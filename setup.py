@@ -36,6 +36,8 @@ class bdist_rpm(_bdist_rpm):
         cmdline = "rpmbuild -ba --define '_topdir %s' %s.spec" % (topdir, os.path.join(specdir, pkg_name))
         execScript(shlex.split(cmdline)).communicate()
 
+templates_dir = 'usr/share/openstack-dashboard/openstack_dashboard/templates'
+img_dir = 'usr/share/openstack-dashboard/static/dashboard/img'
 
 setup(
       name=pkg_name,
@@ -46,6 +48,11 @@ setup(
       author_email='CREAM group <cream-support@lists.infn.it>',
       packages=['keystone_skey_auth', 'openstack_auth_shib'],
       package_dir = {'': 'src'},
+      data_files=[
+                  (templates_dir, ['src/templates/splash.html']),
+                  (templates_dir + '/auth', ['src/templates/_loginAAI.html']),
+                  (img_dir, ['src/templates/logoInfnAAI.png'])
+                 ],
       cmdclass={'bdist_rpm': bdist_rpm}
      )
 
