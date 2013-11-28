@@ -14,6 +14,8 @@ from openstack_auth import backend as base_backend
 from openstack_auth.exceptions import KeystoneAuthException
 from openstack_auth.user import create_user_from_token
 from openstack_auth.user import Token
+from openstack_auth.utils import get_keystone_version
+
 
 LOG = logging.getLogger(__name__)
 
@@ -95,6 +97,12 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
 
             unscoped_auth_ref = client.auth_ref
             unscoped_token = Token(auth_ref=unscoped_auth_ref)
+            
+            # Force API V3
+            if get_keystone_version() < 3:
+                unscoped_token.serviceCatalog = unscoped_auth_ref.get('catalog', [])
+                unscoped_token.roles = unscoped_auth_ref.get('roles', [])
+            
         except (keystone_exceptions.Unauthorized,
                 keystone_exceptions.Forbidden,
                 keystone_exceptions.NotFound) as exc:
@@ -145,12 +153,19 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
                 msg = _("Unable to authenticate to any available projects.")
                 raise KeystoneAuthException(msg)
 
-        # Check expiry for our new scoped token.
-        self.check_auth_expiry(auth_ref)
+            # Check expiry for our new scoped token.
+            self.check_auth_expiry(auth_ref)
 
         # If we made it here we succeeded. Create our User!
+        
+        # Force API V3
+        project_token = Token(auth_ref)
+        if get_keystone_version() < 3:
+            project_token.serviceCatalog = auth_ref.get('catalog', [])
+            project_token.roles = auth_ref.get('roles', [])
+        
         user = create_user_from_token(request,
-                                      Token(auth_ref),
+                                      project_token,
                                       client.service_catalog.url_for())
 
         if request is not None:
