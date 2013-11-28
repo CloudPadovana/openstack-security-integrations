@@ -1,0 +1,82 @@
+Summary: Shibboleth-Openstack integrations
+Name: openstack-security-integrations
+Version: @PKGVERSION@
+Release: @PKGRELEASE@%{?dist}%{!?dist:.el5}
+License: Apache Software License
+Vendor: EMI
+URL: http://glite.cern.ch/
+Group: Applications/Internet
+BuildArch: noarch
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+AutoReqProv: yes
+Source: %{name}.tar.gz
+
+
+%if ! (0%{?fedora} > 12 || 0%{?rhel} > 5)
+%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
+%{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
+%endif
+
+%description
+Shibboleth-Openstack integrations.
+
+%prep
+
+%setup -c -q
+
+%build
+
+%install
+rm -rf %{buildroot}
+mkdir -p %{buildroot}
+python setup.py install -O1 --prefix %{buildroot}/usr --install-data %{buildroot}
+
+%clean
+rm -rf %{buildroot}
+
+
+
+
+%package -n openstack-auth-shib
+Summary: Django plugin for Shibboleth authentication
+Group: System Environment/Libraries
+Requires: python-django-openstack-auth, python-crypto
+Requires: python-keystoneclient
+
+%description -n openstack-auth-shib
+Django plugin for Shibboleth authentication
+
+%files -n openstack-auth-shib
+%defattr(-,root,root)
+%dir %{python_sitelib}/openstack_auth_shib
+%{python_sitelib}/openstack_auth_shib/*.py
+%{python_sitelib}/openstack_auth_shib/*.pyc
+%{python_sitelib}/openstack_auth_shib/*.pyo
+%if 0%{?el6}
+%{python_sitelib}/*.egg-info
+%endif
+
+
+%package -n keystone-skey-auth
+Summary: Keystone authentication plugin for secret token
+Group: System Environment/Libraries
+Requires: python-crypto, python-keystone
+
+%description -n keystone-skey-auth
+Keystone authentication plugin for secret token
+
+%files -n keystone-skey-auth
+%defattr(-,root,root)
+%dir %{python_sitelib}/keystone_skey_auth
+%{python_sitelib}/keystone_skey_auth/*.py
+%{python_sitelib}/keystone_skey_auth/*.pyc
+%{python_sitelib}/keystone_skey_auth/*.pyo
+%if 0%{?el6}
+%{python_sitelib}/*.egg-info
+%endif
+
+
+%changelog
+* Thu Feb 28 2013 CREAM group <cream-support@lists.infn.it> - @PKGVERSION@-@PKGRELEASE@
+- New major release
+
