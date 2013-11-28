@@ -3,6 +3,11 @@ import logging
 import base64
 
 from Crypto.Cipher import AES
+from Crypto import __version__ as crypto_version
+if crypto_version.startswith('2.0'):
+    from Crypto.Util import randpool
+else:
+    from Crypto import Random
 
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
@@ -61,7 +66,30 @@ class ExtClient(BaseClient):
 
 
 
+def create_cryptoken(aes_key, data):
 
+    if len(aes_key) > 32:
+        aes_key = aes_key[:32]
+    elif len(aes_key) > 16:
+        aes_key = aes_key[:16]
+    elif len(aes_key) > 8:
+        aes_key = aes_key[:8]
+    else:
+        raise keystone_exceptions.AuthorizationFailure()
+    
+    if crypto_version.startswith('2.0'):
+    
+        prng = randpool.RandomPool()
+        iv = prng.get_bytes(256)
+        cipher = AES.new(aes_key, AES.MODE_CFB)    
+        return base64.b64encode(cipher.encrypt(iv + data))
+    
+    else:
+        
+        prng = Random.new()
+        iv = prng.read(256)
+        cipher = AES.new(key, AES.MODE_CFB, iv)
+        return base64.b64encode(iv + cipher.encrypt(data))
 
 #
 # Register this backend in /usr/share/openstack-dashboard/openstack_dashboard/settings.py
@@ -82,12 +110,12 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
         insecure = getattr(settings, 'OPENSTACK_SSL_NO_VERIFY', False)
         secret_key = getattr(settings, 'SECRET_KEY', None)
         
-        # TODO missing IV
-        cipher = AES.new(secret_key, AES.MODE_CFB)
         fqun = "%s@%s" % (username, user_domain_name)
-        secret_token = base64.b64encode(cipher.encrypt(fqun))
 
         try:
+        
+            secret_token = create_cryptoken(secret_key, fqun)
+            
             client = ExtClient(user_domain_name=user_domain_name,
                                username=username,
                                secret_token=secret_token,

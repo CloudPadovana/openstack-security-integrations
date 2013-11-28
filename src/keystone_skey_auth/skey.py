@@ -28,16 +28,21 @@ class SecretKeyAuth(AuthMethodHandler):
         else:
             self.aes_key = None
     
+    def _parse_cryptoken(self, data):
+        if self.aes_key == None:
+            raise Exception("Wrong secret key")
+
+        cipher = AES.new(self.aes_key, AES.MODE_CFB)
+        b64msg = base64.b64decode(data)
+        return cipher.decrypt(b64msg)[256:]
+        
+    
     def authenticate(self, context, auth_info, auth_context):
         headers = context['headers']
         if 'X-Auth-Secret' in headers and 'user_id' not in auth_context:
             try:
-                if self.aes_key == None:
-                    raise Exception("Wrong secret key")
                 
-                cipher = AES.new(cfg.CONF.skey.secret_key, AES.MODE_CFB)
-                b64msg = base64.b64decode(headers['X-Auth-Secret'])
-                fqun = cipher.decrypt(b64msg)
+                fqun = self._parse_cryptoken(headers['X-Auth-Secret'])
                 LOG.info("Accept secret for " + fqun)
                 
                 uTuple = fqun.split('@')
