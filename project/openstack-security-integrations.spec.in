@@ -30,6 +30,12 @@ Shibboleth-Openstack integrations.
 rm -rf %{buildroot}
 mkdir -p %{buildroot}
 python setup.py install -O1 --prefix %{buildroot}/usr --install-data %{buildroot}
+#
+# We need a link to the splash page so we can resolve
+# any hardcoded reference to login.html in the correct way
+#
+ln -s %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/templates/auth/login.html \
+      /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/login.html
 
 %clean
 rm -rf %{buildroot}
@@ -69,9 +75,23 @@ Django plugin for Shibboleth authentication
 # so we can we the one contained into horizon_login_with_aai.less
 #
 sed -i -e 's|splash \.login|splash .loginOrig|g' /usr/share/openstack-dashboard/static/dashboard/less/horizon.less
+#
+# Register the new backend driver
+#
+sed -i -e 's|openstack_auth.backend.KeystoneBackend|openstack_auth_shib.backend.ExtKeystoneBackend|g' \
+    /usr/share/openstack-dashboard/openstack_dashboard/settings.py
+#
+# Register the views wrapper
+#
+sed -i -e 's|openstack_auth.urls|openstack_auth_shib.urls|g' \
+    /usr/share/openstack-dashboard/openstack_dashboard/urls.py
 
 %triggerun -n openstack-auth-shib -- openstack-dashboard
 sed -i -e 's|splash \.loginOrig|splash .login|g' /usr/share/openstack-dashboard/static/dashboard/less/horizon.less
+sed -i -e 's|openstack_auth_shib.backend.ExtKeystoneBackend|openstack_auth.backend.KeystoneBackend|g' \
+    /usr/share/openstack-dashboard/openstack_dashboard/settings.py
+sed -i -e 's|openstack_auth_shib.urls|openstack_auth.urls|g' \
+    /usr/share/openstack-dashboard/openstack_dashboard/urls.py
 
 
 

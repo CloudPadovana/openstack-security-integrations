@@ -2,7 +2,7 @@
 # This is the entry point for the dashboard
 # in /usr/share/openstack-dashboard/openstack_dashboard/urls.py
 # it is necessary to register:
-# url(r'^auth/', include('openstack_shib.urls'))
+# url(r'^auth/', include('openstack_auth_shib.urls'))
 # instead of
 # url(r'^auth/', include('openstack_auth.urls'))
 #
