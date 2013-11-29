@@ -30,12 +30,6 @@ Shibboleth-Openstack integrations.
 rm -rf %{buildroot}
 mkdir -p %{buildroot}
 python setup.py install -O1 --prefix %{buildroot}/usr --install-data %{buildroot}
-#
-# We need a link to the splash page so we can resolve
-# any hardcoded reference to login.html in the correct way
-#
-ln -s %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/templates/auth/login.html \
-      /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/login.html
 
 %clean
 rm -rf %{buildroot}
@@ -68,6 +62,17 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/*.html
 /usr/share/openstack-dashboard/static/dashboard/img/logoInfnAAI.png
 /usr/share/openstack-dashboard/static/dashboard/less/horizon_login_with_aai.less
+
+%post -n openstack-auth-shib
+#
+# We need a link to the splash page so we can resolve
+# any hardcoded reference to login.html in the correct way
+#
+ln -s /usr/share/openstack-dashboard/openstack_dashboard/templates/splash.html \
+      /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/login.html
+
+%preun -n openstack-auth-shib
+rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/login.html
 
 %triggerin -n openstack-auth-shib -- openstack-dashboard
 #
