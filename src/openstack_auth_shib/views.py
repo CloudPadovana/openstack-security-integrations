@@ -5,7 +5,8 @@ from threading import Thread
 from django import shortcuts
 from django.conf import settings
 from django.http import HttpResponseForbidden
-from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, login as auth_login
+from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate
+from django.contrib.auth import login as auth_login, logout as auth_logout
 
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.debug import sensitive_post_parameters
@@ -77,6 +78,8 @@ def logout(request):
             t = Thread(target=delete_all_tokens,
                    args=(list(request.session['token_list']),))
             t.start()
+        
+        auth_logout(request)
         return shortcuts.redirect('/Shibboleth.sso/Logout')
     else:
         return basic_logout(request)
