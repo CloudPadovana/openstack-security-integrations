@@ -62,10 +62,8 @@ def login(request):
             return shortcuts.redirect( '/dashboard-shib/project' )
             
     except:
-        import sys, traceback
-        etype, evalue, etraceback = sys.exc_info()
-        errmsg = traceback.format_exc(etraceback)
-        return HttpResponseForbidden("%s %s" %(evalue, errmsg))
+        LOG.error("Cannot authenticate user", exc_info=True)
+        return HttpResponseForbidden("Authentication failure")
         
     return basic_login(request)
 
