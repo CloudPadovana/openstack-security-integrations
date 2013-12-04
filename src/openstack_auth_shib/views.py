@@ -78,7 +78,9 @@ def logout(request):
             t.start()
         
         auth_logout(request)
-        return shortcuts.redirect('/Shibboleth.sso/Logout')
+        ret_URL = "https://%s:%s/dashboard" % (request.META['SERVER_NAME'],
+                                               request.META['SERVER_PORT'])
+        return shortcuts.redirect('/Shibboleth.sso/Logout?return=%s' % ret_URL)
     else:
         return basic_logout(request)
 
