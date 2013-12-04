@@ -12,6 +12,14 @@ METHOD_NAME = 'sKey'
 
 LOG = logging.getLogger(__name__)
 
+#
+# TODO
+# investigate OTP libraries
+# https://github.com/nathforge/pyotp
+#
+# move token in the body
+#
+
 class SecretKeyAuth(AuthMethodHandler):
 
     def __init__(self):
