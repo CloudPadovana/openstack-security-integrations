@@ -77,6 +77,7 @@ def logout(request):
                    args=(list(request.session['token_list']),))
             t.start()
         
+        # update the session cookies (sessionid and csrftoken)
         auth_logout(request)
         ret_URL = "https://%s:%s/dashboard" % (request.META['SERVER_NAME'],
                                                request.META['SERVER_PORT'])
@@ -93,6 +94,24 @@ def switch_region(request, region_name, redirect_field_name=REDIRECT_FIELD_NAME)
     return basic_switch_region(request, region_name, redirect_field_name)
 
 
+from django import forms
 
+class RegistrationForm(forms.Form):
+     project = forms.CharField()
+
+def register(request):
+    if request.method == 'POST':
+        reg_form = RegistrationForm(request.POST)
+        if reg_form.is_valid():
+            pass
+    else:
+        reg_form = RegistrationForm()
+    
+    tempDict = { 'form': reg_form }
+    if 'REMOTE_USER' in request.META:
+        tempDict['userid'] = request.META['REMOTE_USER']
+    else:
+        tempDict['userid'] = 'Unknown'
+    return shortcuts.render(request, 'registration.html', tempDict)
 
 

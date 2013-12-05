@@ -40,6 +40,12 @@ templates_dir = 'usr/share/openstack-dashboard/openstack_dashboard/templates'
 img_dir = 'usr/share/openstack-dashboard/static/dashboard/img'
 css_dir = 'usr/share/openstack-dashboard/static/dashboard/less'
 
+template_list = [
+                    'src/templates/splash.html',
+                    'src/templates/_register_form.html',
+                    'src/templates/registration.html'
+                ]
+
 setup(
       name=pkg_name,
       version=pkg_version,
@@ -50,7 +56,7 @@ setup(
       packages=['keystone_skey_auth', 'openstack_auth_shib'],
       package_dir = {'': 'src'},
       data_files=[
-                  (templates_dir, ['src/templates/splash.html']),
+                  (templates_dir, template_list),
                   (templates_dir + '/auth', ['src/templates/_loginAAI.html']),
                   (css_dir, ['src/templates/horizon_login_with_aai.less']),
                   (img_dir, ['src/templates/logoInfnAAI.png'])
