@@ -1,4 +1,5 @@
 import logging
+import re
 
 from threading import Thread
 
@@ -7,6 +8,7 @@ from django.conf import settings
 from django.http import HttpResponseForbidden
 from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate
 from django.contrib.auth import login as auth_login, logout as auth_logout
+from django.utils.translation import ugettext_lazy as _
 
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.debug import sensitive_post_parameters
@@ -30,6 +32,28 @@ LOG = logging.getLogger(__name__)
 # issue: shibboleth redirect converts POST in GET
 #        input parameters are lost
 
+auth_domain_table = [
+                        re.compile('(infn.it)$'),
+                        re.compile('(unipd.it)$')
+                    ]
+
+                    
+def get_auth_domain(request):
+    
+    tmps = None
+    if 'mail' in request.META:
+        tmps = request.META['mail']
+    
+    if not tmps:
+        raise keystone_exceptions.AuthorizationFailure(_('Cannot retrieve authentication domain'))
+    
+    for regex in auth_domain_table:
+        res = regex.search(tmps)
+        if res:
+            return res.group(1)
+    
+    raise keystone_exceptions.AuthorizationFailure(_('Cannot retrieve authentication domain'))
+
 @sensitive_post_parameters()
 @csrf_protect
 @never_cache
@@ -39,10 +63,8 @@ def login(request):
     try:
         if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-shib'):
 
-            username = request.META['REMOTE_USER']
+            username = "%s@%s" % (request.META['REMOTE_USER'], get_auth_domain(request))
             region = getattr(settings, 'OPENSTACK_KEYSTONE_URL').replace('v2.0','v3')
-            # TODO
-            # retrieve domain from IdP
             domain = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN', 'Default')
 
             user = authenticate(request=request,

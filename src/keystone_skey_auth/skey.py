@@ -18,6 +18,7 @@ LOG = logging.getLogger(__name__)
 # https://github.com/nathforge/pyotp
 #
 # move token in the body
+# use json for token content
 #
 
 class SecretKeyAuth(AuthMethodHandler):
@@ -53,7 +54,7 @@ class SecretKeyAuth(AuthMethodHandler):
                 fqun = self._parse_cryptoken(headers['X-Auth-Secret'])
                 LOG.info("Accept secret for " + fqun)
                 
-                uTuple = fqun.split('@')
+                uTuple = fqun.split('|')
                 
                 uDict = self.identity_api.get_user_by_name(uTuple[0], uTuple[1])
                 

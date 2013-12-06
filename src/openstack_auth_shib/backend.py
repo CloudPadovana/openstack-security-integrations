@@ -131,7 +131,10 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
         insecure = getattr(settings, 'OPENSTACK_SSL_NO_VERIFY', False)
         secret_key = getattr(settings, 'SECRET_KEY', None)
         
-        fqun = "%s@%s" % (username, user_domain_name)
+        #
+        # TODO use json for token content
+        #
+        fqun = "%s|%s" % (username, user_domain_name)
 
         try:
         
