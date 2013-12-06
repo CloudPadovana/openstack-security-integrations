@@ -20,6 +20,8 @@ from openstack_auth.views import switch_region as basic_switch_region
 from openstack_auth.views import delete_all_tokens
 from openstack_auth.user import set_session_from_user
 
+from keystoneclient import exceptions as keystone_exceptions
+
 LOG = logging.getLogger(__name__)
 
 # TODO
@@ -33,6 +35,7 @@ LOG = logging.getLogger(__name__)
 @never_cache
 def login(request):
 
+    username =''
     try:
         if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-shib'):
 
@@ -61,9 +64,12 @@ def login(request):
                 request.session['region_name'] = region_name
             return shortcuts.redirect( '/dashboard-shib/project' )
             
-    except:
-        LOG.error("Cannot authenticate user", exc_info=True)
-        return HttpResponseForbidden("Authentication failure")
+    except keystone_exceptions.NotFound:
+        LOG.debug("User %s authenticated but not authorized" % username)
+        return register(request, username)
+    except Exception as exc:
+        LOG.error(exc.message, exc_info=True)
+        return HttpResponseForbidden("Authorization failure")
         
     return basic_login(request)
 
@@ -99,7 +105,7 @@ from django import forms
 class RegistrationForm(forms.Form):
      project = forms.CharField()
 
-def register(request):
+def register(request, userid='Unknown'):
     if request.method == 'POST':
         reg_form = RegistrationForm(request.POST)
         if reg_form.is_valid():
@@ -107,11 +113,7 @@ def register(request):
     else:
         reg_form = RegistrationForm()
     
-    tempDict = { 'form': reg_form }
-    if 'REMOTE_USER' in request.META:
-        tempDict['userid'] = request.META['REMOTE_USER']
-    else:
-        tempDict['userid'] = 'Unknown'
+    tempDict = { 'form': reg_form, 'userid' : userid }
     return shortcuts.render(request, 'registration.html', tempDict)
 
 

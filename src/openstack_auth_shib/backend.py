@@ -12,7 +12,10 @@ else:
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
-from keystoneclient import exceptions as keystone_exceptions
+from keystoneclient.exceptions import AuthorizationFailure
+from keystoneclient.exceptions import Unauthorized
+from keystoneclient.exceptions import NotFound
+from keystoneclient.exceptions import ClientException
 from keystoneclient.v3.client import Client as BaseClient
 
 from openstack_auth import backend as base_backend
@@ -35,34 +38,52 @@ class ExtClient(BaseClient):
             self.secret_token = None
         super(ExtClient, self).__init__(**kwargs)
 
-    def _do_auth(self, auth_url, user_id=None, username=None,
-                 user_domain_id=None, user_domain_name=None, password=None,
-                 domain_id=None, domain_name=None,
-                 project_id=None, project_name=None, project_domain_id=None,
-                 project_domain_name=None, token=None, trust_id=None):
+    def get_raw_token_from_identity_service(self, auth_url, user_id=None,
+                                            username=None,
+                                            user_domain_id=None,
+                                            user_domain_name=None,
+                                            password=None,
+                                            domain_id=None, domain_name=None,
+                                            project_id=None, project_name=None,
+                                            project_domain_id=None,
+                                            project_domain_name=None,
+                                            token=None,
+                                            trust_id=None,
+                                            **kwargs):
 
         if self.secret_token == None:
-            return super(ExtClient, self)._do_auth(auth_url, user_id, username,
+            return super(ExtClient, self).get_raw_token_from_identity_service(
+                                                   auth_url, user_id, username,
                                                    user_domain_id, user_domain_name,
                                                    password, domain_id, domain_name,
                                                    project_id, project_name,
                                                    project_domain_id,
                                                    project_domain_name, token,
                                                    trust_id)
-        headers = {}
-        if auth_url is None:
-            raise ValueError("Cannot authenticate without a valid auth_url")
-        url = auth_url + "/auth/tokens"
-        body = {'auth': {'identity': {}}}
-        ident = body['auth']['identity']
+        try:
         
-        headers['X-Auth-Secret'] = self.secret_token
-        ident['methods'] = ['sKey']
-        ident['sKey'] = {}
+            headers = {}
+            if auth_url is None:
+                raise AuthorizationFailure("Cannot authenticate without a valid auth_url")
+            url = auth_url + "/auth/tokens"
+            body = {'auth': {'identity': {}}}
+            ident = body['auth']['identity']
+        
+            headers['X-Auth-Secret'] = self.secret_token
+            ident['methods'] = ['sKey']
+            ident['sKey'] = {}
         
 
-        resp, body = self.request(url, 'POST', body=body, headers=headers)
-        return resp, body
+            resp, body = self.request(url, 'POST', body=body, headers=headers)
+            return resp, body
+            
+        except (AuthorizationFailure, Unauthorized, NotFound):
+            LOG.debug('Authorization failed.')
+            raise
+        except Exception as e:
+            raise AuthorizationFailure('Authorization failed: %s' % e)
+            
+
 
 
 
@@ -75,7 +96,7 @@ def create_cryptoken(aes_key, data):
     elif len(aes_key) > 8:
         aes_key = aes_key[:8]
     else:
-        raise keystone_exceptions.AuthorizationFailure()
+        raise AuthorizationFailure()
     
     if crypto_version.startswith('2.0'):
     
@@ -105,7 +126,7 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
             return parentObj.authenticate(request, username, password,
                                           user_domain_name, auth_url)
 
-        LOG.debug('Beginning user authentication for user "%s".' % username)
+        LOG.debug('Authenticating user "%s".' % username)
 
         insecure = getattr(settings, 'OPENSTACK_SSL_NO_VERIFY', False)
         secret_key = getattr(settings, 'SECRET_KEY', None)
@@ -131,16 +152,12 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
                 unscoped_token.serviceCatalog = unscoped_auth_ref.get('catalog', [])
                 unscoped_token.roles = unscoped_auth_ref.get('roles', [])
             
-        except (keystone_exceptions.Unauthorized,
-                keystone_exceptions.Forbidden,
-                keystone_exceptions.NotFound) as exc:
-            msg = _('Invalid user name or password.')
-            LOG.debug(exc.message)
-            raise KeystoneAuthException(msg)
-        except (keystone_exceptions.ClientException,
-                keystone_exceptions.AuthorizationFailure) as exc:
+        except ClientException as exc:
+            LOG.debug(exc.message, exc_info=True)
+            raise
+        except Exception as exc:
             msg = _("An error occurred authenticating. Please try again later.")
-            LOG.debug(exc.message)
+            LOG.debug(exc.message, exc_info=True)
             raise KeystoneAuthException(msg)
 
         self.check_auth_expiry(unscoped_auth_ref)
@@ -152,8 +169,7 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
             try:
                 client.management_url = auth_url
                 projects = client.projects.list(user=unscoped_auth_ref.user_id)
-            except (keystone_exceptions.ClientException,
-                    keystone_exceptions.AuthorizationFailure) as exc:
+            except (ClientException, AuthorizationFailure) as exc:
                 msg = _('Unable to retrieve authorized projects.')
                 raise KeystoneAuthException(msg)
 
@@ -173,8 +189,7 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
                         debug=settings.DEBUG)
                     auth_ref = client.auth_ref
                     break
-                except (keystone_exceptions.ClientException,
-                        keystone_exceptions.AuthorizationFailure):
+                except (ClientException, AuthorizationFailure):
                     auth_ref = None
 
             if auth_ref is None:
