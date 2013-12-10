@@ -16,6 +16,8 @@ LOG = logging.getLogger(__name__)
 # TODO
 # investigate OTP libraries
 # https://github.com/nathforge/pyotp
+# investigate schema based on timestamp and originatorID
+# originatorID is the uniqueID of the thread sending the request.
 #
 # move token in the body
 # use json for token content

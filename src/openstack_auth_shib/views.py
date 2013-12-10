@@ -5,7 +5,6 @@ from threading import Thread
 
 from django import shortcuts
 from django.conf import settings
-from django.http import HttpResponseForbidden
 from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.utils.translation import ugettext_lazy as _
@@ -24,6 +23,9 @@ from openstack_auth.user import set_session_from_user
 
 from keystoneclient import exceptions as keystone_exceptions
 
+from .models import Candidate
+from .forms import RegistrationForm
+
 LOG = logging.getLogger(__name__)
 
 # TODO
@@ -37,22 +39,35 @@ auth_domain_table = [
                         re.compile('(unipd.it)$')
                     ]
 
-                    
-def get_auth_domain(request):
+def get_shib_attributes(request):
     
-    tmps = None
-    if 'mail' in request.META:
-        tmps = request.META['mail']
+    userid = None
+    email = None
     
-    if not tmps:
-        raise keystone_exceptions.AuthorizationFailure(_('Cannot retrieve authentication domain'))
+    if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-shib'):
     
-    for regex in auth_domain_table:
-        res = regex.search(tmps)
-        if res:
-            return res.group(1)
+        name_attr = request.META['REMOTE_USER']
     
-    raise keystone_exceptions.AuthorizationFailure(_('Cannot retrieve authentication domain'))
+        if 'mail' in request.META:
+            email = request.META['mail']
+        else:
+            raise keystone_exceptions.AuthorizationFailure(_('Cannot retrieve authentication domain'))
+        
+        tmpd = None
+        for regex in auth_domain_table:
+            tmpd = regex.search(email)
+            if tmpd:
+                userid = "%s@%s" % (name_attr, tmpd.group(1))
+        
+        if not userid:
+            raise keystone_exceptions.AuthorizationFailure(_('Cannot retrieve authentication domain'))
+        
+    return (userid, email)
+
+def get_ostack_attributes(request):
+    region = getattr(settings, 'OPENSTACK_KEYSTONE_URL').replace('v2.0','v3')
+    domain = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN', 'Default')
+    return (domain, region)
 
 @sensitive_post_parameters()
 @csrf_protect
@@ -61,11 +76,11 @@ def login(request):
 
     username =''
     try:
-        if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-shib'):
-
-            username = "%s@%s" % (request.META['REMOTE_USER'], get_auth_domain(request))
-            region = getattr(settings, 'OPENSTACK_KEYSTONE_URL').replace('v2.0','v3')
-            domain = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN', 'Default')
+    
+        username, usermail = get_shib_attributes(request)
+        domain, region = get_ostack_attributes(request)
+        
+        if username:
 
             user = authenticate(request=request,
                                 username=username,
@@ -88,10 +103,13 @@ def login(request):
             
     except keystone_exceptions.NotFound:
         LOG.debug("User %s authenticated but not authorized" % username)
-        return register(request, username)
+        return register(request)
     except Exception as exc:
         LOG.error(exc.message, exc_info=True)
-        return HttpResponseForbidden("Authorization failure")
+        #
+        # TODO print authorization error in the splash page
+        #
+        raise
         
     return basic_login(request)
 
@@ -122,20 +140,32 @@ def switch_region(request, region_name, redirect_field_name=REDIRECT_FIELD_NAME)
     return basic_switch_region(request, region_name, redirect_field_name)
 
 
-from django import forms
+def register(request):
 
-class RegistrationForm(forms.Form):
-     project = forms.CharField()
-
-def register(request, userid='Unknown'):
-    if request.method == 'POST':
-        reg_form = RegistrationForm(request.POST)
-        if reg_form.is_valid():
-            pass
-    else:
-        reg_form = RegistrationForm()
+    username, usermail = get_shib_attributes(request)
+    domain, region = get_ostack_attributes(request)
     
-    tempDict = { 'form': reg_form, 'userid' : userid }
-    return shortcuts.render(request, 'registration.html', tempDict)
+    if username:
 
+        if request.method == 'POST':
+            reg_form = RegistrationForm(request.POST)
+            if reg_form.is_valid():
+                LOG.debug("Saving %s" % username)
+                candidate = Candidate(uname=username, domain=domain,
+                                      project=reg_form.cleaned_data['project'])
+                candidate.save()
+                return shortcuts.redirect('/dashboard')
+        else:
+            reg_form = RegistrationForm()
+            #deprecated
+            reg_form.initial['uname'] = username
+            reg_form.initial['domain'] = domain
+    
+        tempDict = { 'form': reg_form,
+                     'userid' : username,
+                     'form_action_url' : '/dashboard-shib/auth/register/' }
+        return shortcuts.render(request, 'registration.html', tempDict)
+        
+    else:
+        raise keystone_exceptions.AuthorizationFailure(_('Not yet implemented'))
 
