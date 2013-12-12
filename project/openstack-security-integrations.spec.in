@@ -30,6 +30,8 @@ Shibboleth-Openstack integrations.
 rm -rf %{buildroot}
 mkdir -p %{buildroot}
 python setup.py install -O1 --prefix %{buildroot}/usr --install-data %{buildroot}
+ln %{buildroot}/%{python_sitelib}/registration_manager/* \
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/
 
 %clean
 rm -rf %{buildroot}
@@ -63,6 +65,10 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/*.html
 /usr/share/openstack-dashboard/static/dashboard/img/logoInfnAAI.png
 /usr/share/openstack-dashboard/static/dashboard/less/horizon_login_with_aai.less
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/registration_manager/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/registration_manager/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/registration_manager/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/registration_manager/templates/registration_manager/*.html
 
 %post -n openstack-auth-shib
 #
