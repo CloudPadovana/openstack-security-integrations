@@ -48,6 +48,12 @@ template_list = [
                     'src/templates/registration.html'
                 ]
 
+reg_templ_list = [
+                    'src/templates/reg_manager.html',
+                    'src/templates/reg_approve.html',
+                    'src/templates/_reg_approve.html'
+                 ]
+
 module_list = [
                 'keystone_skey_auth',
                 'openstack_auth_shib',
@@ -66,7 +72,7 @@ setup(
       data_files=[
                   (templates_dir, template_list),
                   (templates_dir + '/auth', ['src/templates/_loginAAI.html']),
-                  (reg_panel_dir, [ 'src/templates/reg_manager.html' ]),
+                  (reg_panel_dir, reg_templ_list),
                   (css_dir, ['src/templates/horizon_login_with_aai.less']),
                   (img_dir, ['src/templates/logoInfnAAI.png'])
                  ],

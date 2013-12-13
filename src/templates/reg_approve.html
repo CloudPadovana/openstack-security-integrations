@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Approve Registration" %}{% endblock %}
+
+{% block page_header %}
+  {# to make searchable false, just remove it from the include statement #}
+  {% include "horizon/common/_page_header.html" with title=_("Approve Registration") %}
+{% endblock page_header %}
+
+{% block main %}
+    {% include 'admin/registration_manager/_reg_approve.html' %}
+{% endblock %}
+
