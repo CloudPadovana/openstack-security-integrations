@@ -7,13 +7,18 @@
     <h3>{% trans "Log In" %}</h3>
   </div>
   
-  <div class="modal-body">
-    <a href="/Shibboleth.sso/Login?entityID=https%3A%2F%2Fidp.infn.it%2Ftesting%2Fsaml2%2Fidp%2Fmetadata.php"><img align="middle" height="60px" width="80x" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png"></a>
-  </div>
-  <hr />
-  
   <form id="form1_id" autocomplete="{{ HORIZON_CONFIG.password_autocomplete }}" class="" action="{% url 'login' %}" method="POST">
     {% csrf_token %}
+
+    <div class="modal-body">
+      <button type="button" 
+              onclick="location.href='/Shibboleth.sso/Login?entityID=https%3A%2F%2Fidp.infn.it%2Ftesting%2Fsaml2%2Fidp%2Fmetadata.php';">
+        <img align="middle" height="60px" width="80x" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
+        <p>{% trans "Sign in" %}<p>
+      </button>
+    </div>
+    <hr />
+  
     <div class="modal-body clearfix">
       <fieldset>
         {% if request.user.is_authenticated and 'next' in request.GET %}
