@@ -24,6 +24,7 @@ from openstack_auth.user import set_session_from_user
 from keystoneclient import exceptions as keystone_exceptions
 
 from .models import Candidate
+from .models import UserMapping
 from .forms import RegistrationForm
 
 LOG = logging.getLogger(__name__)
@@ -81,9 +82,12 @@ def login(request):
         domain, region = get_ostack_attributes(request)
         
         if username:
+        
+            localuser = str(UserMapping.objects.get(globaluser=username).localuser)
+            LOG.debug("Mapped user %s on %s" % (username, localuser))
 
             user = authenticate(request=request,
-                                username=username,
+                                username=localuser,
                                 password=None,
                                 user_domain_name=domain,
                                 auth_url=region)
