@@ -65,7 +65,6 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/templates/*.html
 /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/*.html
 /usr/share/openstack-dashboard/static/dashboard/img/logoInfnAAI.png
-/usr/share/openstack-dashboard/static/dashboard/less/horizon_login_with_aai.less
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/registration_manager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/registration_manager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/registration_manager/*.pyo
@@ -84,10 +83,8 @@ rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/login.ht
 
 %triggerin -n openstack-auth-shib -- openstack-dashboard
 #
-# Removing original definition for .login
-# so we can we the one contained into horizon_login_with_aai.less
+# Overriding original definition for .login
 #
-sed -i -e 's|splash \.login|splash .loginOrig|g' /usr/share/openstack-dashboard/static/dashboard/less/horizon.less
 python /usr/share/openstack-dashboard/manage.py compress -v 0
 #
 # Register the new backend driver
@@ -101,7 +98,6 @@ sed -i -e 's|openstack_auth.urls|openstack_auth_shib.urls|g' \
     /usr/share/openstack-dashboard/openstack_dashboard/urls.py
 
 %triggerun -n openstack-auth-shib -- openstack-dashboard
-sed -i -e 's|splash \.loginOrig|splash .login|g' /usr/share/openstack-dashboard/static/dashboard/less/horizon.less
 sed -i -e 's|openstack_auth_shib.backend.ExtKeystoneBackend|openstack_auth.backend.KeystoneBackend|g' \
     /usr/share/openstack-dashboard/openstack_dashboard/settings.py
 sed -i -e 's|openstack_auth_shib.urls|openstack_auth.urls|g' \

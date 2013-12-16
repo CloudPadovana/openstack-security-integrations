@@ -1,0 +1,46 @@
+{% load i18n %}
+{% load url from future %}
+
+<div id="login_frame1_id" class="login {% if hide %}modal hide{% endif %}">
+  <div class="modal-header">
+    {% if hide %}<a href="#" class="close" data-dismiss="modal">&times;</a>{% endif %}
+    <h3>{% trans "Log In" %}</h3>
+  </div>
+  
+  <div class="modal-body">
+    <a href="/Shibboleth.sso/Login?entityID=https%3A%2F%2Fidp.infn.it%2Ftesting%2Fsaml2%2Fidp%2Fmetadata.php"><img align="middle" height="60px" width="80x" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png"></a>
+  </div>
+  <hr />
+  
+  <form id="form1_id" autocomplete="{{ HORIZON_CONFIG.password_autocomplete }}" class="" action="{% url 'login' %}" method="POST">
+    {% csrf_token %}
+    <div class="modal-body clearfix">
+      <fieldset>
+        {% if request.user.is_authenticated and 'next' in request.GET %}
+        <div class="control-group clearfix error">
+          <span class="help-inline"><p>{% trans "You don't have permissions to access:" %}</p>
+            <p><b>{{ request.GET.next }}</b></p>
+            <p>{% trans "Login as different user or go back to" %}
+            <a href="{% url 'horizon:user_home' %}">{% trans "home page" %}</a></p>
+          </span>
+        </div>
+        {% endif  %}
+       
+        {% if request.COOKIES.logout_reason %}
+        <div class="control-group clearfix error">
+          <span class="help-inline"><p>{{ request.COOKIES.logout_reason }}</p></span>
+        </div>
+        {% endif %}
+       
+        {% if next %}<input type="hidden" name="{{ redirect_field_name }}" value="{{ next }}" />{% endif %}
+        {% include "horizon/common/_form_fields.html" %}
+      </fieldset>
+    </div>
+    <div class="modal-footer">
+      <button type="submit" class="btn btn-primary pull-right">{% trans "Sign In" %}</button>
+      <button type="button" class="btn btn-primary pull-right">{% trans "Register" %}</button>
+    </div>
+  </form>
+</div>
+
+

@@ -39,11 +39,9 @@ class bdist_rpm(_bdist_rpm):
 os_main_dir = 'usr/share/openstack-dashboard/'
 templates_dir = os_main_dir + 'openstack_dashboard/templates'
 img_dir = os_main_dir + 'static/dashboard/img'
-css_dir = os_main_dir + 'static/dashboard/less'
 reg_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/admin/registration_manager/templates/registration_manager'
 
 template_list = [
-                    'src/templates/splash.html',
                     'src/templates/_register_form.html',
                     'src/templates/registration.html'
                 ]
@@ -71,9 +69,8 @@ setup(
       package_dir = {'': 'src'},
       data_files=[
                   (templates_dir, template_list),
-                  (templates_dir + '/auth', ['src/templates/_loginAAI.html']),
+                  (templates_dir + '/auth', ['src/templates/_login.html']),
                   (reg_panel_dir, reg_templ_list),
-                  (css_dir, ['src/templates/horizon_login_with_aai.less']),
                   (img_dir, ['src/templates/logoInfnAAI.png'])
                  ],
       cmdclass={'bdist_rpm': bdist_rpm}
