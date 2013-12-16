@@ -8,7 +8,7 @@ from horizon import tables
 from horizon import exceptions
 from horizon import forms
 
-from openstack_auth_shib.models import Candidate
+from openstack_auth_shib.models import RegRequest
 
 from .tables import RegisterTable
 from .forms import ApproveRegForm
@@ -25,7 +25,10 @@ class IndexView(tables.DataTableView):
         reg_list = []
         
         try:
-            reg_list = Candidate.objects.all()
+            #
+            # TODO paging
+            #
+            reg_list = RegRequest.objects.all()
         except Exception:
             exceptions.handle(self.request, _('Unable to retrieve registration list.'))
 
@@ -44,7 +47,7 @@ class ApproveView(forms.ModalFormView):
         if not hasattr(self, "_object"):
             try:
 
-                self._object = Candidate.objects.get(uname=self.kwargs['uname'])
+                self._object = RegRequest.objects.get(reqid=self.kwargs['reqid'])
 
             except Exception:
                 redirect = reverse("horizon:admin:registration_manager:index")
@@ -61,9 +64,13 @@ class ApproveView(forms.ModalFormView):
     def get_initial(self):
         registration = self.get_object()
         return {
-            'uname' : registration.uname,
-            'domain' : registration.domain,
-            'project' : registration.project
+            'reqid' : registration.reqid ,
+            'localuser' : registration.localuser ,
+            'email' : registration.email ,
+            'notes' : registration.notes ,
+            'globalid' : registration.globalid ,
+            'idp' : registration.idp ,
+            'domain' : registration.domain
         }
 
 

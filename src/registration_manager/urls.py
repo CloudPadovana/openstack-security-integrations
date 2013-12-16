@@ -7,5 +7,5 @@ prefix = 'openstack_dashboard.dashboards.admin.registration_manager.views'
 
 urlpatterns = patterns(prefix,
     url(r'^$', views.IndexView.as_view(), name='index'),
-    url(r'^(?P<uname>[^/]+)/approve/$', views.ApproveView.as_view(), name='approve'))
+    url(r'^(?P<reqid>[^/]+)/approve/$', views.ApproveView.as_view(), name='approve'))
 
