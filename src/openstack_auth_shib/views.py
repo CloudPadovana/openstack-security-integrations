@@ -23,7 +23,8 @@ from openstack_auth.user import set_session_from_user
 
 from keystoneclient import exceptions as keystone_exceptions
 
-from .models import Candidate
+from horizon import forms
+
 from .models import UserMapping
 from .forms import RegistrationForm
 
@@ -155,9 +156,6 @@ def register(request):
             reg_form = RegistrationForm(request.POST)
             if reg_form.is_valid():
                 LOG.debug("Saving %s" % username)
-                candidate = Candidate(uname=username, domain=domain,
-                                      project=reg_form.cleaned_data['project'])
-                candidate.save()
                 return shortcuts.redirect('/dashboard')
         else:
             reg_form = RegistrationForm()
@@ -172,4 +170,6 @@ def register(request):
         
     else:
         raise keystone_exceptions.AuthorizationFailure(_('Not yet implemented'))
+
+
 
