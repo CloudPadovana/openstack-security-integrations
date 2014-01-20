@@ -43,7 +43,9 @@
     </div>
     <div class="modal-footer">
       <button type="submit" class="btn btn-primary pull-right">{% trans "Sign In" %}</button>
-      <button type="button" class="btn btn-primary pull-right">{% trans "Register" %}</button>
+      <button type="button"
+              onclick="location.href='/dashboard/auth/register/'"
+              class="btn btn-primary pull-right">{% trans "Register" %}</button>
     </div>
   </form>
 </div>

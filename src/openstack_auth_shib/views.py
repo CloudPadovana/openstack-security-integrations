@@ -26,7 +26,7 @@ from keystoneclient import exceptions as keystone_exceptions
 from horizon import forms
 
 from .models import UserMapping
-from .forms import RegistrationForm
+from .forms import BaseRegistForm, UsrPwdRegistForm
 
 LOG = logging.getLogger(__name__)
 
@@ -153,15 +153,19 @@ def register(request):
     if username:
 
         if request.method == 'POST':
-            reg_form = RegistrationForm(request.POST)
+            reg_form = BaseRegistForm(request.POST)
             if reg_form.is_valid():
+                notes = form.cleaned_data['notes']
+                project = form.cleaned_data['project']
+                prjlist = [ project ]
+
                 LOG.debug("Saving %s" % username)
+                storeRegistration(username, None, usermail, notes,
+                                  domain, region, prjlist)
+                
                 return shortcuts.redirect('/dashboard')
         else:
-            reg_form = RegistrationForm()
-            #deprecated
-            reg_form.initial['uname'] = username
-            reg_form.initial['domain'] = domain
+            reg_form = BaseRegistForm()
     
         tempDict = { 'form': reg_form,
                      'userid' : username,
@@ -169,7 +173,57 @@ def register(request):
         return shortcuts.render(request, 'registration.html', tempDict)
         
     else:
-        raise keystone_exceptions.AuthorizationFailure(_('Not yet implemented'))
 
+        if request.method == 'POST':
+            reg_form = UsrPwdRegistForm(request.POST)
+            if reg_form.is_valid():
+                username = form.cleaned_data['username']
+                pwd = form.cleaned_data['pwd']
+                repwd = form.cleaned_data['repwd']
+                email = form.cleaned_data['email']
+                notes = form.cleaned_data['notes']
+                project = form.cleaned_data['project']
+                prjlist = [ project ]
+                
+                if pwd <> repwd:
+                    #TODO handle pwd mismatch
+                    pass
+                
+                if '@' in username:
+                    #TODO handle bad char in name
+                    pass
+                
+                storeRegistration(username, pwd, email, notes,
+                                  domain, region, prjlist)
+
+                LOG.debug("Saving %s" % username)
+                return shortcuts.redirect('/dashboard')
+        else:
+            reg_form = UsrPwdRegistForm()
+    
+        tempDict = { 'form': reg_form,
+                     'form_action_url' : '/dashboard-shib/auth/register/' }
+        return shortcuts.render(request, 'registration.html', tempDict)
+
+
+def storeRegistration(username, password, email, notes, domain, region, prjlist):
+    
+    try:
+        regReq = RegRequest(username=username, password=password,
+                            email=email, notes=notes,
+                            domain=domain, region=region)
+        regReq.save()
+    except:
+        #TODO handle errors
+        pass
+    
+    try:
+        for prjitem in prjlist:
+        
+            reqPrj = ReqProject(registration=regReq, projectname=prjitem)
+            reqPrj.save()
+    except:
+        #TODO rollback and handle erros
+        pass
 
 

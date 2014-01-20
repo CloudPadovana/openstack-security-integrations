@@ -6,11 +6,13 @@ class UserMapping(models.Model):
 
 class RegRequest(models.Model):
     reqid = models.AutoField(primary_key=True)
-    localuser = models.CharField(max_length=50)
-    password = models.CharField(max_length=50)
-    email = models.CharField(max_length=50)
+    username = models.CharField(max_length=50)
+    password = models.CharField(max_length=50, null=True)
+    email = models.EmailField(max_length=50)
     notes = models.CharField(max_length=300)
-    globalid = models.CharField(max_length=50, null=True)
-    idp = models.CharField(max_length=50, null=True)
-    domain = models.CharField(max_length=50, null=True)
+    domain = models.CharField(max_length=50)
+    region = models.CharField(max_length=50)
 
+class ReqProject(models.Model):
+    registration = models.ForeignKey(RegRequest)
+    projectname = models.CharField(max_length=50)
