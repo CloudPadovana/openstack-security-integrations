@@ -2,7 +2,7 @@
 {% load i18n %}
 
 {% block modal_id%}register_div_id{% endblock %}
-{% block modal-header %}{% trans "Register" %}{% endblock %}
+{% block modal-header %}{% trans "User Registration" %}{% endblock %}
 {% block modal_class %}register{% if hide %} modal hide{% endif %}{% endblock %}
 
 {% block form_id %}register_form_id{% endblock %}
@@ -23,5 +23,8 @@
 
 {% block modal-footer %}
   <button type="submit" class="btn btn-primary pull-right">{% trans "Register" %}</button>
+  <button type="button"
+          onclick="location.href='/dashboard'"
+          class="btn btn-primary pull-right">{% trans "Cancel" %}</button>
 {% endblock %}
 

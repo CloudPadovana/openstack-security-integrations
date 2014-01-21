@@ -40,6 +40,7 @@ os_main_dir = 'usr/share/openstack-dashboard/'
 templates_dir = os_main_dir + 'openstack_dashboard/templates'
 img_dir = os_main_dir + 'static/dashboard/img'
 reg_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/admin/registration_manager/templates/registration_manager'
+css_dir = 'usr/share/openstack-dashboard/static/dashboard/less'
 
 template_list = [
                     'src/templates/_register_form.html',
@@ -71,6 +72,7 @@ setup(
                   (templates_dir, template_list),
                   (templates_dir + '/auth', ['src/templates/_login.html']),
                   (reg_panel_dir, reg_templ_list),
+                  (css_dir, ['src/templates/aai_infn_integrations.less']),
                   (img_dir, ['src/templates/logoInfnAAI.png'])
                  ],
       cmdclass={'bdist_rpm': bdist_rpm}

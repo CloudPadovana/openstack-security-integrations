@@ -48,6 +48,7 @@ Requires: python-django-openstack-auth
 Requires: python-crypto
 Requires: python-keystoneclient
 Requires: openstack-dashboard
+Requires: python-lesscpy
 
 %description -n openstack-auth-shib
 Django plugin for Shibboleth authentication
@@ -63,6 +64,7 @@ Django plugin for Shibboleth authentication
 %endif
 /usr/share/openstack-dashboard/openstack_dashboard/templates/*.html
 /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/*.html
+/usr/share/openstack-dashboard/static/dashboard/less/aai_infn_integrations.less
 /usr/share/openstack-dashboard/static/dashboard/img/logoInfnAAI.png
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/registration_manager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/registration_manager/*.pyc
@@ -81,6 +83,10 @@ ln -sf /usr/share/openstack-dashboard/openstack_dashboard/templates/splash.html 
 rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/login.html
 
 %triggerin -n openstack-auth-shib -- openstack-dashboard
+#
+# Compressing aai_infn_integrations
+#
+python /usr/share/openstack-dashboard/manage.py compress -v 0
 #
 # Register the new backend driver
 #

@@ -25,7 +25,7 @@ from keystoneclient import exceptions as keystone_exceptions
 
 from horizon import forms
 
-from .models import UserMapping
+from .models import UserMapping, RegRequest, ReqProject
 from .forms import BaseRegistForm, UsrPwdRegistForm
 
 LOG = logging.getLogger(__name__)
@@ -155,8 +155,8 @@ def register(request):
         if request.method == 'POST':
             reg_form = BaseRegistForm(request.POST)
             if reg_form.is_valid():
-                notes = form.cleaned_data['notes']
-                project = form.cleaned_data['project']
+                notes = reg_form.cleaned_data['notes']
+                project = reg_form.cleaned_data['project']
                 prjlist = [ project ]
 
                 LOG.debug("Saving %s" % username)
@@ -177,12 +177,12 @@ def register(request):
         if request.method == 'POST':
             reg_form = UsrPwdRegistForm(request.POST)
             if reg_form.is_valid():
-                username = form.cleaned_data['username']
-                pwd = form.cleaned_data['pwd']
-                repwd = form.cleaned_data['repwd']
-                email = form.cleaned_data['email']
-                notes = form.cleaned_data['notes']
-                project = form.cleaned_data['project']
+                username = reg_form.cleaned_data['username']
+                pwd = reg_form.cleaned_data['pwd']
+                repwd = reg_form.cleaned_data['repwd']
+                email = reg_form.cleaned_data['email']
+                notes = reg_form.cleaned_data['notes']
+                project = reg_form.cleaned_data['project']
                 prjlist = [ project ]
                 
                 if pwd <> repwd:
@@ -202,7 +202,7 @@ def register(request):
             reg_form = UsrPwdRegistForm()
     
         tempDict = { 'form': reg_form,
-                     'form_action_url' : '/dashboard-shib/auth/register/' }
+                     'form_action_url' : '/dashboard/auth/register/' }
         return shortcuts.render(request, 'registration.html', tempDict)
 
 
@@ -215,7 +215,7 @@ def storeRegistration(username, password, email, notes, domain, region, prjlist)
         regReq.save()
     except:
         #TODO handle errors
-        pass
+        LOG.error("Registration error", exc_info=True)
     
     try:
         for prjitem in prjlist:
@@ -224,6 +224,6 @@ def storeRegistration(username, password, email, notes, domain, region, prjlist)
             reqPrj.save()
     except:
         #TODO rollback and handle erros
-        pass
+        LOG.error("Registration error", exc_info=True)
 
 
