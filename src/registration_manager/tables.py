@@ -28,12 +28,11 @@ class DiscardAction(tables.DeleteAction):
 
 class RegisterTable(tables.DataTable):
     reqid = tables.Column('reqid', verbose_name=_('Request ID'))
-    localuser = tables.Column('localuser', verbose_name=_('Cloud User'))
+    username = tables.Column('username', verbose_name=_('User Name'))
     email = tables.Column('email', verbose_name=_('Email address'))
     notes = tables.Column('notes', verbose_name=_('Notes'))
-    globalid = tables.Column('globalid', verbose_name=_('Global user ID'))
-    idp = tables.Column('idp', verbose_name=_('Identity Provider'))
     domain = tables.Column('domain', verbose_name=_('Domain'))
+    region = tables.Column('region', verbose_name=_('Region'))
 
     class Meta:
         name = "register_table"

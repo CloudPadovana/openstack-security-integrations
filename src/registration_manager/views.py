@@ -15,6 +15,17 @@ from .forms import ApproveRegForm
 
 LOG = logging.getLogger(__name__)
 
+def generateLocalAccount(registration):
+    #
+    # TODO improve suggested account (configurable)
+    #
+    if '@' in registration.username:
+        uid = registration.username.split('@')[0]
+    else:
+        uid = registration.username
+    
+    return "%s:%09d" % (uid, registration.reqid)
+
 
 class IndexView(tables.DataTableView):
     table_class = RegisterTable
@@ -65,12 +76,13 @@ class ApproveView(forms.ModalFormView):
         registration = self.get_object()
         return {
             'reqid' : registration.reqid ,
-            'localuser' : registration.localuser ,
+            'username' : registration.username,
+            'password' : registration.password,
             'email' : registration.email ,
             'notes' : registration.notes ,
-            'globalid' : registration.globalid ,
-            'idp' : registration.idp ,
-            'domain' : registration.domain
+            'domain' : registration.domain,
+            'region' : registration.region,
+            'localaccount' : generateLocalAccount(registration)
         }
 
 

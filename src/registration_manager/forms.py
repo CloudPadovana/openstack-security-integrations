@@ -2,6 +2,7 @@ import logging
 
 from horizon import forms
 from django.forms.widgets import HiddenInput
+from openstack_auth_shib.models import UserMapping
 
 from django.utils.translation import ugettext_lazy as _
 
@@ -12,13 +13,13 @@ class ApproveRegForm(forms.SelfHandlingForm):
     readonlyInput = forms.TextInput(attrs={'readonly': 'readonly'})
     
     reqid = forms.CharField(label=_("Request ID"), widget=readonlyInput)
-    localuser = forms.CharField(label=_("Cloud User"), widget=readonlyInput)
+    username = forms.CharField(label=_("User name"), widget=readonlyInput)
     password = forms.CharField(widget=HiddenInput)
     email = forms.CharField(label=_("Email address"), widget=readonlyInput)
     notes = forms.CharField(label=_("Notes"), widget=readonlyInput)
-    globalid = forms.CharField(label=_("Global user ID"), widget=readonlyInput)
-    idp = forms.CharField(label=_("Identity Provider"), widget=readonlyInput)
     domain = forms.CharField(label=_("Domain"), widget=readonlyInput)
+    region = forms.CharField(label=_("Region"), widget=readonlyInput)
+    localaccount = forms.CharField(label=_("Local account"))
 
     def __init__(self, request, *args, **kwargs):
         super(ApproveRegForm, self).__init__(request, *args, **kwargs)
@@ -26,6 +27,17 @@ class ApproveRegForm(forms.SelfHandlingForm):
     def handle(self, request, data):
         
         LOG.debug("Approving registration for %s" % data.pop('reqid'))
+        #
+        #TODO call keystone
+        #
+        
+        try:
+            username = data.pop('username')
+            localaccount = data.pop('localaccount')
+            mapping = UserMapping(globaluser=username, localuser=localaccount)
+            mapping.save()
+        except:
+            LOG.error("User mapping failure", exc_info=True)
         
         return True
 
