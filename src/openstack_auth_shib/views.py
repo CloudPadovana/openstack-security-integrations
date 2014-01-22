@@ -4,6 +4,7 @@ import re
 from threading import Thread
 
 from django import shortcuts
+from django.db import transaction
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate
 from django.contrib.auth import login as auth_login, logout as auth_logout
@@ -25,7 +26,7 @@ from keystoneclient import exceptions as keystone_exceptions
 
 from horizon import forms
 
-from .models import UserMapping, RegRequest, ReqProject
+from .models import Registration, Project, RegRequest, PrjRequest
 from .forms import BaseRegistForm, UsrPwdRegistForm
 
 LOG = logging.getLogger(__name__)
@@ -182,14 +183,18 @@ def register(request):
                 repwd = reg_form.cleaned_data['repwd']
                 email = reg_form.cleaned_data['email']
                 notes = reg_form.cleaned_data['notes']
+                
+                #
+                #TODO missing project request and multiple selection
+                #
                 project = reg_form.cleaned_data['project']
-                prjlist = [ project ]
+                prjlist = [ (project, "Testing project", True) ]
                 
                 if pwd <> repwd:
                     #TODO handle pwd mismatch
                     pass
                 
-                if '@' in username:
+                if '@' in username or ':' in username:
                     #TODO handle bad char in name
                     pass
                 
@@ -207,23 +212,27 @@ def register(request):
 
 
 def storeRegistration(username, password, email, notes, domain, region, prjlist):
+
+    with transaction.commit_on_success():
     
-    try:
-        regReq = RegRequest(username=username, password=password,
-                            email=email, notes=notes,
-                            domain=domain, region=region)
+        registration = Registration(username=username, domain=domain, region=region)
+        registration.save()
+    
+        regReq = RegRequest(registration=registration, password=password,
+                            email=email, notes=notes)
         regReq.save()
-    except:
-        #TODO handle errors
-        LOG.error("Registration error", exc_info=True)
-    
-    try:
+
         for prjitem in prjlist:
         
-            reqPrj = ReqProject(registration=regReq, projectname=prjitem)
+            try:
+                project = Project.objects.get(projectname=prjitem[0])
+            except Project.DoesNotExist:
+                project = Project(projectname=prjitem[0],
+                                  description=prjitem[1],
+                                  visible=prjitem[2])
+                project.save()
+        
+            reqPrj = PrjRequest(registration=registration, project=project)
             reqPrj.save()
-    except:
-        #TODO rollback and handle erros
-        LOG.error("Registration error", exc_info=True)
 
 
