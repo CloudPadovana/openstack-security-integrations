@@ -11,7 +11,10 @@ class Project(models.Model):
     projectname = models.CharField(max_length=50, primary_key=True)
     description = models.CharField(max_length=300)
     visible = models.BooleanField()
-    #admin = models.ForeignKey(Registration)
+
+#
+#TODO missing project admin table
+#
 
 class UserMapping(models.Model):
     globaluser = models.CharField(max_length=50, primary_key=True)
@@ -28,3 +31,4 @@ class RegRequest(models.Model):
 class PrjRequest(models.Model):
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
     project = models.ForeignKey(Project)
+    new = models.BooleanField()

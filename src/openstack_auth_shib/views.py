@@ -224,6 +224,7 @@ def storeRegistration(username, password, email, notes, domain, region, prjlist)
 
         for prjitem in prjlist:
         
+            newPrj = False
             try:
                 project = Project.objects.get(projectname=prjitem[0])
             except Project.DoesNotExist:
@@ -231,8 +232,9 @@ def storeRegistration(username, password, email, notes, domain, region, prjlist)
                                   description=prjitem[1],
                                   visible=prjitem[2])
                 project.save()
+                newPrj = True
         
-            reqPrj = PrjRequest(registration=registration, project=project)
+            reqPrj = PrjRequest(registration=registration, project=project, new=newPrj)
             reqPrj.save()
 
 
