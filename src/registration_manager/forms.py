@@ -4,6 +4,8 @@ from horizon import forms
 
 from django.db import transaction
 from django.forms.widgets import HiddenInput
+from django.views.decorators.debug import sensitive_variables
+
 from openstack_auth_shib.models import UserMapping
 from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import Registration
@@ -27,6 +29,7 @@ class ApproveRegForm(forms.SelfHandlingForm):
     def __init__(self, request, *args, **kwargs):
         super(ApproveRegForm, self).__init__(request, *args, **kwargs)
 
+    @sensitive_variables('data')
     def handle(self, request, data):
         
         with transaction.commit_on_success():

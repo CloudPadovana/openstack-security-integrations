@@ -32,9 +32,6 @@ class DiscardAction(tables.DeleteAction):
 class RegisterTable(tables.DataTable):
     regid = tables.Column('regid', verbose_name=_('ID'))
     username = tables.Column('username', verbose_name=_('User name'))
-    email = tables.Column('email', verbose_name=_('Email address'))
-    notes = tables.Column('notes', verbose_name=_('Notes'))
-    externalid = tables.Column('externalid', verbose_name=_('External ID'))
     domain = tables.Column('domain', verbose_name=_('Domain'))
     region = tables.Column('region', verbose_name=_('Region'))
 
@@ -45,7 +42,7 @@ class RegisterTable(tables.DataTable):
         table_actions = (DiscardAction,)
 
     def get_object_id(self, datum):
-        return datum.getID()
+        return datum.regid
 
 
 
