@@ -14,6 +14,12 @@ from openstack_dashboard import api
 
 LOG = logging.getLogger(__name__)
 
+#
+# Workaround for activating the selector
+#
+DEFAULT_ROLE_ID = "00000"
+DEFAULT_ROLE_NAME = "dummy role"
+
 from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import PrjRequest
 
@@ -25,27 +31,15 @@ class ApproveAccountAction(workflows.MembershipAction):
         err_msg = _('Unable to retrieve account list. Please try again later.')
         
         try:
-            default_role = api.keystone.get_default_role(self.request)
-            if default_role is None:
-                default = getattr(settings, "OPENSTACK_KEYSTONE_DEFAULT_ROLE", None)
-                msg = _('Could not find default role "%s" in Keystone') % default
-                raise exceptions.NotFound(msg)
-        except Exception:
-            exceptions.handle(self.request,
-                              err_msg,
-                              redirect=reverse_lazy('horizon:admin:registration_manager:index'))
-
-        default_role_name = self.get_default_role_field_name()
-        self.fields[default_role_name] = forms.CharField(required=False)
-        self.fields[default_role_name].initial = default_role.id
-        
-        role_list = list()
-        account_list = list()
-        
-        try:
-        
-            regid = self.initial["regid"]
-            userReqList = RegRequest.objects.filter(registration__regid__exact=int(regid))
+            default_role_name = self.get_default_role_field_name()
+            self.fields[default_role_name] = forms.CharField(required=False)
+            self.fields[default_role_name].initial = DEFAULT_ROLE_ID
+            
+            account_list = list()
+            
+            regid = int(self.initial["regid"])
+            userReqList = RegRequest.objects.filter(registration__regid__exact=regid)
+            
             for reg_req in userReqList:
                 if reg_req.externalid:
                     ext_acct, ext_idp = reg_req.externalid.split('@')
@@ -54,21 +48,17 @@ class ApproveAccountAction(workflows.MembershipAction):
                 else:
                     tmpname = _("local user <%s>") % reg_req.email
                     account_list.append(('none', tmpname))
-        
-            role_list = api.keystone.role_list(request)
-
-        except Exception:
-            exceptions.handle(request,
-                              err_msg,
-                              redirect=reverse_lazy('horizon:admin:registration_manager:index'))
-        
-        for role in role_list:
-            field_name = self.get_member_field_name(role.id)
-            label = role.name
-            self.fields[field_name] = forms.MultipleChoiceField(required=False,
-                                                                label=label)
+            
+            field_name = self.get_member_field_name(DEFAULT_ROLE_ID)
+            label = DEFAULT_ROLE_NAME
+            self.fields[field_name] = forms.MultipleChoiceField(required=False, label=label)
             self.fields[field_name].choices = account_list
             self.fields[field_name].initial = []
+        
+        except Exception:
+            exceptions.handle(self.request,
+                              err_msg,
+                              redirect=reverse_lazy('horizon:admin:registration_manager:index'))
 
     class Meta:
         slug = "approve_account"
@@ -83,6 +73,19 @@ class ApproveAccount(workflows.UpdateMembersStep):
     no_members_text = _("No accounts.")
     show_roles = False
 
+    def contribute(self, data, context):
+        if data:
+            try:                
+
+                post = self.workflow.request.POST
+                field = self.get_member_field_name(DEFAULT_ROLE_ID)
+                context[field] = post.getlist(field)
+                
+            except Exception:
+                exceptions.handle(self.workflow.request, _('Unable to retrieve role list.'))
+
+        return context
+
 
 
 class ApprovePrjMemberAction(workflows.MembershipAction):
@@ -93,45 +96,29 @@ class ApprovePrjMemberAction(workflows.MembershipAction):
         err_msg = _('Unable to retrieve project list. Please try again later.')
         
         try:
-            default_role = api.keystone.get_default_role(self.request)
-            if default_role is None:
-                default = getattr(settings, "OPENSTACK_KEYSTONE_DEFAULT_ROLE", None)
-                msg = _('Could not find default role "%s" in Keystone') % default
-                raise exceptions.NotFound(msg)
+
+            default_role_name = self.get_default_role_field_name()
+            self.fields[default_role_name] = forms.CharField(required=False)
+            self.fields[default_role_name].initial = DEFAULT_ROLE_ID
+            
+            prj_list = list()
+            
+            regid = int(self.initial["regid"])
+            prjReqList = PrjRequest.objects.filter(registration__regid__exact=regid)
+            for prj_req in prjReqList:
+                prjname = prj_req.project.projectname
+                prj_list.append((prjname, prjname))
+            
+            field_name = self.get_member_field_name(DEFAULT_ROLE_ID)
+            label = DEFAULT_ROLE_NAME
+            self.fields[field_name] = forms.MultipleChoiceField(required=False, label=label)
+            self.fields[field_name].choices = prj_list
+            self.fields[field_name].initial = []
+            
         except Exception:
             exceptions.handle(self.request,
                               err_msg,
                               redirect=reverse_lazy('horizon:admin:registration_manager:index'))
-
-        default_role_name = self.get_default_role_field_name()
-        self.fields[default_role_name] = forms.CharField(required=False)
-        self.fields[default_role_name].initial = default_role.id
-
-        role_list = list()
-        prj_list = list()
-        
-        try:
-        
-            regid = self.initial["regid"]
-            prjReqList = PrjRequest.objects.filter(registration__regid__exact=int(regid))
-            for prj_req in prjReqList:
-                prjname = prj_req.project.projectname
-                prj_list.append((prjname, prjname))
-        
-            role_list = api.keystone.role_list(request)
-
-        except Exception:
-            exceptions.handle(request,
-                              err_msg,
-                              redirect=reverse_lazy('horizon:admin:registration_manager:index'))
-
-        for role in role_list:
-            field_name = self.get_member_field_name(role.id)
-            label = role.name
-            self.fields[field_name] = forms.MultipleChoiceField(required=False,
-                                                                label=label)
-            self.fields[field_name].choices = prj_list
-            self.fields[field_name].initial = []
 
     class Meta:
         slug = "approve_prjmember"
@@ -147,6 +134,18 @@ class ApprovePrjMember(workflows.UpdateMembersStep):
     no_members_text = _("No projects.")
     show_roles = False
 
+    def contribute(self, data, context):
+        if data:
+            try:
+
+                post = self.workflow.request.POST
+                field = self.get_member_field_name(DEFAULT_ROLE_ID)
+                context[field] = post.getlist(field)
+
+            except Exception:
+                exceptions.handle(self.workflow.request, _('Unable to retrieve role list.'))
+        
+        return context
 
 
 
@@ -172,7 +171,23 @@ class ApproveRegWorkflow(workflows.Workflow):
 
     @sensitive_variables('data')
     def handle(self, request, data):
-        LOG.debug("Handling workflow")
+        try:
+            
+            acct_step = self.get_step('approve_account')
+            field_name = acct_step.get_member_field_name(DEFAULT_ROLE_ID)
+            approved_accts = data[field_name]
+            
+            LOG.debug("Approved accounts: %s" % str(approved_accts))
+        
+            prjmem_step = self.get_step('approve_prjmember')
+            field_name = prjmem_step.get_member_field_name(DEFAULT_ROLE_ID)
+            approved_prjs = data[field_name]
+
+            LOG.debug("Approved projects: %s" % str(approved_prjs))
+        
+        except:
+            LOG.error("Failure in handle", exc_info=True)
+        
         return True
 
 
