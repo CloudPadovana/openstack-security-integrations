@@ -3,7 +3,8 @@ from django.db import models
 # Persistent data
 class Registration(models.Model):
     regid = models.AutoField(primary_key=True)
-    username = models.CharField(max_length=50)    #local user name
+    userid = models.CharField(max_length=50, null=True)      #local user id
+    username = models.CharField(max_length=50)               #local user name
     domain = models.CharField(max_length=50)
     region = models.CharField(max_length=50)
 
