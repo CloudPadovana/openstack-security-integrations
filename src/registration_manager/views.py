@@ -27,25 +27,23 @@ class IndexView(tables.DataTableView):
 
     def get_data(self):
     
-        result = list()
+        reqTable = dict()
         
         try:
             #
             # TODO paging
             #
-            r_list = Registration.objects.all();
-
-            for r_entry in r_list:
-                nRReq = RegRequest.objects.filter(registration__regid__exact=r_entry.regid).count()
-                nPReq = PrjRequest.objects.filter(registration__regid__exact=r_entry.regid).count()
-                
-                if nRReq > 0 or nPReq:
-                    result.append(r_entry)
+            for r_entry in RegRequest.objects.all():
+                reqTable[r_entry.registration.regid] = r_entry.registration
+            
+            for p_entry in PrjRequest.objects.all():
+                if not p_entry.registration.regid in reqTable:
+                    reqTable[p_entry.registration.regid] = p_entry.registration
             
         except Exception:
             exceptions.handle(self.request, _('Unable to retrieve registration list.'))
 
-        return result
+        return reqTable.values()
 
 
 class ApproveView(workflows.WorkflowView):
@@ -56,5 +54,10 @@ class ApproveView(workflows.WorkflowView):
         
         regid = int(self.kwargs['rowid'])
         initial['regid'] = regid
+        
+        reg_item = Registration.objects.get(regid=regid)
+        initial['username'] = reg_item.username
+        initial['userid'] = reg_item.userid
+        
         return initial
 

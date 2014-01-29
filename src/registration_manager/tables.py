@@ -22,8 +22,9 @@ class DiscardAction(tables.DeleteAction):
     def delete(self, request, obj_id):
     
         with transaction.commit_on_success():
-            LOG.debug("Discarding registration for %d" % obj_id)
-            Registration.objects.get(regid=obj_id).delete()
+            regid = int(obj_id)
+            LOG.debug("Discarding registration for %d" % regid)
+            Registration.objects.get(regid=regid).delete()
             #
             # TODO send notification via mail
             #
@@ -32,6 +33,7 @@ class DiscardAction(tables.DeleteAction):
 class RegisterTable(tables.DataTable):
     regid = tables.Column('regid', verbose_name=_('ID'))
     username = tables.Column('username', verbose_name=_('User name'))
+    fullname = tables.Column('fullname', verbose_name=_('Full name'))
     domain = tables.Column('domain', verbose_name=_('Domain'))
     region = tables.Column('region', verbose_name=_('Region'))
 
