@@ -161,7 +161,7 @@ def register(request):
                 prjlist = [ project ]
 
                 LOG.debug("Saving %s" % username)
-                storeRegistration(username, None, usermail, notes,
+                storeRegistration(username, None, "TBD", usermail, notes,
                                   domain, region, prjlist)
                 
                 return shortcuts.redirect('/dashboard')
@@ -179,6 +179,7 @@ def register(request):
             reg_form = UsrPwdRegistForm(request.POST)
             if reg_form.is_valid():
                 username = reg_form.cleaned_data['username']
+                fullname = reg_form.cleaned_data['fullname']
                 pwd = reg_form.cleaned_data['pwd']
                 repwd = reg_form.cleaned_data['repwd']
                 email = reg_form.cleaned_data['email']
@@ -198,7 +199,7 @@ def register(request):
                     #TODO handle bad char in name
                     pass
                 
-                storeRegistration(username, pwd, email, notes,
+                storeRegistration(username, pwd, fullname, email, notes,
                                   domain, region, prjlist)
 
                 LOG.debug("Saving %s" % username)
@@ -211,11 +212,13 @@ def register(request):
         return shortcuts.render(request, 'registration.html', tempDict)
 
 
-def storeRegistration(username, password, email, notes, domain, region, prjlist):
+def storeRegistration(username, password, fullname,
+                      email, notes, domain, region, prjlist):
 
     with transaction.commit_on_success():
     
-        registration = Registration(username=username, domain=domain, region=region)
+        registration = Registration(username=username, fullname=fullname,
+                                    domain=domain, region=region)
         registration.save()
     
         regReq = RegRequest(registration=registration, password=password,

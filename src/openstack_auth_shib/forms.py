@@ -8,7 +8,8 @@ class BaseRegistForm(forms.Form):
     notes = forms.CharField(label=_('Notes'))
 
 class UsrPwdRegistForm(forms.Form):
-    username = forms.CharField(label=_('Username'))
+    username = forms.CharField(label=_('User name'))
+    fullname = forms.CharField(label=_('Full name'))
     pwd = forms.CharField(label=_('Password'), widget=PasswordInput)
     repwd = forms.CharField(label=_('Confirm password'), widget=PasswordInput)
     email = forms.EmailField(label=_('Email Address'))

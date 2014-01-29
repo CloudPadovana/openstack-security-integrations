@@ -5,6 +5,7 @@ class Registration(models.Model):
     regid = models.AutoField(primary_key=True)
     userid = models.CharField(max_length=50, null=True)      #local user id
     username = models.CharField(max_length=50)               #local user name
+    fullname = models.CharField(max_length=50)
     domain = models.CharField(max_length=50)
     region = models.CharField(max_length=50)
 
