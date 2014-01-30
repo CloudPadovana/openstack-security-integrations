@@ -5,6 +5,7 @@ from threading import Thread
 
 from django import shortcuts
 from django.db import transaction
+from django.db import IntegrityError
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate
 from django.contrib.auth import login as auth_login, logout as auth_logout
@@ -156,15 +157,9 @@ def register(request):
         if request.method == 'POST':
             reg_form = BaseRegistForm(request.POST)
             if reg_form.is_valid():
-                notes = reg_form.cleaned_data['notes']
-                project = reg_form.cleaned_data['project']
-                prjlist = [ (project, "Testing project", True) ]
-
-                LOG.debug("Saving %s" % username)
-                storeRegistration(username, None, "TBD", usermail, notes,
-                                  domain, region, prjlist)
+            
+                return processForm(reg_form, domain, region, username, usermail)
                 
-                return shortcuts.redirect('/dashboard')
         else:
             reg_form = BaseRegistForm()
     
@@ -178,32 +173,9 @@ def register(request):
         if request.method == 'POST':
             reg_form = UsrPwdRegistForm(request.POST)
             if reg_form.is_valid():
-                username = reg_form.cleaned_data['username']
-                fullname = reg_form.cleaned_data['fullname']
-                pwd = reg_form.cleaned_data['pwd']
-                repwd = reg_form.cleaned_data['repwd']
-                email = reg_form.cleaned_data['email']
-                notes = reg_form.cleaned_data['notes']
+            
+                return processForm(reg_form, domain, region)
                 
-                #
-                #TODO missing project request and multiple selection
-                #
-                project = reg_form.cleaned_data['project']
-                prjlist = [ (project, "Testing project", True) ]
-                
-                if pwd <> repwd:
-                    #TODO handle pwd mismatch
-                    pass
-                
-                if '@' in username or ':' in username:
-                    #TODO handle bad char in name
-                    pass
-                
-                storeRegistration(username, pwd, fullname, email, notes,
-                                  domain, region, prjlist)
-
-                LOG.debug("Saving %s" % username)
-                return shortcuts.redirect('/dashboard')
         else:
             reg_form = UsrPwdRegistForm()
     
@@ -211,6 +183,91 @@ def register(request):
                      'form_action_url' : '/dashboard/auth/register/' }
         return shortcuts.render(request, 'registration.html', tempDict)
 
+
+
+
+
+
+
+def processForm(reg_form, domain, region, username=None, 
+                email=None, fullname='Unknown'):
+
+    try:
+        pwd = None
+        
+        if not username:
+            username = reg_form.cleaned_data['username']
+            fullname = reg_form.cleaned_data['fullname']
+            pwd = reg_form.cleaned_data['pwd']
+            repwd = reg_form.cleaned_data['repwd']
+            email = reg_form.cleaned_data['email']
+            
+            if pwd <> repwd:
+                raise Exception(_("Password mismatch"))
+                
+            if '@' in username or ':' in username:
+                raise Exception(_("Wrong user name format"))
+        
+        notes = reg_form.cleaned_data['notes']
+        project = reg_form.cleaned_data['project']
+        #
+        #TODO missing project request and multiple selection
+        #
+        prjlist = [ (project, "Testing project", True) ]
+
+        LOG.debug("Saving %s" % username)
+                
+        with transaction.commit_on_success():
+    
+            queryArgs = {
+                'username' : username,
+                'fullname' : fullname,
+                'domain' : domain,
+                'region' : region
+            }
+            registration = Registration(**queryArgs)
+            registration.save()
+    
+            regArgs = {
+                'registration' : registration,
+                'password' : pwd,
+                'email' : email,
+                'notes' : notes
+            }
+            regReq = RegRequest(**regArgs)
+            regReq.save()
+
+            for prjitem in prjlist:
+        
+                try:
+                
+                    project = Project.objects.get(projectname=prjitem[0])
+                
+                except Project.DoesNotExist:
+                    prjArgs = {
+                        'projectname' : prjitem[0],
+                        'description' : prjitem[1],
+                        'visible' : prjitem[2]
+                    }
+                    project = Project(**prjArgs)
+                    project.save()
+        
+                reqArgs = {
+                    'registration' : registration,
+                    'project' : project,
+                    'notes' : notes
+                }
+                reqPrj = PrjRequest(**reqArgs)
+                reqPrj.save()
+                
+        return shortcuts.redirect('/dashboard')
+        
+    except:
+        #
+        # TODO redirect to error page
+        #
+        LOG.error("Generic failure", exc_info=True)
+                
 
 def storeRegistration(username, password, fullname,
                       email, notes, domain, region, prjlist):
