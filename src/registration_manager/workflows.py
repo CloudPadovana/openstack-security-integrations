@@ -231,6 +231,7 @@ class ApproveRegWorkflow(workflows.Workflow):
                 registration = None
                 email = None
                 password = None
+                main_tenant = None
 
                 #
                 # Registration of the external identities
@@ -240,68 +241,108 @@ class ApproveRegWorkflow(workflows.Workflow):
                 approved_accts = data[field_name]
             
                 userReqList = RegRequest.objects.filter(registration__regid__exact=regid)
-            
+                userReqList = userReqList.filter(externalid__in=approved_accts)
+                
                 for tmpReq in userReqList:
+
+                    LOG.debug("Registering external account %s" % tmpReq.externalid)
+                    
                     if not registration:
                         registration = tmpReq.registration
-                    
-                    if tmpReq.password and not password:
-                        password = tmpReq.password
 
-                    if tmpReq.externalid and tmpReq.externalid in approved_accts:
-                        mapping = UserMapping(globaluser=tmpReq.externalid,
-                                              registration=tmpReq.registration)
-                        mapping.save()
-                    
-                        if not email:
-                            email = tmpReq.email
-                    
-                    if not tmpReq.externalid and not email:
+                    if not email:
                         email = tmpReq.email
 
+                    mapping = UserMapping(globaluser=tmpReq.externalid,
+                                          registration=tmpReq.registration)
+                    mapping.save()
+                    
                     tmpReq.delete()
-                   
+                    
+            
                 #
-                # First registration of the local user
+                # Registration of the tenants
                 #
                 prjmem_step = self.get_step('approve_prjmember')
                 field_name = prjmem_step.get_member_field_name(DEFAULT_ROLE_ID)
                 approved_prjs = data[field_name]
 
-                if not registration.userid:
+                prjReqList = PrjRequest.objects.filter(registration__regid__exact=regid)
+                prjReqList = prjReqList.filter(project__projectname__in=approved_prjs)
                 
-                    if len(approved_prjs) == 0:
-                        raise Exception("No tenants for first registration")
+                for tmpPrj in prjReqList:
+                
+                    currPrjName = tmpPrj.project.projectname
+                    currPrjId = tmpPrj.project.projectid
+                    
+                    LOG.debug("Registering user for project %s" % currPrjName)
+                    
+                    if currPrjId is None:
+                        try:
+                            #
+                            # TODO improve search for project id
+                            #
+                            for tmpTnt in keystone_api.tenant_list(request):
+                                if tmpTnt.name == currPrjName:
+                                    LOG.debug("Recovering project id %s" % tmpTnt.id)
+                                    tmpPrj.project.projectid = tmpTnt.id
+                                    tmpPrj.project.save()
+
+                        except:
+                            #
+                            # TODO register new tenant
+                            #
+                            LOG.error("Error registering tenant", exc_info=True)
+
+                    if not main_tenant:
+                        main_tenant = tmpPrj.project
+                    
+                    tmpPrj.delete()
+                    
+
+                #
+                # First registration of the local user
+                #
+                if not registration:
+                    # Find the first local-user registration
+                    userReqList = RegRequest.objects.filter(registration__regid__exact=regid)
+                    userReqList = userReqList.filter(externalid__isnull=True)
+                    
+                    if len(userReqList):
+                        
+                        LOG.debug("Checking local-user registrations for %d" % regid)
+                        
+                        tmpReq = userReqList[0]
+                        registration = tmpReq.registration
+                        email = tmpReq.email
+                        password = tmpReq.password
+                        
+                    else:
+                        raise Exception(_("Cannot retrieve user data"))
+                    
+                if not registration.userid:
+
+                    if not main_tenant:
+                        raise Exception(_("No tenants for first registration"))
                     
                     if not email:
-                        raise Exception("No email for first registration")
+                        raise Exception(_("No email for first registration"))
                     
                     if not password:
                         password = self._generate_pwd()
                         
-                    first_prj = approved_prjs.pop()
                     kuser = keystone_api.user_create(request, name=data['username'],
                                                      password=password, email=email,
-                                                     project=first_prj,
-                                                     enabled=True, domain='Default')
+                                                     project=main_tenant.projectid,
+                                                     enabled=True,
+                                                     domain=registration.domain)
                     
-                    keystone_api.add_tenant_user_role(request,first_prj,
-                                                               kuser.id, data['role_id'])
+                    keystone_api.add_tenant_user_role(request,main_tenant.projectid,
+                                                      kuser.id, data['role_id'])
 
                     registration.userid = kuser.id
                     registration.username = data['username']
                     registration.save()
-                    
-                #
-                # Registration of the tenants
-                #
-                prjReqList = PrjRequest.objects.filter(registration__regid__exact=regid)
-                
-                for tmpPrj in prjReqList:
-                    if tmpPrj in approved_prjs:
-                        pass
-                        
-                    tmpPrj.delete()
                 
         except:
             LOG.error("Failure in handle", exc_info=True)
