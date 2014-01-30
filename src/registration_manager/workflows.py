@@ -32,7 +32,10 @@ DEFAULT_ROLE_ID = "00000"
 DEFAULT_ROLE_NAME = "dummy role"
 
 
+class RegistWorkflowException(Exception):
 
+    def __init__(self, msg):
+        super(Exception, self).__init__(msg)
 
 class ApproveAccountAction(workflows.MembershipAction):
 
@@ -279,10 +282,9 @@ class ApproveRegWorkflow(workflows.Workflow):
                     
                     if currPrjId is None:
                         try:
-                            #
-                            # TODO improve search for project id
-                            #
-                            for tmpTnt in keystone_api.tenant_list(request):
+                        
+                            for tmpTnt in keystone_api.tenant_list(request)[0]:
+                                
                                 if tmpTnt.name == currPrjName:
                                     LOG.debug("Recovering project id %s" % tmpTnt.id)
                                     tmpPrj.project.projectid = tmpTnt.id
@@ -308,25 +310,26 @@ class ApproveRegWorkflow(workflows.Workflow):
                     userReqList = RegRequest.objects.filter(registration__regid__exact=regid)
                     userReqList = userReqList.filter(externalid__isnull=True)
                     
-                    if len(userReqList):
+                    if len(userReqList) == 0:
+                        raise RegistWorkflowException(_("Cannot retrieve user data"))
+                    
+                    for tmpReq in userReqList:
+                    
+                        if not registration:
+                            LOG.debug("Checking local-user registrations for %d" % regid)
+                            registration = tmpReq.registration
+                            email = tmpReq.email
+                            password = tmpReq.password
                         
-                        LOG.debug("Checking local-user registrations for %d" % regid)
-                        
-                        tmpReq = userReqList[0]
-                        registration = tmpReq.registration
-                        email = tmpReq.email
-                        password = tmpReq.password
-                        
-                    else:
-                        raise Exception(_("Cannot retrieve user data"))
+                        tmpReq.delete()
                     
                 if not registration.userid:
 
                     if not main_tenant:
-                        raise Exception(_("No tenants for first registration"))
+                        raise RegistWorkflowException(_("No tenants for first registration"))
                     
                     if not email:
-                        raise Exception(_("No email for first registration"))
+                        raise RegistWorkflowException(_("No email for first registration"))
                     
                     if not password:
                         password = self._generate_pwd()
@@ -343,7 +346,9 @@ class ApproveRegWorkflow(workflows.Workflow):
                     registration.userid = kuser.id
                     registration.username = data['username']
                     registration.save()
-                
+                    
+        except RegistWorkflowException, ex:
+            exceptions.handle(request, ex.message)
         except:
             LOG.error("Failure in handle", exc_info=True)
             exceptions.handle(request, _('Unable to approve request.'))
