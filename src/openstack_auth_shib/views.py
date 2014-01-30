@@ -158,7 +158,7 @@ def register(request):
             if reg_form.is_valid():
                 notes = reg_form.cleaned_data['notes']
                 project = reg_form.cleaned_data['project']
-                prjlist = [ project ]
+                prjlist = [ (project, "Testing project", True) ]
 
                 LOG.debug("Saving %s" % username)
                 storeRegistration(username, None, "TBD", usermail, notes,
@@ -221,23 +221,34 @@ def storeRegistration(username, password, fullname,
                                     domain=domain, region=region)
         registration.save()
     
-        regReq = RegRequest(registration=registration, password=password,
-                            email=email, notes=notes)
+        regArgs = {
+            'registration' : registration,
+            'password' : password,
+            'email' : email,
+            'notes' : notes
+        }
+        regReq = RegRequest(**regArgs)
         regReq.save()
 
         for prjitem in prjlist:
         
-            newPrj = False
             try:
                 project = Project.objects.get(projectname=prjitem[0])
             except Project.DoesNotExist:
-                project = Project(projectname=prjitem[0],
-                                  description=prjitem[1],
-                                  visible=prjitem[2])
+                prjArgs = {
+                    'projectname' : prjitem[0],
+                    'description' : prjitem[1],
+                    'visible' : prjitem[2]
+                }
+                project = Project(**prjArgs)
                 project.save()
-                newPrj = True
         
-            reqPrj = PrjRequest(registration=registration, project=project, new=newPrj)
+            reqArgs = {
+                'registration' : registration,
+                'project' : project,
+                'notes' : notes
+            }
+            reqPrj = PrjRequest(**reqArgs)
             reqPrj.save()
 
 
