@@ -199,15 +199,8 @@ def processForm(reg_form, domain, region, username=None,
             username = reg_form.cleaned_data['username']
             fullname = reg_form.cleaned_data['fullname']
             pwd = reg_form.cleaned_data['pwd']
-            repwd = reg_form.cleaned_data['repwd']
             email = reg_form.cleaned_data['email']
             
-            if pwd <> repwd:
-                raise Exception(_("Password mismatch"))
-                
-            if '@' in username or ':' in username:
-                raise Exception(_("Wrong user name format"))
-        
         notes = reg_form.cleaned_data['notes']
         project = reg_form.cleaned_data['project']
         #
@@ -268,44 +261,5 @@ def processForm(reg_form, domain, region, username=None,
         #
         LOG.error("Generic failure", exc_info=True)
                 
-
-def storeRegistration(username, password, fullname,
-                      email, notes, domain, region, prjlist):
-
-    with transaction.commit_on_success():
-    
-        registration = Registration(username=username, fullname=fullname,
-                                    domain=domain, region=region)
-        registration.save()
-    
-        regArgs = {
-            'registration' : registration,
-            'password' : password,
-            'email' : email,
-            'notes' : notes
-        }
-        regReq = RegRequest(**regArgs)
-        regReq.save()
-
-        for prjitem in prjlist:
-        
-            try:
-                project = Project.objects.get(projectname=prjitem[0])
-            except Project.DoesNotExist:
-                prjArgs = {
-                    'projectname' : prjitem[0],
-                    'description' : prjitem[1],
-                    'visible' : prjitem[2]
-                }
-                project = Project(**prjArgs)
-                project.save()
-        
-            reqArgs = {
-                'registration' : registration,
-                'project' : project,
-                'notes' : notes
-            }
-            reqPrj = PrjRequest(**reqArgs)
-            reqPrj.save()
 
 
