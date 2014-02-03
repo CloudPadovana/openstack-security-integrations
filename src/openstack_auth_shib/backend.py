@@ -102,8 +102,10 @@ def create_cryptoken(aes_key, data):
     
         prng = randpool.RandomPool()
         iv = prng.get_bytes(256)
-        cipher = AES.new(aes_key, AES.MODE_CFB)    
-        return base64.b64encode(cipher.encrypt(iv + data))
+        cipher = AES.new(aes_key, AES.MODE_CFB)
+        tmpbuf = cipher.encrypt(iv)
+        tmpbuf += cipher.encrypt(data)
+        return base64.b64encode(tmpbuf)
     
     else:
         
