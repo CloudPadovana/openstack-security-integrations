@@ -219,9 +219,10 @@ class ApproveRegWorkflow(workflows.Workflow):
     def _generate_pwd(self):
         if crypto_version.startswith('2.0'):
             prng = randpool.RandomPool()
+            iv = prng.get_bytes(256)
         else:
             prng = Random.new()
-        iv = prng.read(16)
+            iv = prng.read(16)
         return base64.b64encode(iv)
     
     @sensitive_variables('data')
