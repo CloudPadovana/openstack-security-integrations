@@ -27,7 +27,7 @@ from keystoneclient import exceptions as keystone_exceptions
 
 from horizon import forms
 
-from .models import Registration, Project, RegRequest, PrjRequest
+from .models import Registration, Project, RegRequest, PrjRequest, UserMapping
 from .forms import BaseRegistForm, UsrPwdRegistForm
 
 LOG = logging.getLogger(__name__)
@@ -86,7 +86,8 @@ def login(request):
         
         if username:
         
-            localuser = str(UserMapping.objects.get(globaluser=username).localuser)
+            map_entry = UserMapping.objects.get(globaluser=username)
+            localuser = map_entry.registration.username
             LOG.debug("Mapped user %s on %s" % (username, localuser))
 
             user = authenticate(request=request,
@@ -108,6 +109,8 @@ def login(request):
                 request.session['region_name'] = region_name
             return shortcuts.redirect( '/dashboard-shib/project' )
             
+    except UserMapping.DoesNotExist:
+        return register(request)
     except keystone_exceptions.NotFound:
         LOG.debug("User %s authenticated but not authorized" % username)
         return register(request)
@@ -200,6 +203,9 @@ def processForm(reg_form, domain, region, username=None,
             fullname = reg_form.cleaned_data['fullname']
             pwd = reg_form.cleaned_data['pwd']
             email = reg_form.cleaned_data['email']
+            ext_account = None
+        else:
+            ext_account = username
             
         notes = reg_form.cleaned_data['notes']
         project = reg_form.cleaned_data['project']
@@ -227,6 +233,8 @@ def processForm(reg_form, domain, region, username=None,
                 'email' : email,
                 'notes' : notes
             }
+            if ext_account:
+                regArgs['externalid'] = ext_account
             regReq = RegRequest(**regArgs)
             regReq.save()
 
