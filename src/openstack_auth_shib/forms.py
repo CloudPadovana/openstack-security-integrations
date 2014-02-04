@@ -1,12 +1,59 @@
+import logging
+
 from horizon import forms
 from horizon.utils import validators
 
 from django.forms import ValidationError
 from django.utils.translation import ugettext_lazy as _
 
+from .models import Project
+
+LOG = logging.getLogger(__name__)
+
 class BaseRegistForm(forms.Form):
-    project = forms.CharField(label=_('Project'))
+    prjaction = forms.ChoiceField(
+        label=_('Project action'),
+        choices=[
+            ('newprj', _('Create personal project')),
+            ('selprj', _('Select existing project'))
+        ],
+        widget=forms.Select(attrs={
+            'class': 'switchable',
+            'data-slug': 'action'
+        })
+    )
+    newprj = forms.CharField(
+        label=_('Create personal project'),
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'switched',
+            'data-switch-on': 'action',
+            'data-source-newprj': _('Create personal project')
+        })
+    )
+    selprj = forms.ChoiceField(
+        label=_('Select existing project'),
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'switched',
+            'data-switch-on': 'action',
+            'data-source-selprj': _('Select existing project')
+        }),
+    )
     notes = forms.CharField(label=_('Notes'))
+    
+    def __init__(self, *args, **kwargs):
+        super(BaseRegistForm, self).__init__(*args, **kwargs)
+        
+        avail_prjs = list()
+        for prj_entry in Project.objects.filter(visible=True):
+            avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
+        self.fields['selprj'].choices = avail_prjs
+    
+    def clean(self):
+        data = super(forms.Form, self).clean()
+        LOG.debug("      cleaned data %s" % str(data))
+        return data
 
 class UsrPwdRegistForm(forms.Form):
     username = forms.CharField(label=_('User name'))
@@ -20,9 +67,7 @@ class UsrPwdRegistForm(forms.Form):
         label=_("Confirm Password"),
         widget=forms.PasswordInput(render_value=False))
     email = forms.EmailField(label=_('Email Address'))
-    project = forms.CharField(label=_('Project'))
-    notes = forms.CharField(label=_('Notes'))
-
+    
     def clean(self):
         data = super(forms.Form, self).clean()
         if 'pwd' in data:
@@ -33,4 +78,14 @@ class UsrPwdRegistForm(forms.Form):
                 raise ValidationError(_("Invalid characters in user name (@:)"))
 
         return data
+
+class FullRegistForm(UsrPwdRegistForm, BaseRegistForm):
+
+    def clean(self):
+        data = super(UsrPwdRegistForm, self).clean()
+        data.update(super(BaseRegistForm, self).clean())
+        return data
+
+
+
 

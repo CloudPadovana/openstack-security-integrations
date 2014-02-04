@@ -28,7 +28,7 @@ from keystoneclient import exceptions as keystone_exceptions
 from horizon import forms
 
 from .models import Registration, Project, RegRequest, PrjRequest, UserMapping
-from .forms import BaseRegistForm, UsrPwdRegistForm
+from .forms import BaseRegistForm, FullRegistForm
 
 LOG = logging.getLogger(__name__)
 
@@ -174,13 +174,13 @@ def register(request):
     else:
 
         if request.method == 'POST':
-            reg_form = UsrPwdRegistForm(request.POST)
+            reg_form = FullRegistForm(request.POST)
             if reg_form.is_valid():
             
                 return processForm(reg_form, domain, region)
                 
         else:
-            reg_form = UsrPwdRegistForm()
+            reg_form = FullRegistForm()
     
         tempDict = { 'form': reg_form,
                      'form_action_url' : '/dashboard/auth/register/' }
@@ -208,11 +208,16 @@ def processForm(reg_form, domain, region, username=None,
             ext_account = username
             
         notes = reg_form.cleaned_data['notes']
-        project = reg_form.cleaned_data['project']
-        #
-        #TODO missing project request and multiple selection
-        #
-        prjlist = [ (project, "Testing project", True) ]
+        
+        prj_action = reg_form.cleaned_data['prjaction']
+        if prj_action == 'selprj':
+            project = reg_form.cleaned_data['selprj']
+            prjlist = [ (project, "", True) ]
+        else:
+            #
+            #TODO missing project creation
+            #
+            prjlist = []
 
         LOG.debug("Saving %s" % username)
                 
