@@ -47,6 +47,7 @@ def get_shib_attributes(request):
     
     userid = None
     email = None
+    fullname = 'Unknown'
     
     if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-shib'):
     
@@ -57,6 +58,9 @@ def get_shib_attributes(request):
         else:
             raise keystone_exceptions.AuthorizationFailure(_('Cannot retrieve authentication domain'))
         
+        if 'cn' in request.META:
+            fullname = request.META['cn']
+        
         tmpd = None
         for regex in auth_domain_table:
             tmpd = regex.search(email)
@@ -66,7 +70,7 @@ def get_shib_attributes(request):
         if not userid:
             raise keystone_exceptions.AuthorizationFailure(_('Cannot retrieve authentication domain'))
         
-    return (userid, email)
+    return (userid, email, fullname)
 
 def get_ostack_attributes(request):
     region = getattr(settings, 'OPENSTACK_KEYSTONE_URL').replace('v2.0','v3')
@@ -81,7 +85,7 @@ def login(request):
     username =''
     try:
     
-        username, usermail = get_shib_attributes(request)
+        username, usermail, fullname = get_shib_attributes(request)
         domain, region = get_ostack_attributes(request)
         
         if username:
@@ -152,7 +156,7 @@ def switch_region(request, region_name, redirect_field_name=REDIRECT_FIELD_NAME)
 
 def register(request):
 
-    username, usermail = get_shib_attributes(request)
+    username, usermail, fullname = get_shib_attributes(request)
     domain, region = get_ostack_attributes(request)
     
     if username:
@@ -161,7 +165,8 @@ def register(request):
             reg_form = BaseRegistForm(request.POST)
             if reg_form.is_valid():
             
-                return processForm(reg_form, domain, region, username, usermail)
+                return processForm(reg_form, domain, region,
+                                   username, usermail, fullname)
                 
         else:
             reg_form = BaseRegistForm()
