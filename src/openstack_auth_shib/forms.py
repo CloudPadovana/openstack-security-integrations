@@ -10,6 +10,10 @@ from .models import Project
 
 LOG = logging.getLogger(__name__)
 
+#
+# TODO check form field length
+#
+
 class BaseRegistForm(forms.Form):
     prjaction = forms.ChoiceField(
         label=_('Project action'),
@@ -23,7 +27,7 @@ class BaseRegistForm(forms.Form):
         })
     )
     newprj = forms.CharField(
-        label=_('Create personal project'),
+        label=_('Personal project'),
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'switched',
@@ -31,8 +35,17 @@ class BaseRegistForm(forms.Form):
             'data-source-newprj': _('Create personal project')
         })
     )
+    prjdescr = forms.CharField(
+        label=_("Project description"),
+        required=False,
+        widget=forms.widgets.Textarea(attrs={
+            'class': 'switched',
+            'data-switch-on': 'action',
+            'data-source-newprj': _('Create personal project')
+        })
+    )
     selprj = forms.ChoiceField(
-        label=_('Select existing project'),
+        label=_('Available projects'),
         required=False,
         widget=forms.Select(attrs={
             'class': 'switched',
@@ -40,7 +53,11 @@ class BaseRegistForm(forms.Form):
             'data-source-selprj': _('Select existing project')
         }),
     )
-    notes = forms.CharField(label=_('Notes'))
+    notes = forms.CharField(
+        label=_('Notes'),
+        required=False,
+        widget=forms.widgets.Textarea()
+    )
     
     def __init__(self, *args, **kwargs):
         super(BaseRegistForm, self).__init__(*args, **kwargs)

@@ -122,7 +122,10 @@ class ApprovePrjMemberAction(workflows.MembershipAction):
             prjReqList = PrjRequest.objects.filter(registration__regid__exact=regid)
             for prj_req in prjReqList:
                 prjname = prj_req.project.projectname
-                prj_list.append((prjname, prjname))
+                if not prj_req.project.projectid:
+                    prj_list.append((prjname, "%s [%s]" % (prjname, _("New"))))
+                else:
+                    prj_list.append((prjname, prjname))
             
             field_name = self.get_member_field_name(DEFAULT_ROLE_ID)
             label = DEFAULT_ROLE_NAME
@@ -282,20 +285,14 @@ class ApproveRegWorkflow(workflows.Workflow):
                     LOG.debug("Registering user for project %s" % currPrjName)
                     
                     if currPrjId is None:
-                        try:
                         
-                            for tmpTnt in keystone_api.tenant_list(request)[0]:
-                                
-                                if tmpTnt.name == currPrjName:
-                                    LOG.debug("Recovering project id %s" % tmpTnt.id)
-                                    tmpPrj.project.projectid = tmpTnt.id
-                                    tmpPrj.project.save()
-
-                        except:
-                            #
-                            # TODO register new tenant
-                            #
-                            LOG.error("Error registering tenant", exc_info=True)
+                        LOG.debug("Creating tenant %s" % currPrjName)
+                        kprj = keystone_api.tenant_create(request, currPrjName,
+                            tmpPrj.project.description, True,
+                            tmpPrj.registration.domain)
+                        
+                        tmpPrj.project.projectid = kprj.id
+                        tmpPrj.project.save()
 
                     if not main_tenant:
                         main_tenant = tmpPrj.project

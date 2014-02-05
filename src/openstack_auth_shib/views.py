@@ -229,10 +229,9 @@ def processForm(reg_form, domain, region, username=None,
             project = reg_form.cleaned_data['selprj']
             prjlist = [ (project, "", True) ]
         else:
-            #
-            #TODO missing project creation
-            #
-            prjlist = []
+            pers_prj = reg_form.cleaned_data['newprj']
+            prj_descr = reg_form.cleaned_data['prjdescr']
+            prjlist = [ (pers_prj, prj_descr, False) ]
 
         LOG.debug("Saving %s" % username)
                 
