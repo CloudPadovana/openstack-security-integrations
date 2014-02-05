@@ -1,0 +1,12 @@
+{% extends "500.html" %}
+{% load i18n branding %}
+
+{% block text %}
+    <h2>{{ error_header }}</h2>
+    <p>{{ error_text }}</p>
+{% endblock %}
+
+{% block links %}
+    <p><a href="/dashboard">{% trans "Home" %}</a></p>
+{% endblock %}
+

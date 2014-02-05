@@ -32,6 +32,8 @@ from .forms import BaseRegistForm, FullRegistForm
 
 LOG = logging.getLogger(__name__)
 
+please_msg = _('please, contact the cloud manager')
+
 # TODO
 # verify whether it is possible to use just the parent views
 # together with the extended backend
@@ -113,17 +115,16 @@ def login(request):
                 request.session['region_name'] = region_name
             return shortcuts.redirect( '/dashboard-shib/project' )
             
-    except UserMapping.DoesNotExist:
-        return register(request)
-    except keystone_exceptions.NotFound:
+    except (UserMapping.DoesNotExist, keystone_exceptions.NotFound):
         LOG.debug("User %s authenticated but not authorized" % username)
         return register(request)
     except Exception as exc:
         LOG.error(exc.message, exc_info=True)
-        #
-        # TODO print authorization error in the splash page
-        #
-        raise
+        tempDict = {
+            'error_header' : _("Authentication error"),
+            'error_text' : "%s, %s" % (_("A failure occurs authenticating user"), please_msg)
+        }
+        return shortcuts.render(request, 'aai_error.html', tempDict)
         
     return basic_login(request)
 
@@ -169,6 +170,15 @@ def register(request):
                                    username, usermail, fullname)
                 
         else:
+        
+            num_req = RegRequest.objects.filter(externalid=username).count()
+            if num_req:
+                tempDict = {
+                    'error_header' : _("Registration error"),
+                    'error_text' : _("Request has already been sent")
+                }
+                return shortcuts.render(request, 'aai_error.html', tempDict)
+
             reg_form = BaseRegistForm()
     
         tempDict = { 'form': reg_form,
@@ -274,10 +284,12 @@ def processForm(reg_form, domain, region, username=None,
         return shortcuts.redirect('/dashboard')
         
     except:
-        #
-        # TODO redirect to error page
-        #
         LOG.error("Generic failure", exc_info=True)
+        tempDict = {
+            'error_header' : _("Registration error"),
+            'error_text' : "%s, %s" % (_("A failure occurs registering user"), please_msg)
+        }
+        return shortcuts.render(request, 'aai_error.html', tempDict)
                 
 
 
