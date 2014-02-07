@@ -338,6 +338,10 @@ class ApproveRegWorkflow(workflows.Workflow):
                                                      enabled=True,
                                                      domain=registration.domain)
                     
+                    #
+                    # TODO verify tenant creation
+                    # it works fine just with API v3
+                    #
                     keystone_api.add_tenant_user_role(request,main_tenant.projectid,
                                                       kuser.id, data['role_id'])
 

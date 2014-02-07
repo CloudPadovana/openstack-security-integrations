@@ -9,7 +9,7 @@ from django.db import IntegrityError
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate
 from django.contrib.auth import login as auth_login, logout as auth_logout
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _
 
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.debug import sensitive_post_parameters

@@ -4,7 +4,7 @@ from horizon import forms
 from horizon.utils import validators
 
 from django.forms import ValidationError
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _
 
 from .models import Project
 
@@ -69,7 +69,15 @@ class BaseRegistForm(forms.Form):
     
     def clean(self):
         data = super(forms.Form, self).clean()
-        LOG.debug("      cleaned data %s" % str(data))
+        
+        if data['prjaction'] == 'newprj':
+            if not data['newprj']:
+                raise ValidationError(_('Project name is required.'))
+        elif data['prjaction'] == 'selprj':
+            if not data['selprj']:
+                raise ValidationError(_('Missing selected project.'))
+        else:
+            raise ValidationError(_('Wrong project parameter.'))
         return data
 
 class UsrPwdRegistForm(forms.Form):

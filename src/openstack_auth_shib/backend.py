@@ -10,7 +10,7 @@ else:
     from Crypto import Random
 
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _
 
 from keystoneclient.exceptions import AuthorizationFailure
 from keystoneclient.exceptions import Unauthorized
