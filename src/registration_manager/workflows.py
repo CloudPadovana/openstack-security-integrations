@@ -188,7 +188,7 @@ class ApproveUserAction(workflows.Action):
 
 class ApproveUser(workflows.Step):
     action_class = ApproveUserAction
-    contributes = ("role_id",)
+    contributes = ("role_id", "username")
     depends_on = ("regid", "username")
 
 
