@@ -33,6 +33,7 @@ python setup.py install -O1 --prefix %{buildroot}/usr --install-data %{buildroot
 mv %{buildroot}/%{python_sitelib}/registration_manager/* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/registration_manager
 rm -rf %{buildroot}/%{python_sitelib}/registration_manager
+mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/project_manager
 mv %{buildroot}/%{python_sitelib}/project_manager/* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/project_manager
 rm -rf %{buildroot}/%{python_sitelib}/project_manager
