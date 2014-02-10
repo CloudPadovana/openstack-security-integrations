@@ -57,7 +57,8 @@ reg_templ_list = [
 module_list = [
                 'keystone_skey_auth',
                 'openstack_auth_shib',
-                'registration_manager'
+                'registration_manager',
+                'project_manager'
               ]
 
 setup(
