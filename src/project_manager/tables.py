@@ -1,4 +1,7 @@
+import logging
 
+from django import shortcuts
+from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import tables
@@ -16,6 +19,10 @@ from openstack_dashboard.dashboards.admin.projects.tables import TenantFilterAct
 from openstack_dashboard.dashboards.admin.projects.tables import CreateProject
 from openstack_dashboard.dashboards.admin.projects.tables import DeleteTenantsAction
 
+from openstack_auth_shib.models import Project
+
+LOG = logging.getLogger(__name__)
+
 class ViewMembersLink(BaseViewMembersLink):
     url = "horizon:admin:project_manager:update"
 
@@ -31,6 +38,20 @@ class UsageLink(BaseUsageLink):
 class ModifyQuotas(BaseModifyQuotas):
     url = "horizon:admin:project_manager:update"
 
+class ToggleVisibility(tables.Action):
+    name = "toggle_visible"
+    verbose_name = _("Toggle Visibility")
+    
+    def single(self, data_table, request, object_id):
+        #
+        # TODO bad query, extract username from data_table (ProjectsTable)
+        #
+        prj_list = Project.objects.filter(projectid=object_id)
+        if len(prj_list):
+            prj_list[0].visible = not prj_list[0].visible
+            prj_list[0].save()
+        return shortcuts.redirect(reverse_lazy('horizon:admin:project_manager:index'))
+
 class ProjectsTable(TenantsTable):
     visible = tables.Column('visible', verbose_name=_('Visible'), status=True)
 
@@ -38,7 +59,8 @@ class ProjectsTable(TenantsTable):
         name = "projects"
         verbose_name = _("Projects (new)")
         row_actions = (ViewMembersLink, ViewGroupsLink, UpdateProject,
-                       UsageLink, ModifyQuotas, DeleteTenantsAction)
+                       UsageLink, ModifyQuotas, ToggleVisibility,
+                       DeleteTenantsAction)
         table_actions = (TenantFilterAction, CreateProject,
                          DeleteTenantsAction)
         pagination_param = "tenant_marker"

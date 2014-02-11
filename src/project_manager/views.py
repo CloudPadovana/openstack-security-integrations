@@ -1,3 +1,5 @@
+import logging
+
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import exceptions
@@ -13,6 +15,8 @@ from .workflows import UpdateProject
 
 from openstack_auth_shib.models import Project
 
+LOG = logging.getLogger(__name__)
+
 class ExtPrjItem:
     def __init__(self, prj_data):
         self.id = prj_data.id
@@ -20,6 +24,7 @@ class ExtPrjItem:
         self.description = prj_data.description
         self.enabled = prj_data.enabled
         self.visible = False
+        self.checked = False
 
 class IndexView(BaseIndexView):
     table_class = ProjectsTable
@@ -44,6 +49,19 @@ class IndexView(BaseIndexView):
             prj_list = Project.objects.filter(projectname__in=prj_table.keys())
             for prj_item in prj_list:
                 prj_table[prj_item.projectname].visible = prj_item.visible
+                prj_table[prj_item.projectname].checked = True
+            
+            # Auto-import of external projects
+            for item in prj_table:
+                if not prj_table[item].checked:
+                    p_query = {
+                        'projectname' : prj_table[item].name,
+                        'projectid' : prj_table[item].id,
+                        'description' : prj_table[item].description,
+                        'visible' : False
+                    }
+                    imprj = Project(**p_query)
+                    imprj.save()
             
             tmplist = prj_table.keys()
             tmplist.sort()
