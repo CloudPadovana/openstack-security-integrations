@@ -88,8 +88,15 @@ class SetGuestProject(tables.Action):
 
         return shortcuts.redirect(reverse_lazy('horizon:admin:project_manager:index'))
 
+def get_prj_status(data):
+    if data.status == PRJ_GUEST:
+        return _("Guest")
+    elif data.status == PRJ_PUBLIC:
+        return _("Public")
+    return _("Private")
+
 class ProjectsTable(TenantsTable):
-    status = tables.Column('status', verbose_name=_('Visible'), status=True)
+    status = tables.Column(get_prj_status, verbose_name=_('Status'), status=True)
 
     class Meta:
         name = "projects"
