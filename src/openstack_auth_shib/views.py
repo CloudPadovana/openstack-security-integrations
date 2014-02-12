@@ -123,7 +123,9 @@ def login(request):
         LOG.error(exc.message, exc_info=True)
         tempDict = {
             'error_header' : _("Authentication error"),
-            'error_text' : "%s, %s" % (_("A failure occurs authenticating user"), please_msg)
+            'error_text' : "%s, %s" % (_("A failure occurs authenticating user"), please_msg),
+            'redirect_url' : '/dashboard',
+            'redirect_label' : _("Home")
         }
         return shortcuts.render(request, 'aai_error.html', tempDict)
         
@@ -176,7 +178,9 @@ def register(request):
             if num_req:
                 tempDict = {
                     'error_header' : _("Registration error"),
-                    'error_text' : _("Request has already been sent")
+                    'error_text' : _("Request has already been sent"),
+                    'redirect_url' : '/dashboard',
+                    'redirect_label' : _("Home")
                 }
                 return shortcuts.render(request, 'aai_error.html', tempDict)
 
@@ -295,7 +299,9 @@ def processForm(reg_form, domain, region, username=None,
         LOG.error("Generic failure", exc_info=True)
         tempDict = {
             'error_header' : _("Registration error"),
-            'error_text' : "%s, %s" % (_("A failure occurs registering user"), please_msg)
+            'error_text' : "%s, %s" % (_("A failure occurs registering user"), please_msg),
+            'redirect_url' : '/dashboard',
+            'redirect_label' : _("Home")
         }
         return shortcuts.render(request, 'aai_error.html', tempDict)
                 

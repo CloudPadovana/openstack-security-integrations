@@ -58,7 +58,13 @@ class ToggleVisibility(tables.Action):
                     prj_list[0].status = PRJ_PRIVATE
                     prj_list[0].save()
                 elif prj_status is PRJ_GUEST:
-                    raise Exception(_("Cannot toggle guest project"))
+                    tempDict = {
+                        'error_header' : _("Authentication error"),
+                        'error_text' : _("Cannot toggle guest project"),
+                        'redirect_url' : reverse_lazy('horizon:admin:project_manager:index'),
+                        'redirect_label' : _("Projects")
+                    }
+                    return shortcuts.render(request, 'aai_error.html', tempDict)
             
         return shortcuts.redirect(reverse_lazy('horizon:admin:project_manager:index'))
 
