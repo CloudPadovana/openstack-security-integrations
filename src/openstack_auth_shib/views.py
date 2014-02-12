@@ -28,7 +28,7 @@ from keystoneclient import exceptions as keystone_exceptions
 from horizon import forms
 
 from .models import Registration, Project, RegRequest, PrjRequest, UserMapping
-from .models import PRJ_PRIVATE, PRJ_PUBLIC
+from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST
 from .forms import BaseRegistForm, FullRegistForm
 
 LOG = logging.getLogger(__name__)
@@ -226,13 +226,16 @@ def processForm(reg_form, domain, region, username=None,
         notes = reg_form.cleaned_data['notes']
         
         prj_action = reg_form.cleaned_data['prjaction']
+        # TODO support for multiple selection
+        # empty list for guest prj
+        prjlist = list()
         if prj_action == 'selprj':
             project = reg_form.cleaned_data['selprj']
-            prjlist = [ (project, "", PRJ_PUBLIC) ]
-        else:
+            prjlist.append((project, "", PRJ_PUBLIC))
+        elif prj_action == 'newprj':
             pers_prj = reg_form.cleaned_data['newprj']
             prj_descr = reg_form.cleaned_data['prjdescr']
-            prjlist = [ (pers_prj, prj_descr, PRJ_PRIVATE) ]
+            prjlist.append((pers_prj, prj_descr, PRJ_PRIVATE))
 
         LOG.debug("Saving %s" % username)
                 
@@ -258,6 +261,10 @@ def processForm(reg_form, domain, region, username=None,
             regReq = RegRequest(**regArgs)
             regReq.save()
 
+            if len(prjlist) == 0:
+                for item in Project.objects.filter(status=PRJ_GUEST):
+                    prjlist.append((item.projectname, item.description, item.status))
+
             for prjitem in prjlist:
         
                 try:
@@ -280,6 +287,7 @@ def processForm(reg_form, domain, region, username=None,
                 }
                 reqPrj = PrjRequest(**reqArgs)
                 reqPrj.save()
+            
                 
         return shortcuts.redirect('/dashboard')
         

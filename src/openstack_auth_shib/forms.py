@@ -16,17 +16,20 @@ LOG = logging.getLogger(__name__)
 #
 
 class BaseRegistForm(forms.Form):
+
     prjaction = forms.ChoiceField(
         label=_('Project action'),
         choices=[
             ('newprj', _('Create personal project')),
-            ('selprj', _('Select existing project'))
+            ('selprj', _('Select existing project')),
+            ('guestprj', _('Use guest project'))
         ],
         widget=forms.Select(attrs={
             'class': 'switchable',
             'data-slug': 'action'
         })
     )
+    
     newprj = forms.CharField(
         label=_('Personal project'),
         required=False,
@@ -45,6 +48,7 @@ class BaseRegistForm(forms.Form):
             'data-source-newprj': _('Create personal project')
         })
     )
+    
     selprj = forms.ChoiceField(
         label=_('Available projects'),
         required=False,
@@ -54,6 +58,8 @@ class BaseRegistForm(forms.Form):
             'data-source-selprj': _('Select existing project')
         }),
     )
+
+
     notes = forms.CharField(
         label=_('Notes'),
         required=False,
@@ -77,7 +83,7 @@ class BaseRegistForm(forms.Form):
         elif data['prjaction'] == 'selprj':
             if not data['selprj']:
                 raise ValidationError(_('Missing selected project.'))
-        else:
+        elif data['prjaction'] <> 'guestprj':
             raise ValidationError(_('Wrong project parameter.'))
         return data
 
