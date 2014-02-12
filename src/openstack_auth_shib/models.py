@@ -1,5 +1,10 @@
 from django.db import models
 
+# Used bit mask for project status
+PRJ_PRIVATE = 0
+PRJ_PUBLIC = 1
+PRJ_GUEST = 3
+
 # Persistent data
 class Registration(models.Model):
     regid = models.AutoField(primary_key=True)
@@ -13,11 +18,11 @@ class Project(models.Model):
     projectname = models.CharField(max_length=50, primary_key=True)
     projectid = models.CharField(max_length=50, null=True)
     description = models.CharField(max_length=300)
-    visible = models.BooleanField()
+    status = models.IntegerField()
 
-#
-#TODO missing project admin table
-#
+class PrjAdmin(models.Model):
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
 class UserMapping(models.Model):
     globaluser = models.CharField(max_length=50, primary_key=True)
@@ -33,5 +38,7 @@ class RegRequest(models.Model):
 
 class PrjRequest(models.Model):
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
-    project = models.ForeignKey(Project)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
     notes = models.CharField(max_length=300)
+
+

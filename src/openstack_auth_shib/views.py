@@ -28,6 +28,7 @@ from keystoneclient import exceptions as keystone_exceptions
 from horizon import forms
 
 from .models import Registration, Project, RegRequest, PrjRequest, UserMapping
+from .models import PRJ_PRIVATE, PRJ_PUBLIC
 from .forms import BaseRegistForm, FullRegistForm
 
 LOG = logging.getLogger(__name__)
@@ -227,11 +228,11 @@ def processForm(reg_form, domain, region, username=None,
         prj_action = reg_form.cleaned_data['prjaction']
         if prj_action == 'selprj':
             project = reg_form.cleaned_data['selprj']
-            prjlist = [ (project, "", True) ]
+            prjlist = [ (project, "", PRJ_PUBLIC) ]
         else:
             pers_prj = reg_form.cleaned_data['newprj']
             prj_descr = reg_form.cleaned_data['prjdescr']
-            prjlist = [ (pers_prj, prj_descr, False) ]
+            prjlist = [ (pers_prj, prj_descr, PRJ_PRIVATE) ]
 
         LOG.debug("Saving %s" % username)
                 
@@ -267,7 +268,7 @@ def processForm(reg_form, domain, region, username=None,
                     prjArgs = {
                         'projectname' : prjitem[0],
                         'description' : prjitem[1],
-                        'visible' : prjitem[2]
+                        'status' : prjitem[2]
                     }
                     project = Project(**prjArgs)
                     project.save()

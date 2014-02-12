@@ -7,6 +7,7 @@ from django.forms import ValidationError
 from django.utils.translation import ugettext as _
 
 from .models import Project
+from .models import PRJ_PUBLIC
 
 LOG = logging.getLogger(__name__)
 
@@ -63,7 +64,7 @@ class BaseRegistForm(forms.Form):
         super(BaseRegistForm, self).__init__(*args, **kwargs)
         
         avail_prjs = list()
-        for prj_entry in Project.objects.filter(visible=True):
+        for prj_entry in Project.objects.filter(status=PRJ_PUBLIC):
             avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
         self.fields['selprj'].choices = avail_prjs
     

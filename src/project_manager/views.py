@@ -14,6 +14,7 @@ from .tables import ProjectsTable
 from .workflows import UpdateProject
 
 from openstack_auth_shib.models import Project
+from openstack_auth_shib.models import PRJ_PRIVATE
 
 LOG = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ class ExtPrjItem:
         self.name = prj_data.name
         self.description = prj_data.description
         self.enabled = prj_data.enabled
-        self.visible = False
+        self.status = PRJ_PRIVATE
         self.checked = False
 
 class IndexView(BaseIndexView):
@@ -48,7 +49,7 @@ class IndexView(BaseIndexView):
             
             prj_list = Project.objects.filter(projectname__in=prj_table.keys())
             for prj_item in prj_list:
-                prj_table[prj_item.projectname].visible = prj_item.visible
+                prj_table[prj_item.projectname].status = prj_item.status
                 prj_table[prj_item.projectname].checked = True
             
             # Auto-import of external projects
@@ -58,7 +59,7 @@ class IndexView(BaseIndexView):
                         'projectname' : prj_table[item].name,
                         'projectid' : prj_table[item].id,
                         'description' : prj_table[item].description,
-                        'visible' : False
+                        'status' : PRJ_PRIVATE
                     }
                     imprj = Project(**p_query)
                     imprj.save()
