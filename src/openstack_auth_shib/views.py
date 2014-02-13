@@ -169,7 +169,7 @@ def register(request):
             reg_form = BaseRegistForm(request.POST)
             if reg_form.is_valid():
             
-                return processForm(reg_form, domain, region,
+                return processForm(request, reg_form, domain, region,
                                    username, usermail, fullname)
                 
         else:
@@ -197,7 +197,7 @@ def register(request):
             reg_form = FullRegistForm(request.POST)
             if reg_form.is_valid():
             
-                return processForm(reg_form, domain, region)
+                return processForm(request, reg_form, domain, region)
                 
         else:
             reg_form = FullRegistForm()
@@ -212,7 +212,7 @@ def register(request):
 
 
 
-def processForm(reg_form, domain, region, username=None, 
+def processForm(request, reg_form, domain, region, username=None, 
                 email=None, fullname='Unknown'):
 
     try:
