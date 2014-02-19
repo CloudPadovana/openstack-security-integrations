@@ -18,7 +18,6 @@ from openstack_dashboard.dashboards.admin.projects.tables import DeleteTenantsAc
 
 from openstack_dashboard.dashboards.admin.projects.tables import TenantFilterAction
 from openstack_dashboard.dashboards.admin.projects.tables import CreateProject as BaseCreateProject
-from openstack_dashboard.dashboards.admin.projects.tables import DeleteTenantsAction
 
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST
@@ -42,6 +41,14 @@ class ModifyQuotas(BaseModifyQuotas):
 
 class CreateProject(BaseCreateProject):
     url = "horizon:admin:project_manager:create"
+
+class DeleteProjectAction(DeleteTenantsAction):
+
+    def delete(self, request, obj_id):
+    
+        with transaction.commit_on_success():
+            Project.objects.filter(projectid=obj_id).delete()
+            super(DeleteProjectAction, self).delete(request, obj_id)
 
 class ToggleVisibility(tables.Action):
     name = "toggle_visible"
@@ -106,9 +113,9 @@ class ProjectsTable(TenantsTable):
         verbose_name = _("Projects (new)")
         row_actions = (ViewMembersLink, ViewGroupsLink, UpdateProject,
                        UsageLink, ModifyQuotas, ToggleVisibility,
-                       SetGuestProject, DeleteTenantsAction)
+                       SetGuestProject, DeleteProjectAction)
         table_actions = (TenantFilterAction, CreateProject,
-                         DeleteTenantsAction)
+                         DeleteProjectAction)
         pagination_param = "tenant_marker"
 
 #

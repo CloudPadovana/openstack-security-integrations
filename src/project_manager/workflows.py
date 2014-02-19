@@ -6,6 +6,7 @@ from openstack_dashboard.dashboards.admin.projects.workflows import CreateProjec
 from openstack_dashboard.dashboards.admin.projects.workflows import UpdateProject as BaseUpdateProject
 
 from openstack_auth_shib.models import Project
+from openstack_auth_shib.models import PRJ_PUBLIC
 
 LOG = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ class CreateProject(BaseCreateProject):
                 'projectname' : name,
                 'projectid' : self.object.id,
                 'description' : desc,
-                'status' : 0
+                'status' : PRJ_PUBLIC
             }
             newprj = Project(**qargs)
             newprj.save()
