@@ -5,13 +5,14 @@ from django.utils.translation import ugettext_lazy as _
 from horizon import exceptions
 
 from openstack_dashboard.dashboards.admin.projects.views import IndexView as BaseIndexView
-from openstack_dashboard.dashboards.admin.projects.views import CreateProjectView
+from openstack_dashboard.dashboards.admin.projects.views import CreateProjectView as BaseCreateProjectView
 from openstack_dashboard.dashboards.admin.projects.views import UpdateProjectView as BaseUpdateProjectView
 from openstack_dashboard.dashboards.admin.projects.views import ProjectUsageView
 from openstack_dashboard import api
 
 from .tables import ProjectsTable
 from .workflows import UpdateProject
+from .workflows import CreateProject
 
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PRJ_PRIVATE
@@ -77,4 +78,7 @@ class IndexView(BaseIndexView):
 
 class UpdateProjectView(BaseUpdateProjectView):
     workflow_class = UpdateProject
+
+class CreateProjectView(BaseCreateProjectView):
+    workflow_class = CreateProject
 

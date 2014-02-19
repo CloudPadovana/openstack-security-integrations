@@ -17,7 +17,7 @@ from openstack_dashboard.dashboards.admin.projects.tables import ModifyQuotas as
 from openstack_dashboard.dashboards.admin.projects.tables import DeleteTenantsAction
 
 from openstack_dashboard.dashboards.admin.projects.tables import TenantFilterAction
-from openstack_dashboard.dashboards.admin.projects.tables import CreateProject
+from openstack_dashboard.dashboards.admin.projects.tables import CreateProject as BaseCreateProject
 from openstack_dashboard.dashboards.admin.projects.tables import DeleteTenantsAction
 
 from openstack_auth_shib.models import Project
@@ -39,6 +39,9 @@ class UsageLink(BaseUsageLink):
     
 class ModifyQuotas(BaseModifyQuotas):
     url = "horizon:admin:project_manager:update"
+
+class CreateProject(BaseCreateProject):
+    url = "horizon:admin:project_manager:create"
 
 class ToggleVisibility(tables.Action):
     name = "toggle_visible"
