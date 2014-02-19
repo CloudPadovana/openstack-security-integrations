@@ -14,5 +14,6 @@ identity_group.panels.append('project_manager')
 #
 import openstack_dashboard.dashboards.admin.registration_manager.panel
 import openstack_dashboard.dashboards.admin.project_manager.panel
+#import openstack_dashboard.dashboards.project.subscription_manager.panel
 
 

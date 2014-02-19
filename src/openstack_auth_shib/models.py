@@ -20,10 +20,6 @@ class Project(models.Model):
     description = models.CharField(max_length=300)
     status = models.IntegerField()
 
-class PrjAdmin(models.Model):
-    registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-
 class UserMapping(models.Model):
     globaluser = models.CharField(max_length=50, primary_key=True)
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
