@@ -30,7 +30,7 @@ class ExtPrjItem:
 
 class IndexView(BaseIndexView):
     table_class = ProjectsTable
-    template_name = 'admin/projects/index.html'
+    template_name = 'admin/project_manager/index.html'
 
     def has_more_data(self, table):
         return self._more

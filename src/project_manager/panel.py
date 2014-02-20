@@ -5,7 +5,7 @@ import horizon
 from openstack_dashboard.dashboards.admin import dashboard
 
 class ProjectManager(horizon.Panel):
-    name = _("Projects (new)")
+    name = _("Projects")
     slug = 'project_manager'
 
 dashboard.Admin.register(ProjectManager)
