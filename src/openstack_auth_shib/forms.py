@@ -26,7 +26,7 @@ class BaseRegistForm(forms.Form):
         ],
         widget=forms.Select(attrs={
             'class': 'switchable',
-            'data-slug': 'action'
+            'data-slug': 'actsource'
         })
     )
     
@@ -35,8 +35,8 @@ class BaseRegistForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'switched',
-            'data-switch-on': 'action',
-            'data-source-newprj': _('Create personal project')
+            'data-switch-on': 'actsource',
+            'data-actsource-newprj': _('Project name')
         })
     )
     prjdescr = forms.CharField(
@@ -44,8 +44,8 @@ class BaseRegistForm(forms.Form):
         required=False,
         widget=forms.widgets.Textarea(attrs={
             'class': 'switched',
-            'data-switch-on': 'action',
-            'data-source-newprj': _('Create personal project')
+            'data-switch-on': 'actsource',
+            'data-actsource-newprj': _('Project description')
         })
     )
     
@@ -54,8 +54,8 @@ class BaseRegistForm(forms.Form):
         required=False,
         widget=forms.Select(attrs={
             'class': 'switched',
-            'data-switch-on': 'action',
-            'data-source-selprj': _('Select existing project')
+            'data-switch-on': 'actsource',
+            'data-actsource-selprj': _('Select existing project')
         }),
     )
 
