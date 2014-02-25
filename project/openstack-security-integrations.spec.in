@@ -77,6 +77,7 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/project_manager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/project_manager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/project_manager/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/templates/password_manager/*.html
 
 %post -n openstack-auth-shib
 #
