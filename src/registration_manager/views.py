@@ -15,7 +15,6 @@ from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import PrjRequest
 
 from .tables import RegisterTable
-from .forms import ApproveRegForm
 from .workflows import ApproveRegWorkflow
 
 LOG = logging.getLogger(__name__)

@@ -21,7 +21,7 @@ class BaseRegistForm(forms.Form):
         label=_('Project action'),
         choices=[
             ('newprj', _('Create personal project')),
-            ('selprj', _('Select existing project')),
+            ('selprj', _('Select existing projects')),
             ('guestprj', _('Use guest project'))
         ],
         widget=forms.Select(attrs={
@@ -49,10 +49,10 @@ class BaseRegistForm(forms.Form):
         })
     )
     
-    selprj = forms.ChoiceField(
+    selprj = forms.MultipleChoiceField(
         label=_('Available projects'),
         required=False,
-        widget=forms.Select(attrs={
+        widget=forms.SelectMultiple(attrs={
             'class': 'switched',
             'data-switch-on': 'actsource',
             'data-actsource-selprj': _('Select existing project')

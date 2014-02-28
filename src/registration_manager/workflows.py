@@ -297,8 +297,6 @@ class ApproveRegWorkflow(workflows.Workflow):
                     if not main_tenant:
                         main_tenant = tmpPrj.project
                     
-                    tmpPrj.delete()
-                    
 
                 #
                 # First registration of the local user
@@ -338,16 +336,19 @@ class ApproveRegWorkflow(workflows.Workflow):
                                                      enabled=True,
                                                      domain=registration.domain)
                     
+                for tmpPrj in prjReqList:
                     #
                     # TODO verify tenant creation
                     # it works fine just with API v3
                     #
-                    keystone_api.add_tenant_user_role(request,main_tenant.projectid,
+                    keystone_api.add_tenant_user_role(request,tmpPrj.project.projectid,
                                                       kuser.id, data['role_id'])
+                    
+                    tmpPrj.delete()
 
-                    registration.userid = kuser.id
-                    registration.username = data['username']
-                    registration.save()
+                registration.userid = kuser.id
+                registration.username = data['username']
+                registration.save()
                     
         except RegistWorkflowException, ex:
             exceptions.handle(request, ex.message)

@@ -230,12 +230,12 @@ def processForm(request, reg_form, domain, region, username=None,
         notes = reg_form.cleaned_data['notes']
         
         prj_action = reg_form.cleaned_data['prjaction']
-        # TODO support for multiple selection
         # empty list for guest prj
         prjlist = list()
         if prj_action == 'selprj':
-            project = reg_form.cleaned_data['selprj']
-            prjlist.append((project, "", PRJ_PUBLIC))
+            for project in reg_form.cleaned_data['selprj']:
+                prjlist.append((project, "", PRJ_PUBLIC))
+            
         elif prj_action == 'newprj':
             pers_prj = reg_form.cleaned_data['newprj']
             prj_descr = reg_form.cleaned_data['prjdescr']
