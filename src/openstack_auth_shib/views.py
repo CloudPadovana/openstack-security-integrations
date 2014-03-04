@@ -41,11 +41,6 @@ please_msg = _('please, contact the cloud manager')
 # issue: shibboleth redirect converts POST in GET
 #        input parameters are lost
 
-auth_domain_table = [
-                        re.compile('(infn.it)$'),
-                        re.compile('(unipd.it)$')
-                    ]
-
 def get_shib_attributes(request):
     
     userid = None
@@ -54,7 +49,8 @@ def get_shib_attributes(request):
     
     if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-shib'):
     
-        name_attr = request.META['REMOTE_USER']
+        # the remote user correspond to the ePPN
+        userid = request.META['REMOTE_USER']
     
         if 'mail' in request.META:
             email = request.META['mail']
@@ -63,12 +59,6 @@ def get_shib_attributes(request):
         
         if 'cn' in request.META:
             fullname = request.META['cn']
-        
-        tmpd = None
-        for regex in auth_domain_table:
-            tmpd = regex.search(email)
-            if tmpd:
-                userid = "%s@%s" % (name_attr, tmpd.group(1))
         
         if not userid:
             raise keystone_exceptions.AuthorizationFailure(_('Cannot retrieve authentication domain'))
