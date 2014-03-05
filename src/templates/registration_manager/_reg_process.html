@@ -1,0 +1,54 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+{% load url from future %}
+
+{% block form_id %}process_reg_form{% endblock %}
+{% block form_action %}{% url 'horizon:admin:registration_manager:process' regid %}{% endblock %}
+
+{% block modal-header %}{{ processingtitle}}{% endblock %}
+
+{% block modal-body %}
+<div class="left">
+    <fieldset>
+    {% include "horizon/common/_form_fields.html" %}
+    </fieldset>
+    
+    {% if extaccounts %}
+    <h3>{% trans "External Identities" %}:</h3>
+    <ul>
+    {% for extacct in extaccounts %}
+        <li>{{ extacct }}</li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+<div class="right">
+
+    {% if prjrequests %}
+        <h3>{% trans "Project membership to be approved" %}:</h3>
+        <ul>
+        {% for prjreq in prjrequests %}
+            <li>{{ prjreq }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    
+    {% if newprojects %}
+        <h3>{% trans "Project to be created" %}:</h3>
+        <ul>
+        {% for prjreq in newprojects %}
+            <li>{{ prjreq }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    
+</div>
+{% endblock %}
+
+{% block modal-footer %}
+  <input class="btn btn-primary pull-right" type="submit" value="{% trans "Submit" %}" />
+  <!--input class="btn btn-primary pull-right" type="button" 
+         onclick="testfun()" value="{% trans "Reject" %}"/ -->
+  <a href="{% url 'horizon:admin:registration_manager:index' %}" class="btn secondary cancel close">{% trans "Cancel" %}</a>  
+{% endblock %}
+

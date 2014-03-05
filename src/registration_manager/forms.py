@@ -1,65 +1,216 @@
 import logging
+import base64
+from Crypto import __version__ as crypto_version
+if crypto_version.startswith('2.0'):
+    from Crypto.Util import randpool
+else:
+    from Crypto import Random
 
 from horizon import forms
+from horizon import exceptions
 
 from django.db import transaction
 from django.forms.widgets import HiddenInput
 from django.views.decorators.debug import sensitive_variables
+from django.utils.translation import ugettext_lazy as _
 
 from openstack_auth_shib.models import UserMapping
 from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import Registration
+from openstack_auth_shib.models import Project
+from openstack_auth_shib.models import PrjRequest
 
-from django.utils.translation import ugettext_lazy as _
+from openstack_auth_shib.models import PSTATUS_REG
+from openstack_auth_shib.models import PSTATUS_PENDING
+from openstack_auth_shib.models import PSTATUS_APPR
+from openstack_auth_shib.models import PSTATUS_REJ
+
+from openstack_auth_shib.models import RSTATUS_PENDING
+from openstack_auth_shib.models import RSTATUS_CHECKED
+
+from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
 
-class ApproveRegForm(forms.SelfHandlingForm):
+class ProcessRegForm(forms.SelfHandlingForm):
 
-    readonlyInput = forms.TextInput(attrs={'readonly': 'readonly'})
-    
-    regid = forms.IntegerField(label=_("ID"), widget=readonlyInput)
+    regid = forms.IntegerField(widget=HiddenInput)
     username = forms.CharField(label=_("User name"))
-    email = forms.CharField(label=_("Email address"), widget=readonlyInput)
-    notes = forms.CharField(label=_("Notes"), widget=readonlyInput)
-    domain = forms.CharField(label=_("Domain"), widget=readonlyInput)
-    region = forms.CharField(label=_("Region"), widget=readonlyInput)
-    externalid = forms.CharField(label=_("External ID"), widget=readonlyInput, required=False)
-
+    role_id = forms.ChoiceField(label=_("Role"))
+    #
+    # TODO use a button instead of choice field
+    #
+    checkaction = forms.ChoiceField(label=_("Action"),
+        choices=[
+            ('accept', _('Accept')),
+            ('reject', _('Reject'))
+        ]
+    )
+    
     def __init__(self, request, *args, **kwargs):
-        super(ApproveRegForm, self).__init__(request, *args, **kwargs)
+        super(ProcessRegForm, self).__init__(request, *args, **kwargs)
+        
+        role_list = keystone_api.role_list(request)
+        self.fields['role_id'].choices = [(role.id, role.name) for role in role_list]
+
+    def _generate_pwd(self):
+        if crypto_version.startswith('2.0'):
+            prng = randpool.RandomPool()
+            iv = prng.get_bytes(256)
+        else:
+            prng = Random.new()
+            iv = prng.read(16)
+        return base64.b64encode(iv)
 
     @sensitive_variables('data')
     def handle(self, request, data):
+    
+        if data['checkaction'] == 'accept':
         
-        with transaction.commit_on_success():
+            with transaction.commit_on_success():
             
-            reg_request = RegRequest.objects.filter(registration__regid__exact=data.pop('regid'))
-            #
-            #TODO verify filter
-            #
-            #if data.pop('externalid'):
-            #    self._object = usrReqList.filter(externalid__exact=data.pop('externalid'))[0]
-            #else:
-            #    self._object = usrReqList.filter(externalid__exact=None)[0]
-            registr = reg_request[0].registration
+                registration = Registration.objects.get(regid=int(data['regid']))
+                flowstatus = RSTATUS_CHECKED
             
-            if registr.username <> data.pop('username'):
-                registr.username = data.pop('username')
-                registr.save()
-        
-        
-            LOG.debug("Approving registration for %s (%s)" % (data.pop('username'), data.pop('password')))
-            #
-            #TODO call keystone
-            #
-        
-            externalid = data.pop('externalid')
-            if externalid:
-                mapping = UserMapping(globaluser=externalid, registration=registr)
-                mapping.save()
+                userReqList = RegRequest.objects.filter(registration=registration)
+                for tmpReq in userReqList:
+                    flowstatus = min(flowstatus, tmpReq.flowstatus)
+                
+                prjReqList = PrjRequest.objects.filter(registration=registration)
+                
+                if flowstatus == RSTATUS_PENDING:
+                    #
+                    # User renaming
+                    #
+                    registration.username = data['username']
+                    registration.save()
+                
+                    #
+                    # Send request to prj-admin
+                    #
+                    q_args = {
+                        'project__projectid__isnull' : False,
+                        'flowstatus' : PSTATUS_REG
+                    }
+                    prjReqList.filter(**q_args).update(flowstatus=PSTATUS_PENDING)
+                    
+                    userReqList.update(flowstatus=RSTATUS_CHECKED)
+                    
+                else:
+                    main_tenant = None
+                    email = None
+                    password = None
+                
+                    #
+                    # Mapping of external accounts
+                    #                
+                    for tmpReq in userReqList:
+                        if tmpReq.externalid:
+                            LOG.debug("Registering external account %s" % tmpReq.externalid)
+                            mapping = UserMapping(globaluser=tmpReq.externalid,
+                                            registration=tmpReq.registration)
+                            mapping.save()
+                        
+                        if not email:
+                            email = tmpReq.email
+                        if not password:
+                            password = tmpReq.password
+                    
+                    #
+                    # Registration of the new tenants
+                    #
+                    for prj_req in prjReqList:
+                    
+                        if not prj_req.project.projectid:
+                        
+                            LOG.debug("Creating tenant %s" % prj_req.project.projectname)
+                            kprj = keystone_api.tenant_create(request,
+                                prj_req.project.projectname,
+                                prj_req.project.description, True,
+                                prj_req.registration.domain)
+                            
+                            prj_req.project.projectid = kprj.id
+                            prj_req.project.save()
+                            
+                            prj_req.flowstatus = PSTATUS_APPR
+                            prj_req.save()
+                            
+                        elif prj_req.flowstatus <= PSTATUS_PENDING:
+                            exceptions.handle(request, _("Cannot process request"))
+                            return False
+                    
+                        if not main_tenant:
+                            main_tenant = prj_req.project
+                    
+                    #
+                    # User creation
+                    #
+                    if not registration.userid:
+                    
+                        if not main_tenant:
+                            exceptions.handle(request, _("No tenants for first registration"))
+                            return False
+                        
+                        if not email:
+                            exceptions.handle(request, _("No email for first registration"))
+                            return False
+                        
+                        if not password:
+                            password = self._generate_pwd()
+                        
+                        kuser = keystone_api.user_create(request, 
+                                                    name=registration.username,
+                                                    password=password,
+                                                    email=email,
+                                                    project=main_tenant.projectid,
+                                                    enabled=True,
+                                                    domain=registration.domain)
+                        
+                        registration.userid = kuser.id
+                        registration.save()
+                        
+                        for prj_req in prjReqList:
+                            if prj_req.flowstatus == PSTATUS_APPR:
+                                keystone_api.add_tenant_user_role(request,
+                                                    prj_req.project.projectid,
+                                                    kuser.id,
+                                                    data['role_id'])
+                            else:
+                                LOG.debug("Reject membership request for %s to %s" \
+                                    % (prj_req.project.projectname, registration.username))
+                    
+                    #
+                    # cache cleanup
+                    #
+                    prjReqList.delete()
+                    userReqList.delete()
+                
+        else:
+            
+            with transaction.commit_on_success():
+            
+                registration = Registration.objects.filter(regid=int(data['regid']))
+                
+                #
+                # Delete projects to be created
+                #
+                prjReqList = PrjRequest.objects.filter(registration=registration)
+                prjReqList = prjReqList.filter(project__projectid__isnull=True)
+                
+                for prj_req in prjReqList:
+                    prj_req.project.delete()
+                
+                #
+                # Delete request or the main registration if new
+                #
+                if registration.userid:
+                    userReqList = RegRequest.objects.filter(registration=registration)
+                    userReqList.delete()
+                else:
+                    registration.delete()
         
         return True
+
 
 
 

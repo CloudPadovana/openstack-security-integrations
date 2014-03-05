@@ -9,6 +9,12 @@ from horizon import tables
 
 LOG = logging.getLogger(__name__)
 
+class ProcessLink(tables.LinkAction):
+    name = "reqprocess"
+    verbose_name = _("Process")
+    url = "horizon:admin:registration_manager:process"
+    classes = ("ajax-modal", "btn-edit")
+
 class ApproveLink(tables.LinkAction):
     name = "approve"
     verbose_name = _("Approve")
@@ -40,7 +46,7 @@ class RegisterTable(tables.DataTable):
     class Meta:
         name = "register_table"
         verbose_name = _("Registrations")
-        row_actions = (ApproveLink, DiscardAction,)
+        row_actions = (ApproveLink, ProcessLink, DiscardAction,)
         table_actions = (DiscardAction,)
 
     def get_object_id(self, datum):

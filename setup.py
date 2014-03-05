@@ -50,6 +50,8 @@ template_list = [
                 ]
 
 reg_templ_list = [
+                    'src/templates/registration_manager/reg_process.html',
+                    'src/templates/registration_manager/_reg_process.html',
                     'src/templates/registration_manager/reg_manager.html',
                     'src/templates/registration_manager/reg_approve.html',
                     'src/templates/registration_manager/_reg_approve.html'

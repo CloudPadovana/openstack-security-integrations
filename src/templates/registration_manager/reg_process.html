@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{{ processingtitle }}{% endblock %}
+
+{% block page_header %}
+  {# to make searchable false, just remove it from the include statement #}
+  {% include "horizon/common/_page_header.html" with title=processingtitle %}
+{% endblock page_header %}
+
+{% block main %}
+    {% include 'admin/registration_manager/_reg_process.html' %}
+{% endblock %}
+
