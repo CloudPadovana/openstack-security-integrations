@@ -15,27 +15,6 @@ class ProcessLink(tables.LinkAction):
     url = "horizon:admin:registration_manager:process"
     classes = ("ajax-modal", "btn-edit")
 
-class ApproveLink(tables.LinkAction):
-    name = "approve"
-    verbose_name = _("Approve")
-    url = "horizon:admin:registration_manager:approve"
-    classes = ("ajax-modal", "btn-edit")
-
-class DiscardAction(tables.DeleteAction):
-    data_type_singular = _("Registration")
-    data_type_plural = _("Registrations")
-
-    def delete(self, request, obj_id):
-    
-        with transaction.commit_on_success():
-            regid = int(obj_id)
-            LOG.debug("Discarding registration for %d" % regid)
-            Registration.objects.get(regid=regid).delete()
-            #
-            # TODO send notification via mail
-            #
-
-
 class RegisterTable(tables.DataTable):
     regid = tables.Column('regid', verbose_name=_('ID'))
     username = tables.Column('username', verbose_name=_('User name'))
@@ -46,8 +25,7 @@ class RegisterTable(tables.DataTable):
     class Meta:
         name = "register_table"
         verbose_name = _("Registrations")
-        row_actions = (ApproveLink, ProcessLink, DiscardAction,)
-        table_actions = (DiscardAction,)
+        row_actions = (ProcessLink, )
 
     def get_object_id(self, datum):
         return datum.regid

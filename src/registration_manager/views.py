@@ -24,7 +24,6 @@ from openstack_auth_shib.models import RSTATUS_CHECKED
 
 from .tables import RegisterTable
 from .forms import ProcessRegForm
-from .workflows import ApproveRegWorkflow
 
 LOG = logging.getLogger(__name__)
 
@@ -113,18 +112,4 @@ class ProcessView(forms.ModalFormView):
         }
 
 
-class ApproveView(workflows.WorkflowView):
-    workflow_class = ApproveRegWorkflow
-    
-    def get_initial(self):
-        initial = super(ApproveView, self).get_initial()
-        
-        regid = int(self.kwargs['rowid'])
-        initial['regid'] = regid
-        
-        reg_item = Registration.objects.get(regid=regid)
-        initial['username'] = reg_item.username
-        initial['userid'] = reg_item.userid
-        
-        return initial
 
