@@ -169,6 +169,9 @@ class ProcessRegForm(forms.SelfHandlingForm):
                         registration.userid = kuser.id
                         registration.save()
                         
+                        #
+                        # TODO role project_manager for private tenants
+                        #
                         for prj_req in prjReqList:
                             if prj_req.flowstatus == PSTATUS_APPR:
                                 keystone_api.add_tenant_user_role(request,
@@ -189,23 +192,26 @@ class ProcessRegForm(forms.SelfHandlingForm):
             
             with transaction.commit_on_success():
             
-                registration = Registration.objects.filter(regid=int(data['regid']))
+                registration = Registration.objects.get(regid=int(data['regid']))
+                prjReqList = PrjRequest.objects.filter(registration=registration)
                 
                 #
                 # Delete projects to be created
                 #
-                prjReqList = PrjRequest.objects.filter(registration=registration)
-                prjReqList = prjReqList.filter(project__projectid__isnull=True)
-                
+                newprj_list = list()
                 for prj_req in prjReqList:
-                    prj_req.project.delete()
+                    if not prj_req.project.projectid:
+                        newprj_list.append(prj_req.project.projectname)
                 
-                #
-                # Delete request or the main registration if new
-                #
+                if len(newprj_list):
+                    Project.objects.filter(projectname__in=newprj_list).delete()
+                
                 if registration.userid:
-                    userReqList = RegRequest.objects.filter(registration=registration)
-                    userReqList.delete()
+                
+                    prjReqList.delete()
+                    
+                    RegRequest.objects.filter(registration=registration).delete()
+                    
                 else:
                     registration.delete()
         
