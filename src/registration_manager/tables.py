@@ -20,7 +20,6 @@ class RegisterTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))
     fullname = tables.Column('fullname', verbose_name=_('Full name'))
     domain = tables.Column('domain', verbose_name=_('Domain'))
-    region = tables.Column('region', verbose_name=_('Region'))
 
     class Meta:
         name = "register_table"
