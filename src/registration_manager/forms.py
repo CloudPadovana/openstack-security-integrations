@@ -34,9 +34,6 @@ LOG = logging.getLogger(__name__)
 
 class ProcessRegForm(forms.SelfHandlingForm):
 
-    regid = forms.IntegerField(widget=HiddenInput)
-    username = forms.CharField(label=_("User name"))
-    role_id = forms.ChoiceField(label=_("Role"))
     #
     # TODO use a button instead of choice field
     #
@@ -50,8 +47,18 @@ class ProcessRegForm(forms.SelfHandlingForm):
     def __init__(self, request, *args, **kwargs):
         super(ProcessRegForm, self).__init__(request, *args, **kwargs)
         
-        role_list = keystone_api.role_list(request)
-        self.fields['role_id'].choices = [(role.id, role.name) for role in role_list]
+        self.fields['regid'] = forms.IntegerField(widget=HiddenInput)
+        
+        regid = kwargs['initial']['regid']
+        flowstatus = kwargs['initial']['processinglevel']
+        if flowstatus == RSTATUS_PENDING:
+            self.fields['username'] = forms.CharField(label=_("User name"))
+        else:
+            self.fields['username'] = forms.CharField(label=_("User name"),
+                widget = forms.TextInput(attrs={'readonly': 'readonly'}))
+            self.fields['role_id'] = forms.ChoiceField(label=_("Role"))
+            role_list = keystone_api.role_list(request)
+            self.fields['role_id'].choices = [(role.id, role.name) for role in role_list]
 
     def _generate_pwd(self):
         if crypto_version.startswith('2.0'):

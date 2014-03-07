@@ -7,5 +7,5 @@ prefix = 'openstack_dashboard.dashboards.admin.registration_manager.views'
 
 urlpatterns = patterns(prefix,
     url(r'^$', views.IndexView.as_view(), name='index'),
-    url(r'^(?P<regid>[^/]+)/process/$', views.ProcessView.as_view(), name='process'),
+    url(r'^(?P<regid>[^/]+)/process/$', views.ProcessView.as_view(), name='process'))
 

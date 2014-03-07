@@ -53,7 +53,45 @@ class IndexView(tables.DataTableView):
         return reqTable.values()
 
 
+class RegReqItem:
+    
+    def __init__(self, regid):
+    
+        registration = Registration.objects.get(regid=regid)
+        
+        self.regid = regid
+        self.username = registration.username
+        self.reqlevel = RSTATUS_CHECKED
+        self.extaccounts = list()
+        self.reqprojects = list()
+        self.newprojects = list()
+        
+        regreq_list = RegRequest.objects.filter(registration=registration)
+        for reg_req in regreq_list:
+            if reg_req.externalid:
+                self.extaccounts.append(reg_req.externalid)
+            self.reqlevel = min(self.reqlevel, reg_req.flowstatus)
 
+        prjreq_list = PrjRequest.objects.filter(registration=registration)
+        for prj_req in prjreq_list:
+            if prj_req.project.projectid:
+                tmpt = (prj_req.project.projectname, prj_req.flowstatus)
+                self.reqprojects.append(tmpt)
+            else:
+                self.newprojects.append(prj_req.project.projectname)
+
+
+def pstatus2label(flowstatus):
+    if flowstatus == PSTATUS_REG:
+        return _("Registered")
+    if flowstatus == PSTATUS_PENDING:
+        return _("Pending")
+    if flowstatus == PSTATUS_APPR:
+        return _("Approved")
+    return _("Rejected")
+
+def get_pstatus_descr(tmpt):
+    return "%s [%s]" % (tmpt[0], pstatus2label(tmpt[1]))
 
 class ProcessView(forms.ModalFormView):
     form_class = ProcessRegForm
@@ -61,42 +99,24 @@ class ProcessView(forms.ModalFormView):
     success_url = reverse_lazy('horizon:admin:registration_manager:index')
     
     def get_object(self):
-        registration = Registration.objects.get(regid=int(self.kwargs['regid']))
-        return registration
+        if not hasattr(self, "_object"):
+            try:
+                self._object = RegReqItem(int(self.kwargs['regid']))
+            except Exception:
+                LOG.error("Registration error", exc_info=True)
+                redirect = reverse_lazy("horizon:admin:registration_manager:index")
+                exceptions.handle(self.request, _('Unable approve registration.'),
+                                  redirect=redirect)
+        return self._object
 
     def get_context_data(self, **kwargs):
         context = super(ProcessView, self).get_context_data(**kwargs)
         context['regid'] = self.get_object().regid
         context['username'] = self.get_object().username
-        
-        context['extaccounts'] = list()
-        context['processinglevel'] = RSTATUS_CHECKED
-        regreq_list = RegRequest.objects.filter(registration=self.get_object())
-
-        for reg_req in regreq_list:
-            if reg_req.externalid:
-                context['extaccounts'].append(reg_req.externalid)
-            context['processinglevel'] = min(context['processinglevel'], reg_req.flowstatus)
-        
-        context['prjrequests'] = list()
-        context['newprojects'] = list()
-        prjreq_list = PrjRequest.objects.filter(registration=self.get_object())
-        for prj_req in prjreq_list:
-            if prj_req.project.projectid:
-                if prj_req.flowstatus == PSTATUS_REG:
-                    stlabel = _("Registered")
-                elif prj_req.flowstatus == PSTATUS_PENDING:
-                    stlabel = _("Pending")
-                elif prj_req.flowstatus == PSTATUS_APPR:
-                    stlabel = _("Approved")
-                elif prj_req.flowstatus == PSTATUS_REJ:
-                    stlabel = _("Rejected")
-                
-                tmps = "%s [%s]" % (prj_req.project.projectname, stlabel)
-                context['prjrequests'].append(tmps)
-            else:
-                context['newprojects'].append(prj_req.project.projectname)
-
+        context['extaccounts'] = self.get_object().extaccounts
+        context['processinglevel'] = self.get_object().reqlevel
+        context['prjrequests'] = map(get_pstatus_descr, self.get_object().reqprojects)
+        context['newprojects'] = self.get_object().newprojects
 
         if context['processinglevel'] == RSTATUS_PENDING:
             context['processingtitle'] = _('Pre-check registration')
@@ -108,7 +128,8 @@ class ProcessView(forms.ModalFormView):
     def get_initial(self):
         return {
             'regid' : self.get_object().regid,
-            'username' : self.get_object().username
+            'username' : self.get_object().username,
+            'processinglevel' : self.get_object().reqlevel
         }
 
 
