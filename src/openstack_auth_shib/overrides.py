@@ -10,7 +10,7 @@ from openstack_dashboard.dashboards.admin.users.panel import Users
 import openstack_dashboard.dashboards.admin.registration_manager.panel
 import openstack_dashboard.dashboards.admin.project_manager.panel
 import openstack_dashboard.dashboards.admin.user_manager.panel
-#import openstack_dashboard.dashboards.project.subscription_manager.panel
+import openstack_dashboard.dashboards.project.subscription_manager.panel
 import openstack_dashboard.dashboards.settings.password_manager.panel
 
 LOG = logging.getLogger(__name__)

@@ -40,34 +40,47 @@ os_main_dir = 'usr/share/openstack-dashboard/'
 templates_dir = os_main_dir + 'openstack_dashboard/templates'
 img_dir = os_main_dir + 'static/dashboard/img'
 reg_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/admin/registration_manager/templates/registration_manager'
+subscr_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/subscription_manager/templates/subscription_manager'
+user_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/admin/user_manager/templates/user_manager'
 pwd_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/settings/password_manager/templates/password_manager'
 css_dir = 'usr/share/openstack-dashboard/static/dashboard/less'
 
 template_list = [
-                    'src/templates/_register_form.html',
-                    'src/templates/registration.html',
-                    'src/templates/aai_error.html'
-                ]
+    'src/templates/_register_form.html',
+    'src/templates/registration.html',
+    'src/templates/aai_error.html'
+]
 
 reg_templ_list = [
-                    'src/templates/registration_manager/reg_process.html',
-                    'src/templates/registration_manager/_reg_process.html',
-                    'src/templates/registration_manager/reg_manager.html',
-                    'src/templates/registration_manager/reg_approve.html',
-                    'src/templates/registration_manager/_reg_approve.html'
-                 ]
+    'src/templates/registration_manager/reg_process.html',
+    'src/templates/registration_manager/_reg_process.html',
+    'src/templates/registration_manager/reg_manager.html',
+    'src/templates/registration_manager/reg_approve.html',
+    'src/templates/registration_manager/_reg_approve.html'
+]
+
+subscr_templ_list = [
+    'src/templates/subscription_manager/subscr_manager.html',
+    'src/templates/subscription_manager/subscr_approve.html',
+    'src/templates/subscription_manager/_subscr_approve.html'
+]
+
+usr_templ_list = [
+    'src/templates/user_manager/update.html',
+    'src/templates/user_manager/_update.html'
+]
 
 pwd_templ_list = [
-                    'src/templates/password_manager/activate.html',
-                    'src/templates/password_manager/_activate.html'
-                 ]
+    'src/templates/password_manager/activate.html',
+    'src/templates/password_manager/_activate.html'
+]
 
 module_list = [
-                'keystone_skey_auth',
-                'openstack_auth_shib',
-                'registration_manager',
-                'project_manager'
-              ]
+    'keystone_skey_auth',
+    'openstack_auth_shib',
+    'registration_manager',
+    'project_manager'
+]
 
 setup(
       name=pkg_name,
@@ -82,7 +95,9 @@ setup(
                   (templates_dir, template_list),
                   (templates_dir + '/auth', ['src/templates/_login.html']),
                   (reg_panel_dir, reg_templ_list),
+                  (user_panel_dir, usr_templ_list),
                   (pwd_panel_dir, pwd_templ_list),
+                  (subscr_panel_dir, subscr_templ_list),
                   (css_dir, ['src/templates/aai_infn_integrations.less']),
                   (img_dir, ['src/templates/logoInfnAAI.png'])
                  ],

@@ -33,10 +33,18 @@ python setup.py install -O1 --prefix %{buildroot}/usr --install-data %{buildroot
 mv %{buildroot}/%{python_sitelib}/registration_manager/* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/registration_manager
 rm -rf %{buildroot}/%{python_sitelib}/registration_manager
-mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/project_manager
-mv %{buildroot}/%{python_sitelib}/project_manager/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/project_manager
-rm -rf %{buildroot}/%{python_sitelib}/project_manager
+mv %{buildroot}/%{python_sitelib}/subscription_manager/* \
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/subscription_manager
+rm -rf %{buildroot}/%{python_sitelib}/subscription_manager
+mv %{buildroot}/%{python_sitelib}/project_manager \
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin
+mv %{buildroot}/%{python_sitelib}/user_manager/* \
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/user_manager
+rm -rf %{buildroot}/%{python_sitelib}/user_manager
+mv %{buildroot}/%{python_sitelib}/password_manager/* \
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager
+rm -rf %{buildroot}/%{python_sitelib}/password_manager
+
 
 %clean
 rm -rf %{buildroot}
@@ -77,7 +85,18 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/project_manager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/project_manager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/project_manager/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/user_manager/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/user_manager/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/user_manager/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/user_manager/templates/user_manager/*.html
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/templates/password_manager/*.html
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/subscription_manager/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/subscription_manager/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/subscription_manager/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/subscription_manager/templates/subscription_manager/*.html
 
 %post -n openstack-auth-shib
 #

@@ -11,7 +11,10 @@ from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
 
-from openstack_dashboard.api import keystone as keystone_api
+from openstack_auth_shib.models import PSTATUS_REG
+from openstack_auth_shib.models import PSTATUS_PENDING
+from openstack_auth_shib.models import PSTATUS_APPR
+from openstack_auth_shib.models import PSTATUS_REJ
 
 from .tables import SubscriptionTable
 from .forms import ApproveSubscrForm
@@ -25,18 +28,10 @@ class PrjReqItem:
         self.fullname = prjReq.registration.fullname
         self.notes = prjReq.notes
     
-    def get_initial(self):
-        return {
-            'regid' : self.regid,
-            'username' : self.username,
-            'fullname' : self.fullname,
-            'notes' : self.notes
-        }
-
 
 class IndexView(tables.DataTableView):
     table_class = SubscriptionTable
-    template_name = 'admin/registration_manager/reg_manager.html'
+    template_name = 'project/subscription_manager/subscr_manager.html'
 
     def get_data(self):
     
@@ -47,7 +42,11 @@ class IndexView(tables.DataTableView):
             # TODO paging
             #
             curr_prjname = self.request.user.tenant_name
-            for p_entry in PrjRequest.objects.filter(project__projectname=curr_prjname):
+            q_args = {
+                'project__projectname' : curr_prjname,
+                'flowstatus' : PSTATUS_PENDING
+            }
+            for p_entry in PrjRequest.objects.filter(**q_args):
                 reqList.append(PrjReqItem(p_entry))
             
         except Exception:
@@ -58,7 +57,7 @@ class IndexView(tables.DataTableView):
 
 class ApproveView(forms.ModalFormView):
     form_class = ApproveSubscrForm
-    template_name = 'project/subscription_manager/reg_approve.html'
+    template_name = 'project/subscription_manager/subscr_approve.html'
     success_url = reverse_lazy('horizon:project:subscription_manager:index')
     
     def get_object(self):
@@ -67,8 +66,11 @@ class ApproveView(forms.ModalFormView):
 
                 regid = int(self.kwargs['regid'])
                 curr_prjname = self.request.user.tenant_name
-                qSet = PrjRequest.objects.filter(project__projectname=curr_prjname)
-                self._object = PrjReqItem(qSet.filter(registration__regid=regid)[0])
+                q_args = {
+                    'project__projectname' : curr_prjname,
+                    'registration__regid' : regid
+                }
+                self._object = PrjReqItem(PrjRequest.objects.filter(**q_args)[0])
                 
             except Exception:
                 LOG.error("Subscription error", exc_info=True)
@@ -83,9 +85,10 @@ class ApproveView(forms.ModalFormView):
         return context
 
     def get_initial(self):
-        ini_dict = self.get_object().get_initial()
-        role_list = keystone_api.role_list(self.request)
-        role_choices = [(role.id, role.name) for role in role_list]
-        ini_dict['role_id'] = role_choices
-        return ini_dict
+        return {
+            'regid' : self.get_object().regid,
+            'username' : self.get_object().username,
+            'fullname' : self.get_object().fullname,
+            'notes' : self.get_object().notes
+        }
 

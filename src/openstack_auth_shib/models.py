@@ -15,6 +15,9 @@ PSTATUS_REJ = 3
 RSTATUS_PENDING = 0
 RSTATUS_CHECKED = 1
 
+# Tenant role name
+TENANTADMIN_ROLE = 'project_manager'
+
 # Persistent data
 class Registration(models.Model):
     regid = models.AutoField(primary_key=True)
