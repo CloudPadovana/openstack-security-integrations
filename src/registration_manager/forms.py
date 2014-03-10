@@ -34,15 +34,7 @@ LOG = logging.getLogger(__name__)
 
 class ProcessRegForm(forms.SelfHandlingForm):
 
-    #
-    # TODO use a button instead of choice field
-    #
-    checkaction = forms.ChoiceField(label=_("Action"),
-        choices=[
-            ('accept', _('Accept')),
-            ('reject', _('Reject'))
-        ]
-    )
+    checkaction = forms.CharField(widget=HiddenInput, initial='accept')
     
     def __init__(self, request, *args, **kwargs):
         super(ProcessRegForm, self).__init__(request, *args, **kwargs)
