@@ -25,15 +25,7 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
     username = forms.CharField(label=_("User name"), widget=readonlyInput)
     fullname = forms.CharField(label=_("Full name"), widget=readonlyInput)
     notes = forms.CharField(label=_("Notes"), widget=readonlyInput)
-    #
-    # TODO use a button instead of choice field
-    #
-    checkaction = forms.ChoiceField(label=_("Action"),
-        choices=[
-            ('accept', _('Accept')),
-            ('reject', _('Reject'))
-        ]
-    )
+    checkaction = forms.CharField(widget=HiddenInput, initial='accept')
 
     @sensitive_variables('data')
     def handle(self, request, data):

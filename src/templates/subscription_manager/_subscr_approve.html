@@ -19,7 +19,16 @@
 {% endblock %}
 
 {% block modal-footer %}
-  <input class="btn btn-primary pull-right" type="submit" value="{% trans "Approve Subscription" %}" />
+  <input class="btn btn-primary pull-right" type="submit" value="{% trans "Approve" %}" />
+  <input class="btn btn-primary pull-right" type="button" onclick="rejSubmit()" value="{% trans "Reject" %}"/>
   <a href="{% url 'horizon:project:subscription_manager:index' %}" class="btn secondary cancel close">{% trans "Cancel" %}</a>
+
+  <script type="text/javascript">
+    function rejSubmit() {
+        document.getElementById('id_checkaction').value = 'reject';
+        document.getElementById('approve_subscr_form').submit();
+    }
+  </script>
+
 {% endblock %}
 
