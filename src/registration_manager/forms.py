@@ -12,7 +12,7 @@ from horizon import exceptions
 from django.db import transaction
 from django.forms.widgets import HiddenInput
 from django.views.decorators.debug import sensitive_variables
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _
 
 from openstack_auth_shib.models import UserMapping
 from openstack_auth_shib.models import RegRequest
@@ -64,100 +64,112 @@ class ProcessRegForm(forms.SelfHandlingForm):
     @sensitive_variables('data')
     def handle(self, request, data):
     
-        if data['checkaction'] == 'accept':
-        
-            with transaction.commit_on_success():
+        try:
+            if data['checkaction'] == 'accept':
+                self._handle_accept(request, data)
+            else:
+                self._handle_reject(request, data)
+        except:
+            exceptions.handle(request, _("No tenants for first registration"))
+            return False
+
+        return True
+
+
+
+    def _handle_accept(self, request, data):
+    
+        with transaction.commit_on_success():
             
-                registration = Registration.objects.get(regid=int(data['regid']))
-                flowstatus = RSTATUS_CHECKED
+            registration = Registration.objects.get(regid=int(data['regid']))
+            flowstatus = RSTATUS_CHECKED
             
-                userReqList = RegRequest.objects.filter(registration=registration)
+            userReqList = RegRequest.objects.filter(registration=registration)
+            for tmpReq in userReqList:
+                flowstatus = min(flowstatus, tmpReq.flowstatus)
+                
+            prjReqList = PrjRequest.objects.filter(registration=registration)
+                
+            if flowstatus == RSTATUS_PENDING:
+                #
+                # User renaming
+                #
+                registration.username = data['username']
+                registration.save()
+                
+                #
+                # Send request to prj-admin
+                #
+                q_args = {
+                    'project__projectid__isnull' : False,
+                    'flowstatus' : PSTATUS_REG
+                }
+                prjReqList.filter(**q_args).update(flowstatus=PSTATUS_PENDING)
+                    
+                userReqList.update(flowstatus=RSTATUS_CHECKED)
+                    
+            else:
+                main_tenant = None
+                email = None
+                password = None
+                
+                #
+                # Mapping of external accounts
+                #                
                 for tmpReq in userReqList:
-                    flowstatus = min(flowstatus, tmpReq.flowstatus)
-                
-                prjReqList = PrjRequest.objects.filter(registration=registration)
-                
-                if flowstatus == RSTATUS_PENDING:
-                    #
-                    # User renaming
-                    #
-                    registration.username = data['username']
-                    registration.save()
-                
-                    #
-                    # Send request to prj-admin
-                    #
-                    q_args = {
-                        'project__projectid__isnull' : False,
-                        'flowstatus' : PSTATUS_REG
-                    }
-                    prjReqList.filter(**q_args).update(flowstatus=PSTATUS_PENDING)
-                    
-                    userReqList.update(flowstatus=RSTATUS_CHECKED)
-                    
-                else:
-                    main_tenant = None
-                    email = None
-                    password = None
-                
-                    #
-                    # Mapping of external accounts
-                    #                
-                    for tmpReq in userReqList:
-                        if tmpReq.externalid:
-                            LOG.debug("Registering external account %s" % tmpReq.externalid)
-                            mapping = UserMapping(globaluser=tmpReq.externalid,
-                                            registration=tmpReq.registration)
-                            mapping.save()
+                    if tmpReq.externalid:
+                        LOG.debug("Registering external account %s" % tmpReq.externalid)
+                        mapping = UserMapping(globaluser=tmpReq.externalid,
+                                        registration=tmpReq.registration)
+                        mapping.save()
                         
-                        if not email:
-                            email = tmpReq.email
-                        if not password:
-                            password = tmpReq.password
+                    if not email:
+                        email = tmpReq.email
+                    if not password:
+                        password = tmpReq.password
                     
-                    #
-                    # Registration of the new tenants
-                    #
-                    for prj_req in prjReqList:
+                #
+                # Registration of the new tenants
+                #
+                for prj_req in prjReqList:
                     
-                        if not prj_req.project.projectid:
+                    if not prj_req.project.projectid:
                         
-                            LOG.debug("Creating tenant %s" % prj_req.project.projectname)
-                            kprj = keystone_api.tenant_create(request,
-                                prj_req.project.projectname,
-                                prj_req.project.description, True,
-                                prj_req.registration.domain)
+                        LOG.debug("Creating tenant %s" % prj_req.project.projectname)
+                        kprj = keystone_api.tenant_create(request,
+                            prj_req.project.projectname,
+                            prj_req.project.description, True,
+                            prj_req.registration.domain)
                             
-                            prj_req.project.projectid = kprj.id
-                            prj_req.project.save()
+                        prj_req.project.projectid = kprj.id
+                        prj_req.project.save()
                             
-                            prj_req.flowstatus = PSTATUS_APPR
-                            prj_req.save()
+                        prj_req.flowstatus = PSTATUS_APPR
+                        prj_req.save()
                             
-                        elif prj_req.flowstatus <= PSTATUS_PENDING:
-                            exceptions.handle(request, _("Cannot process request"))
-                            return False
+                    elif prj_req.flowstatus <= PSTATUS_PENDING:
+                        raise exceptions.HorizonException(_("Cannot process request"))
                     
-                        if not main_tenant:
-                            main_tenant = prj_req.project
+                    if not main_tenant:
+                        main_tenant = prj_req.project
                     
-                    #
-                    # User creation
-                    #
-                    if not registration.userid:
+                #
+                # User creation
+                #
+                if not registration.userid:
                     
-                        if not main_tenant:
-                            exceptions.handle(request, _("No tenants for first registration"))
-                            return False
+                    if not main_tenant:
+                        raise exceptions.HorizonException(_("No tenants for first registration"))
+                        return False
                         
-                        if not email:
-                            exceptions.handle(request, _("No email for first registration"))
-                            return False
+                    if not email:
+                        raise exceptions.HorizonException( _("No email for first registration"))
+                        return False
                         
-                        if not password:
-                            password = self._generate_pwd()
+                    if not password:
+                        password = self._generate_pwd()
                         
-                        kuser = keystone_api.user_create(request, 
+                    kuser = keystone_api.user_create(request, 
                                                     name=registration.username,
                                                     password=password,
                                                     email=email,
@@ -165,56 +177,55 @@ class ProcessRegForm(forms.SelfHandlingForm):
                                                     enabled=True,
                                                     domain=registration.domain)
                         
-                        registration.userid = kuser.id
-                        registration.save()
+                    registration.userid = kuser.id
+                    registration.save()
                         
-                        #
-                        # TODO role project_manager for private tenants
-                        #
-                        for prj_req in prjReqList:
-                            if prj_req.flowstatus == PSTATUS_APPR:
-                                keystone_api.add_tenant_user_role(request,
+                    #
+                    # TODO role project_manager for private tenants
+                    #
+                    for prj_req in prjReqList:
+                        if prj_req.flowstatus == PSTATUS_APPR:
+                            keystone_api.add_tenant_user_role(request,
                                                     prj_req.project.projectid,
                                                     kuser.id,
                                                     data['role_id'])
-                            else:
-                                LOG.debug("Reject membership request for %s to %s" \
+                        else:
+                            LOG.debug("Reject membership request for %s to %s" \
                                     % (prj_req.project.projectname, registration.username))
                     
-                    #
-                    # cache cleanup
-                    #
-                    prjReqList.delete()
-                    userReqList.delete()
-                
-        else:
-            
-            with transaction.commit_on_success():
-            
-                registration = Registration.objects.get(regid=int(data['regid']))
-                prjReqList = PrjRequest.objects.filter(registration=registration)
-                
                 #
-                # Delete projects to be created
+                # cache cleanup
                 #
-                newprj_list = list()
-                for prj_req in prjReqList:
-                    if not prj_req.project.projectid:
-                        newprj_list.append(prj_req.project.projectname)
+                prjReqList.delete()
+                userReqList.delete()
                 
-                if len(newprj_list):
-                    Project.objects.filter(projectname__in=newprj_list).delete()
+    def _handle_reject(self, request, data):
+            
+        with transaction.commit_on_success():
+            
+            registration = Registration.objects.get(regid=int(data['regid']))
+            prjReqList = PrjRequest.objects.filter(registration=registration)
                 
-                if registration.userid:
+            #
+            # Delete projects to be created
+            #
+            newprj_list = list()
+            for prj_req in prjReqList:
+                if not prj_req.project.projectid:
+                    newprj_list.append(prj_req.project.projectname)
                 
-                    prjReqList.delete()
+            if len(newprj_list):
+                Project.objects.filter(projectname__in=newprj_list).delete()
+                
+            if registration.userid:
+                
+                prjReqList.delete()
                     
-                    RegRequest.objects.filter(registration=registration).delete()
+                RegRequest.objects.filter(registration=registration).delete()
                     
-                else:
-                    registration.delete()
+            else:
+                registration.delete()
         
-        return True
 
 
 
