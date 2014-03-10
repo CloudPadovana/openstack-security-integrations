@@ -28,6 +28,8 @@ from openstack_auth_shib.models import PSTATUS_REJ
 from openstack_auth_shib.models import RSTATUS_PENDING
 from openstack_auth_shib.models import RSTATUS_CHECKED
 
+from openstack_auth_shib.models import TENANTADMIN_ROLE
+
 from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
@@ -40,6 +42,7 @@ class ProcessRegForm(forms.SelfHandlingForm):
         super(ProcessRegForm, self).__init__(request, *args, **kwargs)
         
         self.fields['regid'] = forms.IntegerField(widget=HiddenInput)
+        self.prjman_roleid = None
         
         regid = kwargs['initial']['regid']
         flowstatus = kwargs['initial']['processinglevel']
@@ -49,8 +52,14 @@ class ProcessRegForm(forms.SelfHandlingForm):
             self.fields['username'] = forms.CharField(label=_("User name"),
                 widget = forms.TextInput(attrs={'readonly': 'readonly'}))
             self.fields['role_id'] = forms.ChoiceField(label=_("Role"))
-            role_list = keystone_api.role_list(request)
-            self.fields['role_id'].choices = [(role.id, role.name) for role in role_list]
+            
+            role_list = list()
+            for role in keystone_api.role_list(request):
+                if role.name == TENANTADMIN_ROLE:
+                    self.prjman_roleid = role.id
+                role_list.append((role.id, role.name))
+            
+            self.fields['role_id'].choices = role_list
 
     def _generate_pwd(self):
         if crypto_version.startswith('2.0'):
@@ -131,27 +140,40 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 #
                 # Registration of the new tenants
                 #
+                prjs_to_create = list()
+                prjs_approved = list()
+                prjs_rejected = list()
+                
                 for prj_req in prjReqList:
                     
                     if not prj_req.project.projectid:
                         
-                        LOG.debug("Creating tenant %s" % prj_req.project.projectname)
-                        kprj = keystone_api.tenant_create(request,
-                            prj_req.project.projectname,
-                            prj_req.project.description, True,
-                            prj_req.registration.domain)
+                        prjs_to_create.append(prj_req)
+                        if not main_tenant:
+                            main_tenant = prj_req.project
+                    
+                    elif prj_req.flowstatus == PSTATUS_APPR:
+                    
+                        prjs_approved.append(prj_req)
+                        if not main_tenant:
+                            main_tenant = prj_req.project
                             
-                        prj_req.project.projectid = kprj.id
-                        prj_req.project.save()
-                            
-                        prj_req.flowstatus = PSTATUS_APPR
-                        prj_req.save()
-                            
-                    elif prj_req.flowstatus <= PSTATUS_PENDING:
+                    elif prj_req.flowstatus <= PSTATUS_REJ:
+                    
+                        prjs_rejected.append(prj_req)
+                        
+                    else:
                         raise exceptions.HorizonException(_("Cannot process request"))
                     
-                    if not main_tenant:
-                        main_tenant = prj_req.project
+                for prj_req in prjs_to_create:
+                    LOG.debug("Creating tenant %s" % prj_req.project.projectname)
+                    kprj = keystone_api.tenant_create(request,
+                        prj_req.project.projectname,
+                        prj_req.project.description, True,
+                        prj_req.registration.domain)
+                            
+                    prj_req.project.projectid = kprj.id
+                    prj_req.project.save()
                     
                 #
                 # User creation
@@ -160,11 +182,9 @@ class ProcessRegForm(forms.SelfHandlingForm):
                     
                     if not main_tenant:
                         raise exceptions.HorizonException(_("No tenants for first registration"))
-                        return False
                         
                     if not email:
                         raise exceptions.HorizonException( _("No email for first registration"))
-                        return False
                         
                     if not password:
                         password = self._generate_pwd()
@@ -180,17 +200,20 @@ class ProcessRegForm(forms.SelfHandlingForm):
                     registration.userid = kuser.id
                     registration.save()
                         
-                    #
-                    # TODO role project_manager for private tenants
-                    #
-                    for prj_req in prjReqList:
-                        if prj_req.flowstatus == PSTATUS_APPR:
-                            keystone_api.add_tenant_user_role(request,
-                                                    prj_req.project.projectid,
-                                                    kuser.id,
-                                                    data['role_id'])
-                        else:
-                            LOG.debug("Reject membership request for %s to %s" \
+                
+                for prj_req in prjs_approved:
+                    keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
+                                                    registration.userid, data['role_id'])
+                    
+                for prj_req in prjs_to_create:
+                    keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
+                                                    registration.userid, data['role_id'])
+
+                    if self.prjman_roleid and self.prjman_roleid <> data['role_id']:
+                        keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
+                                                    registration.userid, self.prjman_roleid)
+                for prj_req in prjs_rejected:
+                    LOG.debug("Reject membership request for %s to %s" \
                                     % (prj_req.project.projectname, registration.username))
                     
                 #
