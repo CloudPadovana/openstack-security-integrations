@@ -158,7 +158,7 @@ class ProcessRegForm(forms.SelfHandlingForm):
                         if not main_tenant:
                             main_tenant = prj_req.project
                             
-                    elif prj_req.flowstatus <= PSTATUS_REJ:
+                    elif prj_req.flowstatus == PSTATUS_REJ:
                     
                         prjs_rejected.append(prj_req)
                         
