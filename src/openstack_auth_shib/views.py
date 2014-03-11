@@ -283,7 +283,16 @@ def processForm(request, reg_form, domain, username=None,
             
                 
         return shortcuts.redirect('/dashboard')
-        
+    
+    except IntegrityError:
+        tempDict = {
+            'error_header' : _("Registration error"),
+            'error_text' : _("Login name not available, please, choose another one"),
+            'redirect_url' : '/dashboard',
+            'redirect_label' : _("Home")
+        }
+        return shortcuts.render(request, 'aai_error.html', tempDict)
+
     except:
         LOG.error("Generic failure", exc_info=True)
         tempDict = {

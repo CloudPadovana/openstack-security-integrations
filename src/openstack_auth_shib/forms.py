@@ -75,8 +75,7 @@ class BaseRegistForm(forms.Form):
         self.fields['selprj'].choices = avail_prjs
     
     def clean(self):
-        data = super(forms.Form, self).clean()
-        
+        data = super(BaseRegistForm, self).clean()
         if data['prjaction'] == 'newprj':
             if not data['newprj']:
                 raise ValidationError(_('Project name is required.'))
@@ -101,7 +100,7 @@ class UsrPwdRegistForm(forms.Form):
     email = forms.EmailField(label=_('Email Address'))
     
     def clean(self):
-        data = super(forms.Form, self).clean()
+        data = super(UsrPwdRegistForm, self).clean()
         if 'pwd' in data:
             if data['pwd'] != data.get('repwd', None):
                 raise ValidationError(_('Passwords do not match.'))
@@ -114,8 +113,8 @@ class UsrPwdRegistForm(forms.Form):
 class FullRegistForm(UsrPwdRegistForm, BaseRegistForm):
 
     def clean(self):
-        data = super(UsrPwdRegistForm, self).clean()
-        data.update(super(BaseRegistForm, self).clean())
+        data = BaseRegistForm.clean(self)
+        data.update(UsrPwdRegistForm.clean(self))
         return data
 
 
