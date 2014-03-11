@@ -69,6 +69,12 @@ class ProcessRegForm(forms.SelfHandlingForm):
             prng = Random.new()
             iv = prng.read(16)
         return base64.b64encode(iv)
+    
+    def _convert_domain(self, request, domain_name):
+        for ditem in keystone_api.domain_list(request):
+            if ditem.name == domain_name:
+                return ditem.id
+        return None
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -122,6 +128,8 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 email = None
                 password = None
                 
+                domain_id = self._convert_domain(request, registration.domain)
+
                 #
                 # Mapping of external accounts
                 #                
@@ -167,10 +175,8 @@ class ProcessRegForm(forms.SelfHandlingForm):
                     
                 for prj_req in prjs_to_create:
                     LOG.debug("Creating tenant %s" % prj_req.project.projectname)
-                    kprj = keystone_api.tenant_create(request,
-                        prj_req.project.projectname,
-                        prj_req.project.description, True,
-                        prj_req.registration.domain)
+                    kprj = keystone_api.tenant_create(request, prj_req.project.projectname,
+                        prj_req.project.description, True, domain_id)
                             
                     prj_req.project.projectid = kprj.id
                     prj_req.project.save()
@@ -194,8 +200,7 @@ class ProcessRegForm(forms.SelfHandlingForm):
                                                     password=password,
                                                     email=email,
                                                     project=main_tenant.projectid,
-                                                    enabled=True,
-                                                    domain=registration.domain)
+                                                    enabled=True, domain=domain_id)
                         
                     registration.userid = kuser.id
                     registration.save()
