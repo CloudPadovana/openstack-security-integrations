@@ -45,6 +45,16 @@ class BaseRegistForm(forms.Form):
             'data-actsource-newprj': _('Project description')
         })
     )
+    prjpriv = forms.BooleanField(
+        label=_("Private project"),
+        required=False,
+        initial=False,
+        widget=forms.widgets.CheckboxInput(attrs={
+            'class': 'switched',
+            'data-switch-on': 'actsource',
+            'data-actsource-newprj': _('Private project')
+        })
+    )
     
     selprj = forms.MultipleChoiceField(
         label=_('Available projects'),

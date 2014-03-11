@@ -229,7 +229,8 @@ def processForm(request, reg_form, domain, username=None,
         elif prj_action == 'newprj':
             pers_prj = reg_form.cleaned_data['newprj']
             prj_descr = reg_form.cleaned_data['prjdescr']
-            prjlist.append((pers_prj, prj_descr, PRJ_PRIVATE))
+            prj_vis = PRJ_PRIVATE if reg_form.cleaned_data['prjpriv'] else PRJ_PUBLIC
+            prjlist.append((pers_prj, prj_descr, prj_vis))
 
         LOG.debug("Saving %s" % username)
                 
