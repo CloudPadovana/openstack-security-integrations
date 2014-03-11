@@ -7,7 +7,8 @@ from django.forms import ValidationError
 from django.utils.translation import ugettext as _
 
 from .models import Project
-from .models import PRJ_PUBLIC
+from .models import PRJ_PRIVATE
+from .models import PRJ_GUEST
 
 LOG = logging.getLogger(__name__)
 
@@ -19,11 +20,7 @@ class BaseRegistForm(forms.Form):
 
     prjaction = forms.ChoiceField(
         label=_('Project action'),
-        choices=[
-            ('newprj', _('Create personal project')),
-            ('selprj', _('Select existing projects')),
-            ('guestprj', _('Use guest project'))
-        ],
+        #choices = <see later>
         widget=forms.Select(attrs={
             'class': 'switchable',
             'data-slug': 'actsource'
@@ -69,11 +66,31 @@ class BaseRegistForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(BaseRegistForm, self).__init__(*args, **kwargs)
         
+        missing_guest = True
         avail_prjs = list()
-        for prj_entry in Project.objects.filter(status=PRJ_PUBLIC):
-            avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
+        for prj_entry in Project.objects.exclude(status=PRJ_PRIVATE):
+            if prj_entry.status == PRJ_GUEST:
+                missing_guest = False
+            else:
+                avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
+                
         self.fields['selprj'].choices = avail_prjs
+        
+        if missing_guest:
+            p_choices = [
+                ('newprj', _('Create personal project')),
+                ('selprj', _('Select existing projects'))
+            ]
+        else:
+            p_choices = [
+                ('newprj', _('Create personal project')),
+                ('selprj', _('Select existing projects')),
+                ('guestprj', _('Use guest project'))
+            ]
+            
+        self.fields['prjaction'].choices = p_choices
     
+
     def clean(self):
         data = super(BaseRegistForm, self).clean()
         if data['prjaction'] == 'newprj':
@@ -85,6 +102,7 @@ class BaseRegistForm(forms.Form):
         elif data['prjaction'] <> 'guestprj':
             raise ValidationError(_('Wrong project parameter.'))
         return data
+
 
 class UsrPwdRegistForm(forms.Form):
     username = forms.CharField(label=_('User name'))
@@ -99,6 +117,7 @@ class UsrPwdRegistForm(forms.Form):
         widget=forms.PasswordInput(render_value=False))
     email = forms.EmailField(label=_('Email Address'))
     
+
     def clean(self):
         data = super(UsrPwdRegistForm, self).clean()
         if 'pwd' in data:
@@ -109,6 +128,7 @@ class UsrPwdRegistForm(forms.Form):
                 raise ValidationError(_("Invalid characters in user name (@:)"))
 
         return data
+
 
 class FullRegistForm(UsrPwdRegistForm, BaseRegistForm):
 

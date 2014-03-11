@@ -28,7 +28,7 @@ from keystoneclient import exceptions as keystone_exceptions
 from horizon import forms
 
 from .models import Registration, Project, RegRequest, PrjRequest, UserMapping
-from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST
+from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST, PSTATUS_APPR
 from .forms import BaseRegistForm, FullRegistForm
 
 LOG = logging.getLogger(__name__)
@@ -254,8 +254,10 @@ def processForm(request, reg_form, domain, username=None,
             regReq = RegRequest(**regArgs)
             regReq.save()
 
+            found_guest = False
             if len(prjlist) == 0:
                 for item in Project.objects.filter(status=PRJ_GUEST):
+                    found_guest = True
                     prjlist.append((item.projectname, item.description, item.status))
 
             for prjitem in prjlist:
@@ -278,6 +280,11 @@ def processForm(request, reg_form, domain, username=None,
                     'project' : project,
                     'notes' : notes
                 }
+                
+                # workaround for guest tenant (no tenant manager)
+                if found_guest:
+                    reqArgs['flowstatus'] = PSTATUS_APPR
+                
                 reqPrj = PrjRequest(**reqArgs)
                 reqPrj.save()
             

@@ -88,7 +88,7 @@ class SetGuestProject(tables.Action):
             
             prj_list = Project.objects.filter(status=PRJ_GUEST)
             if len(prj_list):
-                prj_list[0].status = status=PRJ_PUBLIC
+                prj_list[0].status = PRJ_PUBLIC
                 prj_list[0].save()
             
             prj_list = Project.objects.filter(projectid=object_id)
