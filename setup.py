@@ -66,6 +66,7 @@ subscr_templ_list = [
 ]
 
 usr_templ_list = [
+    'src/templates/user_manager/index.html',
     'src/templates/user_manager/update.html',
     'src/templates/user_manager/_update.html'
 ]
