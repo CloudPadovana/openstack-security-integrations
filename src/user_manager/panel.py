@@ -5,7 +5,7 @@ import horizon
 from openstack_dashboard.dashboards.admin import dashboard
 
 class UserManager(horizon.Panel):
-    name = _("Users (new)")
+    name = _("Users")
     slug = 'user_manager'
 
 dashboard.Admin.register(UserManager)

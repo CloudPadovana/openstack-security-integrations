@@ -110,7 +110,7 @@ class ProjectsTable(TenantsTable):
 
     class Meta:
         name = "projects"
-        verbose_name = _("Projects (new)")
+        verbose_name = _("Projects")
         row_actions = (ViewMembersLink, ViewGroupsLink, UpdateProject,
                        UsageLink, ModifyQuotas, ToggleVisibility,
                        SetGuestProject, DeleteProjectAction)

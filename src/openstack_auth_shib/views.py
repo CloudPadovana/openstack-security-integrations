@@ -289,7 +289,9 @@ def processForm(request, reg_form, domain, username=None,
                 reqPrj = PrjRequest(**reqArgs)
                 reqPrj.save()
             
-                
+        #
+        # TODO close shibboleth session after registration
+        #
         return shortcuts.redirect('/dashboard')
     
     except IntegrityError:
