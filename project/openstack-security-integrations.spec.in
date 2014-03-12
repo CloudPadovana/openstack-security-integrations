@@ -115,6 +115,10 @@ ln -sf /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/proje
 %preun -n openstack-auth-shib
 rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/login.html
 
+
+
+
+
 %triggerin -n openstack-auth-shib -- openstack-dashboard
 #
 # Compressing aai_infn_integrations
@@ -130,13 +134,27 @@ sed -i -e 's|openstack_auth.backend.KeystoneBackend|openstack_auth_shib.backend.
 #
 sed -i -e 's|openstack_auth.urls|openstack_auth_shib.urls|g' \
     /usr/share/openstack-dashboard/openstack_dashboard/urls.py
+#
+# Register as an installed application
+#
+sed -i -e "s|openstack_auth[\']|openstack_auth_shib\'|g" \
+    /usr/share/openstack-dashboard/openstack_dashboard/settings.py
+#
+# Insert customization point
+#
+echo -e "HORIZON_CONFIG[\"customization_module\"] = \"openstack_auth_shib.overrides\"\n" \
+    >> /etc/openstack-dashboard/local_settings
+
 
 %triggerun -n openstack-auth-shib -- openstack-dashboard
 sed -i -e 's|openstack_auth_shib.backend.ExtKeystoneBackend|openstack_auth.backend.KeystoneBackend|g' \
     /usr/share/openstack-dashboard/openstack_dashboard/settings.py
 sed -i -e 's|openstack_auth_shib.urls|openstack_auth.urls|g' \
     /usr/share/openstack-dashboard/openstack_dashboard/urls.py
-
+sed -i -e "s|openstack_auth_shib[\']|openstack_auth\'|g" \
+    /usr/share/openstack-dashboard/openstack_dashboard/settings.py
+sed -i -e 's|HORIZON_CONFIG\[\"customization_module\"\].*||g' \
+    /etc/openstack-dashboard/local_settings
 
 
 

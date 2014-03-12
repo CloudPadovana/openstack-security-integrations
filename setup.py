@@ -79,7 +79,10 @@ module_list = [
     'keystone_skey_auth',
     'openstack_auth_shib',
     'registration_manager',
-    'project_manager'
+    'project_manager',
+    'subscription_manager',
+    'user_manager',
+    'password_manager'
 ]
 
 setup(
