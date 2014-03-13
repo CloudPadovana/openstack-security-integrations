@@ -220,17 +220,18 @@ def processForm(request, reg_form, domain, username=None,
         notes = reg_form.cleaned_data['notes']
         
         prj_action = reg_form.cleaned_data['prjaction']
-        # empty list for guest prj
         prjlist = list()
         if prj_action == 'selprj':
             for project in reg_form.cleaned_data['selprj']:
-                prjlist.append((project, "", PRJ_PUBLIC))
+                prjlist.append((project, "", PRJ_PUBLIC, False))
             
         elif prj_action == 'newprj':
-            pers_prj = reg_form.cleaned_data['newprj']
-            prj_descr = reg_form.cleaned_data['prjdescr']
-            prj_vis = PRJ_PRIVATE if reg_form.cleaned_data['prjpriv'] else PRJ_PUBLIC
-            prjlist.append((pers_prj, prj_descr, prj_vis))
+            prjlist.append((
+                reg_form.cleaned_data['newprj'],
+                reg_form.cleaned_data['prjdescr'],
+                PRJ_PRIVATE if reg_form.cleaned_data['prjpriv'] else PRJ_PUBLIC,
+                True
+            ))
 
         LOG.debug("Saving %s" % username)
                 
@@ -255,26 +256,28 @@ def processForm(request, reg_form, domain, username=None,
             regReq = RegRequest(**regArgs)
             regReq.save()
 
+            #
+            # empty list for guest prj
+            #
             found_guest = False
             if len(prjlist) == 0:
                 for item in Project.objects.filter(status=PRJ_GUEST):
                     found_guest = True
-                    prjlist.append((item.projectname, item.description, item.status))
+                    prjlist.append((item.projectname, None, 0, False))
 
             for prjitem in prjlist:
         
-                try:
-                
-                    project = Project.objects.get(projectname=prjitem[0])
-                
-                except Project.DoesNotExist:
+                if prjitem[3]:
+
                     prjArgs = {
                         'projectname' : prjitem[0],
                         'description' : prjitem[1],
                         'status' : prjitem[2]
                     }
-                    project = Project(**prjArgs)
-                    project.save()
+                    project = Project.objects.create(**prjArgs)
+
+                else:
+                    project = Project.objects.get(projectname=prjitem[0])
         
                 reqArgs = {
                     'registration' : registration,
@@ -297,7 +300,7 @@ def processForm(request, reg_form, domain, username=None,
     except IntegrityError:
         tempDict = {
             'error_header' : _("Registration error"),
-            'error_text' : _("Login name not available, please, choose another one"),
+            'error_text' : _("Login name or project already exists, please, choose another one"),
             'redirect_url' : '/dashboard',
             'redirect_label' : _("Home")
         }

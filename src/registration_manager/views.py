@@ -76,19 +76,20 @@ class RegReqItem:
         else:
             self.reqlevel = RSTATUS_PRECHKD
 
-        prj_ok = True
+        prj_mark = True
         prjreq_list = PrjRequest.objects.filter(registration=registration)
         for prj_req in prjreq_list:
             if prj_req.project.projectid:
                 if prj_req.flowstatus == PSTATUS_PENDING or \
                     prj_req.flowstatus == PSTATUS_REG:
-                    prj_ok = False
+                    prj_mark = False
                 tmpt = (prj_req.project.projectname, prj_req.flowstatus)
                 self.reqprojects.append(tmpt)
             else:
+                prj_mark = False
                 self.newprojects.append(prj_req.project.projectname)
-        
-        if (len(self.newprojects) and not len(self.reqprojects)) or prj_ok:
+                
+        if prj_mark and self.reqlevel == RSTATUS_PRECHKD:
             self.reqlevel = RSTATUS_CHECKED
 
 

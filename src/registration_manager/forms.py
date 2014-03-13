@@ -52,15 +52,17 @@ class ProcessRegForm(forms.SelfHandlingForm):
         else:
             self.fields['username'] = forms.CharField(label=_("User name"),
                 widget = forms.TextInput(attrs={'readonly': 'readonly'}))
-            self.fields['role_id'] = forms.ChoiceField(label=_("Role"))
             
-            role_list = list()
-            for role in keystone_api.role_list(request):
-                if role.name == TENANTADMIN_ROLE:
-                    self.prjman_roleid = role.id
-                role_list.append((role.id, role.name))
+            if flowstatus == RSTATUS_CHECKED:
+                self.fields['role_id'] = forms.ChoiceField(label=_("Role"))
             
-            self.fields['role_id'].choices = role_list
+                role_list = list()
+                for role in keystone_api.role_list(request):
+                    if role.name == TENANTADMIN_ROLE:
+                        self.prjman_roleid = role.id
+                    role_list.append((role.id, role.name))
+            
+                self.fields['role_id'].choices = role_list
 
     def _generate_pwd(self):
         if crypto_version.startswith('2.0'):
@@ -104,6 +106,13 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 
             prjReqList = PrjRequest.objects.filter(registration=registration)
                 
+            if flowstatus == RSTATUS_PENDING:
+                #
+                # User renaming
+                #
+                registration.username = data['username']
+                registration.save()
+                
             if flowstatus == RSTATUS_PENDING or flowstatus == RSTATUS_PRECHKD:
                 #
                 # Send request to prj-admin
@@ -114,13 +123,6 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 }
                 prjReqList.filter(**q_args).update(flowstatus=PSTATUS_PENDING)
                     
-            if flowstatus == RSTATUS_PENDING:
-                #
-                # User renaming
-                #
-                registration.username = data['username']
-                registration.save()
-                
                 userReqList.update(flowstatus=RSTATUS_CHECKED)
                     
             if flowstatus == RSTATUS_CHECKED:
