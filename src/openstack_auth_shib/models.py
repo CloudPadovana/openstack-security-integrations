@@ -13,7 +13,8 @@ PSTATUS_REJ = 3
 
 # Status for registration approval
 RSTATUS_PENDING = 0
-RSTATUS_CHECKED = 1
+RSTATUS_PRECHKD = 1
+RSTATUS_CHECKED = 2
 
 # Tenant role name
 TENANTADMIN_ROLE = 'project_manager'

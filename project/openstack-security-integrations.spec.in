@@ -44,6 +44,9 @@ rm -rf %{buildroot}/%{python_sitelib}/user_manager
 mv %{buildroot}/%{python_sitelib}/password_manager/* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager
 rm -rf %{buildroot}/%{python_sitelib}/password_manager
+mv %{buildroot}/%{python_sitelib}/project_requests/* \
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/project_requests
+rm -rf %{buildroot}/%{python_sitelib}/project_requests
 
 
 %clean
@@ -97,23 +100,18 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/subscription_manager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/subscription_manager/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/subscription_manager/templates/subscription_manager/*.html
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/project_requests/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/project_requests/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/project_requests/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/project_requests/templates/project_requests/*.html
 
 %post -n openstack-auth-shib
-#
-# We need a link to the splash page so we can resolve
-# any hardcoded reference to login.html in the correct way
-#
-ln -sf /usr/share/openstack-dashboard/openstack_dashboard/templates/splash.html \
-       /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/login.html
 #
 # Duplicate templates for Project dashboard
 #
 mkdir -p /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/project_manager/templates
 ln -sf /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/projects/templates/projects \
        /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/project_manager/templates/project_manager
-
-%preun -n openstack-auth-shib
-rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/login.html
 
 
 

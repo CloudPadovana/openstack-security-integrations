@@ -20,6 +20,7 @@ from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_REG
 
 from openstack_auth_shib.models import RSTATUS_PENDING
+from openstack_auth_shib.models import RSTATUS_PRECHKD
 from openstack_auth_shib.models import RSTATUS_CHECKED
 
 from .tables import RegisterTable
@@ -67,18 +68,28 @@ class RegReqItem:
         self.newprojects = list()
         
         regreq_list = RegRequest.objects.filter(registration=registration)
-        for reg_req in regreq_list:
-            if reg_req.externalid:
-                self.extaccounts.append(reg_req.externalid)
-            self.reqlevel = min(self.reqlevel, reg_req.flowstatus)
+        if len(regreq_list):
+            for reg_req in regreq_list:
+                if reg_req.externalid:
+                    self.extaccounts.append(reg_req.externalid)
+                self.reqlevel = min(self.reqlevel, reg_req.flowstatus)
+        else:
+            self.reqlevel = RSTATUS_PRECHKD
 
+        prj_ok = True
         prjreq_list = PrjRequest.objects.filter(registration=registration)
         for prj_req in prjreq_list:
             if prj_req.project.projectid:
+                if prj_req.flowstatus == PSTATUS_PENDING or \
+                    prj_req.flowstatus == PSTATUS_REG:
+                    prj_ok = False
                 tmpt = (prj_req.project.projectname, prj_req.flowstatus)
                 self.reqprojects.append(tmpt)
             else:
                 self.newprojects.append(prj_req.project.projectname)
+        
+        if (len(self.newprojects) and not len(reqprojects)) or prj_ok:
+            self.reqlevel = RSTATUS_CHECKED
 
 
 def pstatus2label(flowstatus):
@@ -119,9 +130,11 @@ class ProcessView(forms.ModalFormView):
         context['newprojects'] = self.get_object().newprojects
 
         if context['processinglevel'] == RSTATUS_PENDING:
-            context['processingtitle'] = _('Pre-check registration')
+            context['processingtitle'] = _('Pre-check registrations')
+        elif context['processinglevel'] == RSTATUS_PRECHKD:
+            context['processingtitle'] = _('Pre-check project subscriptions')
         else:
-            context['processingtitle'] = _('Approve registration')
+            context['processingtitle'] = _('Approve registrations')
 
         return context
 

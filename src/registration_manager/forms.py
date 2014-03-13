@@ -26,6 +26,7 @@ from openstack_auth_shib.models import PSTATUS_APPR
 from openstack_auth_shib.models import PSTATUS_REJ
 
 from openstack_auth_shib.models import RSTATUS_PENDING
+from openstack_auth_shib.models import RSTATUS_PRECHKD
 from openstack_auth_shib.models import RSTATUS_CHECKED
 
 from openstack_auth_shib.models import TENANTADMIN_ROLE
@@ -42,9 +43,9 @@ class ProcessRegForm(forms.SelfHandlingForm):
         super(ProcessRegForm, self).__init__(request, *args, **kwargs)
         
         self.fields['regid'] = forms.IntegerField(widget=HiddenInput)
+        self.fields['processinglevel'] = forms.IntegerField(widget=HiddenInput)
         self.prjman_roleid = None
         
-        regid = kwargs['initial']['regid']
         flowstatus = kwargs['initial']['processinglevel']
         if flowstatus == RSTATUS_PENDING:
             self.fields['username'] = forms.CharField(label=_("User name"))
@@ -97,21 +98,13 @@ class ProcessRegForm(forms.SelfHandlingForm):
         with transaction.commit_on_success():
             
             registration = Registration.objects.get(regid=int(data['regid']))
-            flowstatus = RSTATUS_CHECKED
+            flowstatus = int(data['processinglevel'])
             
             userReqList = RegRequest.objects.filter(registration=registration)
-            for tmpReq in userReqList:
-                flowstatus = min(flowstatus, tmpReq.flowstatus)
                 
             prjReqList = PrjRequest.objects.filter(registration=registration)
                 
-            if flowstatus == RSTATUS_PENDING:
-                #
-                # User renaming
-                #
-                registration.username = data['username']
-                registration.save()
-                
+            if flowstatus == RSTATUS_PENDING or flowstatus == RSTATUS_PRECHKD:
                 #
                 # Send request to prj-admin
                 #
@@ -121,9 +114,16 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 }
                 prjReqList.filter(**q_args).update(flowstatus=PSTATUS_PENDING)
                     
+            if flowstatus == RSTATUS_PENDING:
+                #
+                # User renaming
+                #
+                registration.username = data['username']
+                registration.save()
+                
                 userReqList.update(flowstatus=RSTATUS_CHECKED)
                     
-            else:
+            if flowstatus == RSTATUS_CHECKED:
                 main_tenant = None
                 email = None
                 password = None

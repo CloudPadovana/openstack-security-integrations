@@ -43,6 +43,7 @@ reg_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/admin/registration
 subscr_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/subscription_manager/templates/subscription_manager'
 user_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/admin/user_manager/templates/user_manager'
 pwd_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/settings/password_manager/templates/password_manager'
+preq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/project_requests/templates/project_requests'
 css_dir = 'usr/share/openstack-dashboard/static/dashboard/less'
 
 template_list = [
@@ -76,6 +77,11 @@ pwd_templ_list = [
     'src/templates/password_manager/_activate.html'
 ]
 
+preq_templ_list = [
+    'src/templates/project_requests/prj_request.html',
+    'src/templates/project_requests/_prj_request.html'
+]
+
 module_list = [
     'keystone_skey_auth',
     'openstack_auth_shib',
@@ -83,7 +89,8 @@ module_list = [
     'project_manager',
     'subscription_manager',
     'user_manager',
-    'password_manager'
+    'password_manager',
+    'project_requests'
 ]
 
 setup(
@@ -102,6 +109,7 @@ setup(
                   (user_panel_dir, usr_templ_list),
                   (pwd_panel_dir, pwd_templ_list),
                   (subscr_panel_dir, subscr_templ_list),
+                  (preq_panel_dir, preq_templ_list),
                   (css_dir, ['src/templates/aai_infn_integrations.less']),
                   (img_dir, ['src/templates/logoInfnAAI.png'])
                  ],
