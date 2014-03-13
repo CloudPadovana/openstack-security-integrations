@@ -3,6 +3,7 @@ import logging
 from horizon import forms
 
 from django.db import transaction
+from django.db import IntegrityError
 from django.views.decorators.debug import sensitive_variables
 
 from openstack_auth_shib.models import Registration
@@ -79,6 +80,9 @@ class ProjectRequestForm(forms.SelfHandlingForm):
     def __init__(self, *args, **kwargs):
         super(ProjectRequestForm, self).__init__(*args, **kwargs)
 
+        #
+        # TODO exclude tenants already subscribed
+        #
         avail_prjs = list()
         for prj_entry in Project.objects.filter(status=PRJ_PUBLIC):
             avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
@@ -96,33 +100,39 @@ class ProjectRequestForm(forms.SelfHandlingForm):
             prjlist = list()
             if prj_action == 'selprj':
                 for project in data['selprj']:
-                    #
-                    # TODO exclude tenants already subscribed
-                    #
-                    prjlist.append((project, "", PRJ_PUBLIC))
+                    prjlist.append((project, "", PRJ_PUBLIC, False))
             
             elif prj_action == 'newprj':
-                pers_prj = data['newprj']
-                prj_descr = data['prjdescr']
-                prj_vis = PRJ_PRIVATE if data['prjpriv'] else PRJ_PUBLIC
-                prjlist.append((pers_prj, prj_descr, prj_vis))
+                prjlist.append((
+                    data['newprj'],
+                    data['prjdescr'],
+                    PRJ_PRIVATE if data['prjpriv'] else PRJ_PUBLIC,
+                    True
+                ))
 
         
             for prjitem in prjlist:
         
-                try:
+                if prjitem[3]:
+                    try:
+
+                        prjArgs = {
+                            'projectname' : prjitem[0],
+                            'description' : prjitem[1],
+                            'status' : prjitem[2]
+                        }
+                        project = Project.objects.create(**prjArgs)
+
+                    except IntegrityError:
+                        #
+                        # TODO handle duplicate project
+                        #
+                        LOG.error("Cannot create project %s" % prjitem[0])
+                        return False
                 
+                else:
                     project = Project.objects.get(projectname=prjitem[0])
-                
-                except Project.DoesNotExist:
-                    prjArgs = {
-                        'projectname' : prjitem[0],
-                        'description' : prjitem[1],
-                        'status' : prjitem[2]
-                    }
-                    project = Project(**prjArgs)
-                    project.save()
-        
+                        
                 reqArgs = {
                     'registration' : registration,
                     'project' : project,

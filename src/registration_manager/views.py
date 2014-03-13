@@ -88,7 +88,7 @@ class RegReqItem:
             else:
                 self.newprojects.append(prj_req.project.projectname)
         
-        if (len(self.newprojects) and not len(reqprojects)) or prj_ok:
+        if (len(self.newprojects) and not len(self.reqprojects)) or prj_ok:
             self.reqlevel = RSTATUS_CHECKED
 
 
