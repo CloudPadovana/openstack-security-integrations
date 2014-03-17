@@ -14,6 +14,8 @@ from django.forms.widgets import HiddenInput
 from django.views.decorators.debug import sensitive_variables
 from django.utils.translation import ugettext as _
 
+import notifications
+
 from openstack_auth_shib.models import UserMapping
 from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import Registration
@@ -231,16 +233,22 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 
     def _handle_reject(self, request, data):
             
+        all_prj_req = list()
+        recipients = None
+        first_reg_rej = False
+
         with transaction.commit_on_success():
             
             registration = Registration.objects.get(regid=int(data['regid']))
             prjReqList = PrjRequest.objects.filter(registration=registration)
+            regReqList = RegRequest.objects.filter(registration=registration)
                 
             #
             # Delete projects to be created
             #
             newprj_list = list()
             for prj_req in prjReqList:
+                all_prj_req.append(prj_req.project.projectname)
                 if not prj_req.project.projectid:
                     newprj_list.append(prj_req.project.projectname)
                 
@@ -251,12 +259,29 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 
                 prjReqList.delete()
                     
-                RegRequest.objects.filter(registration=registration).delete()
+                regReqList.delete()
+                
+                try:
+                    tmpusr = keystone_api.user_get(request, registration.userid)
+                    recipients = [ tmpusr.email ]
+                except:
+                    LOG.error("Cannot retrieve email", exc_info=True)
                     
             else:
+            
+                recipients = [ x for x in regReqList.values_list('email', flat=True) ]
+                
                 registration.delete()
+                first_reg_rej = True
         
-
-
+        if first_reg_rej:
+        
+            notifications.notify(recipients, notifications.REGISTRATION_NOT_AUTHORIZED)
+        
+        elif all_prj_req.append:
+            msg_obj = notifications.TenantNotifMessage(
+                prj_no = [ prj_req.project.projectname for prj_req in all_prj_req.append ]
+            )
+            notifications.notify(recipients, msg_obj)
 
 
