@@ -221,10 +221,16 @@ class ProcessRegForm(forms.SelfHandlingForm):
                     if self.prjman_roleid and self.prjman_roleid <> data['role_id']:
                         keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
                                                     registration.userid, self.prjman_roleid)
-                for prj_req in prjs_rejected:
-                    LOG.debug("Reject membership request for %s to %s" \
-                                    % (prj_req.project.projectname, registration.username))
-                    
+                
+                
+                notifications.notify(email, notifications.TenantNotifMessage(
+                    username = registration.username,
+                    prj_ok = [ prj_req.project.projectname for prj_req in prjs_approved ],
+                    prj_no = [ prj_req.project.projectname for prj_req in prjs_rejected ],
+                    prj_new = [ prj_req.project.projectname for prj_req in prjs_to_create ]
+                ))
+                
+                
                 #
                 # cache cleanup
                 #

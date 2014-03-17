@@ -20,6 +20,11 @@ class TenantNotifMessage(NotificationMessage):
         self.subject = _("Tenant subscription request")
         self.body = ''
         
+        username = kwargs.get('username', None)
+        if username:
+            self.body += _("Your account has been registered\n")
+            self.body += _("Your login name is %s\n") % username
+        
         prjok_list = kwargs.get('prj_ok', [])
         if prjok_list:
             self.body += _("The following subscriptions have been approved") + '\n'
@@ -34,6 +39,13 @@ class TenantNotifMessage(NotificationMessage):
                 self.body += item + '\n'
             self.body += '\n'
         
+        prjnew_list = kwargs.get('prj_new', [])
+        if prjnew_list:
+            self.body += _("The following projects have been created") + '\n'
+            for item in prjnew_list:
+                self.body += item + '\n'
+            self.body += '\n'
+
         self.body += FOOTER_DISCLAIMER + '\n'
         
             
