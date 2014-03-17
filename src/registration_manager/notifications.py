@@ -20,14 +20,14 @@ class TenantNotifMessage(NotificationMessage):
         self.subject = _("Tenant subscription request")
         self.body = ''
         
-        prjok_list = getattr(kwargs, 'prj_ok', [])
+        prjok_list = kwargs.get('prj_ok', [])
         if prjok_list:
             self.body += _("The following subscriptions have been approved") + '\n'
             for item in prjok_list:
                 self.body += item + '\n'
             self.body += '\n'
         
-        prjno_list = getattr(kwargs, 'prj_no', [])
+        prjno_list = kwargs.get('prj_no', [])
         if prjno_list:
             self.body += _("The following subscriptions have been rejected") + '\n'
             for item in prjno_list:

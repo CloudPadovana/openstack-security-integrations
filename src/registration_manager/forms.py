@@ -278,10 +278,8 @@ class ProcessRegForm(forms.SelfHandlingForm):
         
             notifications.notify(recipients, notifications.REGISTRATION_NOT_AUTHORIZED)
         
-        elif all_prj_req.append:
-            msg_obj = notifications.TenantNotifMessage(
-                prj_no = [ prj_req.project.projectname for prj_req in all_prj_req.append ]
-            )
+        elif all_prj_req:
+            msg_obj = notifications.TenantNotifMessage(prj_no = all_prj_req)
             notifications.notify(recipients, msg_obj)
 
 
