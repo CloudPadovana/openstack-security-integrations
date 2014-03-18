@@ -30,6 +30,7 @@ from horizon import forms
 from .models import Registration, Project, RegRequest, PrjRequest, UserMapping
 from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST, PSTATUS_APPR
 from .forms import BaseRegistForm, FullRegistForm
+from .notifications import notifyManagers, RegistrAvailable
 
 LOG = logging.getLogger(__name__)
 
@@ -298,6 +299,9 @@ def processForm(request, reg_form, domain, username=None,
                 reqPrj = PrjRequest(**reqArgs)
                 reqPrj.save()
             
+        
+        notifyManagers(RegistrAvailable(username=username))
+
         #
         # TODO close shibboleth session after registration
         #

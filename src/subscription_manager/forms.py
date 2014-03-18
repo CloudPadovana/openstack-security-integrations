@@ -13,6 +13,8 @@ from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import PSTATUS_APPR
 from openstack_auth_shib.models import PSTATUS_REJ
 
+from .notifications import notifyManagers, SubscrChecked
+
 from django.utils.translation import ugettext_lazy as _
 
 LOG = logging.getLogger(__name__)
@@ -52,6 +54,11 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 new_status = PSTATUS_REJ
                     
             PrjRequest.objects.filter(**q_args).update(flowstatus=new_status)
+            
+            notifyManagers(SubscrChecked(
+                username = data['username'],
+                project = curr_prjname
+            ))
         
         return True
 

@@ -134,6 +134,10 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 prjReqList.filter(**q_args).update(flowstatus=PSTATUS_PENDING)
                     
                 userReqList.update(flowstatus=RSTATUS_CHECKED)
+                
+                #
+                # TODO missing notifications to tenant managers
+                #
                     
             if flowstatus == RSTATUS_CHECKED:
                 main_tenant = None
