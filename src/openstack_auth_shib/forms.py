@@ -86,7 +86,7 @@ class BaseRegistForm(forms.Form):
         for prj_entry in Project.objects.exclude(status=PRJ_PRIVATE):
             if prj_entry.status == PRJ_GUEST:
                 missing_guest = False
-            else:
+            elif prj_entry.projectid:
                 avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
                 
         self.fields['selprj'].choices = avail_prjs

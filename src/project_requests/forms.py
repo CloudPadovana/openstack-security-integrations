@@ -80,14 +80,16 @@ class ProjectRequestForm(forms.SelfHandlingForm):
     def __init__(self, *args, **kwargs):
         super(ProjectRequestForm, self).__init__(*args, **kwargs)
 
-        #
-        # TODO exclude tenants already subscribed
-        #
-        avail_prjs = list()
-        for prj_entry in Project.objects.filter(status=PRJ_PUBLIC):
-            avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
+        auth_prjs = [
+            pitem.name for pitem in self.request.user.authorized_tenants
+        ]
 
-        self.fields['selprj'].choices = avail_prjs
+        prj_list = Project.objects.exclude(projectname__in=auth_prjs)
+        prj_list = prj_list.filter(status=PRJ_PUBLIC, projectid__isnull=False)
+
+        self.fields['selprj'].choices = [
+            (prj_entry.projectname, prj_entry.projectname) for prj_entry in prj_list
+        ]
 
     @sensitive_variables('data')
     def handle(self, request, data):
