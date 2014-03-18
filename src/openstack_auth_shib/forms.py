@@ -73,6 +73,11 @@ class BaseRegistForm(forms.Form):
         widget=forms.widgets.Textarea()
     )
     
+    aupok = forms.BooleanField(
+        label=_('I have read and accepted the Cloud Padovana AUP'),
+        initial=False
+    )
+    
     def __init__(self, *args, **kwargs):
         super(BaseRegistForm, self).__init__(*args, **kwargs)
         
@@ -111,6 +116,10 @@ class BaseRegistForm(forms.Form):
                 raise ValidationError(_('Missing selected project.'))
         elif data['prjaction'] <> 'guestprj':
             raise ValidationError(_('Wrong project parameter.'))
+        
+        if not data.get('aupok', False):
+            raise ValidationError(_('You must accept Cloud Padovana AUP.'))
+        
         return data
 
 
