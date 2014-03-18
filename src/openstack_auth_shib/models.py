@@ -32,7 +32,8 @@ class Registration(models.Model):
     regid = models.AutoField(primary_key=True)
     userid = models.CharField(max_length=OS_ID_LEN, null=True)      #local user id
     username = models.CharField(max_length=OS_LNAME_LEN, unique=True)  #local user name
-    fullname = models.CharField(max_length=OS_LNAME_LEN)
+    givenname = models.CharField(max_length=OS_LNAME_LEN)
+    sn = models.CharField(max_length=OS_LNAME_LEN)
     domain = models.CharField(max_length=OS_SNAME_LEN)
 
 class Project(models.Model):

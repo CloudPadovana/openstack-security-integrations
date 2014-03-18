@@ -25,7 +25,8 @@ class PrjReqItem:
     def __init__(self, prjReq):
         self.regid = prjReq.registration.regid
         self.username = prjReq.registration.username
-        self.fullname = prjReq.registration.fullname
+        self.givenname = prjReq.registration.givenname
+        self.sn = prjReq.registration.sn
         self.notes = prjReq.notes
     
 
@@ -88,7 +89,8 @@ class ApproveView(forms.ModalFormView):
         return {
             'regid' : self.get_object().regid,
             'username' : self.get_object().username,
-            'fullname' : self.get_object().fullname,
+            'givenname' : self.get_object().givenname,
+            'sn' : self.get_object().sn,
             'notes' : self.get_object().notes
         }
 

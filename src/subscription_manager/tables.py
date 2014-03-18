@@ -15,7 +15,8 @@ class ApproveLink(tables.LinkAction):
 
 class SubscriptionTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))
-    fullname = tables.Column('fullname', verbose_name=_('Full name'))
+    givenname = tables.Column('givenname', verbose_name=_('First name'))
+    sn = tables.Column('sn', verbose_name=_('Last name'))
     notes = tables.Column('notes', verbose_name=_('Notes'))
 
     class Meta:

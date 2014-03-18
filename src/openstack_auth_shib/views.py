@@ -45,7 +45,8 @@ def get_shib_attributes(request):
     
     userid = None
     email = None
-    fullname = 'Unknown'
+    givenname = 'Unknown'
+    sn = 'Unknown'
     
     if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-shib'):
     
@@ -57,13 +58,16 @@ def get_shib_attributes(request):
         else:
             raise keystone_exceptions.AuthorizationFailure(_('Cannot retrieve authentication domain'))
         
-        if 'cn' in request.META:
-            fullname = request.META['cn']
+        if 'givenName' in request.META:
+            givenname = request.META['givenName']
+        
+        if 'sn' in request.META:
+            sn = request.META['sn']
         
         if not userid:
             raise keystone_exceptions.AuthorizationFailure(_('Cannot retrieve authentication domain'))
         
-    return (userid, email, fullname)
+    return (userid, email, givenname, sn)
 
 def get_ostack_attributes(request):
     region = getattr(settings, 'OPENSTACK_KEYSTONE_URL').replace('v2.0','v3')
@@ -78,7 +82,7 @@ def login(request):
     username =''
     try:
     
-        username, usermail, fullname = get_shib_attributes(request)
+        username, usermail, givenname, sn = get_shib_attributes(request)
         domain, region = get_ostack_attributes(request)
         
         if username:
@@ -150,7 +154,7 @@ def switch_region(request, region_name, redirect_field_name=REDIRECT_FIELD_NAME)
 
 def register(request):
 
-    username, usermail, fullname = get_shib_attributes(request)
+    username, usermail, givenname, sn = get_shib_attributes(request)
     domain, region = get_ostack_attributes(request)
     
     if username:
@@ -160,7 +164,7 @@ def register(request):
             if reg_form.is_valid():
             
                 return processForm(request, reg_form, domain,
-                                   username, usermail, fullname)
+                                   username, usermail, givenname, sn)
                 
         else:
         
@@ -203,14 +207,15 @@ def register(request):
 
 
 def processForm(request, reg_form, domain, username=None, 
-                email=None, fullname='Unknown'):
+                email=None, givenname='Unknown', sn='Unknown'):
 
     try:
         pwd = None
         
         if not username:
             username = reg_form.cleaned_data['username']
-            fullname = reg_form.cleaned_data['fullname']
+            givenname = reg_form.cleaned_data['givenname']
+            sn = reg_form.cleaned_data['sn']
             pwd = reg_form.cleaned_data['pwd']
             email = reg_form.cleaned_data['email']
             ext_account = None
@@ -239,7 +244,8 @@ def processForm(request, reg_form, domain, username=None,
     
             queryArgs = {
                 'username' : username,
-                'fullname' : fullname,
+                'givenname' : givenname,
+                'sn' : sn,
                 'domain' : domain
             }
             registration = Registration(**queryArgs)

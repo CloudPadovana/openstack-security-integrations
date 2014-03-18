@@ -23,7 +23,8 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
     
     regid = forms.IntegerField(label=_("ID"), widget=HiddenInput)
     username = forms.CharField(label=_("User name"), widget=readonlyInput)
-    fullname = forms.CharField(label=_("Full name"), widget=readonlyInput)
+    givenname = forms.CharField(label=_("First name"), widget=readonlyInput)
+    sn = forms.CharField(label=_("Last name"), widget=readonlyInput)
     notes = forms.CharField(label=_("Notes"), widget=readonlyInput)
     checkaction = forms.CharField(widget=HiddenInput, initial='accept')
 

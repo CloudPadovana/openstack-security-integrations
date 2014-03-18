@@ -80,6 +80,14 @@ class ProcessRegForm(forms.SelfHandlingForm):
             if ditem.name == domain_name:
                 return ditem.id
         return None
+    
+    def _retrieve_email(self, request, uid):
+        try:
+            tmpusr = keystone_api.user_get(request, uid)
+            return [ tmpusr.email ]
+        except:
+            LOG.error("Cannot retrieve email", exc_info=True)
+        return []
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -208,7 +216,9 @@ class ProcessRegForm(forms.SelfHandlingForm):
                         
                     registration.userid = kuser.id
                     registration.save()
-                        
+                
+                else:
+                    email = self._retrieve_email(request, registration.userid)
                 
                 for prj_req in prjs_approved:
                     keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
@@ -267,11 +277,7 @@ class ProcessRegForm(forms.SelfHandlingForm):
                     
                 regReqList.delete()
                 
-                try:
-                    tmpusr = keystone_api.user_get(request, registration.userid)
-                    recipients = [ tmpusr.email ]
-                except:
-                    LOG.error("Cannot retrieve email", exc_info=True)
+                recipients = self._retrieve_email(request, registration.userid)
                     
             else:
             

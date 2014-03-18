@@ -18,7 +18,8 @@ class ProcessLink(tables.LinkAction):
 class RegisterTable(tables.DataTable):
     regid = tables.Column('regid', verbose_name=_('ID'))
     username = tables.Column('username', verbose_name=_('User name'))
-    fullname = tables.Column('fullname', verbose_name=_('Full name'))
+    givenname = tables.Column('givenname', verbose_name=_('First name'))
+    sn = tables.Column('sn', verbose_name=_('Last name'))
     domain = tables.Column('domain', verbose_name=_('Domain'))
 
     class Meta:

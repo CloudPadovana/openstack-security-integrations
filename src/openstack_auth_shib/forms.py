@@ -116,7 +116,8 @@ class BaseRegistForm(forms.Form):
 
 class UsrPwdRegistForm(forms.Form):
     username = forms.CharField(label=_('User name'))
-    fullname = forms.CharField(label=_('Full name'))
+    givenname = forms.CharField(label=_('First name'))
+    sn = forms.CharField(label=_('Last name'))
     pwd = forms.RegexField(
         label=_("Password"),
         widget=forms.PasswordInput(render_value=False),
