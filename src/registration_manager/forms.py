@@ -1,5 +1,7 @@
+import sys
 import logging
 import base64
+
 from Crypto import __version__ as crypto_version
 if crypto_version.startswith('2.0'):
     from Crypto.Util import randpool
@@ -7,7 +9,7 @@ else:
     from Crypto import Random
 
 from horizon import forms
-from horizon import exceptions
+from horizon import messages
 
 from django.db import transaction
 from django.forms.widgets import HiddenInput
@@ -98,7 +100,8 @@ class ProcessRegForm(forms.SelfHandlingForm):
             else:
                 self._handle_reject(request, data)
         except:
-            exceptions.handle(request, _("No tenants for first registration"))
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            messages.error(request, exc_value)
             return False
 
         return True
@@ -187,7 +190,7 @@ class ProcessRegForm(forms.SelfHandlingForm):
                         prjs_rejected.append(prj_req)
                         
                     else:
-                        raise exceptions.HorizonException(_("Cannot process request"))
+                        raise Exception(_("Cannot process request: pending projects"))
                     
                 for prj_req in prjs_to_create:
                     LOG.debug("Creating tenant %s" % prj_req.project.projectname)
@@ -203,10 +206,10 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 if not registration.userid:
                     
                     if not main_tenant:
-                        raise exceptions.HorizonException(_("No tenants for first registration"))
+                        raise Exception(_("No tenants for first registration"))
                         
                     if not email:
-                        raise exceptions.HorizonException( _("No email for first registration"))
+                        raise Exception( _("No email for first registration"))
                         
                     if not password:
                         password = self._generate_pwd()
