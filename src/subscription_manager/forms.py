@@ -1,6 +1,7 @@
 import logging
 
 from horizon import forms
+from horizon import exceptions
 
 from django.db import transaction
 from django.forms.widgets import HiddenInput
@@ -12,10 +13,11 @@ from openstack_auth_shib.models import PrjRequest
 
 from openstack_auth_shib.models import PSTATUS_APPR
 from openstack_auth_shib.models import PSTATUS_REJ
+from openstack_auth_shib.models import TENANTADMIN_ROLE
 
 from .notifications import notifyManagers, SubscrChecked
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _
 
 LOG = logging.getLogger(__name__)
 
@@ -33,33 +35,38 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
     @sensitive_variables('data')
     def handle(self, request, data):
     
-        #
-        # TODO check if the current user owns TENANTADMIN_ROLE (manual post)
-        #
+        try:
         
+            role_names = [ role['name'] for role in self.request.user.roles ]
+            if not TENANTADMIN_ROLE in role_names:
+                raise Exception(_('Permissions denied: cannot approve subscriptions'))
         
-        with transaction.commit_on_success():
+            with transaction.commit_on_success():
             
-            LOG.debug("Approving subscription for %s" % data['username'])
+                LOG.debug("Approving subscription for %s" % data['username'])
                 
-            curr_prjname = self.request.user.tenant_name
-            q_args = {
-                'registration__regid' : int(data['regid']),
-                'project__projectname' : curr_prjname
-            }
+                curr_prjname = self.request.user.tenant_name
+                q_args = {
+                    'registration__regid' : int(data['regid']),
+                    'project__projectname' : curr_prjname
+                }
                 
-            if data['checkaction'] == 'accept':
-                new_status = PSTATUS_APPR
-            else:
-                new_status = PSTATUS_REJ
+                if data['checkaction'] == 'accept':
+                    new_status = PSTATUS_APPR
+                else:
+                    new_status = PSTATUS_REJ
                     
-            PrjRequest.objects.filter(**q_args).update(flowstatus=new_status)
+                PrjRequest.objects.filter(**q_args).update(flowstatus=new_status)
             
-            notifyManagers(SubscrChecked(
-                username = data['username'],
-                project = curr_prjname
-            ))
+                notifyManagers(SubscrChecked(
+                    username = data['username'],
+                    project = curr_prjname
+                ))
         
+        except:
+            exceptions.handle(request)
+            return False
+            
         return True
 
 
