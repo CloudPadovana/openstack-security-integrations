@@ -7,6 +7,15 @@
 {% block modal-header %}{% trans "Approve Subscription" %}{% endblock %}
 
 {% block modal-body %}
+{% if subscr_err %}
+<div class="modal-body">
+    <h3>{% trans "Error" %}:</h3>
+    <p>{{ subscr_err }}</p>
+    <p>{% blocktrans with contactstr=admin_mail %}
+        Please, contact the site administrator at <a href="mailto:{{ contactstr }}">{{ contactstr }}</a>
+    {% endblocktrans %}</p>
+</div>
+{% else %}
 <div class="left">
     <fieldset>
     {% include "horizon/common/_form_fields.html" %}
@@ -16,11 +25,14 @@
     <h3>{% trans "Description" %}:</h3>
     <p>{% trans "From here you can approve user subscription." %}</p>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block modal-footer %}
+{% if not subscr_err %}
   <input class="btn btn-primary pull-right" type="submit" value="{% trans "Approve" %}" />
   <input class="btn btn-primary pull-right" type="button" onclick="rejSubmit()" value="{% trans "Reject" %}"/>
+{% endif %}
   <a href="{% url 'horizon:project:subscription_manager:index' %}" class="btn secondary cancel close">{% trans "Cancel" %}</a>
 
   <script type="text/javascript">

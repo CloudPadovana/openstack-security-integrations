@@ -1,10 +1,11 @@
 import logging
 
+from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.core.urlresolvers import reverse_lazy
 
 from horizon import tables
-from horizon import exceptions
+from horizon import messages
 from horizon import forms
 
 from openstack_auth_shib.models import Registration
@@ -51,7 +52,7 @@ class IndexView(tables.DataTableView):
                 reqList.append(PrjReqItem(p_entry))
             
         except Exception:
-            exceptions.handle(self.request, _('Unable to retrieve subscription list.'))
+            messages.error(self.request, _('Unable to retrieve subscription list.'))
 
         return reqList
 
@@ -75,17 +76,26 @@ class ApproveView(forms.ModalFormView):
                 
             except Exception:
                 LOG.error("Subscription error", exc_info=True)
-                redirect = reverse_lazy("horizon:project:subscription_manager:index")
-                exceptions.handle(self.request, _('Unable approve subscription.'),
-                                  redirect=redirect)
+                self._object = None
+
         return self._object
 
     def get_context_data(self, **kwargs):
         context = super(ApproveView, self).get_context_data(**kwargs)
-        context['regid'] = self.get_object().regid
+        context['regid'] = int(self.kwargs['regid'])
+
+        if not self.get_object():
+            context['subscr_err'] = _("Cannot retrieve user's data from database.")
+            man_emails = getattr(settings, 'MANAGERS', None)
+            context['admin_mail'] = man_emails[0] if man_emails else 'cloud@lists.pd.infn.it'
+            
         return context
 
     def get_initial(self):
+    
+        if not self.get_object():
+            return dict()
+            
         return {
             'regid' : self.get_object().regid,
             'username' : self.get_object().username,
