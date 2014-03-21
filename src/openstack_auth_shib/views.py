@@ -302,10 +302,19 @@ def processForm(request, reg_form, domain, username=None,
         
         notifyManagers(RegistrAvailable(username=username))
 
-        #
-        # TODO close shibboleth session after registration
-        #
-        return shortcuts.redirect('/dashboard')
+        if ext_account:
+            redir_url = '/Shibboleth.sso/Logout?return=https://%s:%s/dashboard' % \
+                (request.META['SERVER_NAME'], request.META['SERVER_PORT'])
+        else:
+            redir_url = '/dashboard'
+
+        tempDict = {
+            'error_header' : _("Registration done"),
+            'error_text' : _("Your registration has been submitted"),
+            'redirect_url' : redir_url,
+            'redirect_label' : _("Home")
+        }
+        return shortcuts.render(request, 'aai_error.html', tempDict)
     
     except IntegrityError:
         tempDict = {
