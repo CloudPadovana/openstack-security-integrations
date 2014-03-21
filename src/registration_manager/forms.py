@@ -34,6 +34,7 @@ from openstack_auth_shib.models import RSTATUS_PRECHKD
 from openstack_auth_shib.models import RSTATUS_CHECKED
 
 from openstack_auth_shib.models import TENANTADMIN_ROLE
+from openstack_auth_shib.models import OS_LNAME_LEN
 
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -52,10 +53,15 @@ class ProcessRegForm(forms.SelfHandlingForm):
         
         flowstatus = kwargs['initial']['processinglevel']
         if flowstatus == RSTATUS_PENDING:
-            self.fields['username'] = forms.CharField(label=_("User name"))
+            self.fields['username'] = forms.CharField(
+                label=_("User name"),
+                max_length=OS_LNAME_LEN
+            )
         else:
-            self.fields['username'] = forms.CharField(label=_("User name"),
-                widget = forms.TextInput(attrs={'readonly': 'readonly'}))
+            self.fields['username'] = forms.CharField(
+                label=_("User name"),
+                widget = forms.TextInput(attrs={'readonly': 'readonly'})
+            )
             
             if flowstatus == RSTATUS_CHECKED:
                 self.fields['role_id'] = forms.ChoiceField(label=_("Role"))

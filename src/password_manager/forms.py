@@ -13,15 +13,21 @@ from horizon.utils import validators
 
 from openstack_dashboard import api
 
+from openstack_auth_shib.models import PWD_LEN
 
 class PasswordForm(forms.SelfHandlingForm):
-    new_password = forms.RegexField(label=_("New password"),
-               widget=forms.PasswordInput(render_value=False),
-               regex=validators.password_validator(),
-               error_messages={'invalid':
-               validators.password_validator_msg()})
-    confirm_password = forms.CharField(label=_("Confirm new password"),
-                            widget=forms.PasswordInput(render_value=False))
+    new_password = forms.RegexField(
+        label=_("New password"),
+        max_length=PWD_LEN,
+        widget=forms.PasswordInput(render_value=False),
+        regex=validators.password_validator(),
+        error_messages={'invalid': validators.password_validator_msg()}
+    )
+    confirm_password = forms.CharField(
+        label=_("Confirm new password"),
+        max_length=PWD_LEN,
+        widget=forms.PasswordInput(render_value=False)
+    )
 
     def clean(self):
         data = super(forms.Form, self).clean()

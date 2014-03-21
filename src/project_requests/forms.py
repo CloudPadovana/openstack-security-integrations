@@ -10,8 +10,8 @@ from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
 
-from openstack_auth_shib.models import PRJ_PUBLIC
-from openstack_auth_shib.models import PRJ_PRIVATE
+from openstack_auth_shib.models import PRJ_PUBLIC,PRJ_PRIVATE
+from openstack_auth_shib.models import OS_SNAME_LEN 
 
 from django.utils.translation import ugettext_lazy as _
 
@@ -33,6 +33,7 @@ class ProjectRequestForm(forms.SelfHandlingForm):
     
     newprj = forms.CharField(
         label=_('Personal project'),
+        max_length=OS_SNAME_LEN,
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'switched',

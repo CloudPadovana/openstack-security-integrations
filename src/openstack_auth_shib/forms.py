@@ -7,14 +7,10 @@ from django.forms import ValidationError
 from django.utils.translation import ugettext as _
 
 from .models import Project
-from .models import PRJ_PRIVATE
-from .models import PRJ_GUEST
+from .models import PRJ_PRIVATE, PRJ_GUEST
+from .models import OS_LNAME_LEN, OS_SNAME_LEN, PWD_LEN, EMAIL_LEN
 
 LOG = logging.getLogger(__name__)
-
-#
-# TODO check form field length
-#
 
 class BaseRegistForm(forms.Form):
 
@@ -29,6 +25,7 @@ class BaseRegistForm(forms.Form):
     
     newprj = forms.CharField(
         label=_('Personal project'),
+        max_length=OS_SNAME_LEN,
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'switched',
@@ -124,18 +121,32 @@ class BaseRegistForm(forms.Form):
 
 
 class UsrPwdRegistForm(forms.Form):
-    username = forms.CharField(label=_('User name'))
-    givenname = forms.CharField(label=_('First name'))
-    sn = forms.CharField(label=_('Last name'))
+    username = forms.CharField(
+        label=_('User name'),
+        max_length=OS_LNAME_LEN
+    )
+    givenname = forms.CharField(
+        label=_('First name'),
+        max_length=OS_LNAME_LEN
+    )
+    sn = forms.CharField(
+        label=_('Last name'),
+        max_length=OS_LNAME_LEN
+    )
     pwd = forms.RegexField(
         label=_("Password"),
+        max_length=PWD_LEN,
         widget=forms.PasswordInput(render_value=False),
         regex=validators.password_validator(),
         error_messages={'invalid': validators.password_validator_msg()})
     repwd = forms.CharField(
         label=_("Confirm Password"),
+        max_length=PWD_LEN,
         widget=forms.PasswordInput(render_value=False))
-    email = forms.EmailField(label=_('Email Address'))
+    email = forms.EmailField(
+        label=_('Email Address'),
+        max_length=EMAIL_LEN
+    )
     
 
     def clean(self):
