@@ -6,6 +6,7 @@ from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext as _
 
 from horizon import tables
+from horizon import messages
 
 from openstack_dashboard.dashboards.admin.projects.tables import TenantsTable
 
@@ -60,7 +61,7 @@ class ToggleVisibility(tables.Action):
         
             prj_list = Project.objects.filter(projectid=object_id)
             if len(prj_list):
-                prj_status = prj_list[0].status
+                prj_status = int(prj_list[0].status)
                 if prj_status is PRJ_PRIVATE:
                     prj_list[0].status = PRJ_PUBLIC
                     prj_list[0].save()
@@ -68,34 +69,8 @@ class ToggleVisibility(tables.Action):
                     prj_list[0].status = PRJ_PRIVATE
                     prj_list[0].save()
                 elif prj_status is PRJ_GUEST:
-                    tempDict = {
-                        'error_header' : _("Authentication error"),
-                        'error_text' : _("Cannot toggle guest project"),
-                        'redirect_url' : reverse_lazy('horizon:admin:project_manager:index'),
-                        'redirect_label' : _("Projects")
-                    }
-                    return shortcuts.render(request, 'aai_error.html', tempDict)
+                    messages.error(request, _("Cannot toggle guest project"))
             
-        return shortcuts.redirect(reverse_lazy('horizon:admin:project_manager:index'))
-
-class SetGuestProject(tables.Action):
-    name = "set_guest_prj"
-    verbose_name = _("Set as guest")
-    
-    def single(self, data_table, request, object_id):
-
-        with transaction.commit_on_success():
-            
-            prj_list = Project.objects.filter(status=PRJ_GUEST)
-            if len(prj_list):
-                prj_list[0].status = PRJ_PUBLIC
-                prj_list[0].save()
-            
-            prj_list = Project.objects.filter(projectid=object_id)
-            if len(prj_list):
-                prj_list[0].status = PRJ_GUEST
-                prj_list[0].save()
-
         return shortcuts.redirect(reverse_lazy('horizon:admin:project_manager:index'))
 
 def get_prj_status(data):
@@ -113,12 +88,9 @@ class ProjectsTable(TenantsTable):
         verbose_name = _("Projects")
         row_actions = (ViewMembersLink, ViewGroupsLink, UpdateProject,
                        UsageLink, ModifyQuotas, ToggleVisibility,
-                       SetGuestProject, DeleteProjectAction)
+                       DeleteProjectAction)
         table_actions = (TenantFilterAction, CreateProject,
                          DeleteProjectAction)
         pagination_param = "tenant_marker"
 
-#
-# TODO try to change the object_id form project_id to project_name
-#      query on primary key (projectname)
-#
+
