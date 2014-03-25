@@ -82,6 +82,11 @@ preq_templ_list = [
     'src/templates/project_requests/_prj_request.html'
 ]
 
+logo_list = [
+    'src/templates/logoInfnAAI.png',
+    'src/templates/logoGoogle.png'
+]
+
 module_list = [
     'keystone_skey_auth',
     'openstack_auth_shib',
@@ -111,7 +116,7 @@ setup(
                   (subscr_panel_dir, subscr_templ_list),
                   (preq_panel_dir, preq_templ_list),
                   (css_dir, ['src/templates/aai_infn_integrations.less']),
-                  (img_dir, ['src/templates/logoInfnAAI.png'])
+                  (img_dir, logo_list)
                  ],
       cmdclass={'bdist_rpm': bdist_rpm}
      )

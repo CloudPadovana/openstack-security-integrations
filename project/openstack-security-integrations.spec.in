@@ -80,7 +80,7 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/templates/*.html
 /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/*.html
 /usr/share/openstack-dashboard/static/dashboard/less/aai_infn_integrations.less
-/usr/share/openstack-dashboard/static/dashboard/img/logoInfnAAI.png
+/usr/share/openstack-dashboard/static/dashboard/img/*.png
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/registration_manager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/registration_manager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/registration_manager/*.pyo
