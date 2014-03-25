@@ -36,61 +36,65 @@ LOG = logging.getLogger(__name__)
 
 please_msg = _('please, contact the cloud manager')
 
-# TODO
-# verify whether it is possible to use just the parent views
-# together with the extended backend
-# issue: shibboleth redirect converts POST in GET
-#        input parameters are lost
-
-def get_shib_attributes(request):
-    
-    userid = None
-    email = None
-    givenname = 'Unknown'
-    sn = 'Unknown'
-    
-    if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-shib'):
-    
-        # the remote user correspond to the ePPN
-        userid = request.META['REMOTE_USER']
-    
-        if 'mail' in request.META:
-            email = request.META['mail']
-        else:
-            raise keystone_exceptions.AuthorizationFailure(_('Cannot retrieve authentication domain'))
-        
-        if 'givenName' in request.META:
-            givenname = request.META['givenName']
-        
-        if 'sn' in request.META:
-            sn = request.META['sn']
-        
-        if not userid:
-            raise keystone_exceptions.AuthorizationFailure(_('Cannot retrieve authentication domain'))
-        
-    return (userid, email, givenname, sn)
-
 def get_ostack_attributes(request):
     region = getattr(settings, 'OPENSTACK_KEYSTONE_URL').replace('v2.0','v3')
     domain = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN', 'Default')
     return (domain, region)
+
+class IdPAttributes():
+
+    def __init__(self, request):
+        
+        self.ok = False
+        
+        if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-shib'):
+            
+            self.ok = True
+            self.root_url = '/dashboard-shib'
+            
+            # the remote user correspond to the ePPN
+            self.username = request.META['REMOTE_USER']
+    
+            if 'mail' in request.META:
+                self.email = request.META['mail']
+            else:
+                self.ok = False
+                raise Exception('Cannot retrieve mail address for %s' % self.username)
+        
+            self.givenname = request.META.get('givenName', 'Unknown')
+            self.sn = request.META.get('sn', 'Unknown')
+
+        if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-google'):
+        
+            self.ok = True
+            self.root_url = '/dashboard-google'
+            self.username = request.META['REMOTE_USER']
+            self.email = request.META['REMOTE_USER']
+            #
+            # TODO investigate OpenID AX
+            #
+            self.givenname = 'Unknown'
+            self.sn = 'Unknown'
+
+    def __nonzero__(self):
+        return self.ok
+
 
 @sensitive_post_parameters()
 @csrf_protect
 @never_cache
 def login(request):
 
-    username =''
     try:
     
-        username, usermail, givenname, sn = get_shib_attributes(request)
+        attributes = IdPAttributes(request)
         domain, region = get_ostack_attributes(request)
         
-        if username:
+        if attributes:
         
-            map_entry = UserMapping.objects.get(globaluser=username)
+            map_entry = UserMapping.objects.get(globaluser=attributes.username)
             localuser = map_entry.registration.username
-            LOG.debug("Mapped user %s on %s" % (username, localuser))
+            LOG.debug("Mapped user %s on %s" % (attributes.username, localuser))
 
             user = authenticate(request=request,
                                 username=localuser,
@@ -109,10 +113,10 @@ def login(request):
                 region_name = regions.get(region)
                 request.session['region_endpoint'] = region
                 request.session['region_name'] = region_name
-            return shortcuts.redirect( '/dashboard-shib/project' )
+            return shortcuts.redirect( '%s/project' % attributes.root_url)
             
     except (UserMapping.DoesNotExist, keystone_exceptions.NotFound):
-        LOG.debug("User %s authenticated but not authorized" % username)
+        LOG.debug("User %s authenticated but not authorized" % attributes.username)
         return register(request)
     except Exception as exc:
         LOG.error(exc.message, exc_info=True)
@@ -128,6 +132,9 @@ def login(request):
 
 
 def logout(request):
+    #
+    # TODO logout from google
+    #
     if request.path.startswith('/dashboard-shib'):
         msg = 'Logging out user "%(username)s".' % {'username': request.user.username}
         LOG.info(msg)
@@ -155,21 +162,20 @@ def switch_region(request, region_name, redirect_field_name=REDIRECT_FIELD_NAME)
 
 def register(request):
 
-    username, usermail, givenname, sn = get_shib_attributes(request)
+    attributes = IdPAttributes(request)
     domain, region = get_ostack_attributes(request)
     
-    if username:
+    if attributes:
 
         if request.method == 'POST':
             reg_form = BaseRegistForm(request.POST)
             if reg_form.is_valid():
             
-                return processForm(request, reg_form, domain,
-                                   username, usermail, givenname, sn)
+                return processForm(request, reg_form, domain, attributes)
                 
         else:
         
-            num_req = RegRequest.objects.filter(externalid=username).count()
+            num_req = RegRequest.objects.filter(externalid=attributes.username).count()
             if num_req:
                 tempDict = {
                     'error_header' : _("Registration error"),
@@ -182,8 +188,8 @@ def register(request):
             reg_form = BaseRegistForm()
     
         tempDict = { 'form': reg_form,
-                     'userid' : username,
-                     'form_action_url' : '/dashboard-shib/auth/register/' }
+                     'userid' : attributes.username,
+                     'form_action_url' : '%s/auth/register/' % attributes.root_url }
         return shortcuts.render(request, 'registration.html', tempDict)
         
     else:
@@ -207,13 +213,12 @@ def register(request):
 
 
 
-def processForm(request, reg_form, domain, username=None, 
-                email=None, givenname='Unknown', sn='Unknown'):
+def processForm(request, reg_form, domain, attributes=None):
 
     try:
         pwd = None
         
-        if not username:
+        if not attributes:
             username = reg_form.cleaned_data['username']
             givenname = reg_form.cleaned_data['givenname']
             sn = reg_form.cleaned_data['sn']
@@ -221,7 +226,11 @@ def processForm(request, reg_form, domain, username=None,
             email = reg_form.cleaned_data['email']
             ext_account = None
         else:
-            ext_account = username
+            username = attributes.username
+            givenname = attributes.givenname
+            sn = attributes.sn
+            email = attributes.email
+            ext_account = attributes.username
             
         notes = reg_form.cleaned_data['notes']
         
