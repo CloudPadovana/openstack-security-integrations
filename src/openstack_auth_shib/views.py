@@ -69,12 +69,9 @@ class IdPAttributes():
             self.ok = True
             self.root_url = '/dashboard-google'
             self.username = request.META['REMOTE_USER']
-            self.email = request.META['REMOTE_USER']
-            #
-            # TODO investigate OpenID AX
-            #
-            self.givenname = 'Unknown'
-            self.sn = 'Unknown'
+            self.email = request.GET.get('openid.ext1.value.email', self.username)
+            self.givenname = request.GET.get('openid.ext1.value.givenName', 'Unknown')
+            self.sn = request.GET.get('openid.ext1.value.sn', 'Unknown')
 
     def __nonzero__(self):
         return self.ok
@@ -117,7 +114,7 @@ def login(request):
             
     except (UserMapping.DoesNotExist, keystone_exceptions.NotFound):
         LOG.debug("User %s authenticated but not authorized" % attributes.username)
-        return register(request)
+        return _register(request, attributes)
     except Exception as exc:
         LOG.error(exc.message, exc_info=True)
         tempDict = {
@@ -132,10 +129,9 @@ def login(request):
 
 
 def logout(request):
-    #
-    # TODO logout from google
-    #
+
     if request.path.startswith('/dashboard-shib'):
+    
         msg = 'Logging out user "%(username)s".' % {'username': request.user.username}
         LOG.info(msg)
         if 'token_list' in request.session:
@@ -148,8 +144,14 @@ def logout(request):
         ret_URL = "https://%s:%s/dashboard" % (request.META['SERVER_NAME'],
                                                request.META['SERVER_PORT'])
         return shortcuts.redirect('/Shibboleth.sso/Logout?return=%s' % ret_URL)
-    else:
-        return basic_logout(request)
+        
+    elif request.path.startswith('/dashboard-google'):
+        
+        response = basic_logout(request)
+        response.delete_cookie('open_id_session_id', path='/dashboard-google')
+        return response
+    
+    return basic_logout(request)
 
 
 @login_required
@@ -160,40 +162,48 @@ def switch_region(request, region_name, redirect_field_name=REDIRECT_FIELD_NAME)
     return basic_switch_region(request, region_name, redirect_field_name)
 
 
+def _register(request, attributes):
+
+    domain, region = get_ostack_attributes(request)
+    
+    if request.method == 'POST':
+        reg_form = BaseRegistForm(request.POST)
+        if reg_form.is_valid():
+            
+            return processForm(request, reg_form, domain, attributes)
+                
+    else:
+        
+        num_req = RegRequest.objects.filter(externalid=attributes.username).count()
+        if num_req:
+            tempDict = {
+                'error_header' : _("Registration error"),
+                'error_text' : _("Request has already been sent"),
+                'redirect_url' : '/dashboard',
+                'redirect_label' : _("Home")
+            }
+            return shortcuts.render(request, 'aai_error.html', tempDict)
+
+        reg_form = BaseRegistForm()
+    
+    tempDict = { 'form': reg_form,
+                 'userid' : attributes.username,
+                 'form_action_url' : '%s/auth/register/' % attributes.root_url }
+    return shortcuts.render(request, 'registration.html', tempDict)
+
+
 def register(request):
 
     attributes = IdPAttributes(request)
-    domain, region = get_ostack_attributes(request)
     
     if attributes:
 
-        if request.method == 'POST':
-            reg_form = BaseRegistForm(request.POST)
-            if reg_form.is_valid():
-            
-                return processForm(request, reg_form, domain, attributes)
-                
-        else:
-        
-            num_req = RegRequest.objects.filter(externalid=attributes.username).count()
-            if num_req:
-                tempDict = {
-                    'error_header' : _("Registration error"),
-                    'error_text' : _("Request has already been sent"),
-                    'redirect_url' : '/dashboard',
-                    'redirect_label' : _("Home")
-                }
-                return shortcuts.render(request, 'aai_error.html', tempDict)
-
-            reg_form = BaseRegistForm()
-    
-        tempDict = { 'form': reg_form,
-                     'userid' : attributes.username,
-                     'form_action_url' : '%s/auth/register/' % attributes.root_url }
-        return shortcuts.render(request, 'registration.html', tempDict)
+        return _register(request, attributes)
         
     else:
 
+        domain, region = get_ostack_attributes(request)
+        
         if request.method == 'POST':
             reg_form = FullRegistForm(request.POST)
             if reg_form.is_valid():
@@ -206,11 +216,6 @@ def register(request):
         tempDict = { 'form': reg_form,
                      'form_action_url' : '/dashboard/auth/register/' }
         return shortcuts.render(request, 'registration.html', tempDict)
-
-
-
-
-
 
 
 def processForm(request, reg_form, domain, attributes=None):
