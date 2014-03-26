@@ -29,7 +29,7 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
     username = forms.CharField(label=_("User name"), widget=readonlyInput)
     givenname = forms.CharField(label=_("First name"), widget=readonlyInput)
     sn = forms.CharField(label=_("Last name"), widget=readonlyInput)
-    notes = forms.CharField(label=_("Notes"), widget=readonlyInput)
+    notes = forms.CharField(label=_("Notes"), required=False, widget=readonlyInput)
     checkaction = forms.CharField(widget=HiddenInput, initial='accept')
 
     @sensitive_variables('data')
