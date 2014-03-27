@@ -16,11 +16,13 @@
         <img align="middle" height="60px" width="80x" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
         <p>{% trans "Sign in" %}<p>
       </button>
+      {% if HORIZON_CONFIG.google_enabled %}
       <button type="button" 
               onclick="location.href='/dashboard-google/auth/login/';">
         <img align="middle" height="60px" width="80x" alt="Login Google" src="/static/dashboard/img/logoGoogle.png">
         <p>{% trans "Sign in" %}<p>
       </button>
+      {% endif %}
     </div>
     <hr />
   
