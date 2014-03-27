@@ -3,6 +3,8 @@ import logging
 from django.db import transaction
 from django.utils.translation import ugettext as _
 
+from horizon import tables
+
 from openstack_dashboard.dashboards.admin.users.tables import UsersTable as BaseUsersTable
 from openstack_dashboard.dashboards.admin.users.tables import EditUserLink as BaseEditUserLink
 from openstack_dashboard.dashboards.admin.users.tables import ToggleEnabled
@@ -28,6 +30,8 @@ class DeleteUsersAction(BaseDeleteUsersAction):
 
 
 class UsersTable(BaseUsersTable):
+
+    expiration = tables.Column('expiration', verbose_name=_('Expiration date'))
 
     class Meta:
         name = "user_table"

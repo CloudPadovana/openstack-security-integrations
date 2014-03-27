@@ -1,6 +1,7 @@
 import sys
 import logging
 import base64
+import datetime
 
 from Crypto import __version__ as crypto_version
 if crypto_version.startswith('2.0'):
@@ -73,6 +74,14 @@ class ProcessRegForm(forms.SelfHandlingForm):
                     role_list.append((role.id, role.name))
             
                 self.fields['role_id'].choices = role_list
+                
+                #
+                # TODO missing check for format
+                #
+                self.fields['expiration'] = forms.DateTimeField(
+                    label=_("Expiration date"),
+                    initial=datetime.datetime.now() + datetime.timedelta(365)
+                )
 
     def _generate_pwd(self):
         if crypto_version.startswith('2.0'):
@@ -228,8 +237,9 @@ class ProcessRegForm(forms.SelfHandlingForm):
                                                     enabled=True, domain=domain_id)
                         
                     registration.userid = kuser.id
+                    registration.expdate = data['expiration']
                     registration.save()
-                
+                    
                 else:
                     email = self._retrieve_email(request, registration.userid)
                 

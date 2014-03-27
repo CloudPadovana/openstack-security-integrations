@@ -30,29 +30,46 @@ PWD_LEN = 64
 # Persistent data
 class Registration(models.Model):
     regid = models.AutoField(primary_key=True)
-    userid = models.CharField(max_length=OS_ID_LEN, null=True)      #local user id
-    username = models.CharField(max_length=OS_LNAME_LEN, unique=True)  #local user name
+    userid = models.CharField(
+        max_length=OS_ID_LEN,
+        db_index=True,
+        null=True
+    )                                   #local user id
+    username = models.CharField(
+        max_length=OS_LNAME_LEN,
+        unique=True
+    )                                   #local user name
     givenname = models.CharField(max_length=OS_LNAME_LEN)
     sn = models.CharField(max_length=OS_LNAME_LEN)
     organization = models.CharField(max_length=OS_LNAME_LEN)
     phone = models.CharField(max_length=OS_SNAME_LEN)
     domain = models.CharField(max_length=OS_SNAME_LEN)
+    expdate = models.DateTimeField(
+        db_index=True,
+        null=True
+    )
 
 class Project(models.Model):
-    projectname = models.CharField(max_length=OS_SNAME_LEN, primary_key=True)
-    projectid = models.CharField(max_length=OS_ID_LEN, null=True)
+    projectname = models.CharField(
+        max_length=OS_SNAME_LEN,
+        primary_key=True
+    )
+    projectid = models.CharField(
+        max_length=OS_ID_LEN,
+        null=True
+    )
     description = models.TextField()
     status = models.IntegerField()
 
 class UserMapping(models.Model):
-    globaluser = models.CharField(max_length=EXT_ACCT_LEN, primary_key=True)
+    globaluser = models.CharField(
+        max_length=EXT_ACCT_LEN,
+        primary_key=True
+    )
     registration = models.ForeignKey(Registration,
                                     db_index=False,
                                     on_delete=models.CASCADE)
 
-class Expiration(models.Model):
-    registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
-    date = models.DateTimeField(db_index=True)
 
 #Temporary data
 class RegRequest(models.Model):
