@@ -237,6 +237,9 @@ def processForm(request, reg_form, domain, attributes=None):
             email = attributes.email
             ext_account = attributes.username
             
+        organization = reg_form.cleaned_data['organization']
+        phone = reg_form.cleaned_data['phone']
+        contactper = reg_form.cleaned_data['contactper']
         notes = reg_form.cleaned_data['notes']
         
         prj_action = reg_form.cleaned_data['prjaction']
@@ -261,6 +264,8 @@ def processForm(request, reg_form, domain, attributes=None):
                 'username' : username,
                 'givenname' : givenname,
                 'sn' : sn,
+                'organization' : organization,
+                'phone' : phone,
                 'domain' : domain
             }
             registration = Registration(**queryArgs)
@@ -270,6 +275,7 @@ def processForm(request, reg_form, domain, attributes=None):
                 'registration' : registration,
                 'password' : pwd,
                 'email' : email,
+                'contactper' : contactper,
                 'notes' : notes
             }
             if ext_account:

@@ -63,7 +63,21 @@ class BaseRegistForm(forms.Form):
         }),
     )
 
-
+    organization = forms.CharField(
+        label=_('Organization'),
+        required=True
+    )
+    
+    phone = forms.CharField(
+        label=_('Phone number'),
+        required=True
+    )
+    
+    contactper = forms.CharField(
+        label=_('Contact person'),
+        required=False
+    )
+    
     notes = forms.CharField(
         label=_('Notes'),
         required=False,

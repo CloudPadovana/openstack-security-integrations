@@ -34,6 +34,8 @@ class Registration(models.Model):
     username = models.CharField(max_length=OS_LNAME_LEN, unique=True)  #local user name
     givenname = models.CharField(max_length=OS_LNAME_LEN)
     sn = models.CharField(max_length=OS_LNAME_LEN)
+    organization = models.CharField(max_length=OS_LNAME_LEN)
+    phone = models.CharField(max_length=OS_SNAME_LEN)
     domain = models.CharField(max_length=OS_SNAME_LEN)
 
 class Project(models.Model):
@@ -48,6 +50,10 @@ class UserMapping(models.Model):
                                     db_index=False,
                                     on_delete=models.CASCADE)
 
+class Expiration(models.Model):
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
+    date = models.DateTimeField(db_index=True)
+
 #Temporary data
 class RegRequest(models.Model):
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
@@ -55,6 +61,7 @@ class RegRequest(models.Model):
     externalid = models.CharField(max_length=EXT_ACCT_LEN, null=True)
     email = models.EmailField(max_length=EMAIL_LEN)
     flowstatus = models.IntegerField(default=RSTATUS_PENDING)
+    contactper = models.CharField(max_length=OS_LNAME_LEN, null=True)
     notes = models.TextField()
 
 class PrjRequest(models.Model):
