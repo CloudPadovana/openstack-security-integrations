@@ -81,34 +81,15 @@ class RenewView(forms.ModalFormView):
     template_name = 'admin/user_manager/renewexp.html'
     success_url = reverse_lazy('horizon:admin:user_manager:index')
 
-
-    def get_object(self):
-        if not hasattr(self, "_object"):
-            try:
-
-                self._object = Registration.objects.filter(
-                    userid=self.kwargs['user_id']
-                )[0]
-                                
-            except Exception:
-                LOG.error("Renewal error", exc_info=True)
-                self._object = None
-
-        return self._object
-        
     def get_context_data(self, **kwargs):
         context = super(RenewView, self).get_context_data(**kwargs)
-        context['userid'] = self.get_object().userid
+        context['userid'] = self.kwargs['user_id']
         return context
-
 
     def get_initial(self):
     
-        if not self.get_object():
-            return dict()
-            
         return {
-            'userid' : self.get_object().userid,
+            'userid' : self.kwargs['user_id'],
             'expiration' : datetime.datetime.now() + datetime.timedelta(365)
         }
 

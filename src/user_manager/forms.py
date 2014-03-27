@@ -28,4 +28,4 @@ class RenewExpForm(forms.SelfHandlingForm):
             reg_list = Registration.objects.filter(userid=data['userid'])
             reg_list.update(expdate=data['expiration'])
             
-            
+        return True
