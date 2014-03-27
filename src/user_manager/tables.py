@@ -28,6 +28,11 @@ class DeleteUsersAction(BaseDeleteUsersAction):
                 tmp_list[0].delete()
             super(DeleteUsersAction, self).delete(request, obj_id)
 
+class RenewLink(tables.LinkAction):
+    name = "renewexp"
+    verbose_name = _("Renew Expiration")
+    url = "horizon:admin:user_manager:renew"
+    classes = ("ajax-modal", "btn-edit")
 
 class UsersTable(BaseUsersTable):
 
@@ -36,6 +41,11 @@ class UsersTable(BaseUsersTable):
     class Meta:
         name = "user_table"
         verbose_name = _("Users")
-        row_actions = (EditUserLink, ToggleEnabled, DeleteUsersAction)
+        row_actions = (
+            EditUserLink,
+            ToggleEnabled,
+            RenewLink,
+            DeleteUsersAction
+        )
         table_actions = (UserFilterAction, DeleteUsersAction)
 
