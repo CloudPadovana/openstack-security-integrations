@@ -29,7 +29,7 @@ from horizon import forms
 
 from .models import Registration, Project, RegRequest, PrjRequest, UserMapping
 from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST, PSTATUS_APPR
-from .forms import BaseRegistForm, FullRegistForm
+from .forms import MixRegistForm
 from .notifications import notifyManagers, RegistrAvailable
 
 LOG = logging.getLogger(__name__)
@@ -167,7 +167,10 @@ def _register(request, attributes):
     domain, region = get_ostack_attributes(request)
     
     if request.method == 'POST':
-        reg_form = BaseRegistForm(request.POST)
+        reg_form = MixRegistForm(request.POST, initial={
+            'givenname' : attributes.givenname,
+            'sn' : attributes.sn
+        })
         if reg_form.is_valid():
             
             return processForm(request, reg_form, domain, attributes)
@@ -184,7 +187,10 @@ def _register(request, attributes):
             }
             return shortcuts.render(request, 'aai_error.html', tempDict)
 
-        reg_form = BaseRegistForm()
+        reg_form = MixRegistForm(initial={
+            'givenname' : attributes.givenname,
+            'sn' : attributes.sn
+        })
     
     tempDict = { 'form': reg_form,
                  'userid' : attributes.username,
@@ -205,13 +211,13 @@ def register(request):
         domain, region = get_ostack_attributes(request)
         
         if request.method == 'POST':
-            reg_form = FullRegistForm(request.POST)
+            reg_form = MixRegistForm(request.POST, initial={'ftype' : 'full'})
             if reg_form.is_valid():
             
                 return processForm(request, reg_form, domain)
                 
         else:
-            reg_form = FullRegistForm()
+            reg_form = MixRegistForm(initial={'ftype' : 'full'})
     
         tempDict = { 'form': reg_form,
                      'form_action_url' : '/dashboard/auth/register/' }
@@ -232,8 +238,10 @@ def processForm(request, reg_form, domain, attributes=None):
             ext_account = None
         else:
             username = attributes.username
-            givenname = attributes.givenname
-            sn = attributes.sn
+            #givenname = attributes.givenname
+            #sn = attributes.sn
+            givenname = reg_form.cleaned_data['givenname']
+            sn = reg_form.cleaned_data['sn']
             email = attributes.email
             ext_account = attributes.username
             

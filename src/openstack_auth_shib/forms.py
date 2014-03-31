@@ -12,86 +12,131 @@ from .models import OS_LNAME_LEN, OS_SNAME_LEN, PWD_LEN, EMAIL_LEN
 
 LOG = logging.getLogger(__name__)
 
-class BaseRegistForm(forms.Form):
+class MixRegistForm(forms.Form):
 
-    prjaction = forms.ChoiceField(
-        label=_('Project action'),
-        #choices = <see later>
-        widget=forms.Select(attrs={
-            'class': 'switchable',
-            'data-slug': 'actsource'
-        })
-    )
-    
-    newprj = forms.CharField(
-        label=_('Personal project'),
-        max_length=OS_SNAME_LEN,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'switched',
-            'data-switch-on': 'actsource',
-            'data-actsource-newprj': _('Project name')
-        })
-    )
-    prjdescr = forms.CharField(
-        label=_("Project description"),
-        required=False,
-        widget=forms.widgets.Textarea(attrs={
-            'class': 'switched',
-            'data-switch-on': 'actsource',
-            'data-actsource-newprj': _('Project description')
-        })
-    )
-    prjpriv = forms.BooleanField(
-        label=_("Private project"),
-        required=False,
-        initial=False,
-        widget=forms.widgets.CheckboxInput(attrs={
-            'class': 'switched',
-            'data-switch-on': 'actsource',
-            'data-actsource-newprj': _('Private project')
-        })
-    )
-    
-    selprj = forms.MultipleChoiceField(
-        label=_('Available projects'),
-        required=False,
-        widget=forms.SelectMultiple(attrs={
-            'class': 'switched',
-            'data-switch-on': 'actsource',
-            'data-actsource-selprj': _('Select existing project')
-        }),
-    )
-
-    organization = forms.CharField(
-        label=_('Organization'),
-        required=True
-    )
-    
-    phone = forms.CharField(
-        label=_('Phone number'),
-        required=True
-    )
-    
-    contactper = forms.CharField(
-        label=_('Contact person'),
-        required=False
-    )
-    
-    notes = forms.CharField(
-        label=_('Notes'),
-        required=False,
-        widget=forms.widgets.Textarea()
-    )
-    
-    aupok = forms.BooleanField(
-        label=_('I have read and accepted the Cloud Padovana AUP'),
-        initial=False
-    )
-    
     def __init__(self, *args, **kwargs):
-        super(BaseRegistForm, self).__init__(*args, **kwargs)
+        super(MixRegistForm, self).__init__(*args, **kwargs)
         
+        initial = kwargs['initial'] if 'initial' in kwargs else dict()
+        self.isFullForm = 'ftype' in initial and initial['ftype'] == 'full'
+        
+        if self.isFullForm:
+            self.fields['username'] = forms.CharField(
+                label=_('User name'),
+                max_length=OS_LNAME_LEN
+            )
+            
+        if self.isFullForm or 'givenname' in initial:
+            self.fields['givenname'] = forms.CharField(
+                label=_('First name'),
+                max_length=OS_LNAME_LEN,
+                widget=forms.HiddenInput if 'givenname' in initial else forms.TextInput
+            )
+            
+        if self.isFullForm or 'sn' in initial:
+            self.fields['sn'] = forms.CharField(
+                label=_('Last name'),
+                max_length=OS_LNAME_LEN,
+                widget=forms.HiddenInput if 'sn' in initial else forms.TextInput
+            )
+            
+        if self.isFullForm:
+            self.fields['pwd'] = forms.RegexField(
+                label=_("Password"),
+                max_length=PWD_LEN,
+                widget=forms.PasswordInput(render_value=False),
+                regex=validators.password_validator(),
+                error_messages={'invalid': validators.password_validator_msg()}
+            )
+            
+            self.fields['repwd'] = forms.CharField(
+                label=_("Confirm Password"),
+                max_length=PWD_LEN,
+                widget=forms.PasswordInput(render_value=False)
+            )
+            
+            self.fields['email'] = forms.EmailField(
+                label=_('Email Address'),
+                max_length=EMAIL_LEN
+            )
+        
+        self.fields['prjaction'] = forms.ChoiceField(
+            label=_('Project action'),
+            #choices = <see later>
+            widget=forms.Select(attrs={
+                'class': 'switchable',
+                'data-slug': 'actsource'
+            })
+        )
+    
+        self.fields['newprj'] = forms.CharField(
+            label=_('Personal project'),
+            max_length=OS_SNAME_LEN,
+            required=False,
+            widget=forms.TextInput(attrs={
+                'class': 'switched',
+                'data-switch-on': 'actsource',
+                'data-actsource-newprj': _('Project name')
+            })
+        )
+        
+        self.fields['prjdescr'] = forms.CharField(
+            label=_("Project description"),
+            required=False,
+            widget=forms.widgets.Textarea(attrs={
+                'class': 'switched',
+                'data-switch-on': 'actsource',
+                'data-actsource-newprj': _('Project description')
+            })
+        )
+        
+        self.fields['prjpriv'] = forms.BooleanField(
+            label=_("Private project"),
+            required=False,
+            initial=False,
+            widget=forms.widgets.CheckboxInput(attrs={
+                'class': 'switched',
+                'data-switch-on': 'actsource',
+                'data-actsource-newprj': _('Private project')
+            })
+        )
+    
+        self.fields['selprj'] = forms.MultipleChoiceField(
+            label=_('Available projects'),
+            required=False,
+            widget=forms.SelectMultiple(attrs={
+                'class': 'switched',
+                'data-switch-on': 'actsource',
+                'data-actsource-selprj': _('Select existing project')
+            }),
+        )
+
+        self.fields['organization'] = forms.CharField(
+            label=_('Organization'),
+            required=True
+        )
+    
+        self.fields['phone'] = forms.CharField(
+            label=_('Phone number'),
+            required=True
+        )
+    
+        self.fields['contactper'] = forms.CharField(
+            label=_('Contact person'),
+            required=False
+        )
+    
+        self.fields['notes'] = forms.CharField(
+            label=_('Notes'),
+            required=False,
+            widget=forms.widgets.Textarea()
+        )
+    
+        self.fields['aupok'] = forms.BooleanField(
+            label=_('I have read and accepted the Cloud Padovana AUP'),
+            initial=False
+        )
+
         missing_guest = True
         avail_prjs = list()
         for prj_entry in Project.objects.exclude(status=PRJ_PRIVATE):
@@ -115,10 +160,12 @@ class BaseRegistForm(forms.Form):
             ]
             
         self.fields['prjaction'].choices = p_choices
-    
+
+
 
     def clean(self):
-        data = super(BaseRegistForm, self).clean()
+        data = super(MixRegistForm, self).clean()
+        
         if data['prjaction'] == 'newprj':
             if not data['newprj']:
                 raise ValidationError(_('Project name is required.'))
@@ -130,58 +177,15 @@ class BaseRegistForm(forms.Form):
         
         if not data.get('aupok', False):
             raise ValidationError(_('You must accept Cloud Padovana AUP.'))
+            
+        if self.isFullForm:
+            if 'pwd' in data:
+                if data['pwd'] != data.get('repwd', None):
+                    raise ValidationError(_('Passwords do not match.'))
+
+            if '@' in data['username'] or ':' in data['username']:
+                raise ValidationError(_("Invalid characters in user name (@:)"))
         
         return data
-
-
-class UsrPwdRegistForm(forms.Form):
-    username = forms.CharField(
-        label=_('User name'),
-        max_length=OS_LNAME_LEN
-    )
-    givenname = forms.CharField(
-        label=_('First name'),
-        max_length=OS_LNAME_LEN
-    )
-    sn = forms.CharField(
-        label=_('Last name'),
-        max_length=OS_LNAME_LEN
-    )
-    pwd = forms.RegexField(
-        label=_("Password"),
-        max_length=PWD_LEN,
-        widget=forms.PasswordInput(render_value=False),
-        regex=validators.password_validator(),
-        error_messages={'invalid': validators.password_validator_msg()})
-    repwd = forms.CharField(
-        label=_("Confirm Password"),
-        max_length=PWD_LEN,
-        widget=forms.PasswordInput(render_value=False))
-    email = forms.EmailField(
-        label=_('Email Address'),
-        max_length=EMAIL_LEN
-    )
-    
-
-    def clean(self):
-        data = super(UsrPwdRegistForm, self).clean()
-        if 'pwd' in data:
-            if data['pwd'] != data.get('repwd', None):
-                raise ValidationError(_('Passwords do not match.'))
-
-        if '@' in data['username'] or ':' in data['username']:
-                raise ValidationError(_("Invalid characters in user name (@:)"))
-
-        return data
-
-
-class FullRegistForm(UsrPwdRegistForm, BaseRegistForm):
-
-    def clean(self):
-        data = BaseRegistForm.clean(self)
-        data.update(UsrPwdRegistForm.clean(self))
-        return data
-
-
 
 
