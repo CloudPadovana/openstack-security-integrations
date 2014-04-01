@@ -14,6 +14,7 @@ from horizon import messages
 
 from django.db import transaction
 from django.forms.widgets import HiddenInput
+from django.forms.extras.widgets import SelectDateWidget
 from django.views.decorators.debug import sensitive_variables
 from django.utils.translation import ugettext as _
 
@@ -75,12 +76,10 @@ class ProcessRegForm(forms.SelfHandlingForm):
             
                 self.fields['role_id'].choices = role_list
                 
-                #
-                # TODO missing check for format
-                #
                 self.fields['expiration'] = forms.DateTimeField(
                     label=_("Expiration date"),
-                    initial=datetime.datetime.now() + datetime.timedelta(365)
+                    initial=datetime.datetime.now() + datetime.timedelta(365),
+                    widget=SelectDateWidget
                 )
 
     def _generate_pwd(self):

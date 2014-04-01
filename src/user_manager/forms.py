@@ -2,6 +2,7 @@ import logging
 
 from django.db import transaction
 from django.forms.widgets import HiddenInput
+from django.forms.extras.widgets import SelectDateWidget
 from django.utils.translation import ugettext as _
 
 from horizon import forms
@@ -16,13 +17,13 @@ class RenewExpForm(forms.SelfHandlingForm):
         label=_("User ID"), 
         widget=HiddenInput
     )
-    expiration = forms.DateTimeField(label=_("Expiration date"))
+    expiration = forms.DateTimeField(
+        label=_("Expiration date"),
+        widget=SelectDateWidget
+    )
 
     def handle(self, request, data):
         
-        #
-        # TODO missing check on format
-        #        
         with transaction.commit_on_success():
         
             reg_list = Registration.objects.filter(userid=data['userid'])
