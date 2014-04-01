@@ -51,6 +51,8 @@ class IdPAttributes():
             
             self.ok = True
             self.root_url = '/dashboard-shib'
+            self.logout_url = '/Shibboleth.sso/Logout?return=https://%s:%s/dashboard' % \
+                (request.META['SERVER_NAME'], request.META['SERVER_PORT'])
             
             # the remote user correspond to the ePPN
             self.username = request.META['REMOTE_USER']
@@ -68,6 +70,7 @@ class IdPAttributes():
         
             self.ok = True
             self.root_url = '/dashboard-google'
+            self.logout_url = '/dashboard-google/auth/logout'
             self.username = request.META['REMOTE_USER']
             self.email = request.GET.get('openid.ext1.value.email', self.username)
             self.givenname = request.GET.get('openid.ext1.value.givenName', 'Unknown')
@@ -330,9 +333,8 @@ def processForm(request, reg_form, domain, attributes=None):
         
         notifyManagers(RegistrAvailable(username=username))
 
-        if ext_account:
-            redir_url = '/Shibboleth.sso/Logout?return=https://%s:%s/dashboard' % \
-                (request.META['SERVER_NAME'], request.META['SERVER_PORT'])
+        if attributes:
+            redir_url = attributes.logout_url
         else:
             redir_url = '/dashboard'
 
