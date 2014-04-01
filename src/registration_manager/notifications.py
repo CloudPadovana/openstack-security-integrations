@@ -14,6 +14,13 @@ NO_TENANT_AUTHORIZED = NotificationMessage(
     body = "You're not authorized to access the required tenants"
 )
 
+class PrjManagerMessage(NotificationMessage):
+
+    def __init__(self, **kwargs):
+        self.subject = _("Subscription request waiting for approval")
+        self.body = _('User %(username)s requires access to project %(projectname)s') % kwargs
+        self.body += FOOTER_DISCLAIMER + '\n'
+
 class TenantNotifMessage(NotificationMessage):
 
     def __init__(self, **kwargs):

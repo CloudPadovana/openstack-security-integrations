@@ -42,6 +42,19 @@ from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
 
+def managersForPrj(request, prjId):
+    result = list()
+
+    #
+    # TODO verify number of calls to keystone
+    #
+    for user in  keystone_api.user_list(request, project=prjId):
+        for role in keystone_api.roles_for_user(request,user.id, prjId):
+            if role.name == TENANTADMIN_ROLE:
+                result.append(user)
+
+    return result
+
 class ProcessRegForm(forms.SelfHandlingForm):
 
     checkaction = forms.CharField(widget=HiddenInput, initial='accept')
@@ -152,9 +165,16 @@ class ProcessRegForm(forms.SelfHandlingForm):
                     
                 userReqList.update(flowstatus=RSTATUS_CHECKED)
                 
-                #
-                # TODO missing notifications to tenant managers
-                #
+                q_args['flowstatus'] = PSTATUS_PENDING
+                for p_item in prjReqList.filter(**q_args):
+                
+                    m_users = managersForPrj(request, p_item.project.projectid)
+                    
+                    msg_obj = notifications.PrjManagerMessage(
+                        username=registration.username,
+                        projectname=p_item.project.projectname
+                    )
+                    notifications.notify([ usr.email for usr in m_users ], msg_obj)
                     
             if flowstatus == RSTATUS_CHECKED:
                 main_tenant = None
