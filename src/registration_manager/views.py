@@ -66,6 +66,7 @@ class RegReqItem:
         self.extaccounts = list()
         self.reqprojects = list()
         self.newprojects = list()
+        self.contacts = list()
         
         regreq_list = RegRequest.objects.filter(registration=registration)
         if len(regreq_list):
@@ -73,6 +74,7 @@ class RegReqItem:
                 if reg_req.externalid:
                     self.extaccounts.append(reg_req.externalid)
                 self.reqlevel = min(self.reqlevel, reg_req.flowstatus)
+                self.contacts.append(reg_req.contactper)
         else:
             self.reqlevel = RSTATUS_PRECHKD
 
@@ -129,6 +131,7 @@ class ProcessView(forms.ModalFormView):
         context['processinglevel'] = self.get_object().reqlevel
         context['prjrequests'] = map(get_pstatus_descr, self.get_object().reqprojects)
         context['newprojects'] = self.get_object().newprojects
+        context['contacts'] = self.get_object().contacts
 
         if context['processinglevel'] == RSTATUS_PENDING:
             context['processingtitle'] = _('Pre-check registrations')

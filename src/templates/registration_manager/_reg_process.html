@@ -21,6 +21,14 @@
     {% endfor %}
     </ul>
     {% endif %}
+    
+    {% if contacts %}
+    <h3>{% trans "Contacts" %}:</h3>
+    <ul>
+    {% for ctc in contacts %}
+        <li>{{ ctc }}</li>
+    {% endfor %}
+    {% endif%}
 </div>
 <div class="right">
 
