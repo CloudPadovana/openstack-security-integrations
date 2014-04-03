@@ -47,10 +47,9 @@ class PasswordForm(forms.SelfHandlingForm):
         try:
             api.keystone.user_update_own_password(request, None, data['new_password'])
             
-            if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-shib'):
-                #
-                # TODO verify workaround
-                #
+            if 'REMOTE_USER' in request.META and \
+                (request.path.startswith('/dashboard-shib') or \
+                request.path.startswith('/dashboard-google')):
                 return http.HttpResponseRedirect(reverse_lazy('login'))
             else:
                 response = http.HttpResponseRedirect(reverse_lazy('logout'))

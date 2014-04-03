@@ -1,6 +1,7 @@
 import logging
 
 from horizon import forms
+from horizon import messages
 
 from django.db import transaction
 from django.db import IntegrityError
@@ -127,9 +128,7 @@ class ProjectRequestForm(forms.SelfHandlingForm):
                         project = Project.objects.create(**prjArgs)
 
                     except IntegrityError:
-                        #
-                        # TODO handle duplicate project
-                        #
+                        messages.error(request, _("Project %s already exists") % prjitem[0])
                         LOG.error("Cannot create project %s" % prjitem[0])
                         return False
                 

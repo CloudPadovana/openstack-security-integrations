@@ -5,7 +5,7 @@ from openstack_dashboard.dashboards.admin.projects.panel import Tenants
 from openstack_dashboard.dashboards.admin.users.panel import Users
 
 #
-# TODO verify workaround
+# Panels must be loaded in advance
 #
 import openstack_dashboard.dashboards.admin.registration_manager.panel
 import openstack_dashboard.dashboards.admin.project_manager.panel
