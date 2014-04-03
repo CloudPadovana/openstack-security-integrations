@@ -1,6 +1,7 @@
 
 import logging
 import base64
+import json
 
 from Crypto.Cipher import AES
 from Crypto import __version__ as crypto_version
@@ -69,9 +70,8 @@ class ExtClient(BaseClient):
             body = {'auth': {'identity': {}}}
             ident = body['auth']['identity']
         
-            headers['X-Auth-Secret'] = self.secret_token
             ident['methods'] = ['sKey']
-            ident['sKey'] = {}
+            ident['sKey'] = { 'token' : self.secret_token }
         
 
             resp, body = self.request(url, 'POST', body=body, headers=headers)
@@ -133,10 +133,10 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
         insecure = getattr(settings, 'OPENSTACK_SSL_NO_VERIFY', False)
         secret_key = getattr(settings, 'SECRET_KEY', None)
         
-        #
-        # TODO use json for token content
-        #
-        fqun = "%s|%s" % (username, user_domain_name)
+        fqun = json.dumps({
+            'username' : username,
+            'domain' : user_domain_name
+        })
 
         try:
         

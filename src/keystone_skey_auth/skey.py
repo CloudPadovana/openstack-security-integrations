@@ -1,4 +1,5 @@
 import base64
+import json
 
 from keystone import identity
 from keystone.auth import AuthMethodHandler
@@ -20,7 +21,6 @@ LOG = logging.getLogger(__name__)
 # originatorID is the uniqueID of the thread sending the request.
 #
 # move token in the body
-# use json for token content
 #
 
 class SecretKeyAuth(AuthMethodHandler):
@@ -49,17 +49,18 @@ class SecretKeyAuth(AuthMethodHandler):
         
     
     def authenticate(self, context, auth_info, auth_context):
-        headers = context['headers']
-        if 'X-Auth-Secret' in headers and 'user_id' not in auth_context:
+        
+        if 'token' in auth_info and 'user_id' not in auth_context:
             try:
                 
-                fqun = self._parse_cryptoken(headers['X-Auth-Secret'])
-                LOG.info("Accepted secret for " + fqun)
+                userdata = json.loads(self._parse_cryptoken(auth_info['token']))
+                if not 'username' in userdata or not 'domain' in userdata:
+                    raise Unauthorized("Cannot retrieve user data")
                 
-                user_name, domain_name = fqun.split('|')
+                LOG.info("Accepted secret for user %s" % userdata['username'])
                 
-                uDict = self.identity_api.get_user_by_name(user_name, domain_name)
-                dDict = self.identity_api.get_domain_by_name(domain_name)
+                uDict = self.identity_api.get_user_by_name(userdata['username'], userdata['domain'])
+                dDict = self.identity_api.get_domain_by_name(userdata['domain'])
                 
                 if not uDict['enabled']:
                     raise Unauthorized("User %s is disabled" % uDict['name'])
@@ -68,10 +69,11 @@ class SecretKeyAuth(AuthMethodHandler):
                 
                 auth_context['user_id'] = uDict['id']
                 return None
+                
             except UserNotFound:
                 raise NotFound("Missing user")
             except Unauthorized as noAuthEx:
-                LOG.warning(str(noAuthEx))
+                LOG.error(str(noAuthEx))
                 raise
             except Exception:
                 LOG.error("Cannot decrypt token", exc_info=True)
@@ -79,18 +81,9 @@ class SecretKeyAuth(AuthMethodHandler):
         raise Unauthorized('Cannot authenticate using sKey')
 
 '''
-## Example of API call with fqun "andreett|default"
+## Example of payload"
 
-POST /v3/auth/tokens HTTP/1.1
-Host: 193.206.210.223:5000
-Content-Length: 61
-Accept-Encoding: gzip, deflate, compress
-Accept: */*
-User-Agent: python-keystoneclient
-X-Auth-Secret: DAnjHuV16dh4hXGCm/uk9A==
-Content-Type: application/json
-
-{"auth" : {"identity" : {"methods" : ["sKey"], "sKey" : {}}}}
+{"auth" : {"identity" : {"methods" : ["sKey"], "sKey" : { "token" : "DAnjHuV16dh4hXGCm/uk9A=="}}}}
 '''
 
 
