@@ -11,9 +11,14 @@
 <div class="modal-body">
     <h3>{% trans "Error" %}:</h3>
     <p>{{ subscr_err }}</p>
-    <p>{% blocktrans with contactstr=admin_mail %}
-        Please, contact the site administrator at <a href="mailto:{{ contactstr }}">{{ contactstr }}</a>
-    {% endblocktrans %}</p>
+    {% if contacts %}
+        <p>{% trans "Please, contact the cloud managers:" %}</p>
+        <ul>
+        {% for item in contacts %}
+            <li><a href="mailto:{{ item.1 }}">{{ item.0 }}</a></li>
+        {% endfor%}
+        </ul>
+    {% endif%}
 </div>
 {% else %}
 <div class="left">

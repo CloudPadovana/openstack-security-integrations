@@ -34,8 +34,6 @@ from .notifications import notifyManagers, RegistrAvailable
 
 LOG = logging.getLogger(__name__)
 
-please_msg = _('please, contact the cloud manager')
-
 def get_ostack_attributes(request):
     region = getattr(settings, 'OPENSTACK_KEYSTONE_URL').replace('v2.0','v3')
     domain = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN', 'Default')
@@ -122,7 +120,8 @@ def login(request):
         LOG.error(exc.message, exc_info=True)
         tempDict = {
             'error_header' : _("Authentication error"),
-            'error_text' : "%s, %s" % (_("A failure occurs authenticating user"), please_msg),
+            'error_text' : _("A failure occurs authenticating user"),
+            'contacts' : settings.MANAGERS,
             'redirect_url' : '/dashboard',
             'redirect_label' : _("Home")
         }
@@ -359,7 +358,8 @@ def processForm(request, reg_form, domain, attributes=None):
         LOG.error("Generic failure", exc_info=True)
         tempDict = {
             'error_header' : _("Registration error"),
-            'error_text' : "%s, %s" % (_("A failure occurs registering user"), please_msg),
+            'error_text' : _("A failure occurs registering user"),
+            'contacts' : getattr(settings, 'MANAGERS', None),
             'redirect_url' : '/dashboard',
             'redirect_label' : _("Home")
         }

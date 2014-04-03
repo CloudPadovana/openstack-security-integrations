@@ -34,7 +34,7 @@ def notify(recpt, msg_obj):
         LOG.debug('Notification disable')
         return
     
-    sender = getattr(settings, 'SERVER_EMAIL', 'cloud@lists.pd.infn.it')
+    sender = settings.SERVER_EMAIL
     if type(recpt) is StringType:
         recipients = [ recpt ]
     else:
