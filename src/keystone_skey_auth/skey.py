@@ -54,24 +54,32 @@ class SecretKeyAuth(AuthMethodHandler):
             try:
                 
                 fqun = self._parse_cryptoken(headers['X-Auth-Secret'])
-                LOG.info("Accept secret for " + fqun)
+                LOG.info("Accepted secret for " + fqun)
                 
-                uTuple = fqun.split('|')
+                user_name, domain_name = fqun.split('|')
                 
-                uDict = self.identity_api.get_user_by_name(uTuple[0], uTuple[1])
+                uDict = self.identity_api.get_user_by_name(user_name, domain_name)
+                dDict = self.identity_api.get_domain_by_name(domain_name)
+                
+                if not uDict['enabled']:
+                    raise Unauthorized("User %s is disabled" % uDict['name'])
+                if not dDict['enabled']:
+                    raise Unauthorized("Domain %s is disabled" % dDict['name'])
                 
                 auth_context['user_id'] = uDict['id']
                 return None
             except UserNotFound:
                 raise NotFound("Missing user")
+            except Unauthorized as noAuthEx:
+                LOG.warning(str(noAuthEx))
+                raise
             except Exception:
                 LOG.error("Cannot decrypt token", exc_info=True)
         
         raise Unauthorized('Cannot authenticate using sKey')
 
 '''
-## Example of API call with andreett@default
-## and secret_key=ae8e5949c97b4cfc97d8fd93ebeb9f0a
+## Example of API call with fqun "andreett|default"
 
 POST /v3/auth/tokens HTTP/1.1
 Host: 193.206.210.223:5000
