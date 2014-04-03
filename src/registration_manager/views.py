@@ -7,7 +7,6 @@ from django.core.urlresolvers import reverse_lazy
 from horizon import tables
 from horizon import exceptions
 from horizon import forms
-from horizon import workflows
 
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
