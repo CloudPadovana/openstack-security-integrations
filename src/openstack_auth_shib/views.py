@@ -116,6 +116,14 @@ def login(request):
     except (UserMapping.DoesNotExist, keystone_exceptions.NotFound):
         LOG.debug("User %s authenticated but not authorized" % attributes.username)
         return _register(request, attributes)
+    except keystone_exceptions.Unauthorized:
+        tempDict = {
+            'error_header' : _("Authentication failed"),
+            'error_text' : _("User not authenticated"),
+            'redirect_url' : '/dashboard',
+            'redirect_label' : _("Home")
+        }
+        return shortcuts.render(request, 'aai_error.html', tempDict)
     except Exception as exc:
         LOG.error(exc.message, exc_info=True)
         tempDict = {
