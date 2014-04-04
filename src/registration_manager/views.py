@@ -87,7 +87,6 @@ class RegReqItem:
                 tmpt = (prj_req.project.projectname, prj_req.flowstatus)
                 self.reqprojects.append(tmpt)
             else:
-                prj_mark = False
                 self.newprojects.append(prj_req.project.projectname)
                 
         if prj_mark and self.reqlevel == RSTATUS_PRECHKD:
