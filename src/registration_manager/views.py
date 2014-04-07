@@ -21,6 +21,7 @@ from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import RSTATUS_PENDING
 from openstack_auth_shib.models import RSTATUS_PRECHKD
 from openstack_auth_shib.models import RSTATUS_CHECKED
+from openstack_auth_shib.models import RSTATUS_NOFLOW
 
 from .tables import RegisterTable
 from .forms import ProcessRegForm
@@ -91,6 +92,10 @@ class RegReqItem:
                 
         if prj_mark and self.reqlevel == RSTATUS_PRECHKD:
             self.reqlevel = RSTATUS_CHECKED
+        
+        if self.reqlevel == RSTATUS_PENDING and len(self.newprojects) \
+            and len(self.reqprojects) == 0:
+            self.reqlevel = RSTATUS_NOFLOW
 
 
 def pstatus2label(flowstatus):

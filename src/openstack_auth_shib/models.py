@@ -15,6 +15,7 @@ PSTATUS_REJ = 3
 RSTATUS_PENDING = 0
 RSTATUS_PRECHKD = 1
 RSTATUS_CHECKED = 2
+RSTATUS_NOFLOW = 3
 #
 #   PENDING -----------------------+
 #   (requests for registration)    |

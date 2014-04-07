@@ -35,6 +35,7 @@ from openstack_auth_shib.models import PSTATUS_REJ
 from openstack_auth_shib.models import RSTATUS_PENDING
 from openstack_auth_shib.models import RSTATUS_PRECHKD
 from openstack_auth_shib.models import RSTATUS_CHECKED
+from openstack_auth_shib.models import RSTATUS_NOFLOW
 
 from openstack_auth_shib.models import OS_LNAME_LEN
 
@@ -68,7 +69,7 @@ class ProcessRegForm(forms.SelfHandlingForm):
         self.prjman_roleid = None
         
         flowstatus = kwargs['initial']['processinglevel']
-        if flowstatus == RSTATUS_PENDING:
+        if flowstatus == RSTATUS_PENDING or flowstatus == RSTATUS_NOFLOW:
             self.fields['username'] = forms.CharField(
                 label=_("User name"),
                 max_length=OS_LNAME_LEN
@@ -79,30 +80,30 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 widget = forms.TextInput(attrs={'readonly': 'readonly'})
             )
             
-            if flowstatus == RSTATUS_CHECKED:
-                self.fields['role_id'] = forms.ChoiceField(label=_("Role"))
+        if flowstatus == RSTATUS_CHECKED or flowstatus == RSTATUS_NOFLOW:
+            self.fields['role_id'] = forms.ChoiceField(label=_("Role"))
             
-                role_list = list()
-                for role in keystone_api.role_list(request):
-                    if role.name == TENANTADMIN_ROLE:
-                        self.prjman_roleid = role.id
-                    else:
-                        role_list.append((role.id, role.name))
+            role_list = list()
+            for role in keystone_api.role_list(request):
+                if role.name == TENANTADMIN_ROLE:
+                    self.prjman_roleid = role.id
+                else:
+                    role_list.append((role.id, role.name))
                 
-                #
-                # Creation of project-manager role if necessary
-                #
-                if not self.prjman_roleid:
-                    self.prjman_roleid = keystone_api.role_create(request, TENANTADMIN_ROLE)
-                role_list.append((self.prjman_roleid, TENANTADMIN_ROLE))
+            #
+            # Creation of project-manager role if necessary
+            #
+            if not self.prjman_roleid:
+                self.prjman_roleid = keystone_api.role_create(request, TENANTADMIN_ROLE)
+            role_list.append((self.prjman_roleid, TENANTADMIN_ROLE))
             
-                self.fields['role_id'].choices = role_list
+            self.fields['role_id'].choices = role_list
                 
-                self.fields['expiration'] = forms.DateTimeField(
-                    label=_("Expiration date"),
-                    initial=datetime.datetime.now() + datetime.timedelta(365),
-                    widget=SelectDateWidget
-                )
+            self.fields['expiration'] = forms.DateTimeField(
+                label=_("Expiration date"),
+                initial=datetime.datetime.now() + datetime.timedelta(365),
+                widget=SelectDateWidget
+            )
 
     def _generate_pwd(self):
         if crypto_version.startswith('2.0'):
@@ -155,14 +156,17 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 
             prjReqList = PrjRequest.objects.filter(registration=registration)
                 
-            if flowstatus == RSTATUS_PENDING:
+            if flowstatus == RSTATUS_PENDING or flowstatus == RSTATUS_NOFLOW:
                 #
                 # User renaming
                 #
                 registration.username = data['username']
                 registration.save()
                 
-            if flowstatus == RSTATUS_PENDING or flowstatus == RSTATUS_PRECHKD:
+                userReqList.update(flowstatus=RSTATUS_CHECKED)
+                
+            if flowstatus == RSTATUS_PENDING or flowstatus == RSTATUS_PRECHKD \
+                 or flowstatus == RSTATUS_NOFLOW:
                 #
                 # Send request to prj-admin
                 #
@@ -172,8 +176,6 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 }
                 prjReqList.filter(**q_args).update(flowstatus=PSTATUS_PENDING)
                     
-                userReqList.update(flowstatus=RSTATUS_CHECKED)
-                
                 q_args['flowstatus'] = PSTATUS_PENDING
                 for p_item in prjReqList.filter(**q_args):
                 
@@ -185,7 +187,7 @@ class ProcessRegForm(forms.SelfHandlingForm):
                     )
                     notifications.notify([ usr.email for usr in m_users ], msg_obj)
                     
-            if flowstatus == RSTATUS_CHECKED:
+            if flowstatus == RSTATUS_CHECKED or flowstatus == RSTATUS_NOFLOW:
                 main_tenant = None
                 email = None
                 password = None
