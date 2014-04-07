@@ -4,6 +4,7 @@ from horizon import forms
 from horizon import exceptions
 
 from django.db import transaction
+from django.conf import settings
 from django.forms.widgets import HiddenInput
 from django.views.decorators.debug import sensitive_variables
 
@@ -13,13 +14,13 @@ from openstack_auth_shib.models import PrjRequest
 
 from openstack_auth_shib.models import PSTATUS_APPR
 from openstack_auth_shib.models import PSTATUS_REJ
-from openstack_auth_shib.models import TENANTADMIN_ROLE
 
 from .notifications import notifyManagers, SubscrChecked
 
 from django.utils.translation import ugettext as _
 
 LOG = logging.getLogger(__name__)
+TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 
 class ApproveSubscrForm(forms.SelfHandlingForm):
 

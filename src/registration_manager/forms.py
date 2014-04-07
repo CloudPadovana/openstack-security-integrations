@@ -13,6 +13,7 @@ from horizon import forms
 from horizon import messages
 
 from django.db import transaction
+from django.conf import settings
 from django.forms.widgets import HiddenInput
 from django.forms.extras.widgets import SelectDateWidget
 from django.views.decorators.debug import sensitive_variables
@@ -35,12 +36,12 @@ from openstack_auth_shib.models import RSTATUS_PENDING
 from openstack_auth_shib.models import RSTATUS_PRECHKD
 from openstack_auth_shib.models import RSTATUS_CHECKED
 
-from openstack_auth_shib.models import TENANTADMIN_ROLE
 from openstack_auth_shib.models import OS_LNAME_LEN
 
 from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
+TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 
 def managersForPrj(request, prjId):
     result = list()
@@ -85,7 +86,15 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 for role in keystone_api.role_list(request):
                     if role.name == TENANTADMIN_ROLE:
                         self.prjman_roleid = role.id
-                    role_list.append((role.id, role.name))
+                    else:
+                        role_list.append((role.id, role.name))
+                
+                #
+                # Creation of project-manager role if necessary
+                #
+                if not self.prjman_roleid:
+                    self.prjman_roleid = keystone_api.role_create(request, TENANTADMIN_ROLE)
+                role_list.append((self.prjman_roleid, TENANTADMIN_ROLE))
             
                 self.fields['role_id'].choices = role_list
                 

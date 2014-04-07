@@ -1,10 +1,11 @@
-
+from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
 import horizon
 
 from openstack_dashboard.dashboards.project import dashboard
-from openstack_auth_shib.models import TENANTADMIN_ROLE
+
+TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 
 class SubscriptionManager(horizon.Panel):
     name = _("Subscriptions")
