@@ -13,6 +13,8 @@ from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import PrjRequest
 
+from openstack_auth_shib.models import PRJ_GUEST
+
 from openstack_auth_shib.models import PSTATUS_APPR
 from openstack_auth_shib.models import PSTATUS_REJ
 from openstack_auth_shib.models import PSTATUS_PENDING
@@ -79,12 +81,15 @@ class RegReqItem:
             self.reqlevel = RSTATUS_PRECHKD
 
         prj_mark = True
+        found_guest = False
         prjreq_list = PrjRequest.objects.filter(registration=registration)
         for prj_req in prjreq_list:
             if prj_req.project.projectid:
                 if prj_req.flowstatus == PSTATUS_PENDING or \
                     prj_req.flowstatus == PSTATUS_REG:
                     prj_mark = False
+                if prj_req.project.status == PRJ_GUEST:
+                    found_guest = True
                 tmpt = (prj_req.project.projectname, prj_req.flowstatus)
                 self.reqprojects.append(tmpt)
             else:
@@ -97,6 +102,9 @@ class RegReqItem:
             and len(self.reqprojects) == 0:
             self.reqlevel = RSTATUS_NOFLOW
 
+        if self.reqlevel == RSTATUS_PENDING and len(self.newprojects) == 0 \
+            and len(self.reqprojects) == 1 and found_guest:
+            self.reqlevel = RSTATUS_NOFLOW
 
 def pstatus2label(flowstatus):
     if flowstatus == PSTATUS_REG:
