@@ -74,6 +74,12 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 label=_("User name"),
                 max_length=OS_LNAME_LEN
             )
+                
+            self.fields['expiration'] = forms.DateTimeField(
+                label=_("Expiration date"),
+                initial=datetime.datetime.now() + datetime.timedelta(365),
+                widget=SelectDateWidget
+            )
         else:
             self.fields['username'] = forms.CharField(
                 label=_("User name"),
@@ -98,12 +104,6 @@ class ProcessRegForm(forms.SelfHandlingForm):
             role_list.append((self.prjman_roleid, TENANTADMIN_ROLE))
             
             self.fields['role_id'].choices = role_list
-                
-            self.fields['expiration'] = forms.DateTimeField(
-                label=_("Expiration date"),
-                initial=datetime.datetime.now() + datetime.timedelta(365),
-                widget=SelectDateWidget
-            )
 
     def _generate_pwd(self):
         if crypto_version.startswith('2.0'):
@@ -161,6 +161,7 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 # User renaming
                 #
                 registration.username = data['username']
+                registration.expdate = data['expiration']
                 registration.save()
                 
                 userReqList.update(flowstatus=RSTATUS_CHECKED)
@@ -267,7 +268,6 @@ class ProcessRegForm(forms.SelfHandlingForm):
                                                     enabled=True, domain=domain_id)
                         
                     registration.userid = kuser.id
-                    registration.expdate = data['expiration']
                     registration.save()
                     
                 else:
