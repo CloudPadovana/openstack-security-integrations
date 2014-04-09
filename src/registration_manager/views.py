@@ -3,6 +3,7 @@ import logging
 from django.utils.translation import ugettext_lazy as _
 from django.core.urlresolvers import reverse
 from django.core.urlresolvers import reverse_lazy
+from django.db.models import Q
 
 from horizon import tables
 from horizon import exceptions
@@ -37,23 +38,13 @@ class IndexView(tables.DataTableView):
 
     def get_data(self):
     
-        reqTable = dict()
+        query1 = Q(regid__in=RegRequest.objects.all().values_list('registration'))
+        query2 = Q(regid__in=PrjRequest.objects.all().values_list('registration'))
         
-        try:
-            #
-            # TODO paging
-            #
-            for r_entry in RegRequest.objects.all():
-                reqTable[r_entry.registration.regid] = r_entry.registration
-            
-            for p_entry in PrjRequest.objects.all():
-                if not p_entry.registration.regid in reqTable:
-                    reqTable[p_entry.registration.regid] = p_entry.registration
-            
-        except Exception:
-            exceptions.handle(self.request, _('Unable to retrieve registration list.'))
-
-        return reqTable.values()
+        #
+        # TODO paging
+        #
+        return Registration.objects.filter(query1 | query2).order_by('username')
 
 
 class RegReqItem:
