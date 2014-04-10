@@ -86,7 +86,8 @@ preq_templ_list = [
 
 logo_list = [
     'src/templates/logoInfnAAI.png',
-    'src/templates/logoGoogle.png'
+    'src/templates/logoGoogle.png',
+    'src/templates/logoUsrPwd.png'
 ]
 
 module_list = [
