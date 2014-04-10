@@ -59,7 +59,11 @@
         <div class="modal-footer">
         </div>
     
+        {% if form.non_field_errors %}
+        <div id="userandpwddiv" style="display: block;">
+        {% else %}
         <div id="userandpwddiv" style="display: none;">
+        {% endif %}
         
             <div class="modal hide in" style="top: 80px; display: block;">
                 <div class="modal-header"><h3>{% trans "Local account" %}</h3></div>
