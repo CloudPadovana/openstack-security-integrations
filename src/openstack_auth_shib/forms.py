@@ -132,9 +132,9 @@ class MixRegistForm(forms.Form):
             widget=forms.widgets.Textarea()
         )
     
-        self.fields['aupok'] = forms.BooleanField(
-            label=_('I have read and accepted the Cloud Padovana AUP'),
-            initial=False
+        self.fields['aupok'] = forms.CharField(
+            widget=forms.HiddenInput,
+            initial='reject'
         )
 
         missing_guest = True
@@ -175,7 +175,7 @@ class MixRegistForm(forms.Form):
         elif data['prjaction'] <> 'guestprj':
             raise ValidationError(_('Wrong project parameter.'))
         
-        if not data.get('aupok', False):
+        if data.get('aupok', 'reject') <> 'accept':
             raise ValidationError(_('You must accept Cloud Padovana AUP.'))
             
         if self.isFullForm:

@@ -1,30 +1,84 @@
-{% extends "horizon/common/_modal_form.html" %}
 {% load i18n %}
 
-{% block modal_id%}register_div_id{% endblock %}
-{% block modal-header %}{% trans "User Registration" %}{% endblock %}
-{% block modal_class %}register{% if hide %} modal hide{% endif %}{% endblock %}
-
-{% block form_id %}register_form_id{% endblock %}
-{% block form_action %}{{ form_action_url }}{% endblock %}
-{% block autocomplete %}{{ HORIZON_CONFIG.password_autocomplete }}{% endblock %}
-
-{% block modal-body %}
-    <fieldset>
+<div id="register_div_id" class="register{% if hide %} modal hide{% endif %}">
+    <div class="modal-header">
+        {% if hide %}<a href="#" class="close" data-dismiss="modal">&times;</a>{% endif %}
+        <h3>{% trans "User Registration" %}</h3>
+    </div>
     
-        {% if userid %}
-        <label>User ID</label>
-        <p>{{userid}}</p>
-        {% endif %}
+    {% if table %}
+    <div class="modal-body">
+        {{ table.render }}
+    </div>
+    
+    <hr />
+    {% endif %}
+    
+    <form id="register_form_id" autocomplete="{{ HORIZON_CONFIG.password_autocomplete }}" class="" 
+        action="{{ form_action_url }}" method="POST">
         
-        {% include "horizon/common/_form_fields.html" %}
-    </fieldset>
-{% endblock %}
+        {% csrf_token %}
+        
+        <div class="modal-body clearfix">
+            <fieldset>
+    
+                {% if userid %}
+                <label>User ID</label>
+                <p>{{userid}}</p>
+                {% endif %}
+        
+                {% include "horizon/common/_form_fields.html" %}
+                
+                <button type="button"
+                        onclick="document.getElementById('aupdiv').style.display='block';"
+                        class="btn btn-primary pull-right">
+                    {% trans "Read the AUP" %}
+                </button>
+                
+            </fieldset>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="submit" class="btn btn-primary pull-right">{% trans "Register" %}</button>
+            <button type="button"
+                    onclick="location.href='/dashboard'"
+                    class="btn btn-primary pull-right">{% trans "Cancel" %}</button>
+        </div>
+        
+        <div id="aupdiv" style="display: none;">
+        
+            <div class="modal hide in" style="top: 80px; display: block;">
+                <div class="modal-header"><h3>{% trans "Access User Policies" %}</h3></div>
+                
+                <div class="modal-body clearfix">
+                    <p>Policies list</p>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button"
+                            onclick="acceptAUP()"
+                            class="btn btn-primary pull-right">{% trans "Accept" %}</button>
+                    <button type="button"
+                            onclick="document.getElementById('aupdiv').style.display='none';"
+                            class="btn btn-primary pull-right">{% trans "Reject" %}</button>
+                </div>
 
-{% block modal-footer %}
-  <button type="submit" class="btn btn-primary pull-right">{% trans "Register" %}</button>
-  <button type="button"
-          onclick="location.href='/dashboard'"
-          class="btn btn-primary pull-right">{% trans "Cancel" %}</button>
-{% endblock %}
+            </div>
+
+            <div class="modal-backdrop in"></div>
+            
+        </div>
+        
+    </form>
+
+    <script type="text/javascript">
+        function acceptAUP() {
+            document.getElementById('id_aupok').value = 'accept';
+            document.getElementById('aupdiv').style.display='none';
+        }
+    </script>
+    
+</div>
+
+
 
