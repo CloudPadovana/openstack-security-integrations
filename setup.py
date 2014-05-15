@@ -7,7 +7,7 @@ from distutils.command.bdist_rpm import bdist_rpm as _bdist_rpm
 
 pkg_name = 'openstack-security-integrations'
 pkg_version = '1.0.0'
-pkg_release = '6'
+pkg_release = '7'
 
 source_items = "setup.py src"
 
@@ -85,6 +85,7 @@ preq_templ_list = [
 ]
 
 logo_list = [
+    'src/templates/logoCloudAreapd.png',
     'src/templates/logoInfnAAI.png',
     'src/templates/logoGoogle.png',
     'src/templates/logoUsrPwd.png'

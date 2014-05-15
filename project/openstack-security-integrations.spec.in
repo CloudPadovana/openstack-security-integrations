@@ -144,6 +144,23 @@ if [ ! $1 == 2 ]; then
     #
     echo -e "HORIZON_CONFIG[\"customization_module\"] = \"openstack_auth_shib.overrides\"\n" \
         >> /etc/openstack-dashboard/local_settings
+    
+    #
+    # Replace logo
+    #
+    if [ ! -e /usr/share/openstack-dashboard/static/dashboard/img/logo-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/static/dashboard/img/logo.png \
+            /usr/share/openstack-dashboard/static/dashboard/img/logo-orig.png
+    fi
+    cp -f /usr/share/openstack-dashboard/static/dashboard/img/logoCloudAreapd.png \
+        /usr/share/openstack-dashboard/static/dashboard/img/logo.png
+    
+    if [ ! -e /usr/share/openstack-dashboard/static/dashboard/img/logo-splash-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/static/dashboard/img/logo-splash.png \
+            /usr/share/openstack-dashboard/static/dashboard/img/logo-splash-orig.png
+    fi
+    cp -f /usr/share/openstack-dashboard/static/dashboard/img/logoCloudAreapd.png \
+        /usr/share/openstack-dashboard/static/dashboard/img/logo-splash.png
 fi
 
 %triggerun -n openstack-auth-shib -- openstack-dashboard
@@ -156,6 +173,14 @@ if [ $1 == 0 -o $2 == 0 ] ; then
         /usr/share/openstack-dashboard/openstack_dashboard/settings.py
     sed -i -e 's|HORIZON_CONFIG\[\"customization_module\"\].*||g' \
         /etc/openstack-dashboard/local_settings
+    if [ -e /usr/share/openstack-dashboard/static/dashboard/img/logo-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/static/dashboard/img/logo-orig.png \
+            /usr/share/openstack-dashboard/static/dashboard/img/logo.png
+    fi
+    if [ -e /usr/share/openstack-dashboard/static/dashboard/img/logo-splash-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/static/dashboard/img/logo-splash-orig.png \
+            /usr/share/openstack-dashboard/static/dashboard/img/logo-splash.png
+    fi
 fi
 
 
