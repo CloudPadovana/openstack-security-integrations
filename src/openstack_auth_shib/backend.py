@@ -131,6 +131,7 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
         LOG.debug('Authenticating user "%s".' % username)
 
         insecure = getattr(settings, 'OPENSTACK_SSL_NO_VERIFY', False)
+        cacert = getattr(settings, 'OPENSTACK_SSL_CACERT', None)
         secret_key = getattr(settings, 'SECRET_KEY', None)
         
         fqun = json.dumps({
@@ -147,6 +148,7 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
                                secret_token=secret_token,
                                auth_url=auth_url,
                                insecure=insecure,
+                               cacert=cacert,
                                debug=settings.DEBUG)
 
             unscoped_auth_ref = client.auth_ref
