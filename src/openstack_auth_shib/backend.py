@@ -132,6 +132,7 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
 
         insecure = getattr(settings, 'OPENSTACK_SSL_NO_VERIFY', False)
         cacert = getattr(settings, 'OPENSTACK_SSL_CACERT', None)
+        ep_type = getattr(settings, 'OPENSTACK_ENDPOINT_TYPE', 'publicURL')
         secret_key = getattr(settings, 'SECRET_KEY', None)
         
         fqun = json.dumps({
@@ -216,7 +217,7 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
         
         user = create_user_from_token(request,
                                       project_token,
-                                      client.service_catalog.url_for())
+                                      client.service_catalog.url_for(endpoint_type=ep_type))
 
         if request is not None:
             request.session['unscoped_token'] = unscoped_token.id

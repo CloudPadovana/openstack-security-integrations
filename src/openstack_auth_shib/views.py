@@ -1,8 +1,6 @@
 import logging
 import re
 
-from threading import Thread
-
 from django import shortcuts
 from django.db import transaction
 from django.db import IntegrityError
@@ -20,8 +18,15 @@ from openstack_auth.views import login as basic_login
 from openstack_auth.views import logout as basic_logout
 from openstack_auth.views import switch as basic_switch
 from openstack_auth.views import switch_region as basic_switch_region
-from openstack_auth.views import delete_all_tokens
 from openstack_auth.user import set_session_from_user
+
+try:
+    from openstack_auth.views import delete_all_tokens
+    from threading import Thread
+    old_token_mgm = True
+except:
+    from openstack_auth.views import delete_token
+    old_token_mgm = False
 
 from keystoneclient import exceptions as keystone_exceptions
 
@@ -144,11 +149,17 @@ def logout(request):
     
         msg = 'Logging out user "%(username)s".' % {'username': request.user.username}
         LOG.info(msg)
-        if 'token_list' in request.session:
-            t = Thread(target=delete_all_tokens,
-                   args=(list(request.session['token_list']),))
-            t.start()
-        
+        if old_token_mgm:
+            if 'token_list' in request.session:
+                t = Thread(target=delete_all_tokens,
+                    args=(list(request.session['token_list']),))
+                t.start()
+        else:
+            endpoint = request.session.get('region_endpoint')
+            token = request.session.get('token')
+            if token and endpoint:
+                delete_token(endpoint=endpoint, token_id=token.id)
+
         # update the session cookies (sessionid and csrftoken)
         auth_logout(request)
         ret_URL = "https://%s:%s/dashboard" % (request.META['SERVER_NAME'],
