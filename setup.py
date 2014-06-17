@@ -9,7 +9,7 @@ pkg_name = 'openstack-security-integrations'
 pkg_version = '1.0.0'
 pkg_release = '7'
 
-source_items = "setup.py src"
+source_items = "setup.py src config"
 
 class bdist_rpm(_bdist_rpm):
 
@@ -88,7 +88,8 @@ logo_list = [
     'src/templates/logoCloudAreapd.png',
     'src/templates/logoInfnAAI.png',
     'src/templates/logoGoogle.png',
-    'src/templates/logoUsrPwd.png'
+    'src/templates/logoUsrPwd.png',
+    'src/templates/logoIDEM.png'
 ]
 
 module_list = [
@@ -120,7 +121,8 @@ setup(
                   (subscr_panel_dir, subscr_templ_list),
                   (preq_panel_dir, preq_templ_list),
                   (css_dir, ['src/templates/aai_infn_integrations.less']),
-                  (img_dir, logo_list)
+                  (img_dir, logo_list),
+                  ('etc/openstack-auth-shib', ['config/idem-template-metadata.xml'])
                  ],
       cmdclass={'bdist_rpm': bdist_rpm}
      )

@@ -20,6 +20,18 @@
                 <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
             </button>
       
+            {% if HORIZON_CONFIG.idem_enabled %}
+            <button type="button" 
+                    onclick="location.href='/dashboard-shib';">
+                <img align="middle" height="60px" width="80px" alt="Login IDEM" src="/static/dashboard/img/logoIDEM.png">
+            </button>
+            {% endif %}
+
+            <button type="button" 
+                    onclick="document.getElementById('userandpwddiv').style.display='block';">
+                <img align="middle" height="60px" width="80px" alt="Local login" src="/static/dashboard/img/logoUsrPwd.png">
+            </button>
+
             {% if HORIZON_CONFIG.google_enabled %}
             <button type="button" 
                     onclick="location.href='/dashboard-google/auth/login/';">
@@ -27,10 +39,6 @@
             </button>
             {% endif %}
       
-            <button type="button" 
-                    onclick="document.getElementById('userandpwddiv').style.display='block';">
-                <img align="middle" height="60px" width="80px" alt="Local login" src="/static/dashboard/img/logoUsrPwd.png">
-            </button>
         </div>
     
         <hr />

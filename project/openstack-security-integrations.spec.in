@@ -70,6 +70,8 @@ Django plugin for Shibboleth authentication
 
 %files -n openstack-auth-shib
 %defattr(-,root,root)
+%dir /etc/openstack-auth-shib
+%config(noreplace) /etc/openstack-auth-shib/idem-template-metadata.xml
 %dir %{python_sitelib}/openstack_auth_shib
 %{python_sitelib}/openstack_auth_shib/*.py
 %{python_sitelib}/openstack_auth_shib/*.pyc
