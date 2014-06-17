@@ -1,13 +1,13 @@
 
 <md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" 
-                     entityID="https://cloud-areapd.pd.infn.it:8443/dashboard-shib">
+                     ID="Cloud Area Padovana" entityID="https://cloud-areapd.pd.infn.it:8443/dashboard-shib">
 
   <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:1.0:protocol">
     
     <md:Extensions>
       <mdui:UIInfo xmlns:mdui="urn:oasis:names:tc:SAML:metadata:ui">
         <mdui:DisplayName xml:lang="en">Cloud Area Padovana</mdui:DisplayName>
-        <mdui:Description xml:lang="en">Cloud site for researches </mdui:Description>
+        <mdui:Description xml:lang="en">Cloud computing and storage service for researchers of INFN Padova and LNL laboratory, and their international collaborators</mdui:Description>
         <mdui:InformationURL xml:lang="en">http://wiki.infn.it/progetti/cloud-areapd/home</mdui:InformationURL>
         <mdui:PrivacyStatementURL xml:lang="en">http://wiki.infn.it/progetti/cloud-areapd/home</mdui:PrivacyStatementURL>
       </mdui:UIInfo>
