@@ -45,7 +45,7 @@ def notify(recpt, msg_obj):
         return
         
     try:
-        #send_mail(msg_obj.subject, msg_obj.body, sender, recipients)
+        send_mail(msg_obj.subject, msg_obj.body, sender, recipients)
         LOG.debug("Sending %s - %s - to %s" % (msg_obj.subject, msg_obj.body, str(recipients)))
     except:
         LOG.error("Cannot send notification", exc_info=True)
@@ -58,7 +58,7 @@ def notifyManagers(msg_obj):
         return
 
     try:
-        #mail_managers(msg_obj.subject, msg_obj.body)
+        mail_managers(msg_obj.subject, msg_obj.body)
         LOG.debug("Sending %s - %s - to managers" % (msg_obj.subject, msg_obj.body))
     except:
         LOG.error("Cannot send notification", exc_info=True)
