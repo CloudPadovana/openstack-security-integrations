@@ -57,7 +57,10 @@ class RegReqItem:
         self.username = registration.username
         self.reqlevel = RSTATUS_CHECKED
         self.extaccounts = list()
-        self.reqprojects = list()
+        self.regprojects = list()
+        self.pendprojects = list()
+        self.apprprojects = list()
+        self.rejprojects = list()
         self.newprojects = list()
         self.contacts = list()
         
@@ -76,13 +79,22 @@ class RegReqItem:
         prjreq_list = PrjRequest.objects.filter(registration=registration)
         for prj_req in prjreq_list:
             if prj_req.project.projectid:
+            
                 if prj_req.flowstatus == PSTATUS_PENDING or \
                     prj_req.flowstatus == PSTATUS_REG:
                     prj_mark = False
                 if prj_req.project.status == PRJ_GUEST:
                     found_guest = True
-                tmpt = (prj_req.project.projectname, prj_req.flowstatus)
-                self.reqprojects.append(tmpt)
+                
+                if prj_req.flowstatus == PSTATUS_REG:
+                    self.regprojects.append(prj_req.project.projectname)
+                elif prj_req.flowstatus == PSTATUS_PENDING:
+                    self.pendprojects.append(prj_req.project.projectname)
+                elif prj_req.flowstatus == PSTATUS_APPR:
+                    self.apprprojects.append(prj_req.project.projectname)
+                else:
+                    self.rejprojects.append(prj_req.project.projectname)
+                
             else:
                 self.newprojects.append(prj_req.project.projectname)
                 
@@ -90,24 +102,15 @@ class RegReqItem:
             self.reqlevel = RSTATUS_CHECKED
         
         if self.reqlevel == RSTATUS_PENDING and len(self.newprojects) \
-            and len(self.reqprojects) == 0:
+            and len(self.regprojects) == 0 and len(self.pendprojects) == 0 \
+            and len(self.apprprojects) == 0 and len(self.rejprojects) == 0:
             self.reqlevel = RSTATUS_NOFLOW
 
         if self.reqlevel == RSTATUS_PENDING and len(self.newprojects) == 0 \
-            and len(self.reqprojects) == 1 and found_guest:
+            and (len(self.regprojects) + len(self.pendprojects) \
+                 + len(self.apprprojects) + len(self.rejprojects)) == 1 \
+            and found_guest:
             self.reqlevel = RSTATUS_NOFLOW
-
-def pstatus2label(flowstatus):
-    if flowstatus == PSTATUS_REG:
-        return _("Registered")
-    if flowstatus == PSTATUS_PENDING:
-        return _("Pending")
-    if flowstatus == PSTATUS_APPR:
-        return _("Approved")
-    return _("Rejected")
-
-def get_pstatus_descr(tmpt):
-    return "%s [%s]" % (tmpt[0], pstatus2label(tmpt[1]))
 
 class ProcessView(forms.ModalFormView):
     form_class = ProcessRegForm
@@ -131,16 +134,28 @@ class ProcessView(forms.ModalFormView):
         context['username'] = self.get_object().username
         context['extaccounts'] = self.get_object().extaccounts
         context['processinglevel'] = self.get_object().reqlevel
-        context['prjrequests'] = map(get_pstatus_descr, self.get_object().reqprojects)
         context['newprojects'] = self.get_object().newprojects
+        context['regprojects'] = self.get_object().regprojects
+        context['pendprojects'] = self.get_object().pendprojects
+        context['apprprojects'] = self.get_object().apprprojects
+        context['rejprojects'] = self.get_object().rejprojects
         context['contacts'] = self.get_object().contacts
 
-        if context['processinglevel'] == RSTATUS_PENDING:
+        if self.get_object().reqlevel == RSTATUS_PENDING:
             context['processingtitle'] = _('Pre-check registrations')
-        elif context['processinglevel'] == RSTATUS_PRECHKD:
+            context['approveenabled'] = True
+        elif self.get_object().reqlevel == RSTATUS_PRECHKD:
             context['processingtitle'] = _('Pre-check project subscriptions')
+            context['approveenabled'] = True
         else:
             context['processingtitle'] = _('Approve registrations')
+            tmpsum = len(self.get_object().regprojects) + len(self.get_object().pendprojects)
+            if tmpsum > 0:
+                context['approveenabled'] = False
+            elif len(self.get_object().apprprojects) > 0:
+                context['approveenabled'] = True
+            else:
+                context['approveenabled'] = False
 
         return context
 

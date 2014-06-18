@@ -32,17 +32,44 @@
 </div>
 <div class="right">
 
-    {% if prjrequests %}
-        <h3>{% trans "Project membership to be approved" %}:</h3>
+    {% if regprojects %}
+        <h3>{% trans "User wants to subscribe to the following projects" %}:</h3>
         <ul>
-        {% for prjreq in prjrequests %}
+        {% for prjreq in regprojects %}
             <li>{{ prjreq }}</li>
         {% endfor %}
         </ul>
     {% endif %}
     
+    {% if pendprojects %}
+        <h3>{% trans "Waiting for project admin approval for" %}:</h3>
+        <ul>
+        {% for prjreq in pendprojects %}
+            <li>{{ prjreq }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if apprprojects %}
+        <h3>{% trans "Project admin approved the subscription for" %}:</h3>
+        <ul>
+        {% for prjreq in apprprojects %}
+            <li>{{ prjreq }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if rejprojects %}
+        <h3>{% trans "Project admin reject the subscription for" %}:</h3>
+        <ul>
+        {% for prjreq in rejprojects %}
+            <li>{{ prjreq }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+
     {% if newprojects %}
-        <h3>{% trans "Project to be created" %}:</h3>
+        <h3>{% trans "User wants to create the following projects" %}:</h3>
         <ul>
         {% for prjreq in newprojects %}
             <li>{{ prjreq }}</li>
@@ -54,7 +81,9 @@
 {% endblock %}
 
 {% block modal-footer %}
-  <input class="btn btn-primary pull-right" type="submit" value="{% trans "Submit" %}" />
+    {% if approveenabled %}
+        <input class="btn btn-primary pull-right" type="submit" value="{% trans "Submit" %}" />
+    {% endif %}
   <input class="btn btn-primary pull-right" type="button" onclick="rejSubmit()" value="{% trans "Reject" %}"/>
   <a href="{% url 'horizon:admin:registration_manager:index' %}" class="btn secondary cancel close">{% trans "Cancel" %}</a>  
 
