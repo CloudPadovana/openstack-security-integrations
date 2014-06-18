@@ -1,5 +1,5 @@
 import logging
-from types import StringType
+from types import ListType
 
 from django.conf import settings
 from django.core.mail import send_mail, mail_managers
@@ -35,10 +35,10 @@ def notify(recpt, msg_obj):
         return
     
     sender = settings.SERVER_EMAIL
-    if type(recpt) is StringType:
-        recipients = [ recpt ]
-    else:
+    if type(recpt) is ListType:
         recipients = recpt
+    else:
+        recipients = [ str(recpt) ]
     
     if len(recipients) == 0:
         LOG.error('Missing recipients')
