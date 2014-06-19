@@ -140,20 +140,22 @@ class ProcessView(forms.ModalFormView):
         context['rejprojects'] = self.get_object().rejprojects
         context['contacts'] = self.get_object().contacts
 
+        context['approveenabled'] = True
         if self.get_object().reqlevel == RSTATUS_PENDING:
             context['processingtitle'] = _('Pre-check registrations')
-            context['approveenabled'] = True
         elif self.get_object().reqlevel == RSTATUS_PRECHKD:
             context['processingtitle'] = _('Pre-check project subscriptions')
-            context['approveenabled'] = True
         else:
             context['processingtitle'] = _('Approve registrations')
-            tmpsum = len(self.get_object().regprojects) + len(self.get_object().pendprojects)
-            if tmpsum > 0:
-                context['approveenabled'] = False
-            elif len(self.get_object().apprprojects) > 0:
-                context['approveenabled'] = True
-            else:
+            
+            tmpsum1 = len(self.get_object().rejprojects) 
+            tmpsum1 += len(self.get_object().pendprojects)
+            
+            tmpsum2 = len(self.get_object().regprojects)
+            tmpsum2 += len(self.get_object().apprprojects)
+            tmpsum2 += len(self.get_object().newprojects)
+            
+            if tmpsum1 > 0 and tmpsum2 == 0:
                 context['approveenabled'] = False
 
         return context
