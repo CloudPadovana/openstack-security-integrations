@@ -80,8 +80,7 @@ class RegReqItem:
         for prj_req in prjreq_list:
             if prj_req.project.projectid:
             
-                if prj_req.flowstatus == PSTATUS_PENDING or \
-                    prj_req.flowstatus == PSTATUS_REG:
+                if prj_req.flowstatus == PSTATUS_REG:
                     prj_mark = False
                 if prj_req.project.status == PRJ_GUEST:
                     found_guest = True
