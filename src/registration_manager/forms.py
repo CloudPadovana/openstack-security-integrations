@@ -38,24 +38,12 @@ from openstack_auth_shib.models import RSTATUS_CHECKED
 from openstack_auth_shib.models import RSTATUS_NOFLOW
 
 from openstack_auth_shib.models import OS_LNAME_LEN
+from openstack_auth_shib.utils import get_project_managers
 
 from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
 TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
-
-def managersForPrj(request, prjId):
-    result = list()
-
-    #
-    # TODO verify number of calls to keystone
-    #
-    for user in  keystone_api.user_list(request, project=prjId):
-        for role in keystone_api.roles_for_user(request,user.id, prjId):
-            if role.name == TENANTADMIN_ROLE:
-                result.append(user)
-
-    return result
 
 class ProcessRegForm(forms.SelfHandlingForm):
 
@@ -180,7 +168,7 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 q_args['flowstatus'] = PSTATUS_PENDING
                 for p_item in prjReqList.filter(**q_args):
                 
-                    m_users = managersForPrj(request, p_item.project.projectid)
+                    m_users = get_project_managers(request, p_item.project.projectid)
                     
                     msg_obj = notifications.PrjManagerMessage(
                         username=registration.username,
