@@ -357,12 +357,10 @@ def processForm(request, reg_form, domain, attributes=None):
             redir_url = '/dashboard'
 
         tempDict = {
-            'error_header' : _("Registration done"),
-            'error_text' : _("Your registration has been submitted"),
             'redirect_url' : redir_url,
             'redirect_label' : _("Home")
         }
-        return shortcuts.render(request, 'aai_error.html', tempDict)
+        return shortcuts.render(request, 'aai_registration_ok.html', tempDict)
     
     except IntegrityError:
         tempDict = {

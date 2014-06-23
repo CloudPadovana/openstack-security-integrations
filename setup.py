@@ -49,7 +49,8 @@ css_dir = 'usr/share/openstack-dashboard/static/dashboard/less'
 template_list = [
     'src/templates/_register_form.html',
     'src/templates/registration.html',
-    'src/templates/aai_error.html'
+    'src/templates/aai_error.html',
+    'src/templates/aai_registration_ok.html'
 ]
 
 reg_templ_list = [
