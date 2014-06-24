@@ -87,6 +87,11 @@ class ApproveView(forms.ModalFormView):
         if not self.get_object():
             context['subscr_err'] = _("Cannot retrieve user's data from database.")
             context['contacts'] = settings.MANAGERS
+        else:
+            context['username'] = self.get_object().username
+            context['givenname'] = self.get_object().givenname
+            context['sn'] = self.get_object().sn
+            context['notes'] = self.get_object().notes
             
         return context
 

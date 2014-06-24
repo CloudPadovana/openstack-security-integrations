@@ -22,6 +22,16 @@
 </div>
 {% else %}
 <div class="left">
+
+    <h3>{% trans "User name" %}:</h3>
+    <p>{{ username }}</p>
+    <h3>{% trans "First name" %}:</h3>
+    <p>{{ givenname }}</p>
+    <h3>{% trans "Last name" %}:</h3>
+    <p>{{ sn }}</p>
+    <h3>{% trans "Notes" %}:</h3>
+    <p>{{ notes }}</p>
+    
     <fieldset>
     {% include "horizon/common/_form_fields.html" %}
     </fieldset>

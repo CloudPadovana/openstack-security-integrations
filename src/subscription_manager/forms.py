@@ -24,13 +24,13 @@ TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 
 class ApproveSubscrForm(forms.SelfHandlingForm):
 
-    readonlyInput = forms.TextInput(attrs={'readonly': 'readonly'})
+    #readonlyInput = forms.TextInput(attrs={'readonly': 'readonly'})
     
     regid = forms.IntegerField(label=_("ID"), widget=HiddenInput)
-    username = forms.CharField(label=_("User name"), widget=readonlyInput)
-    givenname = forms.CharField(label=_("First name"), widget=readonlyInput)
-    sn = forms.CharField(label=_("Last name"), widget=readonlyInput)
-    notes = forms.CharField(label=_("Notes"), required=False, widget=readonlyInput)
+    username = forms.CharField(label=_("User name"), widget=HiddenInput)
+    givenname = forms.CharField(label=_("First name"), widget=HiddenInput)
+    sn = forms.CharField(label=_("Last name"), widget=HiddenInput)
+    notes = forms.CharField(label=_("Notes"), required=False, widget=HiddenInput)
     checkaction = forms.CharField(widget=HiddenInput, initial='accept')
 
     @sensitive_variables('data')
