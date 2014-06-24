@@ -4,7 +4,6 @@ from django.db import transaction
 from django.utils.translation import ugettext as _
 
 from horizon import tables
-from horizon import messages
 
 from openstack_dashboard.dashboards.admin.users.tables import UsersTable as BaseUsersTable
 from openstack_dashboard.dashboards.admin.users.tables import EditUserLink as BaseEditUserLink
@@ -16,6 +15,8 @@ from openstack_auth_shib.models import Registration
 from openstack_auth_shib.utils import get_project_managers
 
 from openstack_dashboard.api import keystone as keystone_api
+
+from keystoneclient.exceptions import AuthorizationFailure
 
 LOG = logging.getLogger(__name__)
 
@@ -36,10 +37,9 @@ class DeleteUsersAction(BaseDeleteUsersAction):
         
         if tenant_ref:
             
-            messages.error(request, _("Cannot delete unique admin for %s") % tenant_ref)
-            #
-            # TODO fix double notification (error + deleted user)
-            #
+            failure = AuthorizationFailure()
+            failure._safe_message=_("Cannot delete unique admin for %s") % tenant_ref
+            raise failure
         
         else:
 
