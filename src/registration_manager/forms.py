@@ -336,3 +336,66 @@ class ProcessRegForm(forms.SelfHandlingForm):
             notifications.notify(recipients, msg_obj)
 
 
+class ForceApproveForm(forms.SelfHandlingForm):
+
+    regid = forms.IntegerField(label=_("ID"), widget=HiddenInput)
+
+    def __init__(self, request, *args, **kwargs):
+        super(ForceApproveForm, self).__init__(request, *args, **kwargs)
+        
+        regid = int(kwargs['initial']['regid'])
+        q_args = {
+            'registration__regid' : regid,
+            'flowstatus' : PSTATUS_PENDING
+        }
+        pendProjects = PrjRequest.objects.filter(**q_args)
+
+        for p_item in pendProjects:
+            prjname = p_item.project.projectname
+            prjid = p_item.project.projectid
+            self.fields['project_%s' % prjid] = forms.ChoiceField(
+                label=prjname,
+                required=False,
+                widget=forms.Select(),
+                choices=[
+                    (PSTATUS_PENDING, _('Keep pending')),
+                    (PSTATUS_APPR, _('Approve')),
+                    (PSTATUS_REJ, _('Reject'))
+                ]
+            )
+    
+    @sensitive_variables('data')
+    def handle(self, request, data):
+    
+        accpt_prjs = list()
+        rej_prjs = list()
+        
+        for key in data:
+            if key.startswith('project_'):
+                pstatus = int(data[key])
+                if pstatus == PSTATUS_APPR:
+                    accpt_prjs.append(key[8:])
+                elif pstatus == PSTATUS_REJ:
+                    rej_prjs.append(key[8:])
+        
+        with transaction.commit_on_success():
+            
+            if len(accpt_prjs):
+                q_args = {
+                    'registration__regid' : int(data['regid']),
+                    'project__projectid__in' : accpt_prjs
+                }
+                PrjRequest.objects.filter(**q_args).update(flowstatus=PSTATUS_APPR)
+
+            if len(rej_prjs):
+                q_args = {
+                    'registration__regid' : int(data['regid']),
+                    'project__projectid__in' : rej_prjs
+                }
+                PrjRequest.objects.filter(**q_args).update(flowstatus=PSTATUS_REJ)
+
+        return True
+
+
+
+

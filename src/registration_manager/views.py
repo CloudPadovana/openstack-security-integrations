@@ -27,7 +27,7 @@ from openstack_auth_shib.models import RSTATUS_CHECKED
 from openstack_auth_shib.models import RSTATUS_NOFLOW
 
 from .tables import RegisterTable
-from .forms import ProcessRegForm
+from .forms import ProcessRegForm, ForceApproveForm
 
 LOG = logging.getLogger(__name__)
 
@@ -166,6 +166,33 @@ class ProcessView(forms.ModalFormView):
             'username' : self.get_object().username,
             'processinglevel' : self.get_object().reqlevel
         }
+
+#
+# TODO forceapprview never pops up a modal view
+# see https://bugs.launchpad.net/horizon/+bug/1276735
+#
+class ForceApprView(forms.ModalFormView):
+    form_class = ForceApproveForm
+    template_name = 'admin/registration_manager/reg_approve.html'
+    
+    def get_success_url(self):
+        return reverse_lazy('horizon:admin:registration_manager:process',
+                            kwargs=self.kwargs)
+        
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            self._object = self.kwargs['regid']
+        return self._object
+
+    def get_context_data(self, **kwargs):
+        context = super(ForceApprView, self).get_context_data(**kwargs)
+        context['regid'] = self.kwargs['regid']
+        return context
+        
+    def get_initial(self):
+        return { 'regid' : self.kwargs['regid'] }
+
+
 
 
 

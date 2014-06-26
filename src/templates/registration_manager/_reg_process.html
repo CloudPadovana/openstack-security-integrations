@@ -48,6 +48,9 @@
             <li>{{ prjreq }}</li>
         {% endfor %}
         </ul>
+        
+        <a href="{% url 'horizon:admin:registration_manager:forceapprove' regid %}"
+            class="btn btn-primary pull-right">{% trans "Force approval" %}</a>
     {% endif %}
 
     {% if apprprojects %}
