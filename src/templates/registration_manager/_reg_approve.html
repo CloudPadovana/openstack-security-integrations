@@ -22,6 +22,6 @@
 {% block modal-footer %}
   <input class="btn btn-primary pull-right" type="submit" value="{% trans "Submit" %}" />
   <a href="{% url 'horizon:admin:registration_manager:process' regid %}" 
-      class="btn secondary cancel close">{% trans "Cancel" %}</a>
+      class="btn secondary ajax-modal cancel close">{% trans "Cancel" %}</a>
 {% endblock %}
 

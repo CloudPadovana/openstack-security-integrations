@@ -5,7 +5,7 @@
 {% block form_id %}process_reg_form{% endblock %}
 {% block form_action %}{% url 'horizon:admin:registration_manager:process' regid %}{% endblock %}
 
-{% block modal-header %}{{ processingtitle}}{% endblock %}
+{% block modal-header %}{{ processingtitle }}{% endblock %}
 
 {% block modal-body %}
 <div class="left">
@@ -33,15 +33,18 @@
 <div class="right">
 
     {% if regprojects %}
+    <div class="modal-body clearfix">
         <h3>{% trans "User wants to subscribe to the following projects" %}:</h3>
         <ul>
         {% for prjreq in regprojects %}
             <li>{{ prjreq }}</li>
         {% endfor %}
         </ul>
+    </div>
     {% endif %}
     
     {% if pendprojects %}
+    <div class="modal-body clearfix">
         <h3>{% trans "Waiting for project admin approval for" %}:</h3>
         <ul>
         {% for prjreq in pendprojects %}
@@ -50,34 +53,41 @@
         </ul>
         
         <a href="{% url 'horizon:admin:registration_manager:forceapprove' regid %}"
-            class="btn btn-primary pull-right">{% trans "Force approval" %}</a>
+            class="btn btn-primary ajax-modal pull-right">{% trans "Force approval" %}</a>
+    </div>
     {% endif %}
 
     {% if apprprojects %}
+    <div class="modal-body clearfix">
         <h3>{% trans "Project admin approved the subscription for" %}:</h3>
         <ul>
         {% for prjreq in apprprojects %}
             <li>{{ prjreq }}</li>
         {% endfor %}
         </ul>
+    </div>
     {% endif %}
 
     {% if rejprojects %}
+    <div class="modal-body clearfix">
         <h3>{% trans "Project admin reject the subscription for" %}:</h3>
         <ul>
         {% for prjreq in rejprojects %}
             <li>{{ prjreq }}</li>
         {% endfor %}
         </ul>
+    </div>
     {% endif %}
 
     {% if newprojects %}
+    <div class="modal-body clearfix">
         <h3>{% trans "User wants to create the following projects" %}:</h3>
         <ul>
         {% for prjreq in newprojects %}
             <li>{{ prjreq }}</li>
         {% endfor %}
         </ul>
+    </div>
     {% endif %}
     
 </div>
