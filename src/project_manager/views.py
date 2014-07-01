@@ -23,7 +23,7 @@ class ExtPrjItem:
     def __init__(self, prj_data):
         self.id = prj_data.id
         self.name = prj_data.name
-        self.description = prj_data.description
+        self.description = prj_data.description if prj_data.description else ""
         self.enabled = prj_data.enabled
         self.status = PRJ_PRIVATE
         self.checked = False
