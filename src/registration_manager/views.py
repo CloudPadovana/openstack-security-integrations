@@ -148,14 +148,14 @@ class ProcessView(forms.ModalFormView):
         else:
             context['processingtitle'] = _('Approve registrations')
             
-            tmpsum1 = len(self.get_object().rejprojects) 
-            tmpsum1 += len(self.get_object().pendprojects)
+            tmpsum = len(self.get_object().regprojects)
+            tmpsum += len(self.get_object().apprprojects)
+            tmpsum += len(self.get_object().newprojects)
             
-            tmpsum2 = len(self.get_object().regprojects)
-            tmpsum2 += len(self.get_object().apprprojects)
-            tmpsum2 += len(self.get_object().newprojects)
-            
-            if tmpsum1 > 0 and tmpsum2 == 0:
+            if len(self.get_object().pendprojects) > 0:
+                context['approveenabled'] = False
+                
+            if len(self.get_object().rejprojects) > 0 and tmpsum == 0:
                 context['approveenabled'] = False
 
         return context
@@ -167,10 +167,6 @@ class ProcessView(forms.ModalFormView):
             'processinglevel' : self.get_object().reqlevel
         }
 
-#
-# TODO forceapprview never pops up a modal view
-# see https://bugs.launchpad.net/horizon/+bug/1276735
-#
 class ForceApprView(forms.ModalFormView):
     form_class = ForceApproveForm
     template_name = 'admin/registration_manager/reg_approve.html'
