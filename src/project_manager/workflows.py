@@ -17,7 +17,7 @@ from openstack_dashboard.dashboards.admin.projects.workflows import CreateProjec
 
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PRJ_PUBLIC, PRJ_GUEST
-from openstack_auth_shib.utils import get_admin_roleid
+from openstack_auth_shib.utils import get_admin_roleid, get_project_managers
 
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -29,15 +29,15 @@ class UpdateProject(BaseUpdateProject):
 
 class ExtCreateProjectInfoAction(CreateProjectInfoAction):
 
-    guest = forms.BooleanField(
-        label=_("Guest Project"),
-        required=False,
-        initial=False
-    )
-
-
     def __init__(self, request, *args, **kwargs):
         super(ExtCreateProjectInfoAction, self).__init__(request, *args, **kwargs)
+        
+        if Project.objects.filter(status=PRJ_GUEST).count() == 0:
+            self.fields['guest'] = forms.BooleanField(
+                label=_("Guest Project"),
+                required=False,
+                initial=False
+            )
 
     class Meta:
         name = _("Project Info")
@@ -86,27 +86,26 @@ class CreateProject(BaseCreateProject):
         #
         with transaction.commit_on_success():
         
-            is_guest = False
-            if data['guest']:
-                is_guest = (Project.objects.filter(status=PRJ_GUEST).count() == 0)
-        
             super(CreateProject, self).handle(request, data)
+            newprj_id = self.object.id
             
             qargs = {
                 'projectname' : name,
-                'projectid' : self.object.id,
+                'projectid' : newprj_id,
                 'description' : desc,
-                'status' : PRJ_GUEST if is_guest else PRJ_PUBLIC
+                'status' : PRJ_GUEST if data.get('guest', False) else PRJ_PUBLIC
             }
             newprj = Project(**qargs)
             newprj.save()
         
         
         #
-        # Insert admin as project_manager
+        # Insert admin as project_manager for manually created tenants
         #
-        keystone_api.add_tenant_user_role(request, self.object.id,
-            request.user.id, get_admin_roleid(request))
+        prj_man_list = get_project_managers(request, newprj_id)
+        if len(prj_man_list) == 0:
+            keystone_api.add_tenant_user_role(request, newprj_id,
+                request.user.id, get_admin_roleid(request))
             
         return True
 
