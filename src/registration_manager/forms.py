@@ -350,9 +350,16 @@ class ForceApproveForm(forms.SelfHandlingForm):
         }
         pendProjects = PrjRequest.objects.filter(**q_args)
 
+        self.prjcache = dict()
+        self.username = None
         for p_item in pendProjects:
+        
             prjname = p_item.project.projectname
             prjid = p_item.project.projectid
+            self.prjcache[prjid] = prjname
+            if not self.username:
+                self.username = p_item.registration.username
+            
             self.fields['project_%s' % prjid] = forms.ChoiceField(
                 label=prjname,
                 required=False,
@@ -393,6 +400,23 @@ class ForceApproveForm(forms.SelfHandlingForm):
                     'project__projectid__in' : rej_prjs
                 }
                 PrjRequest.objects.filter(**q_args).update(flowstatus=PSTATUS_REJ)
+
+
+        for prjid in accpt_prjs:
+            m_users = get_project_managers(request, prjid)
+            msg_obj = notifications.ForcedApprovedMessage(
+                username=self.username,
+                projectname=self.prjcache[prjid]
+            )
+            notifications.notify([ usr.email for usr in m_users ], msg_obj)
+
+        for prjid in rej_prjs:
+            m_users = get_project_managers(request, prjid)
+            msg_obj = notifications.ForcedRejectedMessage(
+                username=self.username,
+                projectname=self.prjcache[prjid]
+            )
+            notifications.notify([ usr.email for usr in m_users ], msg_obj)
 
         return True
 

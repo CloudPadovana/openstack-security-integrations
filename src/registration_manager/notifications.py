@@ -21,6 +21,20 @@ class PrjManagerMessage(NotificationMessage):
         self.body = _('User %(username)s requires access to project %(projectname)s\n') % kwargs
         self.body += FOOTER_DISCLAIMER + '\n'
 
+class ForcedApprovedMessage(NotificationMessage):
+
+    def __init__(self, **kwargs):
+        self.subject = _("Cloud manager forcedly approved subscription")
+        self.body = _('Cloud manager forcedly approved the subscription of %(username)s to %(projectname)s\n') % kwargs
+        self.body += FOOTER_DISCLAIMER + '\n'
+
+class ForcedRejectedMessage(NotificationMessage):
+
+    def __init__(self, **kwargs):
+        self.subject = _("Cloud manager forcedly rejected subscription")
+        self.body = _('Cloud manager forcedly rejected the subscription of %(username)s to %(projectname)s\n') % kwargs
+        self.body += FOOTER_DISCLAIMER + '\n'
+
 class TenantNotifMessage(NotificationMessage):
 
     def __init__(self, **kwargs):
