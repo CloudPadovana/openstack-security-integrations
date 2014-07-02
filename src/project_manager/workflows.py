@@ -17,6 +17,9 @@ from openstack_dashboard.dashboards.admin.projects.workflows import CreateProjec
 
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PRJ_PUBLIC, PRJ_GUEST
+from openstack_auth_shib.utils import get_admin_roleid
+
+from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
 
@@ -97,6 +100,13 @@ class CreateProject(BaseCreateProject):
             }
             newprj = Project(**qargs)
             newprj.save()
+        
+        
+        #
+        # Insert admin as project_manager
+        #
+        keystone_api.add_tenant_user_role(request, self.object.id,
+            request.user.id, get_admin_roleid(request))
             
         return True
 
