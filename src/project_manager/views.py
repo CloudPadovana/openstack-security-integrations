@@ -16,6 +16,7 @@ from .workflows import CreateProject
 
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PRJ_PRIVATE
+from openstack_auth_shib.utils import import_guest_project
 
 LOG = logging.getLogger(__name__)
 
@@ -36,6 +37,9 @@ class IndexView(BaseIndexView):
         return self._more
 
     def get_data(self):
+    
+        import_guest_project()
+        
         result = list()
         marker = self.request.GET.get(ProjectsTable._meta.pagination_param, None)
         domain_context = self.request.session.get('domain_context', None)

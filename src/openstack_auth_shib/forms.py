@@ -10,6 +10,7 @@ from django.utils.translation import ugettext as _
 from .models import Project
 from .models import PRJ_PRIVATE, PRJ_GUEST
 from .models import OS_LNAME_LEN, OS_SNAME_LEN, PWD_LEN, EMAIL_LEN
+from .utils import import_guest_project
 
 LOG = logging.getLogger(__name__)
 
@@ -141,6 +142,8 @@ class MixRegistForm(forms.Form):
             initial='reject'
         )
 
+        import_guest_project()
+        
         missing_guest = True
         avail_prjs = list()
         for prj_entry in Project.objects.exclude(status=PRJ_PRIVATE):
