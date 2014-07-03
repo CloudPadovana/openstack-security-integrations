@@ -3,6 +3,7 @@ import logging
 from horizon import forms
 from horizon.utils import validators
 
+from django.conf import settings
 from django.forms import ValidationError
 from django.utils.translation import ugettext as _
 
@@ -116,9 +117,12 @@ class MixRegistForm(forms.Form):
             required=True
         )
     
-        self.fields['phone'] = forms.CharField(
+        phone_regex = settings.HORIZON_CONFIG.get('phone_regex', '^\s*\+*[0-9]+[0-9\s.]+\s*$')
+        self.fields['phone'] = forms.RegexField(
             label=_('Phone number'),
-            required=True
+            required=True,
+            regex=phone_regex,
+            error_messages={'invalid': _("Wrong phone format")}
         )
     
         self.fields['contactper'] = forms.CharField(
