@@ -143,10 +143,13 @@ class ProcessView(forms.ModalFormView):
         context['approveenabled'] = True
         if self.get_object().reqlevel == RSTATUS_PENDING:
             context['processingtitle'] = _('Pre-check registrations')
+            context['processingbtn'] = _('Pre-check')
         elif self.get_object().reqlevel == RSTATUS_PRECHKD:
             context['processingtitle'] = _('Pre-check project subscriptions')
+            context['processingbtn'] = _('Pre-check')
         else:
             context['processingtitle'] = _('Approve registrations')
+            context['processingbtn'] = _('Approve')
             
             tmpsum = len(self.get_object().regprojects)
             tmpsum += len(self.get_object().apprprojects)

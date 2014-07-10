@@ -156,12 +156,12 @@ class MixRegistForm(forms.Form):
         
         if missing_guest:
             p_choices = [
-                ('newprj', _('Create personal project')),
+                ('newprj', _('Create new project')),
                 ('selprj', _('Select existing projects'))
             ]
         else:
             p_choices = [
-                ('newprj', _('Create personal project')),
+                ('newprj', _('Create new project')),
                 ('selprj', _('Select existing projects')),
                 ('guestprj', _('Use guest project'))
             ]

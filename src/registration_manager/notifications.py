@@ -35,16 +35,18 @@ class ForcedRejectedMessage(NotificationMessage):
         self.body = _('Cloud manager forcedly rejected the subscription of %(username)s to %(projectname)s\n') % kwargs
         self.body += FOOTER_DISCLAIMER + '\n'
 
-class TenantNotifMessage(NotificationMessage):
+class RequestResultMessage(NotificationMessage):
 
     def __init__(self, **kwargs):
-        self.subject = _("Tenant subscription request")
         self.body = ''
         
         username = kwargs.get('username', None)
         if username:
+            self.subject = _("Your registration has been accepted")
             self.body += _("Your account has been registered\n")
             self.body += _("Your login name is %s\n") % username
+        else:
+            self.subject = _("Your project subscriptions have been evaluated")
         
         prjok_list = kwargs.get('prj_ok', [])
         if prjok_list:

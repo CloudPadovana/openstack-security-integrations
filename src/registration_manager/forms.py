@@ -274,7 +274,7 @@ class ProcessRegForm(forms.SelfHandlingForm):
                                                     registration.userid, self.prjman_roleid)
                 
                 
-                notifications.notify(email, notifications.TenantNotifMessage(
+                notifications.notify(email, notifications.RequestResultMessage(
                     username = registration.username,
                     prj_ok = [ prj_req.project.projectname for prj_req in prjs_approved ],
                     prj_no = [ prj_req.project.projectname for prj_req in prjs_rejected ],
@@ -332,7 +332,7 @@ class ProcessRegForm(forms.SelfHandlingForm):
             notifications.notify(recipients, notifications.REGISTRATION_NOT_AUTHORIZED)
         
         elif all_prj_req:
-            msg_obj = notifications.TenantNotifMessage(prj_no = all_prj_req)
+            msg_obj = notifications.RequestResultMessage(prj_no = all_prj_req)
             notifications.notify(recipients, msg_obj)
 
 

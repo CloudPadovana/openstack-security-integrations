@@ -95,7 +95,7 @@
 
 {% block modal-footer %}
     {% if approveenabled %}
-        <input class="btn btn-primary pull-right" type="submit" value="{% trans "Accept" %}" />
+        <input class="btn btn-primary pull-right" type="submit" value="{{ processingbtn }}" />
     {% endif %}
   <input class="btn btn-primary pull-right" type="button" onclick="rejSubmit()" value="{% trans "Reject" %}"/>
   <a href="{% url 'horizon:admin:registration_manager:index' %}" class="btn secondary cancel close">{% trans "Cancel" %}</a>  
