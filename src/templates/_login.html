@@ -44,6 +44,15 @@
         <hr />
   
         <div class="modal-body clearfix">
+        
+            <noscript>
+                <div class="control-group clearfix error">
+                    <span class="help-inline">
+                        <p>{% trans "Javascript is disabled; this site requires javascript" %}</p>
+                    </span>
+                </div>
+            </noscript>
+        
             {% if request.user.is_authenticated and 'next' in request.GET %}
             <div class="control-group clearfix error">
                 <span class="help-inline">
