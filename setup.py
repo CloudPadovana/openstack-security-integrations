@@ -102,7 +102,8 @@ module_list = [
     'subscription_manager',
     'user_manager',
     'password_manager',
-    'project_requests'
+    'project_requests',
+    'commands'
 ]
 
 setup(

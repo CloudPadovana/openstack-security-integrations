@@ -47,6 +47,9 @@ rm -rf %{buildroot}/%{python_sitelib}/password_manager
 mv %{buildroot}/%{python_sitelib}/project_requests/* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/project_requests
 rm -rf %{buildroot}/%{python_sitelib}/project_requests
+mv %{buildroot}/%{python_sitelib}/commands/* \
+   %{buildroot}/%{python_sitelib}/horizon/management/commands/
+rm -rf %{buildroot}/%{python_sitelib}/commands
 
 
 %clean
@@ -107,6 +110,9 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/project_requests/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/project_requests/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/project_requests/templates/project_requests/*.html
+%{python_sitelib}/horizon/management/commands/*.py
+%{python_sitelib}/horizon/management/commands/*.pyc
+%{python_sitelib}/horizon/management/commands/*.pyo
 
 %post -n openstack-auth-shib
 #
