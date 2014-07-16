@@ -46,6 +46,9 @@ def get_ostack_attributes(request):
 
 class IdPAttributes():
 
+    SHIB_TYPE = 0
+    GOOGLE_TYPE = 1
+
     def __init__(self, request):
         
         self.ok = False
@@ -53,8 +56,9 @@ class IdPAttributes():
         if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-shib'):
             
             self.ok = True
+            self.type = IdPAttributes.SHIB_TYPE
             self.root_url = '/dashboard-shib'
-            self.logout_url = '/Shibboleth.sso/Logout?return=https://%s:%s/dashboard' % \
+            self.logout_prefix = '/Shibboleth.sso/Logout?return=https://%s:%s' % \
                 (request.META['SERVER_NAME'], request.META['SERVER_PORT'])
             
             # the remote user correspond to the ePPN
@@ -72,8 +76,8 @@ class IdPAttributes():
         if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-google'):
         
             self.ok = True
+            self.type = IdPAttributes.GOOGLE_TYPE
             self.root_url = '/dashboard-google'
-            self.logout_url = '/dashboard-google/auth/logout'
             self.username = request.META['REMOTE_USER']
             self.email = request.GET.get('openid.ext1.value.email', self.username)
             self.givenname = request.GET.get('openid.ext1.value.givenName', 'Unknown')
@@ -81,19 +85,44 @@ class IdPAttributes():
 
     def __nonzero__(self):
         return self.ok
+    
+    def get_logout_url(self, *args):
+        
+        if self.type == IdPAttributes.SHIB_TYPE:
+            result = self.logout_prefix
+            if len(args):
+                result += args[0]
+            else:
+                result += '/dashboard'
+            return result
+        
+        if len(args):
+            return args[0]
+        return '/dashboard'
 
 
 def build_err_response(request, code, attributes):
-    response = shortcuts.redirect(attributes.logout_url)
+    response = shortcuts.redirect(attributes.get_logout_url())
     response.set_cookie('aai_error', code)
     
-    if attributes.root_url == '/dashboard-google':
+    if attributes.type == IdPAttributes.GOOGLE_TYPE:
         response.delete_cookie('open_id_session_id', path='/dashboard-google')
 
     return response
 
 def adj_response(response):
     response.delete_cookie('aai_error')
+    return response
+
+def build_safe_redirect(request, location, attributes):
+    if attributes:
+        response = shortcuts.redirect(attributes.get_logout_url(location))
+    
+        if attributes.type == IdPAttributes.GOOGLE_TYPE:
+            response.delete_cookie('open_id_session_id', path='/dashboard-google')
+    else:
+        response = shortcuts.redirect(location)
+        
     return response
 
 @sensitive_post_parameters()
@@ -151,9 +180,9 @@ def login(request):
 
 def logout(request):
 
-    if request.path.startswith('/dashboard-shib'):
+    attributes = IdPAttributes(request)
     
-        attributes = IdPAttributes(request)
+    if attributes and attributes.type == IdPAttributes.SHIB_TYPE:
         
         msg = 'Logging out user "%(username)s".' % {'username': request.user.username}
         LOG.info(msg)
@@ -170,9 +199,9 @@ def logout(request):
 
         # update the session cookies (sessionid and csrftoken)
         auth_logout(request)
-        return shortcuts.redirect(attributes.logout_url)
+        return shortcuts.redirect(attributes.get_logout_url())
         
-    elif request.path.startswith('/dashboard-google'):
+    elif attributes and attributes.type == IdPAttributes.GOOGLE_TYPE:
         
         response = basic_logout(request)
         response.delete_cookie('open_id_session_id', path='/dashboard-google')
@@ -206,13 +235,8 @@ def _register(request, attributes):
         
         num_req = RegRequest.objects.filter(externalid=attributes.username).count()
         if num_req:
-            tempDict = {
-                'error_header' : _("Registration error"),
-                'error_text' : _("Request has already been sent"),
-                'redirect_url' : '/dashboard',
-                'redirect_label' : _("Home")
-            }
-            return shortcuts.render(request, 'aai_error.html', tempDict)
+        
+            return build_safe_redirect(request, '/dashboard/auth/dup_login/', attributes)
 
         reg_form = MixRegistForm(initial={
             'givenname' : attributes.givenname,
@@ -357,36 +381,53 @@ def processForm(request, reg_form, domain, attributes=None):
         
         notifyManagers(RegistrAvailable(username=username))
 
-        if attributes:
-            redir_url = attributes.logout_url
-        else:
-            redir_url = '/dashboard'
-
-        tempDict = {
-            'redirect_url' : redir_url,
-            'redirect_label' : _("Home")
-        }
-        return shortcuts.render(request, 'aai_registration_ok.html', tempDict)
+        return build_safe_redirect(request, '/dashboard/auth/reg_done/', attributes)
     
     except IntegrityError:
-        tempDict = {
-            'error_header' : _("Registration error"),
-            'error_text' : _("Login name or project already exists, please, choose another one"),
-            'redirect_url' : '/dashboard',
-            'redirect_label' : _("Home")
-        }
-        return shortcuts.render(request, 'aai_error.html', tempDict)
+    
+        return build_safe_redirect(request, '/dashboard/auth/name_exists/', attributes)
 
     except:
+    
         LOG.error("Generic failure", exc_info=True)
-        tempDict = {
-            'error_header' : _("Registration error"),
-            'error_text' : _("A failure occurs registering user"),
-            'contacts' : getattr(settings, 'MANAGERS', None),
-            'redirect_url' : '/dashboard',
-            'redirect_label' : _("Home")
-        }
-        return shortcuts.render(request, 'aai_error.html', tempDict)
+        return build_safe_redirect(request, '/dashboard/auth/reg_failure/', attributes)
                 
+
+def reg_done(request):
+    tempDict = {
+        'redirect_url' : '/dashboard',
+        'redirect_label' : _("Home")
+    }
+    return shortcuts.render(request, 'aai_registration_ok.html', tempDict)
+
+def reg_failure(request):
+    tempDict = {
+        'error_header' : _("Registration error"),
+        'error_text' : _("A failure occurs registering user"),
+        'contacts' : getattr(settings, 'MANAGERS', None),
+        'redirect_url' : '/dashboard',
+        'redirect_label' : _("Home")
+    }
+    return shortcuts.render(request, 'aai_error.html', tempDict)
+
+def name_exists(request):
+    tempDict = {
+        'error_header' : _("Registration error"),
+        'error_text' : _("Login name or project already exists, please, choose another one"),
+        'redirect_url' : '/dashboard',
+        'redirect_label' : _("Home")
+    }
+    return shortcuts.render(request, 'aai_error.html', tempDict)
+
+def dup_login(request):
+    tempDict = {
+        'error_header' : _("Registration error"),
+        'error_text' : _("Request has already been sent"),
+        'redirect_url' : '/dashboard',
+        'redirect_label' : _("Home")
+    }
+    return shortcuts.render(request, 'aai_error.html', tempDict)
+
+
 
 
