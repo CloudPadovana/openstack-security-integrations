@@ -83,6 +83,19 @@ class IdPAttributes():
         return self.ok
 
 
+def build_err_response(request, code, attributes):
+    response = shortcuts.redirect(attributes.logout_url)
+    response.set_cookie('aai_error', code)
+    
+    if attributes.root_url == '/dashboard-google':
+        response.delete_cookie('open_id_session_id', path='/dashboard-google')
+
+    return response
+
+def adj_response(response):
+    response.delete_cookie('aai_error')
+    return response
+
 @sensitive_post_parameters()
 @csrf_protect
 @never_cache
@@ -116,37 +129,32 @@ def login(request):
                 region_name = regions.get(region)
                 request.session['region_endpoint'] = region
                 request.session['region_name'] = region_name
-            return shortcuts.redirect( '%s/project' % attributes.root_url)
+            
+            return adj_response(shortcuts.redirect( '%s/project' % attributes.root_url))
             
     except (UserMapping.DoesNotExist, keystone_exceptions.NotFound):
+
         LOG.debug("User %s authenticated but not authorized" % attributes.username)
         return _register(request, attributes)
+
     except keystone_exceptions.Unauthorized:
-        tempDict = {
-            'error_header' : _("Authentication failed"),
-            'error_text' : _("User not authenticated"),
-            'redirect_url' : '/dashboard',
-            'redirect_label' : _("Home")
-        }
-        return shortcuts.render(request, 'aai_error.html', tempDict)
+
+        return build_err_response(request, 'NOAUTHZ', attributes)
+
     except Exception as exc:
+
         LOG.error(exc.message, exc_info=True)
-        tempDict = {
-            'error_header' : _("Authentication error"),
-            'error_text' : _("A failure occurs authenticating user"),
-            'contacts' : settings.MANAGERS,
-            'redirect_url' : '/dashboard',
-            'redirect_label' : _("Home")
-        }
-        return shortcuts.render(request, 'aai_error.html', tempDict)
+        return build_err_response(request, 'GENERICERROR', attributes)
         
-    return basic_login(request)
+    return adj_response(basic_login(request))
 
 
 def logout(request):
 
     if request.path.startswith('/dashboard-shib'):
     
+        attributes = IdPAttributes(request)
+        
         msg = 'Logging out user "%(username)s".' % {'username': request.user.username}
         LOG.info(msg)
         if old_token_mgm:
@@ -162,9 +170,7 @@ def logout(request):
 
         # update the session cookies (sessionid and csrftoken)
         auth_logout(request)
-        ret_URL = "https://%s:%s/dashboard" % (request.META['SERVER_NAME'],
-                                               request.META['SERVER_PORT'])
-        return shortcuts.redirect('/Shibboleth.sso/Logout?return=%s' % ret_URL)
+        return shortcuts.redirect(attributes.logout_url)
         
     elif request.path.startswith('/dashboard-google'):
         
@@ -216,7 +222,7 @@ def _register(request, attributes):
     tempDict = { 'form': reg_form,
                  'userid' : attributes.username,
                  'form_action_url' : '%s/auth/register/' % attributes.root_url }
-    return shortcuts.render(request, 'registration.html', tempDict)
+    return adj_response(shortcuts.render(request, 'registration.html', tempDict))
 
 
 def register(request):
@@ -242,7 +248,7 @@ def register(request):
     
         tempDict = { 'form': reg_form,
                      'form_action_url' : '/dashboard/auth/register/' }
-        return shortcuts.render(request, 'registration.html', tempDict)
+        return adj_response(shortcuts.render(request, 'registration.html', tempDict))
 
 
 def processForm(request, reg_form, domain, attributes=None):

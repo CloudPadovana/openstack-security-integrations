@@ -70,6 +70,19 @@
             </div>
             {% endif %}
        
+            {% if request.COOKIES.aai_error %}
+            <div class="control-group clearfix error">
+                <span class="help-inline">
+                {% if request.COOKIES.aai_error == 'NOAUTHZ'%}
+                    <p>{% trans "User not authorized: invalid or disabled" %}</p>
+                {% else %}
+                    <p>{% trans "A failure occurs authenticating user" %}</p>
+                    <p>{% trans "Please, contact the cloud managers" %}</p>
+                {% endif %}
+                </span>
+            </div>
+            {% endif %}
+
             {% if next %}<input type="hidden" name="{{ redirect_field_name }}" value="{{ next }}" />{% endif %}
         </div>
     
