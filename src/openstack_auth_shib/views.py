@@ -428,6 +428,24 @@ def dup_login(request):
     }
     return shortcuts.render(request, 'aai_error.html', tempDict)
 
+#
+# Used in /etc/shibboleth/shibboleth2.xml
+#
+def auth_error(request):
+
+    if 'errorText' in request.GET:
+        err_msg = "%s: [%s]" % (_("Original error"), request.GET['errorText'])
+    else:
+        err_msg = _("A failure occurs authenticating user")
+    
+    tempDict = {
+        'error_header' : _("Authentication error"),
+        'error_text' : err_msg,
+        'contacts' : getattr(settings, 'MANAGERS', None),
+        'redirect_url' : '/dashboard',
+        'redirect_label' : _("Home")
+    }
+    return shortcuts.render(request, 'aai_error.html', tempDict)
 
 
 

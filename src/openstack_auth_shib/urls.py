@@ -25,5 +25,6 @@ urlpatterns = patterns('openstack_auth_shib.views',
     url(r"^reg_done/$", "reg_done", name='reg_done'),
     url(r"^name_exists/$", "name_exists", name='name_exists'),
     url(r"^reg_failure/$", "reg_failure", name='reg_failure'),
-    url(r"^dup_login/$", "dup_login", name='dup_login')
+    url(r"^dup_login/$", "dup_login", name='dup_login'),
+    url(r"^auth_error/$", "auth_error", name='auth_error')
 )
