@@ -15,10 +15,17 @@
 
         <div class="modal-body">
     
+            {% if HORIZON_CONFIG.infntesting_enabled %}
             <button type="button" 
                     onclick="location.href='/Shibboleth.sso/Login?entityID=https%3A%2F%2Fidp.infn.it%2Ftesting%2Fsaml2%2Fidp%2Fmetadata.php';">
                 <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
             </button>
+            {% else %}
+            <button type="button" 
+                    onclick="location.href='/Shibboleth.sso/Login?entityID=https%3A%2F%2Fidp.infn.it%2Fsaml2%2Fidp%2Fmetadata.php';">
+                <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
+            </button>
+            {% endif %}
       
             {% if HORIZON_CONFIG.idem_enabled %}
             <button type="button" 
