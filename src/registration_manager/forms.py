@@ -148,9 +148,10 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 #
                 # User renaming
                 #
-                registration.username = data['username']
-                registration.expdate = data['expiration']
-                registration.save()
+                if registration.userid == None:
+                    registration.username = data['username']
+                    registration.expdate = data['expiration']
+                    registration.save()
                 
                 userReqList.update(flowstatus=RSTATUS_CHECKED)
                 
@@ -180,6 +181,7 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 main_tenant = None
                 email = None
                 password = None
+                first_registr = False
                 
                 domain_id = self._convert_domain(request, registration.domain)
 
@@ -257,6 +259,7 @@ class ProcessRegForm(forms.SelfHandlingForm):
                         
                     registration.userid = kuser.id
                     registration.save()
+                    first_registr = True
                     
                 else:
                     email = self._retrieve_email(request, registration.userid)
@@ -273,14 +276,19 @@ class ProcessRegForm(forms.SelfHandlingForm):
                         keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
                                                     registration.userid, self.prjman_roleid)
                 
-                
-                notifications.notify(email, notifications.RequestResultMessage(
-                    username = registration.username,
-                    prj_ok = [ prj_req.project.projectname for prj_req in prjs_approved ],
-                    prj_no = [ prj_req.project.projectname for prj_req in prjs_rejected ],
-                    prj_new = [ prj_req.project.projectname for prj_req in prjs_to_create ]
-                ))
-                
+                if first_registr:
+                    notifications.notify(email, notifications.RequestResultMessage(
+                        username = registration.username,
+                        prj_ok = [ prj_req.project.projectname for prj_req in prjs_approved ],
+                        prj_no = [ prj_req.project.projectname for prj_req in prjs_rejected ],
+                        prj_new = [ prj_req.project.projectname for prj_req in prjs_to_create ]
+                    ))
+                elif len(prjs_approved) + len(prjs_rejected) + len(prjs_to_create) > 0:
+                    notifications.notify(email, notifications.RequestResultMessage(
+                        prj_ok = [ prj_req.project.projectname for prj_req in prjs_approved ],
+                        prj_no = [ prj_req.project.projectname for prj_req in prjs_rejected ],
+                        prj_new = [ prj_req.project.projectname for prj_req in prjs_to_create ]
+                    ))
                 
                 #
                 # cache cleanup
@@ -379,11 +387,12 @@ class ForceApproveForm(forms.SelfHandlingForm):
         
         for key in data:
             if key.startswith('project_'):
+                p_id = key[8:]
                 pstatus = int(data[key])
-                if pstatus == PSTATUS_APPR:
-                    accpt_prjs.append(key[8:])
-                elif pstatus == PSTATUS_REJ:
-                    rej_prjs.append(key[8:])
+                if pstatus == PSTATUS_APPR and p_id in self.prjcache:
+                    accpt_prjs.append(p_id)
+                elif pstatus == PSTATUS_REJ and p_id in self.prjcache:
+                    rej_prjs.append(p_id)
         
         with transaction.commit_on_success():
             
