@@ -78,6 +78,7 @@ class RegReqItem:
         self.rejprojects = list()
         self.newprojects = list()
         self.contacts = list()
+        self.emails = list()
         
         regreq_list = RegRequest.objects.filter(registration=registration)
         if len(regreq_list):
@@ -86,6 +87,7 @@ class RegReqItem:
                     self.extaccounts.append(reg_req.externalid)
                 self.reqlevel = min(self.reqlevel, reg_req.flowstatus)
                 self.contacts.append(reg_req.contactper)
+                self.emails.append(reg_req.email)
         else:
             self.reqlevel = RSTATUS_PRECHKD
 
@@ -154,6 +156,7 @@ class ProcessView(forms.ModalFormView):
         context['apprprojects'] = self.get_object().apprprojects
         context['rejprojects'] = self.get_object().rejprojects
         context['contacts'] = self.get_object().contacts
+        context['emails'] = self.get_object().emails
 
         context['approveenabled'] = True
         if self.get_object().reqlevel == RSTATUS_PENDING:

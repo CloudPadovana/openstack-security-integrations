@@ -1,3 +1,4 @@
+{% extends "horizon/common/_modal_form.html" %}
 {% comment %}
   Copyright (c) 2014 INFN - "Istituto Nazionale di Fisica Nucleare" - Italy
   All Rights Reserved.
@@ -15,7 +16,6 @@
   under the License. 
 {% endcomment %}
 
-{% extends "horizon/common/_modal_form.html" %}
 {% load i18n %}
 {% load url from future %}
 
@@ -45,7 +45,18 @@
     {% for ctc in contacts %}
         <li>{{ ctc }}</li>
     {% endfor %}
+    </ul>
     {% endif%}
+    
+    {% if emails %}
+    <h3>{% trans "Email addresses" %}:</h3>
+    <ul>
+    {% for emailaddr in emails %}
+        <li><a href="mailto:{{ emailaddr }}">{{ emailaddr }}</a></li>
+    {% endfor %}
+    </ul>
+    {% endif%}
+    
 </div>
 <div class="right">
 
