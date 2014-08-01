@@ -21,8 +21,8 @@ from distutils.core import setup
 from distutils.command.bdist_rpm import bdist_rpm as _bdist_rpm
 
 pkg_name = 'openstack-security-integrations'
-pkg_version = '1.0.0'
-pkg_release = '9'
+pkg_version = '1.0.1'
+pkg_release = '0'
 
 source_items = "setup.py src config"
 

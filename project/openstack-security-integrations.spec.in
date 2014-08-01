@@ -225,6 +225,6 @@ Keystone authentication plugin for secret token
 %endif
 
 %changelog
-* Thu Feb 28 2013 CREAM group <cream-support@lists.infn.it> - @PKGVERSION@-@PKGRELEASE@
+* Fri Aug 01 2014 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
 - New major release
 
