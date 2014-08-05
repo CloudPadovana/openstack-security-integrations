@@ -59,6 +59,7 @@ subscr_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/subscri
 user_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/admin/user_manager/templates/user_manager'
 pwd_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/settings/password_manager/templates/password_manager'
 preq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/project_requests/templates/project_requests'
+idpreq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/idp_requests/templates/idp_requests'
 css_dir = 'usr/share/openstack-dashboard/static/dashboard/less'
 
 template_list = [
@@ -100,6 +101,11 @@ preq_templ_list = [
     'src/templates/project_requests/_prj_request.html'
 ]
 
+idpreq_templ_list = [
+    'src/templates/idp_requests/idp_request.html',
+    'src/templates/idp_requests/_idp_request.html'
+]
+
 logo_list = [
     'src/templates/logoCloudAreapd.png',
     'src/templates/logoInfnAAI.png',
@@ -118,6 +124,7 @@ module_list = [
     'user_manager',
     'password_manager',
     'project_requests',
+    'idp_requests',
     'commands'
 ]
 
@@ -138,6 +145,7 @@ setup(
                   (pwd_panel_dir, pwd_templ_list),
                   (subscr_panel_dir, subscr_templ_list),
                   (preq_panel_dir, preq_templ_list),
+                  (idpreq_panel_dir, idpreq_templ_list),
                   (css_dir, ['src/templates/aai_infn_integrations.less']),
                   (img_dir, logo_list),
                   ('etc/openstack-auth-shib', ['config/idem-template-metadata.xml'])
