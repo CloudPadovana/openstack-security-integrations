@@ -14,8 +14,10 @@
 #  under the License. 
 
 import logging
+import urllib
 
 from django import shortcuts
+from django.conf import settings
 from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
 #from django.core.urlresolvers import reverse_lazy
@@ -35,15 +37,55 @@ LOG = logging.getLogger(__name__)
 
 def manage(request):
 
+    myproviders = set()
+    
+    allmaps = UserMapping.objects.filter(registration__userid=request.user.id)
+    for umap in allmaps:
+        idx = umap.globaluser.find('@')
+        if idx > 0:
+            myproviders.add(umap.globaluser[idx+1:])
+
+    ctx = dict()
+
     attributes = IdPAttributes(request)
     if attributes:
-        currpath = '%s/project/idp_requests/suspend/' % attributes.root_url
+        ctx['currpath'] = '%s/project/idp_requests/suspend/' % attributes.root_url
     else:
-        currpath = '/dashboard/project/idp_requests/suspend/'
+        ctx['currpath'] = '/dashboard/project/idp_requests/suspend/'
+    
+    if not 'infn.it' in myproviders:
+        
+        if settings.HORIZON_CONFIG.get('infntesting_enabled', False):
+            ctx['infntestquery'] = urllib.urlencode({
+                'url' : '/Shibboleth.sso/Login?entityID=%s&target=%s' % \
+                    ('https%3A%2F%2Fidp.infn.it%2Ftesting%2Fsaml2%2Fidp%2Fmetadata.php',
+                    '%2Fdashboard-shib%2Fproject%2Fidp_requests%2Fresume%2F')
+            })
+        else:
+            ctx['infnprodquery'] = urllib.urlencode({
+                'url' : '/Shibboleth.sso/Login?entityID=%s&target=%s' % \
+                    ('https%3A%2F%2Fidp.infn.it%2Fsaml2%2Fidp%2Fmetadata.php',
+                    '%2Fdashboard-shib%2Fproject%2Fidp_requests%2Fresume%2F')
+            })
+    
+    if settings.HORIZON_CONFIG.get('idem_enabled', False):
+    
+        ctx['idemquery'] = urllib.urlencode({
+            'url' : '/dashboard-shib/project/idp_requests/resume/'
+        })
+    
+    if not ('gmail.com' in myproviders or 'google.com' in myproviders) \
+        and settings.HORIZON_CONFIG.get('google_enabled', False):
+        
+        ctx['googlequery'] = urllib.urlencode({
+            'url' : '/dashboard-google/project/idp_requests/resume/'
+        })
+    
+    ctx['showidptable'] = len(ctx) > 1
     
     return shortcuts.render(request, 
                             'project/idp_requests/idp_request.html',
-                            { 'currpath' : currpath })
+                            ctx)
     
     
 

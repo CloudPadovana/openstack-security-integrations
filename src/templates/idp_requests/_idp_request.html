@@ -29,43 +29,49 @@
 {% block modal-body %}
 <div class="modal-body">
     <h3>{% trans "Available Identity Providers" %}</h3>
+    {% if showidptable %}
     <table>
 
-        {% if HORIZON_CONFIG.infntesting_enabled %}
+        {% if infntestquery %}
         <tr><td>
             <button type="button" 
-                    onclick="location.href='{{ currpath }}?url=%2FShibboleth.sso%2FLogin%3FentityID%3Dhttps%253A%252F%252Fidp.infn.it%252Ftesting%252Fsaml2%252Fidp%252Fmetadata.php';">
+                    onclick="location.href='{{ currpath }}?{{ infntestquery }}';">
                 <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
             </button>
         </td></tr>
-        {% else %}
+        {% endif %}
+        
+        {% if infnprodquery %}
         <tr><td>
             <button type="button" 
-                    onclick="location.href='{{ currpath }}?url=%2FShibboleth.sso%2FLogin%3FentityID%3Dhttps%253A%252F%252Fidp.infn.it%252Fsaml2%252Fidp%252Fmetadata.php';">
+                    onclick="location.href='{{ currpath }}?{{ infnprodquery }}';">
                 <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
             </button>
         </td></tr>
         {% endif %}
 
-        {% if HORIZON_CONFIG.idem_enabled %}
+        {% if idemquery %}
         <tr><td>
             <button type="button" 
-                    onclick="location.href='{{ currpath }}?url=%2Fdashboard-shib%2Fproject%2Fidp_requests%2Fresume%2F';">
+                    onclick="location.href='{{ currpath }}?{{ idemquery }}';">
                 <img align="middle" height="60px" width="80px" alt="Login IDEM" src="/static/dashboard/img/logoIDEM.png">
             </button>
         </td></tr>
         {% endif %}
 
-        {% if HORIZON_CONFIG.google_enabled %}
+        {% if googlequery %}
         <tr><td>
             <button type="button" 
-                    onclick="location.href='{{ currpath }}?url=%2Fdashboard-google%2Fproject%2Fidp_requests%2Fresume%2F';">
+                    onclick="location.href='{{ currpath }}?{{ googlequery }}';">
                 <img align="middle" height="60px" width="80px" alt="Login Google" src="/static/dashboard/img/logoGoogle.png">
             </button>
         </td></tr>
         {% endif %}
 
     </table>
+    {% else %}
+    <p>{% trans "No providers available" %}</p>
+    {% endif %}
 </div>
 {% endblock %}
 
