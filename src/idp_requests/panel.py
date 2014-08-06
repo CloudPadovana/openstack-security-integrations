@@ -20,7 +20,7 @@ import horizon
 from openstack_dashboard.dashboards.project import dashboard
 
 class IdPRequests(horizon.Panel):
-    name = _("Manage Identity Providers")
+    name = _("Identity Providers")
     slug = 'idp_requests'
 
 dashboard.Project.register(IdPRequests)

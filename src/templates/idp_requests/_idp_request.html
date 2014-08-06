@@ -34,14 +34,14 @@
         {% if HORIZON_CONFIG.infntesting_enabled %}
         <tr><td>
             <button type="button" 
-                    onclick="location.href='/Shibboleth.sso/Login?entityID=https%3A%2F%2Fidp.infn.it%2Ftesting%2Fsaml2%2Fidp%2Fmetadata.php';">
+                    onclick="location.href='{{ currpath }}?url=%2FShibboleth.sso%2FLogin%3FentityID%3Dhttps%253A%252F%252Fidp.infn.it%252Ftesting%252Fsaml2%252Fidp%252Fmetadata.php';">
                 <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
             </button>
         </td></tr>
         {% else %}
         <tr><td>
             <button type="button" 
-                    onclick="location.href='/Shibboleth.sso/Login?entityID=https%3A%2F%2Fidp.infn.it%2Fsaml2%2Fidp%2Fmetadata.php';">
+                    onclick="location.href='{{ currpath }}?url=%2FShibboleth.sso%2FLogin%3FentityID%3Dhttps%253A%252F%252Fidp.infn.it%252Fsaml2%252Fidp%252Fmetadata.php';">
                 <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
             </button>
         </td></tr>
@@ -50,7 +50,7 @@
         {% if HORIZON_CONFIG.idem_enabled %}
         <tr><td>
             <button type="button" 
-                    onclick="location.href='/dashboard-shib';">
+                    onclick="location.href='{{ currpath }}?url=%2Fdashboard-shib%2Fproject%2Fidp_requests%2Fresume%2F';">
                 <img align="middle" height="60px" width="80px" alt="Login IDEM" src="/static/dashboard/img/logoIDEM.png">
             </button>
         </td></tr>
@@ -59,7 +59,7 @@
         {% if HORIZON_CONFIG.google_enabled %}
         <tr><td>
             <button type="button" 
-                    onclick="location.href='/dashboard-google/auth/login/';">
+                    onclick="location.href='{{ currpath }}?url=%2Fdashboard-google%2Fproject%2Fidp_requests%2Fresume%2F';">
                 <img align="middle" height="60px" width="80px" alt="Login Google" src="/static/dashboard/img/logoGoogle.png">
             </button>
         </td></tr>
