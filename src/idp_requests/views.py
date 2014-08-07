@@ -18,6 +18,7 @@ import urllib
 
 from django import shortcuts
 from django.conf import settings
+from django.db import IntegrityError
 from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
 #from django.core.urlresolvers import reverse_lazy
@@ -82,6 +83,7 @@ def manage(request):
         })
     
     ctx['showidptable'] = len(ctx) > 1
+    ctx['providers'] = myproviders
     
     return shortcuts.render(request, 
                             'project/idp_requests/idp_request.html',
@@ -121,22 +123,30 @@ def resume(request):
     
     if attributes:
     
-        with transaction.commit_on_success():
+        try:
+            with transaction.commit_on_success():
         
-            extId = attributes.username
+                extId = attributes.username
         
-            registr = Registration.objects.filter(userid=userid)[0]
-            #
-            # TODO check EXT_ACCT_LEN
-            #
-            u_map = UserMapping(
-                globaluser=extId,
-                registration=registr
-            )
-            u_map.save()
+                registr = Registration.objects.filter(userid=userid)[0]
+                #
+                # TODO check EXT_ACCT_LEN
+                #
+                u_map = UserMapping(globaluser=extId, registration=registr)
+                u_map.save()
 
-        LOG.debug('Calling resume with %s/project' % attributes.root_url)
-        response = shortcuts.redirect(attributes.root_url + '/project')
+            LOG.debug('Calling resume with %s/project' % attributes.root_url)
+            response = shortcuts.redirect(attributes.root_url + '/project')
+        
+        except IntegrityError:
+            LOG.error("Duplicate map for %s in %s" % (userid, extId))
+            response = shortcuts.redirect(attributes.root_url + '/project')
+        except:
+            LOG.error("Cannot map userid %s" % userid, exc_info=True)
+            #
+            # TODO handle local logout
+            #
+            response = shortcuts.redirect('/dashboard')
 
     else:
         response = shortcuts.redirect('/dashboard')

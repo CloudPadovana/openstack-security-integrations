@@ -20,14 +20,14 @@
 {% load i18n %}
 {% load url from future %}
 
-{% block form_id %}prj_request_form{% endblock %}
+{% block form_id %}idp_request_form{% endblock %}
 {% block form_action %}{% url 'horizon:project:idp_requests:index' %}{% endblock %}
 
 {% block modal_id %}idp_request_modal{% endblock %}
 {% block modal-header %}{% trans "Manage providers" %}{% endblock %}
 
 {% block modal-body %}
-<div class="modal-body">
+
     <h3>{% trans "Available Identity Providers" %}</h3>
     {% if showidptable %}
     <table>
@@ -72,7 +72,18 @@
     {% else %}
     <p>{% trans "No providers available" %}</p>
     {% endif %}
-</div>
+    
+    {% if providers %}
+    <hr/>
+    
+    <h3>{% trans "Used Identity Providers" %}</h3>
+    <ul>
+        {% for prov_id in providers %}
+        <li>{{ prov_id }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
 {% endblock %}
 
 
