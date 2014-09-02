@@ -113,6 +113,8 @@ class CreateProject(BaseCreateProject):
             newprj = Project(**qargs)
             newprj.save()
         
+        if data.get('guest', False):
+            return True
         
         #
         # Insert admin as project_manager for manually created tenants
