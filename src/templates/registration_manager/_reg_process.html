@@ -27,8 +27,36 @@
 
 {% block modal-body %}
 <div class="left">
+
+
     <fieldset>
-    {% include "horizon/common/_form_fields.html" %}
+    {# customization of horizon/common/_form_fields.html #}
+    {% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+    {% if form.non_field_errors %}
+        <div class="alert alert-message alert-error">
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
+    {% for field in form.visible_fields %}
+        <div id="id_div_{{ field.name }}"
+             {% if field.name == 'reason' %}style="visibility: hidden"{% endif %}
+             class="control-group form-field clearfix{% if field.errors %} error{% endif %} {{ field.css_classes }}">
+             
+            {{ field.label_tag }}
+            {% if field.errors %}
+                {% for error in field.errors %}
+                <span class="help-inline">{{ error }}</span>
+                {% endfor %}
+            {% endif %}
+            <span class="help-block">{% filter force_escape %} {{ field.help_text }} {% endfilter %} </span>
+            <div class="input">
+                {{ field }}
+            </div>
+            
+        </div>
+    {% endfor %}
     </fieldset>
     
     {% if extaccounts %}
@@ -59,7 +87,7 @@
     {% endif%}
     
 </div>
-<div class="right">
+<div id="rdiv01" class="right">
 
     {% if regprojects %}
     <div class="modal-body clearfix">
@@ -120,21 +148,62 @@
     {% endif %}
     
 </div>
+<div id="rdiv02" class="right" style="visibility: hidden">
+    <h3>{% trans "Description" %}:</h3>
+    <p>{% trans "From here you can specify a reason for rejecting the request." %}</p>
+</div>
 {% endblock %}
 
 {% block modal-footer %}
-    {% if approveenabled %}
-        <input class="btn btn-primary pull-right" type="submit" value="{{ processingbtn }}" />
-    {% endif %}
-  <input class="btn btn-primary pull-right" type="button" onclick="rejSubmit()" value="{% trans "Reject" %}"/>
-  <a href="{% url 'horizon:admin:registration_manager:index' %}" class="btn secondary cancel close">{% trans "Cancel" %}</a>  
+    
+    <input type="button"
+           class="btn btn-primary pull-right"
+           onclick="location.href='{% url 'horizon:admin:registration_manager:index' %}'"
+           value="{% trans 'Cancel' %}"/>  
+    <input id="rejbtnid" 
+           class="btn btn-primary pull-right" 
+           type="button" 
+           onclick="rejSubmit()" 
+           value="{% trans "Reject" %}"/>
+    <input id="okbtnid"
+           class="btn btn-primary pull-right" 
+           type="submit" 
+           value="{{ processingbtn }}" 
+           {% if not approveenabled %}style="visibility: hidden"{% endif %} />
+
+{% endblock %}
+
+{% block modal-js %}
 
   <script type="text/javascript">
+    var rejbtnstatus = true;
+      
     function rejSubmit() {
-        document.getElementById('id_checkaction').value = 'reject';
-        document.getElementById('process_reg_form').submit();
+        if (rejbtnstatus) {
+            rejbtnstatus = !rejbtnstatus;
+            document.getElementById('rejbtnid').value = '{% trans "Confirm" %}';
+            document.getElementById('okbtnid').style.visibility = 'hidden';
+            document.getElementById('rdiv01').remove();
+            document.getElementById('rdiv02').style.visibility = 'visible';
+            
+            if ( document.getElementById('id_div_username') != null ) {
+                document.getElementById('id_div_username').remove();
+            }
+            if ( document.getElementById('id_div_expiration') != null ) {
+                document.getElementById('id_div_expiration').remove();
+            }
+            if ( document.getElementById('id_div_role_id') != null ) {
+                document.getElementById('id_div_role_id').remove();
+            }
+            document.getElementById('id_div_reason').style.visibility = 'visible';
+        } else {
+            document.getElementById('id_checkaction').value = 'reject';
+            document.getElementById('process_reg_form').submit();        
+        }
     }
   </script>
 
 {% endblock %}
+
+
 

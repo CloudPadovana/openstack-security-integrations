@@ -29,6 +29,16 @@ NO_TENANT_AUTHORIZED = NotificationMessage(
     body = "You're not authorized to access the required tenants"
 )
 
+class RegistrNotAuthorized(NotificationMessage):
+
+    def __init__(self, **kwargs):
+        self.subject = _("Registration not authorized")
+        self.body = _("You're not authorized to access the cloud infrastructure")
+        notes = kwargs.get('notes', None)
+        if notes:
+            self.body += '\n\n' + notes + '\n\n'
+        self.body += FOOTER_DISCLAIMER + '\n'
+
 class PrjManagerMessage(NotificationMessage):
 
     def __init__(self, **kwargs):

@@ -75,22 +75,27 @@ class ProcessRegForm(forms.SelfHandlingForm):
         if flowstatus == RSTATUS_PENDING or flowstatus == RSTATUS_NOFLOW:
             self.fields['username'] = forms.CharField(
                 label=_("User name"),
+                required=False,
                 max_length=OS_LNAME_LEN
             )
                 
             self.fields['expiration'] = forms.DateTimeField(
                 label=_("Expiration date"),
+                required=False,
                 initial=datetime.datetime.now() + datetime.timedelta(365),
                 widget=SelectDateWidget
             )
         else:
             self.fields['username'] = forms.CharField(
                 label=_("User name"),
+                required=False,
                 widget = forms.TextInput(attrs={'readonly': 'readonly'})
             )
             
         if flowstatus == RSTATUS_CHECKED or flowstatus == RSTATUS_NOFLOW:
-            self.fields['role_id'] = forms.ChoiceField(label=_("Role"))
+            self.fields['role_id'] = forms.ChoiceField(
+                label=_("Role"),
+                required=False)
             
             role_list = list()
             for role in keystone_api.role_list(request):
@@ -107,6 +112,12 @@ class ProcessRegForm(forms.SelfHandlingForm):
             role_list.append((self.prjman_roleid, TENANTADMIN_ROLE))
             
             self.fields['role_id'].choices = role_list
+            
+        self.fields['reason'] = forms.CharField(
+            label=_('Message'),
+            required=False,
+            widget=forms.widgets.Textarea()
+        )
 
     def _generate_pwd(self):
         if crypto_version.startswith('2.0'):
@@ -164,6 +175,12 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 # User renaming
                 #
                 if registration.userid == None:
+                
+                    if not data['username']:
+                        raise Exception(_("Cannot process request: missing username"))
+                    if not data['expiration']:
+                        raise Exception(_("Cannot process request: missing expiration date"))
+                    
                     registration.username = data['username']
                     registration.expdate = data['expiration']
                     registration.save()
@@ -279,6 +296,9 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 else:
                     email = self._retrieve_email(request, registration.userid)
                 
+                if not data['role_id']:
+                    raise Exception(_("Cannot process request: missing role"))
+    
                 for prj_req in prjs_approved:
                     keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
                                                     registration.userid, data['role_id'])
@@ -352,7 +372,8 @@ class ProcessRegForm(forms.SelfHandlingForm):
         
         if first_reg_rej:
         
-            notifications.notify(recipients, notifications.REGISTRATION_NOT_AUTHORIZED)
+            msg = notifications.RegistrNotAuthorized(notes=data['reason'])
+            notifications.notify(recipients, msg)
         
         elif all_prj_req:
             msg_obj = notifications.RequestResultMessage(prj_no = all_prj_req)
