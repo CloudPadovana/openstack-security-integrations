@@ -21,7 +21,7 @@ from django.conf import settings
 from django.db import IntegrityError
 from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
-#from django.core.urlresolvers import reverse_lazy
+from django.core.urlresolvers import reverse
 
 from horizon import exceptions
 from horizon import forms
@@ -30,11 +30,6 @@ from openstack_auth_shib.views import IdPAttributes
 from openstack_auth_shib.models import Registration, UserMapping
 
 LOG = logging.getLogger(__name__)
-
-#class ManageView(forms.ModalFormView):
-#    form_class = IdpManageForm
-#    template_name = 'project/idp_requests/idp_request.html'
-#    success_url = reverse_lazy('horizon:project:overview:index')
 
 def manage(request):
 
@@ -101,9 +96,7 @@ def suspend(request):
     if attributes:
         LOG.debug("Calling suspend with %s" % attributes.get_logout_url(new_url))
         response = shortcuts.redirect(attributes.get_logout_url(new_url))
-    
-        if attributes.type == IdPAttributes.GOOGLE_TYPE:
-            response.delete_cookie('open_id_session_id', path='/dashboard-google')
+        response = attributes.postproc_logout(response)
     
     else:
         response = shortcuts.redirect(new_url)
@@ -129,24 +122,20 @@ def resume(request):
                 extId = attributes.username
         
                 registr = Registration.objects.filter(userid=userid)[0]
-                #
-                # TODO check EXT_ACCT_LEN
-                #
                 u_map = UserMapping(globaluser=extId, registration=registr)
-                u_map.save()
+                u_map.save(force_insert=True)
 
             LOG.debug('Calling resume with %s/project' % attributes.root_url)
             response = shortcuts.redirect(attributes.root_url + '/project')
         
         except IntegrityError:
             LOG.error("Duplicate map for %s in %s" % (userid, extId))
-            response = shortcuts.redirect(attributes.root_url + '/project')
+            response = shortcuts.redirect(reverse('logout'))
+            response.set_cookie('aai_error', 'NOREMAP')
         except:
             LOG.error("Cannot map userid %s" % userid, exc_info=True)
-            #
-            # TODO handle local logout
-            #
-            response = shortcuts.redirect('/dashboard')
+            response = shortcuts.redirect(reverse('logout'))
+            response.set_cookie('aai_error', 'GENERICERROR')
 
     else:
         response = shortcuts.redirect('/dashboard')

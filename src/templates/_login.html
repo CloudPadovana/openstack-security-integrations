@@ -99,7 +99,11 @@
                 <span class="help-inline">
                 {% if request.COOKIES.aai_error == 'NOAUTHZ'%}
                     <p>{% trans "User not authorized: invalid or disabled" %}</p>
-                {% else %}
+                {% endif %}
+                {% if request.COOKIES.aai_error == 'NOREMAP'%}
+                    <p>{% trans "An account already uses the selected identity" %}</p>
+                {% endif %}
+                {% if request.COOKIES.aai_error == 'GENERICERROR'%}
                     <p>{% trans "A failure occurs authenticating user" %}</p>
                     <p>{% trans "Please, contact the cloud managers" %}</p>
                 {% endif %}
