@@ -225,6 +225,6 @@ Keystone authentication plugin for secret token
 %endif
 
 %changelog
-* Fri Aug 01 2014 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
+* Fri Sep 12 2014 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
 - New major release
 
