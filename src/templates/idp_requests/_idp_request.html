@@ -1,0 +1,89 @@
+{% extends "horizon/common/_modal_form.html" %}
+
+{% comment %}
+  Copyright (c) 2014 INFN - "Istituto Nazionale di Fisica Nucleare" - Italy
+  All Rights Reserved.
+
+  Licensed under the Apache License, Version 2.0 (the "License"); you may
+  not use this file except in compliance with the License. You may obtain
+  a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  License for the specific language governing permissions and limitations
+  under the License. 
+{% endcomment %}
+
+{% load i18n %}
+{% load url from future %}
+
+{% block form_id %}idp_request_form{% endblock %}
+{% block form_action %}{% url 'horizon:project:idp_requests:index' %}{% endblock %}
+
+{% block modal_id %}idp_request_modal{% endblock %}
+{% block modal-header %}{% trans "Manage providers" %}{% endblock %}
+
+{% block modal-body %}
+
+    <h3>{% trans "Available Identity Providers" %}</h3>
+    {% if showidptable %}
+    <table>
+
+        {% if infntestquery %}
+        <tr><td>
+            <button type="button" 
+                    onclick="location.href='{{ currpath }}?{{ infntestquery }}';">
+                <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
+            </button>
+        </td></tr>
+        {% endif %}
+        
+        {% if infnprodquery %}
+        <tr><td>
+            <button type="button" 
+                    onclick="location.href='{{ currpath }}?{{ infnprodquery }}';">
+                <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
+            </button>
+        </td></tr>
+        {% endif %}
+
+        {% if idemquery %}
+        <tr><td>
+            <button type="button" 
+                    onclick="location.href='{{ currpath }}?{{ idemquery }}';">
+                <img align="middle" height="60px" width="80px" alt="Login IDEM" src="/static/dashboard/img/logoIDEM.png">
+            </button>
+        </td></tr>
+        {% endif %}
+
+        {% if googlequery %}
+        <tr><td>
+            <button type="button" 
+                    onclick="location.href='{{ currpath }}?{{ googlequery }}';">
+                <img align="middle" height="60px" width="80px" alt="Login Google" src="/static/dashboard/img/logoGoogle.png">
+            </button>
+        </td></tr>
+        {% endif %}
+
+    </table>
+    {% else %}
+    <p>{% trans "No providers available" %}</p>
+    {% endif %}
+    
+    {% if providers %}
+    <hr/>
+    
+    <h3>{% trans "Used Identity Providers" %}</h3>
+    <ul>
+        {% for prov_id in providers %}
+        <li>{{ prov_id }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+{% endblock %}
+
+

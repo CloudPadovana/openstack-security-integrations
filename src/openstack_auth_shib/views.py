@@ -48,7 +48,7 @@ from keystoneclient import exceptions as keystone_exceptions
 from horizon import forms
 
 from .models import Registration, Project, RegRequest, PrjRequest, UserMapping
-from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST, PSTATUS_APPR
+from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST, PSTATUS_APPR, OS_LNAME_LEN
 from .forms import MixRegistForm
 from .notifications import notifyManagers, RegistrAvailable
 
@@ -97,6 +97,9 @@ class IdPAttributes():
             self.email = request.GET.get('openid.ext1.value.email', self.username)
             self.givenname = request.GET.get('openid.ext1.value.givenName', 'Unknown')
             self.sn = request.GET.get('openid.ext1.value.sn', 'Unknown')
+            
+        if self.ok and len(self.username) > OS_LNAME_LEN:
+            self.username = self.username[0:OS_LNAME_LEN]
 
     def __nonzero__(self):
         return self.ok
@@ -114,14 +117,19 @@ class IdPAttributes():
         if len(args):
             return args[0]
         return '/dashboard'
-
+    
+    def postproc_logout(self, response):
+        if self.type == IdPAttributes.GOOGLE_TYPE:
+            response.delete_cookie('open_id_session_id', path='/dashboard-google')
+        else:
+            return response
 
 def build_err_response(request, code, attributes):
     response = shortcuts.redirect(attributes.get_logout_url())
+    if attributes:
+        response = attributes.postproc_logout(response)
+
     response.set_cookie('aai_error', code)
-    
-    if attributes.type == IdPAttributes.GOOGLE_TYPE:
-        response.delete_cookie('open_id_session_id', path='/dashboard-google')
 
     return response
 
@@ -132,9 +140,7 @@ def adj_response(response):
 def build_safe_redirect(request, location, attributes):
     if attributes:
         response = shortcuts.redirect(attributes.get_logout_url(location))
-    
-        if attributes.type == IdPAttributes.GOOGLE_TYPE:
-            response.delete_cookie('open_id_session_id', path='/dashboard-google')
+        response = attributes.postproc_logout(response)
     else:
         response = shortcuts.redirect(location)
         
@@ -218,9 +224,7 @@ def logout(request):
         
     elif attributes and attributes.type == IdPAttributes.GOOGLE_TYPE:
         
-        response = basic_logout(request)
-        response.delete_cookie('open_id_session_id', path='/dashboard-google')
-        return response
+        return attributes.postproc_logout(basic_logout(request))
     
     return basic_logout(request)
 
