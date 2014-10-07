@@ -48,9 +48,10 @@ from keystoneclient import exceptions as keystone_exceptions
 from horizon import forms
 
 from .models import Registration, Project, RegRequest, PrjRequest, UserMapping
-from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST, PSTATUS_APPR, OS_LNAME_LEN
+from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST, PSTATUS_APPR
 from .forms import MixRegistForm
 from .notifications import notifyManagers, RegistrAvailable
+from .idpmanager import get_manager
 
 LOG = logging.getLogger(__name__)
 
@@ -58,71 +59,6 @@ def get_ostack_attributes(request):
     region = getattr(settings, 'OPENSTACK_KEYSTONE_URL').replace('v2.0','v3')
     domain = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN', 'Default')
     return (domain, region)
-
-class IdPAttributes():
-
-    SHIB_TYPE = 0
-    GOOGLE_TYPE = 1
-
-    def __init__(self, request):
-        
-        self.ok = False
-        
-        if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-shib'):
-            
-            self.ok = True
-            self.type = IdPAttributes.SHIB_TYPE
-            self.root_url = '/dashboard-shib'
-            self.logout_prefix = '/Shibboleth.sso/Logout?return=https://%s:%s' % \
-                (request.META['SERVER_NAME'], request.META['SERVER_PORT'])
-            
-            # the remote user correspond to the ePPN
-            self.username = request.META['REMOTE_USER']
-    
-            if 'mail' in request.META:
-                self.email = request.META['mail']
-            else:
-                self.ok = False
-                raise Exception('Cannot retrieve mail address for %s' % self.username)
-        
-            self.givenname = request.META.get('givenName', 'Unknown')
-            self.sn = request.META.get('sn', 'Unknown')
-
-        if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-google'):
-        
-            self.ok = True
-            self.type = IdPAttributes.GOOGLE_TYPE
-            self.root_url = '/dashboard-google'
-            self.username = request.META['REMOTE_USER']
-            self.email = request.GET.get('openid.ext1.value.email', self.username)
-            self.givenname = request.GET.get('openid.ext1.value.givenName', 'Unknown')
-            self.sn = request.GET.get('openid.ext1.value.sn', 'Unknown')
-            
-        if self.ok and len(self.username) > OS_LNAME_LEN:
-            self.username = self.username[0:OS_LNAME_LEN]
-
-    def __nonzero__(self):
-        return self.ok
-    
-    def get_logout_url(self, *args):
-        
-        if self.type == IdPAttributes.SHIB_TYPE:
-            result = self.logout_prefix
-            if len(args):
-                result += args[0]
-            else:
-                result += '/dashboard'
-            return result
-        
-        if len(args):
-            return args[0]
-        return '/dashboard'
-    
-    def postproc_logout(self, response):
-        if self.type == IdPAttributes.GOOGLE_TYPE:
-            response.delete_cookie('open_id_session_id', path='/dashboard-google')
-        else:
-            return response
 
 def build_err_response(request, code, attributes):
     response = shortcuts.redirect(attributes.get_logout_url())
@@ -153,7 +89,7 @@ def login(request):
 
     try:
     
-        attributes = IdPAttributes(request)
+        attributes = get_manager(request)
         domain, region = get_ostack_attributes(request)
         
         if attributes:
@@ -201,9 +137,9 @@ def login(request):
 
 def logout(request):
 
-    attributes = IdPAttributes(request)
+    attributes = get_manager(request)
     
-    if attributes and attributes.type == IdPAttributes.SHIB_TYPE:
+    if attributes:
         
         msg = 'Logging out user "%(username)s".' % {'username': request.user.username}
         LOG.info(msg)
@@ -220,12 +156,10 @@ def logout(request):
 
         # update the session cookies (sessionid and csrftoken)
         auth_logout(request)
-        return shortcuts.redirect(attributes.get_logout_url())
         
-    elif attributes and attributes.type == IdPAttributes.GOOGLE_TYPE:
+        response = shortcuts.redirect(attributes.get_logout_url())
+        return attributes.postproc_logout(response)
         
-        return attributes.postproc_logout(basic_logout(request))
-    
     return basic_logout(request)
 
 
@@ -270,7 +204,7 @@ def _register(request, attributes):
 
 def register(request):
 
-    attributes = IdPAttributes(request)
+    attributes = get_manager(request)
     
     if attributes:
 

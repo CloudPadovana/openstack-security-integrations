@@ -29,44 +29,19 @@
 {% block modal-body %}
 
     <h3>{% trans "Available Identity Providers" %}</h3>
-    {% if showidptable %}
+    {% if idp_data_list %}
     <table>
-
-        {% if infntestquery %}
+    
+        {% for idpdata in idp_data_list %}
         <tr><td>
             <button type="button" 
-                    onclick="location.href='{{ currpath }}?{{ infntestquery }}';">
-                <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
+                    onclick="location.href='{{ currpath }}?{{ idpdata.resume_query }}';">
+                <img align="middle" height="60px" width="80px" 
+                     alt="Login with {{ idpdata.descr }}" 
+                     src="/static/dashboard/img/{{ idpdata.logo }}">
             </button>
         </td></tr>
-        {% endif %}
-        
-        {% if infnprodquery %}
-        <tr><td>
-            <button type="button" 
-                    onclick="location.href='{{ currpath }}?{{ infnprodquery }}';">
-                <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
-            </button>
-        </td></tr>
-        {% endif %}
-
-        {% if idemquery %}
-        <tr><td>
-            <button type="button" 
-                    onclick="location.href='{{ currpath }}?{{ idemquery }}';">
-                <img align="middle" height="60px" width="80px" alt="Login IDEM" src="/static/dashboard/img/logoIDEM.png">
-            </button>
-        </td></tr>
-        {% endif %}
-
-        {% if googlequery %}
-        <tr><td>
-            <button type="button" 
-                    onclick="location.href='{{ currpath }}?{{ googlequery }}';">
-                <img align="middle" height="60px" width="80px" alt="Login Google" src="/static/dashboard/img/logoGoogle.png">
-            </button>
-        </td></tr>
-        {% endif %}
+        {% endfor %}
 
     </table>
     {% else %}

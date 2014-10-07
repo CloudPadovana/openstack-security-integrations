@@ -14,10 +14,8 @@
 #  under the License. 
 
 import logging
-import urllib
 
 from django import shortcuts
-from django.conf import settings
 from django.db import IntegrityError
 from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
@@ -26,7 +24,7 @@ from django.core.urlresolvers import reverse
 from horizon import exceptions
 from horizon import forms
 
-from openstack_auth_shib.views import IdPAttributes
+from openstack_auth_shib.idpmanager import get_manager, get_idp_list
 from openstack_auth_shib.models import Registration, UserMapping
 
 LOG = logging.getLogger(__name__)
@@ -43,53 +41,23 @@ def manage(request):
 
     ctx = dict()
 
-    attributes = IdPAttributes(request)
+    attributes = get_manager(request)
     if attributes:
         ctx['currpath'] = '%s/project/idp_requests/suspend/' % attributes.root_url
     else:
         ctx['currpath'] = '/dashboard/project/idp_requests/suspend/'
     
-    if not 'infn.it' in myproviders:
-        
-        if settings.HORIZON_CONFIG.get('infntesting_enabled', False):
-            ctx['infntestquery'] = urllib.urlencode({
-                'url' : '/Shibboleth.sso/Login?entityID=%s&target=%s' % \
-                    ('https%3A%2F%2Fidp.infn.it%2Ftesting%2Fsaml2%2Fidp%2Fmetadata.php',
-                    '%2Fdashboard-shib%2Fproject%2Fidp_requests%2Fresume%2F')
-            })
-        else:
-            ctx['infnprodquery'] = urllib.urlencode({
-                'url' : '/Shibboleth.sso/Login?entityID=%s&target=%s' % \
-                    ('https%3A%2F%2Fidp.infn.it%2Fsaml2%2Fidp%2Fmetadata.php',
-                    '%2Fdashboard-shib%2Fproject%2Fidp_requests%2Fresume%2F')
-            })
-    
-    if settings.HORIZON_CONFIG.get('idem_enabled', False):
-    
-        ctx['idemquery'] = urllib.urlencode({
-            'url' : '/dashboard-shib/project/idp_requests/resume/'
-        })
-    
-    if not ('gmail.com' in myproviders or 'google.com' in myproviders) \
-        and settings.HORIZON_CONFIG.get('google_enabled', False):
-        
-        ctx['googlequery'] = urllib.urlencode({
-            'url' : '/dashboard-google/project/idp_requests/resume/'
-        })
-    
-    ctx['showidptable'] = len(ctx) > 1
+    ctx['idp_data_list'] = get_idp_list(myproviders)
     ctx['providers'] = myproviders
     
-    return shortcuts.render(request, 
-                            'project/idp_requests/idp_request.html',
-                            ctx)
+    return shortcuts.render(request, 'project/idp_requests/idp_request.html', ctx)
     
     
 
 def suspend(request):
     
     new_url = request.GET['url']
-    attributes = IdPAttributes(request)
+    attributes = get_manager(request)
 
     response = None
     
@@ -110,7 +78,7 @@ def resume(request):
 
     userid = request.COOKIES['pivot']
 
-    attributes = IdPAttributes(request)
+    attributes = get_manager(request)
     
     response = None
     
