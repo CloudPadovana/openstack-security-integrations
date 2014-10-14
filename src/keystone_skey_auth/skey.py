@@ -71,7 +71,7 @@ class SecretKeyAuth(AuthMethodHandler):
         
         prng = Random.new()
         iv = prng.read(16)
-        cipher = AES.new(SECRET_KEY, AES.MODE_CFB, iv)
+        cipher = AES.new(self.aes_key, AES.MODE_CFB, iv)
         b64msg = base64.b64decode(data)
         return cipher.decrypt(b64msg)[16:]
     
