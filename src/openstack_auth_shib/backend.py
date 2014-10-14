@@ -104,11 +104,11 @@ class ExtClient(BaseClient):
 
 def create_cryptoken(aes_key, data):
 
-    if len(aes_key) > 32:
+    if len(aes_key) >= 32:
         aes_key = aes_key[:32]
-    elif len(aes_key) > 16:
+    elif len(aes_key) >= 16:
         aes_key = aes_key[:16]
-    elif len(aes_key) > 8:
+    elif len(aes_key) >= 8:
         aes_key = aes_key[:8]
     else:
         raise AuthorizationFailure()
@@ -125,8 +125,8 @@ def create_cryptoken(aes_key, data):
     else:
         
         prng = Random.new()
-        iv = prng.read(256)
-        cipher = AES.new(key, AES.MODE_CFB, iv)
+        iv = prng.read(16)
+        cipher = AES.new(aes_key, AES.MODE_CFB, iv)
         return base64.b64encode(iv + cipher.encrypt(data))
 
 #
