@@ -46,6 +46,8 @@ LOG = logging.getLogger(__name__)
 
 class SecretKeyAuth(AuthMethodHandler):
 
+    method = METHOD_NAME
+    
     def __init__(self):
         cfg.CONF.register_opt(cfg.StrOpt('secret_key', default=None), group='skey')
         self.identity_api = identity.Manager()
