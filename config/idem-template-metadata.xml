@@ -1,6 +1,6 @@
 
 <md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" 
-                     ID="Cloud Area Padovana" entityID="https://cloud-areapd.pd.infn.it:8443/dashboard-shib">
+                     entityID="https://cloud-areapd.pd.infn.it/dashboard-shib">
 
   <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:1.0:protocol">
     
