@@ -22,6 +22,12 @@ from keystone.openstack.common import log as logging
 from keystone.exception import Unauthorized, UserNotFound, NotFound
 
 from Crypto.Cipher import AES
+from Crypto import __version__ as crypto_version
+if crypto_version.startswith('2.0'):
+    from Crypto.Util import randpool
+else:
+    from Crypto import Random
+
 from oslo.config import cfg
 
 METHOD_NAME = 'sKey'
@@ -40,16 +46,18 @@ LOG = logging.getLogger(__name__)
 
 class SecretKeyAuth(AuthMethodHandler):
 
+    method = METHOD_NAME
+    
     def __init__(self):
         cfg.CONF.register_opt(cfg.StrOpt('secret_key', default=None), group='skey')
         self.identity_api = identity.Manager()
         
         self.aes_key = cfg.CONF.skey.secret_key
-        if len(self.aes_key) > 32:
+        if len(self.aes_key) >= 32:
             self.aes_key = self.aes_key[:32]
-        elif len(self.aes_key) > 16:
+        elif len(self.aes_key) >= 16:
             self.aes_key = self.aes_key[:16]
-        elif len(self.aes_key) > 8:
+        elif len(self.aes_key) >= 8:
             self.aes_key = self.aes_key[:8]
         else:
             self.aes_key = None
@@ -58,10 +66,16 @@ class SecretKeyAuth(AuthMethodHandler):
         if self.aes_key == None:
             raise Exception("Wrong secret key")
 
-        cipher = AES.new(self.aes_key, AES.MODE_CFB)
-        b64msg = base64.b64decode(data)
-        return cipher.decrypt(b64msg)[256:]
+        if crypto_version.startswith('2.0'):
+            cipher = AES.new(self.aes_key, AES.MODE_CFB)
+            b64msg = base64.b64decode(data)
+            return cipher.decrypt(b64msg)[256:]
         
+        prng = Random.new()
+        iv = prng.read(16)
+        cipher = AES.new(self.aes_key, AES.MODE_CFB, iv)
+        b64msg = base64.b64decode(data)
+        return cipher.decrypt(b64msg)[16:]
     
     def authenticate(self, context, auth_info, auth_context):
         
