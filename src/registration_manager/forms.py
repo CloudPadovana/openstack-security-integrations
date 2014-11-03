@@ -78,12 +78,15 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 required=False,
                 max_length=OS_LNAME_LEN
             )
+            
+            curr_year = datetime.datetime.now().year
+            years_list = range(curr_year, curr_year+25)
                 
             self.fields['expiration'] = forms.DateTimeField(
                 label=_("Expiration date"),
                 required=False,
                 initial=datetime.datetime.now() + datetime.timedelta(365),
-                widget=SelectDateWidget
+                widget=SelectDateWidget(None, years_list)
             )
         else:
             self.fields['username'] = forms.CharField(

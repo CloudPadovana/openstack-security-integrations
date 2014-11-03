@@ -14,6 +14,7 @@
 #  under the License. 
 
 import logging
+from datetime import datetime
 
 from django.db import transaction
 from django.forms.widgets import HiddenInput
@@ -28,13 +29,16 @@ LOG = logging.getLogger(__name__)
 
 class RenewExpForm(forms.SelfHandlingForm):
 
+    curr_year = datetime.now().year
+    years_list = range(curr_year, curr_year+25)
+
     userid = forms.CharField(
         label=_("User ID"), 
         widget=HiddenInput
     )
     expiration = forms.DateTimeField(
         label=_("Expiration date"),
-        widget=SelectDateWidget
+        widget=SelectDateWidget(None, years_list)
     )
 
     def handle(self, request, data):
