@@ -25,6 +25,9 @@ LOG = logging.getLogger(__name__)
 
 def get_manager(request):
 
+    #
+    # TODO remove dashboard-shib, check shib session in META
+    #
     if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-shib'):
         return SAML2_IdP(request)
     
@@ -100,6 +103,23 @@ def get_idp_list(excl_list=list()):
 
     result = list()
     
+    idp_list = settings.HORIZON_CONFIG.get('identity_providers', [])
+
+    for idp_data in idp_list:
+        #
+        # TODO check if item is well-formed, see _login.html
+        # Accepted keys:
+        # id: IdP id (infn.it, unipd.it, etc)
+        # path: URL path prefix (/dashboard-shib, /dashboard-google, etc.)
+        # description: IdP short description
+        # logo: URL path for the logo (/static/dashboard/img/logoInfnAAI.png)
+        #
+        if not idp_data['id'] in excl_list:
+            resume_url = '%s/project/idp_requests/resume/' % idp_data['path']
+            idp_data['resume_query'] = urllib.urlencode({'url' : resume_url})
+            result.append()
+
+'''    
     if not 'infn.it' in excl_list and settings.HORIZON_CONFIG.get('infntesting_enabled', False):
         result.append(IdPData('infntest', 'INFN AAI', 'logoInfnAAI.png', 
             urllib.urlencode({ 'url' : '/Shibboleth.sso/Login?entityID=%s&target=%s' % \
@@ -123,7 +143,7 @@ def get_idp_list(excl_list=list()):
         
         result.append(IdPData('google', 'Google Provider', 'logoGoogle.png',
             urllib.urlencode({ 'url' : '/dashboard-google/project/idp_requests/resume/' })))
-    
+'''    
     return result
 
 
