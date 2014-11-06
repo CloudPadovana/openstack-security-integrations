@@ -29,6 +29,7 @@ from horizon.utils import validators
 from openstack_dashboard import api
 
 from openstack_auth_shib.models import PWD_LEN
+from openstack_auth_shib.idpmanager import get_manager
 
 class PasswordForm(forms.SelfHandlingForm):
     new_password = forms.RegexField(
@@ -62,9 +63,7 @@ class PasswordForm(forms.SelfHandlingForm):
         try:
             api.keystone.user_update_own_password(request, None, data['new_password'])
             
-            if 'REMOTE_USER' in request.META and \
-                (request.path.startswith('/dashboard-shib') or \
-                request.path.startswith('/dashboard-google')):
+            if get_manager(request):
                 return http.HttpResponseRedirect(reverse_lazy('login'))
             else:
                 response = http.HttpResponseRedirect(reverse_lazy('logout'))

@@ -18,10 +18,11 @@ from django.utils.translation import ugettext_lazy as _
 import horizon
 
 from openstack_dashboard.dashboards.settings import dashboard
+from openstack_auth_shib.idpmanager import get_manager
 
 def enableActPwd(obj, context):
     request = context['request']
-    if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-shib'):
+    if get_manager(request):
         return True
     return False
     
