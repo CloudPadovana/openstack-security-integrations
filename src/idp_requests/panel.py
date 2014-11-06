@@ -14,6 +14,7 @@
 #  under the License. 
 
 from django.utils.translation import ugettext_lazy as _
+from django.conf import settings
 
 import horizon
 
@@ -23,5 +24,6 @@ class IdPRequests(horizon.Panel):
     name = _("Identity Providers")
     slug = 'idp_requests'
 
-dashboard.Project.register(IdPRequests)
+if settings.HORIZON_CONFIG.get('experimental', False):
+    dashboard.Project.register(IdPRequests)
 
