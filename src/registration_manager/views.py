@@ -62,6 +62,14 @@ class IndexView(tables.DataTableView):
         return Registration.objects.filter(query1 | query2).order_by('username')
 
 
+class PrjInfo:
+    def __init__(self, name, status):
+        self.name = name
+        self.visible = status
+    
+    def __str__(self):
+        return self.name
+
 class RegReqItem:
     
     def __init__(self, regid):
@@ -112,7 +120,8 @@ class RegReqItem:
                     self.rejprojects.append(prj_req.project.projectname)
                 
             else:
-                self.newprojects.append(prj_req.project.projectname)
+                tmpp = PrjInfo(prj_req.project.projectname, prj_req.project.status)
+                self.newprojects.append(tmpp)
                 
         if prj_mark and self.reqlevel == RSTATUS_PRECHKD:
             self.reqlevel = RSTATUS_CHECKED

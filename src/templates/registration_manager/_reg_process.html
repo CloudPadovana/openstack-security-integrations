@@ -141,7 +141,11 @@
         <h3>{% trans "User wants to create the following projects" %}:</h3>
         <ul>
         {% for prjreq in newprojects %}
-            <li>{{ prjreq }}</li>
+            {% if prjreq.visible %}
+            <li>{{ prjreq.name }}</li>
+            {% else %}
+            <li>{{ prjreq.name }} ({% trans "Private" %})</li>
+            {% endif %}
         {% endfor %}
         </ul>
     </div>
