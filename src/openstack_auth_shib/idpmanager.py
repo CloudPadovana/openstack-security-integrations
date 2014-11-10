@@ -119,31 +119,6 @@ def get_idp_list(excl_list=list()):
             idp_data['resume_query'] = urllib.urlencode({'url' : resume_url})
             result.append()
 
-'''    
-    if not 'infn.it' in excl_list and settings.HORIZON_CONFIG.get('infntesting_enabled', False):
-        result.append(IdPData('infntest', 'INFN AAI', 'logoInfnAAI.png', 
-            urllib.urlencode({ 'url' : '/Shibboleth.sso/Login?entityID=%s&target=%s' % \
-                ('https%3A%2F%2Fidp.infn.it%2Ftesting%2Fsaml2%2Fidp%2Fmetadata.php',
-                '%2Fdashboard-shib%2Fproject%2Fidp_requests%2Fresume%2F')
-            })))
-    
-    if not 'infn.it' in excl_list and not settings.HORIZON_CONFIG.get('infntesting_enabled', False):
-        result.append(IdPData('infn', 'INFN AAI', 'logoInfnAAI.png', 
-            urllib.urlencode({ 'url' : '/Shibboleth.sso/Login?entityID=%s&target=%s' % \
-                ('https%3A%2F%2Fidp.infn.it%2Fsaml2%2Fidp%2Fmetadata.php',
-                '%2Fdashboard-shib%2Fproject%2Fidp_requests%2Fresume%2F')
-            })))
-    
-    if settings.HORIZON_CONFIG.get('idem_enabled', False):
-        result.append(IdPData('idem', 'IDEM Federation', 'logoIDEM.png',
-            urllib.urlencode({ 'url' : '/dashboard-shib/project/idp_requests/resume/' })))
-    
-    if not ('gmail.com' in excl_list or 'google.com' in excl_list) \
-        and settings.HORIZON_CONFIG.get('google_enabled', False):
-        
-        result.append(IdPData('google', 'Google Provider', 'logoGoogle.png',
-            urllib.urlencode({ 'url' : '/dashboard-google/project/idp_requests/resume/' })))
-'''    
     return result
 
 
