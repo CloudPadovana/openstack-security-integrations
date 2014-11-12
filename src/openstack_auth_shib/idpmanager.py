@@ -25,10 +25,7 @@ LOG = logging.getLogger(__name__)
 
 def get_manager(request):
 
-    #
-    # TODO remove dashboard-shib, check shib session in META
-    #
-    if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-shib'):
+    if 'REMOTE_USER' in request.META and request.META.get('AUTH_TYPE','') == 'shibboleth':
         return SAML2_IdP(request)
     
     if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-google'):
@@ -42,7 +39,7 @@ class SAML2_IdP:
 
     def __init__(self, request):
     
-        self.root_url = '/dashboard-shib'
+        self.root_url = '/' + request.path.split('/')[1]
         self.logout_prefix = '/Shibboleth.sso/Logout?return=https://%s:%s' % \
             (request.META['SERVER_NAME'], request.META['SERVER_PORT'])
             
