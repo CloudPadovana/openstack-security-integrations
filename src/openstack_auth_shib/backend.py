@@ -148,7 +148,7 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
         insecure = getattr(settings, 'OPENSTACK_SSL_NO_VERIFY', False)
         cacert = getattr(settings, 'OPENSTACK_SSL_CACERT', None)
         ep_type = getattr(settings, 'OPENSTACK_ENDPOINT_TYPE', 'publicURL')
-        secret_key = getattr(settings, 'SECRET_KEY', None)
+        secret_key = getattr(settings, 'KEYSTONE_SECRET_KEY', None)
         
         fqun = json.dumps({
             'username' : username,
