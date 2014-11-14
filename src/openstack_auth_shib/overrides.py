@@ -18,6 +18,7 @@ import horizon
 
 from openstack_dashboard.dashboards.admin.projects.panel import Tenants
 from openstack_dashboard.dashboards.admin.users.panel import Users
+from openstack_dashboard.dashboards.settings.password.panel import PasswordPanel
 
 #
 # Panels must be loaded in advance
@@ -48,6 +49,10 @@ settings_dash = horizon.get_dashboard("settings")
 defset_group = settings_dash.get_panel_group('default')
 defset_group.panels.append('password_manager')
 
+try:
+    settings_dash.unregister(PasswordPanel)
+except:
+    LOG.warning("Cannot unregister password panel")
 
 
 

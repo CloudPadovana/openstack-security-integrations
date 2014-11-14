@@ -61,7 +61,8 @@ class PasswordForm(forms.SelfHandlingForm):
             return False
 
         try:
-            api.keystone.user_update_own_password(request, None, data['new_password'])
+            #api.keystone.user_update_own_password(request, None, data['new_password'])
+            api.keystone.user_update_password(request, request.user.id, data['new_password'], False)
             
             if get_manager(request):
                 return http.HttpResponseRedirect(reverse_lazy('login'))

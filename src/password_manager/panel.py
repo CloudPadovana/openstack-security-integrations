@@ -27,7 +27,7 @@ def enableActPwd(obj, context):
     return False
     
 class PasswordPanel(horizon.Panel):
-    name = _("Activate Password")
+    name = _("Manage Password")
     slug = 'password_manager'
 #    nav = enableActPwd
 
