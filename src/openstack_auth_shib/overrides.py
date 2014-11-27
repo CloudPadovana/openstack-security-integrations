@@ -33,7 +33,6 @@ import openstack_dashboard.dashboards.settings.password_manager.panel
 
 LOG = logging.getLogger(__name__)
 
-LOG.debug("Registering panel for the registration manager")
 admin_dash = horizon.get_dashboard("admin")
 identity_group = admin_dash.get_panel_group('identity')
 identity_group.panels.append('registration_manager')
@@ -44,7 +43,6 @@ admin_dash.unregister(Tenants)
 identity_group.panels[2] = 'user_manager'
 admin_dash.unregister(Users)
 
-LOG.debug("Registering panel for the password manager")
 settings_dash = horizon.get_dashboard("settings")
 defset_group = settings_dash.get_panel_group('default')
 defset_group.panels.append('password_manager')

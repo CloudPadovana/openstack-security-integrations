@@ -175,11 +175,16 @@ def _register(request, attributes):
 
     domain, region = get_ostack_attributes(request)
     
+    init_dict = dict()
+    if attributes.givenname:
+        init_dict['givenname'] = attributes.givenname
+    if attributes.sn:
+        init_dict['sn'] = attributes.sn
+    if attributes.email:
+        init_dict['email'] = attributes.email
+    
     if request.method == 'POST':
-        reg_form = MixRegistForm(request.POST, initial={
-            'givenname' : attributes.givenname,
-            'sn' : attributes.sn
-        })
+        reg_form = MixRegistForm(request.POST, initial=init_dict)
         if reg_form.is_valid():
             
             return processForm(request, reg_form, domain, attributes)
@@ -191,10 +196,7 @@ def _register(request, attributes):
         
             return build_safe_redirect(request, '/dashboard/auth/dup_login/', attributes)
 
-        reg_form = MixRegistForm(initial={
-            'givenname' : attributes.givenname,
-            'sn' : attributes.sn
-        })
+        reg_form = MixRegistForm(initial=init_dict)
     
     tempDict = { 'form': reg_form,
                  'userid' : attributes.username,
@@ -242,11 +244,9 @@ def processForm(request, reg_form, domain, attributes=None):
             ext_account = None
         else:
             username = attributes.username
-            #givenname = attributes.givenname
-            #sn = attributes.sn
             givenname = reg_form.cleaned_data['givenname']
             sn = reg_form.cleaned_data['sn']
-            email = attributes.email
+            email = reg_form.cleaned_data['email']
             ext_account = attributes.username
             
         organization = reg_form.cleaned_data['organization']
@@ -294,6 +294,8 @@ def processForm(request, reg_form, domain, attributes=None):
                 regArgs['externalid'] = ext_account
             regReq = RegRequest(**regArgs)
             regReq.save()
+            
+            LOG.debug("Saved %s" % username)
 
             #
             # empty list for guest prj

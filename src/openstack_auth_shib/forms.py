@@ -43,19 +43,17 @@ class MixRegistForm(forms.Form):
                 max_length=OS_LNAME_LEN
             )
             
-        if self.isFullForm or 'givenname' in initial:
-            self.fields['givenname'] = forms.CharField(
-                label=_('First name'),
-                max_length=OS_LNAME_LEN,
-                widget=forms.HiddenInput if 'givenname' in initial else forms.TextInput
-            )
+        self.fields['givenname'] = forms.CharField(
+            label=_('First name'),
+            max_length=OS_LNAME_LEN,
+            widget=forms.HiddenInput if 'givenname' in initial else forms.TextInput
+        )
             
-        if self.isFullForm or 'sn' in initial:
-            self.fields['sn'] = forms.CharField(
-                label=_('Last name'),
-                max_length=OS_LNAME_LEN,
-                widget=forms.HiddenInput if 'sn' in initial else forms.TextInput
-            )
+        self.fields['sn'] = forms.CharField(
+            label=_('Last name'),
+            max_length=OS_LNAME_LEN,
+            widget=forms.HiddenInput if 'sn' in initial else forms.TextInput
+        )
             
         if self.isFullForm:
             self.fields['pwd'] = forms.RegexField(
@@ -72,10 +70,11 @@ class MixRegistForm(forms.Form):
                 widget=forms.PasswordInput(render_value=False)
             )
             
-            self.fields['email'] = forms.EmailField(
-                label=_('Email Address'),
-                max_length=EMAIL_LEN
-            )
+        self.fields['email'] = forms.EmailField(
+            label=_('Email Address'),
+            max_length=EMAIL_LEN,
+            widget=forms.HiddenInput if 'email' in initial else forms.TextInput
+        )
         
         self.fields['prjaction'] = forms.ChoiceField(
             label=_('Project action'),

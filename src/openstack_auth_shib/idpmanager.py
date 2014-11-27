@@ -47,14 +47,10 @@ class SAML2_IdP:
         self.username = request.META['REMOTE_USER']
         if len(self.username) > OS_LNAME_LEN:
             self.username = self.username[0:OS_LNAME_LEN]
-    
-        if 'mail' in request.META:
-            self.email = request.META['mail']
-        else:
-            raise Exception('Cannot retrieve mail address for %s' % self.username)
         
-        self.givenname = request.META.get('givenName', 'Unknown')
-        self.sn = request.META.get('sn', 'Unknown')
+        self.email = request.META.get('mail', None)
+        self.givenname = request.META.get('givenName', None)
+        self.sn = request.META.get('sn', None)
         
     def get_logout_url(self, *args):
         
