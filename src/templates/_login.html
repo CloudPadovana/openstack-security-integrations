@@ -35,13 +35,13 @@
             {# TODO check if the provider list is well-formed #}
             {# INFN provider is the default one #}
             <button type="button" 
-                    onclick="location.href='/dashboard-shib';">
+                    onclick="location.href='/dashboard-shib/auth/login?';">
                 <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
             </button>
 
             {% for idpdata in HORIZON_CONFIG.identity_providers %}
             {# For definition of idpdata see openstack_auth_shib.idpmanager #}
-            <button type="button" onclick="location.href='{{ idpdata.path }}';">
+            <button type="button" onclick="location.href='{{ idpdata.path }}/auth/login';">
                 <img align="middle" height="60px" width="80px" 
                      alt="Login {{ idpdata.description }}" 
                      src="{{ idpdata.logo }}"/>
