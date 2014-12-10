@@ -72,12 +72,15 @@ class Google_IdP:
     
         self.root_url = '/dashboard-google'
         self.logout_prefix = ''
-        self.username = request.META['REMOTE_USER']
+        self.email = request.META.get('HTTP_OIDC_CLAIM_EMAIL', None)
+        if self.email:
+            self.username = self.email
+        else:
+            self.username = request.META['REMOTE_USER']
         if len(self.username) > OS_LNAME_LEN:
             self.username = self.username[0:OS_LNAME_LEN]
-        self.email = request.GET.get('openid.ext1.value.email', self.username)
-        self.givenname = request.GET.get('openid.ext1.value.givenName', 'Unknown')
-        self.sn = request.GET.get('openid.ext1.value.sn', 'Unknown')
+        self.givenname = request.META.get('HTTP_OIDC_CLAIM_GIVEN_NAME', None)
+        self.sn = request.META.get('HTTP_OIDC_CLAIM_FAMILY_NAME', None)
 
     def get_logout_url(self, *args):
         
@@ -86,7 +89,10 @@ class Google_IdP:
         return '/dashboard'
     
     def postproc_logout(self, response):
-        response.delete_cookie('open_id_session_id', path='/dashboard-google')
+        #
+        # TODO verify logout
+        #
+        response.delete_cookie('mod_auth_openidc_session')
         return response
 
 
