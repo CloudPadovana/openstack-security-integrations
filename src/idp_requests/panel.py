@@ -20,10 +20,16 @@ import horizon
 
 from openstack_dashboard.dashboards.project import dashboard
 
+def enableIdPRequests(obj, context):
+    request = context['request']
+    if 'INFN-testing' in request.META.get('HTTP_USER_AGENT',''):
+        return True
+    return False
+
 class IdPRequests(horizon.Panel):
     name = _("Identity Providers")
     slug = 'idp_requests'
+    nav = enableIdPRequests
 
-if settings.HORIZON_CONFIG.get('experimental', False):
-    dashboard.Project.register(IdPRequests)
+dashboard.Project.register(IdPRequests)
 
