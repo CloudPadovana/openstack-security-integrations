@@ -37,8 +37,8 @@
             <button type="button" 
                     onclick="location.href='{{ currpath }}?{{ idpdata.resume_query }}';">
                 <img align="middle" height="60px" width="80px" 
-                     alt="Login with {{ idpdata.descr }}" 
-                     src="/static/dashboard/img/{{ idpdata.logo }}">
+                     alt="Login with {{ idpdata.description }}" 
+                     src="{{ idpdata.logo }}">
             </button>
         </td></tr>
         {% endfor %}

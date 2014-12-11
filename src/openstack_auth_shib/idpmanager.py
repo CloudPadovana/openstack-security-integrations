@@ -116,18 +116,9 @@ def get_idp_list(excl_list=list()):
         if not idp_data['id'] in excl_list:
             resume_url = '%s/project/idp_requests/resume/' % idp_data['path']
             idp_data['resume_query'] = urllib.urlencode({'url' : resume_url})
-            result.append()
+            result.append(idp_data)
 
     return result
-
-
-class IdPData:
-
-    def __init__(self, name, descr, logo, resume_query):
-        self.name = name
-        self.descr = descr
-        self.logo = logo
-        self.resume_query = resume_query
 
 
 
