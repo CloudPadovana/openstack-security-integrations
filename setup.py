@@ -56,6 +56,7 @@ templates_dir = os_main_dir + 'openstack_dashboard/templates'
 img_dir = os_main_dir + 'static/dashboard/img'
 reg_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/admin/registration_manager/templates/registration_manager'
 subscr_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/subscription_manager/templates/subscription_manager'
+member_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/member_manager/templates/member_manager'
 user_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/admin/user_manager/templates/user_manager'
 pwd_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/settings/password_manager/templates/password_manager'
 preq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/project_requests/templates/project_requests'
@@ -81,6 +82,10 @@ subscr_templ_list = [
     'src/templates/subscription_manager/subscr_manager.html',
     'src/templates/subscription_manager/subscr_approve.html',
     'src/templates/subscription_manager/_subscr_approve.html'
+]
+
+member_templ_list = [
+    'src/templates/member_manager/member_manager.html'
 ]
 
 usr_templ_list = [
@@ -121,6 +126,7 @@ module_list = [
     'registration_manager',
     'project_manager',
     'subscription_manager',
+    'member_manager',
     'user_manager',
     'password_manager',
     'project_requests',
@@ -144,6 +150,7 @@ setup(
                   (user_panel_dir, usr_templ_list),
                   (pwd_panel_dir, pwd_templ_list),
                   (subscr_panel_dir, subscr_templ_list),
+                  (member_panel_dir, member_templ_list),
                   (preq_panel_dir, preq_templ_list),
                   (idpreq_panel_dir, idpreq_templ_list),
                   (css_dir, ['src/templates/aai_infn_integrations.less']),
