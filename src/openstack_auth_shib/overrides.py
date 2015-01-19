@@ -27,6 +27,7 @@ import openstack_dashboard.dashboards.admin.registration_manager.panel
 import openstack_dashboard.dashboards.admin.project_manager.panel
 import openstack_dashboard.dashboards.admin.user_manager.panel
 import openstack_dashboard.dashboards.project.subscription_manager.panel
+import openstack_dashboard.dashboards.project.member_manager.panel
 import openstack_dashboard.dashboards.project.project_requests.panel
 import openstack_dashboard.dashboards.project.idp_requests.panel
 import openstack_dashboard.dashboards.settings.password_manager.panel
