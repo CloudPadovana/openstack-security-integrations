@@ -40,7 +40,7 @@ class MemberItem():
         self.givenname = registration.givenname
         self.sn = registration.sn
         self.organization = registration.organization
-        self.role = _("Admin") if is_t_admin else _("User")
+        self.is_t_admin = is_t_admin
 
 class IndexView(tables.DataTableView):
     table_class = MemberTable
