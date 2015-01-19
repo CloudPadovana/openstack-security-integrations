@@ -35,8 +35,8 @@ class MemberTable(tables.DataTable):
     givenname = tables.Column('givenname', verbose_name=_('First name'))
     sn = tables.Column('sn', verbose_name=_('Last name'))
     organization = tables.Column('organization', verbose_name=_('Organization'))
-    phone = tables.Column('phone', verbose_name=_('Phone'))
-
+    role = tables.Column('role', verbose_name=_('Role'))
+    
     class Meta:
         name = "member_table"
         verbose_name = _("Project members")

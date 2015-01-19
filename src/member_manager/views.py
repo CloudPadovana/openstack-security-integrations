@@ -30,6 +30,18 @@ from .tables import MemberTable
 
 LOG = logging.getLogger(__name__)
 
+TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
+
+class MemberItem():
+
+    def __init__(self, registration, is_t_admin):
+        self.username = registration.username
+        self.userid = registration.userid
+        self.givenname = registration.givenname
+        self.sn = registration.sn
+        self.organization = registration.organization
+        self.role = _("Admin") if is_t_admin else _("User")
+
 class IndexView(tables.DataTableView):
     table_class = MemberTable
     template_name = 'project/member_manager/member_manager.html'
@@ -37,13 +49,21 @@ class IndexView(tables.DataTableView):
     def get_data(self):
     
         try:
+            t_role_id = ''
+            for role in self.request.user.roles:
+                if role['name'] == TENANTADMIN_ROLE:
+                    t_role_id = role['id']
         
-            all_roles = client_factory(self.request).role_assignments.list(project=self.request.user.tenant_id)
-            member_id_set = set()
-            for r_item in all_roles:
-                member_id_set.add(r_item.user['id'])
+            role_assign_obj = client_factory(self.request).role_assignments
+            member_id_dict = dict()
+            for r_item in role_assign_obj.list(project=self.request.user.tenant_id):
+                if r_item.role['id'] == t_role_id:
+                    member_id_dict[r_item.user['id']] = True
+                elif not r_item.user['id'] in member_id_dict:
+                    member_id_dict[r_item.user['id']] = False
         
-            return Registration.objects.filter(userid__in=member_id_set)
+            all_regs = Registration.objects.filter(userid__in=member_id_dict)
+            return [ MemberItem(reg, member_id_dict[reg.userid]) for reg in all_regs ]
         
         except Exception:
             LOG.error("Member view error", exc_info=True)
