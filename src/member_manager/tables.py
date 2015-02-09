@@ -23,6 +23,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from horizon import tables
 from horizon import messages
+from horizon.utils import functions as utils
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
@@ -98,7 +99,10 @@ class ToggleRoleAction(tables.Action):
             messages.error(request, _('Unable to toggle the role.'))
            
         if obj_id == request.user.id:
-            return shortcuts.redirect(reverse_lazy('horizon:project:overview:index'))
+            response = shortcuts.redirect(reverse_lazy('logout'))
+            msg = _("Roles changed. Please log in again to continue.")
+            utils.add_logout_reason(request, response, msg)
+            return response
             
         return shortcuts.redirect(reverse_lazy('horizon:project:member_manager:index'))
 
