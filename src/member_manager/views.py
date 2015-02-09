@@ -34,13 +34,15 @@ TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 
 class MemberItem():
 
-    def __init__(self, registration, is_t_admin):
+    def __init__(self, registration, role_params):
         self.username = registration.username
         self.userid = registration.userid
         self.givenname = registration.givenname
         self.sn = registration.sn
         self.organization = registration.organization
-        self.is_t_admin = is_t_admin
+        self.is_t_admin = role_params[0]
+        self.num_of_roles = role_params[1]
+        self.num_of_admins = role_params[2]
 
 class IndexView(tables.DataTableView):
     table_class = MemberTable
@@ -56,11 +58,19 @@ class IndexView(tables.DataTableView):
         
             role_assign_obj = client_factory(self.request).role_assignments
             member_id_dict = dict()
+            number_of_admins = 0
             for r_item in role_assign_obj.list(project=self.request.user.tenant_id):
+                if not r_item.user['id'] in member_id_dict:
+                    member_id_dict[r_item.user['id']] = [False, 0, 0]
+                    
                 if r_item.role['id'] == t_role_id:
-                    member_id_dict[r_item.user['id']] = True
-                elif not r_item.user['id'] in member_id_dict:
-                    member_id_dict[r_item.user['id']] = False
+                    member_id_dict[r_item.user['id']][0] = True
+                    number_of_admins +=1
+                    
+                member_id_dict[r_item.user['id']][1] += 1
+            
+            for rp_item in member_id_dict.itervalues():
+                rp_item[2] = number_of_admins
         
             all_regs = Registration.objects.filter(userid__in=member_id_dict)
             return [ MemberItem(reg, member_id_dict[reg.userid]) for reg in all_regs ]
