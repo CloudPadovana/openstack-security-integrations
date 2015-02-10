@@ -204,7 +204,7 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
             while projects:
                 project = projects.pop()
                 try:
-                    client = keystone_client.Client(
+                    client = BaseClient(
                         tenant_id=project.id,
                         token=unscoped_auth_ref.auth_token,
                         auth_url=auth_url,
