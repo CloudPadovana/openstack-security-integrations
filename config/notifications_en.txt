@@ -33,17 +33,9 @@ body: User {{ username }} requires access to project {{ project }}
 subject: Your registration has been accepted
 body: Your account has been registered
   Your login name is {{ username }}
-  {% if projects_approved %}You are allowed to access to the following projects:{% endif %}
-  {% for prj in projects_approved %}
-  {{ prj }}
-  {% endfor %}
-  {% if projects_rejected %}You are not allowed to access to the following projects:{% endif %}
-  {% for prj in projects_rejected %}
-  {{ prj }}
-  {% endfor %}
-  {% if projects_created %}The following projects have been created:{% endif %}
-  {% for prj in projects_created %}
-  {{ prj }}
+  The status of your project subscriptions are the following:
+  {% for prj in projects_info %}
+  Project {{ prj.name }} has been {% if prj.appr %}approved{% else %}{% if prj.rej %}rejected{% else %}created{% endif %}{% endif %}
   {% endfor %}
   
   Please, don't reply to this message
@@ -51,17 +43,9 @@ body: Your account has been registered
 [subscription_processed]
 subject: Your project subscriptions have been approved
 body: Your subscriptions have been approved
-  {% if projects_approved %}You are allowed to access to the following projects:{% endif %}
-  {% for prj in projects_approved %}
-  {{ prj }}
-  {% endfor %}
-  {% if projects_rejected %}You are not allowed to access to the following projects:{% endif %}
-  {% for prj in projects_rejected %}
-  {{ prj }}
-  {% endfor %}
-  {% if projects_created %}The following projects have been created:{% endif %}
-  {% for prj in projects_created %}
-  {{ prj }}
+  The status of your project subscriptions are the following:
+  {% for prj in projects_info %}
+  Project {{ prj.name }} has been {% if prj.appr %}approved{% else %}{% if prj.rej %}rejected{% else %}created{% endif %}{% endif %}
   {% endfor %}
   
   Please, don't reply to this message

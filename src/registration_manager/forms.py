@@ -68,6 +68,21 @@ from openstack_dashboard.api import keystone as keystone_api
 LOG = logging.getLogger(__name__)
 TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 
+class ProjectResultInfo():
+
+    def __init__(self, name, res_code):
+        self.name = name
+        self.code = res_code
+    
+    def appr(self):
+        return self.code == 'a'
+    
+    def rej(self):
+        return self.code == 'r'
+    
+    def new(self):
+        return self.code == 'c'
+
 class ProcessRegForm(forms.SelfHandlingForm):
 
     checkaction = forms.CharField(widget=HiddenInput, initial='accept')
@@ -310,10 +325,13 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 
                 if not data['role_id']:
                     raise Exception(_("Cannot process request: missing role"))
+                
+                prj_infos = list()
     
                 for prj_req in prjs_approved:
                     keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
                                                     registration.userid, data['role_id'])
+                    prj_infos.append(ProjectResultInfo(prj_req.project.projectname, 'a'))
                     
                 for prj_req in prjs_to_create:
                     keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
@@ -322,14 +340,15 @@ class ProcessRegForm(forms.SelfHandlingForm):
                     if self.prjman_roleid and self.prjman_roleid <> data['role_id']:
                         keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
                                                     registration.userid, self.prjman_roleid)
-                
+                    prj_infos.append(ProjectResultInfo(prj_req.project.projectname, 'c'))
+                    
+                for prj_req in prjs_rejected:
+                    prj_infos.append(ProjectResultInfo(prj_req.project.projectname, 'r'))
                 
                 
                 noti_params = {
                     'username' : registration.username,
-                    'projects_approved' : [ prj_req.project.projectname for prj_req in prjs_approved ],
-                    'projects_rejected' : [ prj_req.project.projectname for prj_req in prjs_rejected ],
-                    'projects_created' : [ prj_req.project.projectname for prj_req in prjs_to_create ]
+                    'projects_info' : prj_infos
                 }
                 
                 if first_registr:
