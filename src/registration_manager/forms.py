@@ -34,7 +34,15 @@ from django.forms.extras.widgets import SelectDateWidget
 from django.views.decorators.debug import sensitive_variables
 from django.utils.translation import ugettext as _
 
-import notifications
+from openstack_auth_shib.notifications import notification_render
+from openstack_auth_shib.notifications import notify as notifyUsers
+from openstack_auth_shib.notifications import SUBSCR_WAIT_TYPE
+from openstack_auth_shib.notifications import FIRST_REG_OK_TYPE
+from openstack_auth_shib.notifications import FIRST_REG_NO_TYPE
+from openstack_auth_shib.notifications import SUBSCR_OK_TYPE
+from openstack_auth_shib.notifications import SUBSCR_NO_TYPE
+from openstack_auth_shib.notifications import SUBSCR_FORCED_OK_TYPE
+from openstack_auth_shib.notifications import SUBSCR_FORCED_NO_TYPE
 
 from openstack_auth_shib.models import UserMapping
 from openstack_auth_shib.models import RegRequest
@@ -206,11 +214,12 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 
                     m_users = get_project_managers(request, p_item.project.projectid)
                     
-                    msg_obj = notifications.PrjManagerMessage(
-                        username=registration.username,
-                        projectname=p_item.project.projectname
-                    )
-                    notifications.notify([ usr.email for usr in m_users ], msg_obj)
+                    noti_params = {
+                        'username' : registration.username,
+                        'project' : p_item.project.projectname
+                    }
+                    noti_sbj, noti_body = notification_render(SUBSCR_WAIT_TYPE, noti_params)
+                    notifyUsers([ usr.email for usr in m_users ], noti_sbj, noti_body)
                     
             if flowstatus == RSTATUS_CHECKED or flowstatus == RSTATUS_NOFLOW:
                 main_tenant = None
@@ -314,19 +323,24 @@ class ProcessRegForm(forms.SelfHandlingForm):
                         keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
                                                     registration.userid, self.prjman_roleid)
                 
+                
+                
+                noti_params = {
+                    'username' : registration.username,
+                    'projects_approved' : [ prj_req.project.projectname for prj_req in prjs_approved ],
+                    'projects_rejected' : [ prj_req.project.projectname for prj_req in prjs_rejected ],
+                    'projects_created' : [ prj_req.project.projectname for prj_req in prjs_to_create ]
+                }
+                
                 if first_registr:
-                    notifications.notify(email, notifications.RequestResultMessage(
-                        username = registration.username,
-                        prj_ok = [ prj_req.project.projectname for prj_req in prjs_approved ],
-                        prj_no = [ prj_req.project.projectname for prj_req in prjs_rejected ],
-                        prj_new = [ prj_req.project.projectname for prj_req in prjs_to_create ]
-                    ))
+                    
+                    noti_sbj, noti_body = notification_render(FIRST_REG_OK_TYPE, noti_params)
+                    notifyUsers(email, noti_sbj, noti_body)
+                    
                 elif len(prjs_approved) + len(prjs_rejected) + len(prjs_to_create) > 0:
-                    notifications.notify(email, notifications.RequestResultMessage(
-                        prj_ok = [ prj_req.project.projectname for prj_req in prjs_approved ],
-                        prj_no = [ prj_req.project.projectname for prj_req in prjs_rejected ],
-                        prj_new = [ prj_req.project.projectname for prj_req in prjs_to_create ]
-                    ))
+                
+                    noti_sbj, noti_body = notification_render(SUBSCR_OK_TYPE, noti_params)
+                    notifyUsers(email, noti_sbj, noti_body)
                 
                 #
                 # cache cleanup
@@ -375,12 +389,18 @@ class ProcessRegForm(forms.SelfHandlingForm):
         
         if first_reg_rej:
         
-            msg = notifications.RegistrNotAuthorized(notes=data['reason'])
-            notifications.notify(recipients, msg)
+            noti_params = {
+                'notes' : data['reason']
+            }
+            noti_sbj, noti_body = notification_render(FIRST_REG_NO_TYPE, noti_params)
+            notifyUsers(recipients, noti_sbj, noti_body)
         
         elif all_prj_req:
-            msg_obj = notifications.RequestResultMessage(prj_no = all_prj_req)
-            notifications.notify(recipients, msg_obj)
+            noti_params = {
+                'projects_rejected' : all_prj_req
+            }
+            noti_sbj, noti_body = notification_render(SUBSCR_NO_TYPE, noti_params)
+            notifyUsers(recipients, noti_sbj, noti_body)
 
 
 class ForceApproveForm(forms.SelfHandlingForm):
@@ -452,19 +472,21 @@ class ForceApproveForm(forms.SelfHandlingForm):
 
         for prjid in accpt_prjs:
             m_users = get_project_managers(request, prjid)
-            msg_obj = notifications.ForcedApprovedMessage(
-                username=self.username,
-                projectname=self.prjcache[prjid]
-            )
-            notifications.notify([ usr.email for usr in m_users ], msg_obj)
+            noti_params = {
+                'username' : self.username,
+                'project' : self.prjcache[prjid]
+            }
+            noti_sbj, noti_body = notification_render(SUBSCR_FORCED_OK_TYPE, noti_params)
+            notifyUsers([ usr.email for usr in m_users ], noti_sbj, noti_body)
 
         for prjid in rej_prjs:
             m_users = get_project_managers(request, prjid)
-            msg_obj = notifications.ForcedRejectedMessage(
-                username=self.username,
-                projectname=self.prjcache[prjid]
-            )
-            notifications.notify([ usr.email for usr in m_users ], msg_obj)
+            noti_params = {
+                'username' : self.username,
+                'project' : self.prjcache[prjid]
+            }
+            noti_sbj, noti_body = notification_render(SUBSCR_FORCED_NO_TYPE, noti_params)
+            notifyUsers([ usr.email for usr in m_users ], noti_sbj, noti_body)
 
         return True
 

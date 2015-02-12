@@ -29,8 +29,9 @@ from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import PRJ_PUBLIC,PRJ_PRIVATE
 from openstack_auth_shib.models import OS_SNAME_LEN
 
-from openstack_auth_shib.notifications import NotificationMessage
+from openstack_auth_shib.notifications import notification_render
 from openstack_auth_shib.notifications import notifyManagers
+from openstack_auth_shib.notifications import SUBSCR_REQ_TYPE
 
 from django.utils.translation import ugettext_lazy as _
 
@@ -143,7 +144,7 @@ class ProjectRequestForm(forms.SelfHandlingForm):
                 ))
 
         
-            prjliststr = ''
+            newprjlist = list()
             for prjitem in prjlist:
         
                 if prjitem[3]:
@@ -173,17 +174,16 @@ class ProjectRequestForm(forms.SelfHandlingForm):
                 }                
                 reqPrj = PrjRequest(**reqArgs)
                 reqPrj.save()
-                prjliststr += project.projectname + '\n'
+                newprjlist.append(project.projectname)
 
         
-            #
-            # TODO customize notification
-            #
-            if len(prjliststr):
-                msgSbj = _("Project subscription request")
-                msgBody = _("New subscription request from %s for the following projects:\n %s") \
-                        % (request.user.username, prjliststr)
-                notifyManagers(NotificationMessage(subject=msgSbj, body=msgBody))
+            if len(newprjlist):
+                noti_params = {
+                    'username' : request.user.username,
+                    'project_list' : newprjlist
+                }
+                noti_sbj, noti_body = notification_render(SUBSCR_REQ_TYPE, noti_params)
+                notifyManagers(noti_sbj, noti_body)
         
         return True
 

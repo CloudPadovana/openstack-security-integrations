@@ -1,0 +1,106 @@
+[registration_available]
+subject: New request for registration available ({{ username }})
+body: A new request for registration is available
+  {% if username %}The username is {{ username }}{% endif %}
+
+  Please, don't reply to this message
+
+[subscription_request]
+subject: Project subscription request ({{ username }})
+body: New subscription request from {{ username }} for the following projects:
+  {% for prj in project_list %}
+  {{ prj }}
+  {% endfor %}
+  
+  Please, don't reply to this message
+
+[subscription_checked]
+subject: Subscription has been checked
+body: A subscription has been checked by project manager
+  {% if username %}The username is {{ username }}{% endif %}
+  {% if project %}The project is {{ project }}{% endif %}
+  
+  Please, don't reply to this message
+
+
+[subscription_waiting_approval]
+subject: Subscription request waiting for approval
+body: User {{ username }} requires access to project {{ project }}
+  
+  Please, don't reply to this message
+
+[first_registration_ok]
+subject: Your registration has been accepted
+body: Your account has been registered
+  Your login name is {{ username }}
+  {% if projects_approved %}You are allowed to access to the following projects:{% endif %}
+  {% for prj in projects_approved %}
+  {{ prj }}
+  {% endfor %}
+  {% if projects_rejected %}You are not allowed to access to the following projects:{% endif %}
+  {% for prj in projects_rejected %}
+  {{ prj }}
+  {% endfor %}
+  {% if projects_created %}The following projects have been created:{% endif %}
+  {% for prj in projects_created %}
+  {{ prj }}
+  {% endfor %}
+  
+  Please, don't reply to this message
+
+[subscription_processed]
+subject: Your project subscriptions have been approved
+body: Your subscriptions have been approved
+  {% if projects_approved %}You are allowed to access to the following projects:{% endif %}
+  {% for prj in projects_approved %}
+  {{ prj }}
+  {% endfor %}
+  {% if projects_rejected %}You are not allowed to access to the following projects:{% endif %}
+  {% for prj in projects_rejected %}
+  {{ prj }}
+  {% endfor %}
+  {% if projects_created %}The following projects have been created:{% endif %}
+  {% for prj in projects_created %}
+  {{ prj }}
+  {% endfor %}
+  
+  Please, don't reply to this message
+
+[first_registration_rejected]
+subject: Registration not authorized
+body: Your request to access the cloud infrastructure was rejected
+  {% if notes %}{{ notes }}{% endif %}
+  
+  Please, don't reply to this message
+
+[subscription_rejected]
+subject: Your project subscriptions have been rejected
+body: Your subscriptions have been rejected
+  {% if projects_rejected %}You are not allowed to access to the following projects:{% endif %}
+  {% for prj in projects_rejected %}
+  {{ prj }}
+  {% endfor %}
+  
+  Please, don't reply to this message
+
+[subscription_forced_approved]
+subject: Cloud manager forcedly approved subscription
+body: Cloud manager forcedly approved the subscription of {{ username }} to {{ project }}
+  
+  Please, don't reply to this message
+
+[subscription_forced_rejected]
+subject: Cloud manager forcedly rejected subscription
+body: Cloud manager forcedly rejected the subscription of {{ username }} to {{ project }}
+  
+  Please, don't reply to this message
+
+
+
+
+
+
+
+
+
+

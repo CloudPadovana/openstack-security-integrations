@@ -89,6 +89,7 @@ Django plugin for Shibboleth authentication
 %if 0%{?el6}
 %{python_sitelib}/*.egg-info
 %endif
+/usr/share/openstack-auth-shib/templates/notifications_en.txt
 /usr/share/openstack-dashboard/openstack_dashboard/templates/*.html
 /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/*.html
 /usr/share/openstack-dashboard/static/dashboard/less/aai_infn_integrations.less

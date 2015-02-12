@@ -50,7 +50,7 @@ from horizon import forms
 from .models import Registration, Project, RegRequest, PrjRequest, UserMapping
 from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST, PSTATUS_APPR
 from .forms import MixRegistForm
-from .notifications import notifyManagers, RegistrAvailable
+from .notifications import notifyManagers, notification_render, REGISTR_AVAIL_TYPE
 from .idpmanager import get_manager
 
 LOG = logging.getLogger(__name__)
@@ -333,8 +333,8 @@ def processForm(request, reg_form, domain, attributes=None):
                 reqPrj = PrjRequest(**reqArgs)
                 reqPrj.save()
             
-        
-        notifyManagers(RegistrAvailable(username=username))
+        noti_sbj, noti_body = notification_render(REGISTR_AVAIL_TYPE, {'username' : username})
+        notifyManagers(noti_sbj, noti_body)
 
         return build_safe_redirect(request, '/dashboard/auth/reg_done/', attributes)
     

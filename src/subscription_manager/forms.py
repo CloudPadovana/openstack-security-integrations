@@ -30,7 +30,9 @@ from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import PSTATUS_APPR
 from openstack_auth_shib.models import PSTATUS_REJ
 
-from .notifications import notifyManagers, SubscrChecked
+from openstack_auth_shib.notifications import notification_render
+from openstack_auth_shib.notifications import notifyManagers
+from openstack_auth_shib.notifications import SUBSCR_CHKD_TYPE
 
 from django.utils.translation import ugettext as _
 
@@ -74,10 +76,12 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                     
                 PrjRequest.objects.filter(**q_args).update(flowstatus=new_status)
             
-                notifyManagers(SubscrChecked(
-                    username = data['username'],
-                    project = curr_prjname
-                ))
+                noti_params = {
+                    'username' : data['username'],
+                    'project' : curr_prjname
+                }
+                noti_sbj, noti_body = notification_render(SUBSCR_CHKD_TYPE, noti_params)
+                notifyManagers(noti_sbj, noti_body)
         
         except:
             exceptions.handle(request)
