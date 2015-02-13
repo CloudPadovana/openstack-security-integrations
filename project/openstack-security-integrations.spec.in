@@ -240,7 +240,13 @@ Keystone authentication plugin for secret token
 %endif
 
 %changelog
-* Thu Nov 27 2014 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
+* Fri Feb 13 2015 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
+- Fixed issue https://issues.infn.it/jira/browse/PDCL-122
+- Fixed issue https://issues.infn.it/jira/browse/PDCL-123
+- Fixed issue https://issues.infn.it/jira/browse/PDCL-134
+- Fixed issue https://issues.infn.it/jira/browse/PDCL-135
+
+* Thu Nov 27 2014 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.0.3-1
 - Email address is not mandatory for registration
 
 * Fri Sep 12 2014 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.0.2-1
