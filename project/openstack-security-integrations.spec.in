@@ -177,7 +177,7 @@ if [ ! $1 == 2 ]; then
         mv -f /usr/share/openstack-dashboard/static/dashboard/img/logo.png \
             /usr/share/openstack-dashboard/static/dashboard/img/logo-orig.png
     fi
-    cp -f /usr/share/openstack-dashboard/static/dashboard/img/logoCloudAreapd.png \
+    cp -f /usr/share/openstack-dashboard/static/dashboard/img/logoCloudAreapdStrip.png \
         /usr/share/openstack-dashboard/static/dashboard/img/logo.png
     
     if [ ! -e /usr/share/openstack-dashboard/static/dashboard/img/logo-splash-orig.png ] ; then
