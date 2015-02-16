@@ -30,25 +30,26 @@
 
         <fieldset>
 
-        {% if HORIZON_CONFIG.identity_providers %}
         <div class="modal-body">
             {# TODO check if the provider list is well-formed #}
             {# INFN provider is the default one #}
             <button type="button" 
-                    onclick="location.href='/dashboard-shib/auth/login?';">
+                    onclick="location.href='/dashboard-shib/auth/login/';">
                 <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
             </button>
 
+            {% if HORIZON_CONFIG.identity_providers %}
             {% for idpdata in HORIZON_CONFIG.identity_providers %}
             {# For definition of idpdata see openstack_auth_shib.idpmanager #}
                 {% if not idpdata.type == 'experimental' or 'INFN-testing' in request.META.HTTP_USER_AGENT %}
-                <button type="button" onclick="location.href='{{ idpdata.path }}/auth/login';">
+                <button type="button" onclick="location.href='{{ idpdata.path }}';">
                     <img align="middle" height="60px" width="80px" 
                          alt="Login {{ idpdata.description }}" 
                          src="{{ idpdata.logo }}"/>
                 </button>
                 {% endif %}
             {% endfor %}
+            {% endif %}
             
             <button type="button" 
                     onclick="document.getElementById('userandpwddiv').style.display='block';">
@@ -56,42 +57,6 @@
             </button>
         
         </div>
-        {% else %}
-        <div class="modal-body">
-    
-            {% if HORIZON_CONFIG.infntesting_enabled %}
-            <button type="button" 
-                    onclick="location.href='/Shibboleth.sso/Login?entityID=https%3A%2F%2Fidp.infn.it%2Ftesting%2Fsaml2%2Fidp%2Fmetadata.php';">
-                <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
-            </button>
-            {% else %}
-            <button type="button" 
-                    onclick="location.href='/Shibboleth.sso/Login?entityID=https%3A%2F%2Fidp.infn.it%2Fsaml2%2Fidp%2Fmetadata.php';">
-                <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
-            </button>
-            {% endif %}
-      
-            {% if HORIZON_CONFIG.idem_enabled %}
-            <button type="button" 
-                    onclick="location.href='/dashboard-shib';">
-                <img align="middle" height="60px" width="80px" alt="Login IDEM" src="/static/dashboard/img/logoIDEM.png">
-            </button>
-            {% endif %}
-
-            <button type="button" 
-                    onclick="document.getElementById('userandpwddiv').style.display='block';">
-                <img align="middle" height="60px" width="80px" alt="Local login" src="/static/dashboard/img/logoUsrPwd.png">
-            </button>
-
-            {% if HORIZON_CONFIG.google_enabled %}
-            <button type="button" 
-                    onclick="location.href='/dashboard-google/auth/login/';">
-                <img align="middle" height="60px" width="80px" alt="Login Google" src="/static/dashboard/img/logoGoogle.png">
-            </button>
-            {% endif %}
-      
-        </div>
-        {% endif %}
 
         <hr />
   
