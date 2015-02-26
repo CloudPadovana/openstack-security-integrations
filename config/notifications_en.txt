@@ -26,6 +26,8 @@ body: A subscription has been checked by project manager
 [subscription_waiting_approval]
 subject: Subscription request waiting for approval
 body: User {{ username }} requires access to project {{ project }}
+  Please, validate the subscription request
+  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html/ManageProjectMembershipRequests.html
   
   Please, don't reply to this message
 
