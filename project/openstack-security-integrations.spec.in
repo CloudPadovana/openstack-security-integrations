@@ -57,6 +57,9 @@ mkdir -p %{buildroot}/%{python_sitelib}/horizon/management/commands
 mv %{buildroot}/%{python_sitelib}/commands/* \
    %{buildroot}/%{python_sitelib}/horizon/management/commands/
 rm -rf %{buildroot}/%{python_sitelib}/commands
+mkdir -p %{buildroot}/etc/openstack-auth-shib/notifications
+cp %{buildroot}/usr/share/openstack-auth-shib/templates/notifications_*.txt \
+   %{buildroot}/etc/openstack-auth-shib/notifications
 
 
 %clean
@@ -82,6 +85,10 @@ Django plugin for Shibboleth authentication
 %defattr(-,root,root)
 %dir /etc/openstack-auth-shib
 %config(noreplace) /etc/openstack-auth-shib/idem-template-metadata.xml
+%config(noreplace) /etc/openstack-auth-shib/actions.conf
+%config(noreplace) /etc/openstack-auth-shib/logging.conf
+%config(noreplace) /etc/openstack-auth-shib/notifications/notifications_*.txt
+%config(noreplace) /etc/cron.d/openstack-auth-shib-cron
 %dir %{python_sitelib}/openstack_auth_shib
 %{python_sitelib}/openstack_auth_shib/*.py
 %{python_sitelib}/openstack_auth_shib/*.pyc

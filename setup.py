@@ -135,6 +135,12 @@ module_list = [
     'commands'
 ]
 
+confile_list = [
+    'config/idem-template-metadata.xml',
+    'config/logging.conf',
+    'config/actions.conf'
+]
+
 setup(
       name=pkg_name,
       version=pkg_version,
@@ -156,7 +162,8 @@ setup(
                   (idpreq_panel_dir, idpreq_templ_list),
                   (css_dir, ['src/templates/aai_infn_integrations.less']),
                   (img_dir, logo_list),
-                  ('etc/openstack-auth-shib', ['config/idem-template-metadata.xml']),
+                  ('etc/openstack-auth-shib', confile_list),
+                  ('etc/cron.d', ['config/openstack-auth-shib-cron']),
                   ('usr/share/openstack-auth-shib/templates', ['config/notifications_en.txt'])
                  ],
       cmdclass={'bdist_rpm': bdist_rpm}
