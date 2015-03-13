@@ -81,7 +81,13 @@ body: Cloud manager forcedly rejected the subscription of {{ username }} to {{ p
   
   Please, don't reply to this message
 
-
+[user_expiring]
+subject: Account for user {{ username }} is going to expire
+body: The account for {{ username }} will expire in {{ days }} days.
+  Please contact the cloud administrators for a renewal
+  {% if contacts %}{% for c_admin in contacts %}{{ c_admin.0 }}{% endfor %}{% endif %}
+  
+  Please, don't reply to this message
 
 
 

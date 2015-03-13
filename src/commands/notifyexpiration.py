@@ -17,14 +17,19 @@ import logging
 import logging.config
 
 from datetime import datetime
+from datetime import timedelta
 from optparse import make_option
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from openstack_auth_shib.models import Registration
+from openstack_auth_shib.notifications import notification_render
+from openstack_auth_shib.notifications import notify as notifyUsers
+from openstack_auth_shib.notifications import USER_EXP_TYPE
 
 from keystoneclient.v3 import client
 
-LOG = logging.getLogger("checkexpiration")
+LOG = logging.getLogger("notifyexpiration")
 
 class Command(BaseCommand):
 
@@ -77,26 +82,44 @@ class Command(BaseCommand):
             raise CommandError("Missing configuration file\n")
             
         try:
+            
             params = self.readParameters(conffile)
             
             # Empty conf file used in rpm
             if len(params) == 0:
                 return
             
-            LOG.info("Checking expiration dates")
+            now = datetime.now()
+            contact_list = getattr(settings, 'MANAGERS', None)      
             
-            expired_regs = Registration.objects.filter(expdate__lt=datetime.now())
+            for tparam in ['FIRST_NOTIFY', 'SECOND_NOTIFY', 'LAST_NOTIFY']:
+                
+                days_to_exp = int(tparam)
+                tframe = now + timedelta(days=days_to_exp)
+                all_regs = Registration.objects.filter(expdate__lt=tframe)
+                all_regs = all_regs.filter(expdate__gte=now)
             
-            for reg_item in expired_regs:
-                
-                keystone = client.Client(username=params['USERNAME'],
-                                         password=params['PASSWD'],
-                                         project_name=params['TENANTNAME'],
-                                         cacert=params['CAFILE'],
-                                         auth_url=params['AUTHURL'])
-                
-                keystone.users.update(reg_item.userid, enabled=False)
-                LOG.info("Disabled user %s" % reg_item.username)
+                for reg_item in all_regs:
+                    try:
+                        
+                        keystone = client.Client(username=params['USERNAME'],
+                                                 password=params['PASSWD'],
+                                                 project_name=params['TENANTNAME'],
+                                                 cacert=params['CAFILE'],
+                                                 auth_url=params['AUTHURL'])
+                        
+                        tmpuser = keystone.users.get(reg_item.userid)
+                        
+                        
+                        noti_params = {
+                            'username' : reg_item.username,
+                            'days' : days_to_exp,
+                            'contacts' : contact_list
+                        }
+                        noti_sbj, noti_body = notification_render(USER_EXP_TYPE, noti_params)
+                        notifyUsers(tmpuser.email, noti_sbj, noti_body)
+                    except:
+                        LOG.warning("Cannot notify %s" % reg_item.username)
                 
         except:
             LOG.error("Check expiration failed", exc_info=True)
