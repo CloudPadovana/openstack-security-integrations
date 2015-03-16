@@ -15,6 +15,7 @@
 
 import logging
 import logging.config
+import re
 
 from datetime import datetime
 from datetime import timedelta
@@ -70,6 +71,21 @@ class Command(BaseCommand):
         
         return result
     
+    def _get_days_to_exp(self, params):
+        result = list()
+        eregex = re.compile('NOTIFY\[(\d+)\]')
+        
+        for item in params:
+            res = eregex.search(item)
+            if res:
+                result.append(int(params[item]))
+        
+        if len(result) == 0:
+            result.append(5)
+            result.append(10)
+            result.append(20)
+        return result
+    
     def handle(self, *args, **options):
     
         logconffile = options.get('logconffile', None)
@@ -92,12 +108,13 @@ class Command(BaseCommand):
             now = datetime.now()
             contact_list = getattr(settings, 'MANAGERS', None)      
             
-            for tparam in ['FIRST_NOTIFY', 'SECOND_NOTIFY', 'LAST_NOTIFY']:
+            for days_to_exp in self._get_days_to_exp(params):
                 
-                days_to_exp = int(tparam)
                 tframe = now + timedelta(days=days_to_exp)
-                all_regs = Registration.objects.filter(expdate__lt=tframe)
-                all_regs = all_regs.filter(expdate__gte=now)
+                tf1 = tframe.replace(hour=0, minute=0, second=0, microsecond=0)
+                tf2 = tframe.replace(hour=23, minute=59, second=59, microsecond=999999)
+                all_regs = Registration.objects.filter(expdate__gte=tf1)
+                all_regs = all_regs.filter(expdate__lte=tf2)
             
                 for reg_item in all_regs:
                     try:
@@ -118,11 +135,12 @@ class Command(BaseCommand):
                         }
                         noti_sbj, noti_body = notification_render(USER_EXP_TYPE, noti_params)
                         notifyUsers(tmpuser.email, noti_sbj, noti_body)
+                        
                     except:
-                        LOG.warning("Cannot notify %s" % reg_item.username)
+                        LOG.warning("Cannot notify %s" % reg_item.username, exc_info=True)
                 
         except:
-            LOG.error("Check expiration failed", exc_info=True)
-            raise CommandError("Check expiration failed")
+            LOG.error("Notification failed", exc_info=True)
+            raise CommandError("Notification failed")
 
 
