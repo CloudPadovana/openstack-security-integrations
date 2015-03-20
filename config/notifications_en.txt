@@ -91,6 +91,11 @@ body: The account for {{ username }} will expire in {{ days }} days.
   {% endif %}
   Please, don't reply to this message
 
+[project_member_deleted]
+subject: User {{ username }} removed from {{ project }}
+body: The user {{ username }} has been removed from the project {{ project }}
+
+  Please, don't reply to this message
 
 
 
