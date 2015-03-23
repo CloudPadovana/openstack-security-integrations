@@ -86,6 +86,7 @@ class ProjectResultInfo():
 class ProcessRegForm(forms.SelfHandlingForm):
 
     checkaction = forms.CharField(widget=HiddenInput, initial='accept')
+    wprjname = forms.CharField(widget=HiddenInput, initial='null')
     
     def __init__(self, request, *args, **kwargs):
         super(ProcessRegForm, self).__init__(request, *args, **kwargs)
@@ -174,6 +175,10 @@ class ProcessRegForm(forms.SelfHandlingForm):
         try:
             if data['checkaction'] == 'accept':
                 self._handle_accept(request, data)
+            elif data['checkaction'] == 'forceapprove':
+                self._handle_forceapprove(request, data)
+            elif data['checkaction'] == 'forcereject':
+                self._handle_forcereject(request, data)
             else:
                 self._handle_reject(request, data)
         except:
@@ -420,6 +425,67 @@ class ProcessRegForm(forms.SelfHandlingForm):
             }
             noti_sbj, noti_body = notification_render(SUBSCR_NO_TYPE, noti_params)
             notifyUsers(recipients, noti_sbj, noti_body)
+
+
+
+
+
+    def _handle_forceapprove(self, request, data):
+    
+        prjid = None
+        tmpuser = None
+        
+        with transaction.commit_on_success():
+            q_args = {
+                'registration__regid' : int(data['regid']),
+                'project__projectname' : data['wprjname']
+            }
+            prjreqs = PrjRequest.objects.filter(**q_args)
+            if len(prjreqs):
+                prjid = prjreqs[0].project.projectid
+                tmpuser = prjreqs[0].registration.username
+            prjreqs.update(flowstatus=PSTATUS_APPR)
+
+        if prjid:
+            m_users = get_project_managers(request, prjid)
+            noti_params = {
+                'username' : tmpuser,
+                'project' : data['wprjname']
+            }
+            noti_sbj, noti_body = notification_render(SUBSCR_FORCED_OK_TYPE, noti_params)
+            notifyUsers([ usr.email for usr in m_users ], noti_sbj, noti_body)
+
+
+
+    def _handle_forcereject(self, request, data):
+    
+        prjid = None
+        tmpuser = None
+        LOG.debug("Called force reject for %s" % data['wprjname'])
+        
+        with transaction.commit_on_success():
+            q_args = {
+                'registration__regid' : int(data['regid']),
+                'project__projectname' : data['wprjname']
+            }
+            prjreqs = PrjRequest.objects.filter(**q_args)
+            if len(prjreqs):
+                prjid = prjreqs[0].project.projectid
+                tmpuser = prjreqs[0].registration.username
+            prjreqs.update(flowstatus=PSTATUS_REJ)
+
+        if prjid:
+            m_users = get_project_managers(request, prjid)
+            noti_params = {
+                'username' : tmpuser,
+                'project' : data['wprjname']
+            }
+            noti_sbj, noti_body = notification_render(SUBSCR_FORCED_NO_TYPE, noti_params)
+            notifyUsers([ usr.email for usr in m_users ], noti_sbj, noti_body)
+
+
+
+
 
 
 class ForceApproveForm(forms.SelfHandlingForm):

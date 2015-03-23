@@ -120,8 +120,11 @@ class RegReqItem:
                     self.rejprojects.append(prj_req.project.projectname)
                 
             else:
-                tmpp = PrjInfo(prj_req.project.projectname, prj_req.project.status)
-                self.newprojects.append(tmpp)
+                if prj_req.flowstatus == PSTATUS_REJ:
+                    self.rejprojects.append(prj_req.project.projectname)
+                else:
+                    tmpp = PrjInfo(prj_req.project.projectname, prj_req.project.status)
+                    self.newprojects.append(tmpp)
                 
         if prj_mark and self.reqlevel == RSTATUS_PRECHKD:
             self.reqlevel = RSTATUS_CHECKED
