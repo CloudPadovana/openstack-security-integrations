@@ -62,11 +62,14 @@ from openstack_auth_shib.models import RSTATUS_NOFLOW
 
 from openstack_auth_shib.models import OS_LNAME_LEN
 from openstack_auth_shib.utils import get_project_managers
+from openstack_auth_shib.utils import get_admin_roleid
+from openstack_auth_shib.utils import get_default_roleid
 
 from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
 TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
+DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', '')
 
 class ProjectResultInfo():
 
@@ -93,7 +96,6 @@ class ProcessRegForm(forms.SelfHandlingForm):
         
         self.fields['regid'] = forms.IntegerField(widget=HiddenInput)
         self.fields['processinglevel'] = forms.IntegerField(widget=HiddenInput)
-        self.prjman_roleid = None
         
         flowstatus = kwargs['initial']['processinglevel']
         if flowstatus == RSTATUS_PENDING or flowstatus == RSTATUS_NOFLOW:
@@ -118,27 +120,6 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 required=False,
                 widget = forms.TextInput(attrs={'readonly': 'readonly'})
             )
-            
-        if flowstatus == RSTATUS_CHECKED or flowstatus == RSTATUS_NOFLOW:
-            self.fields['role_id'] = forms.ChoiceField(
-                label=_("Role"),
-                required=False)
-            
-            role_list = list()
-            for role in keystone_api.role_list(request):
-                if role.name == TENANTADMIN_ROLE:
-                    self.prjman_roleid = role.id
-                else:
-                    role_list.append((role.id, role.name))
-                
-            #
-            # Creation of project-manager role if necessary
-            #
-            if not self.prjman_roleid:
-                self.prjman_roleid = keystone_api.role_create(request, TENANTADMIN_ROLE)
-            role_list.append((self.prjman_roleid, TENANTADMIN_ROLE))
-            
-            self.fields['role_id'].choices = role_list
             
         self.fields['reason'] = forms.CharField(
             label=_('Message'),
@@ -328,23 +309,27 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 else:
                     email = self._retrieve_email(request, registration.userid)
                 
-                if not data['role_id']:
-                    raise Exception(_("Cannot process request: missing role"))
-                
+                prjman_roleid = get_admin_roleid(request)
+                if not prjman_roleid:
+                    raise Exception(_("Cannot process request: missing project admin role"))
+                default_roleid = get_default_roleid(request)
+                if not default_roleid:
+                    raise Exception(_("Cannot process request: missing default role"))
+                    
                 prj_infos = list()
     
                 for prj_req in prjs_approved:
                     keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
-                                                    registration.userid, data['role_id'])
+                                                    registration.userid, default_roleid)
                     prj_infos.append(ProjectResultInfo(prj_req.project.projectname, 'a'))
                     
                 for prj_req in prjs_to_create:
                     keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
-                                                    registration.userid, data['role_id'])
+                                                    registration.userid, default_roleid)
 
-                    if self.prjman_roleid and self.prjman_roleid <> data['role_id']:
-                        keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
-                                                    registration.userid, self.prjman_roleid)
+                    keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
+                                                    registration.userid, prjman_roleid)
+                    
                     prj_infos.append(ProjectResultInfo(prj_req.project.projectname, 'c'))
                     
                 for prj_req in prjs_rejected:
