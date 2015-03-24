@@ -104,6 +104,7 @@
         {% for prjreq in pendprojects %}
         <tr>
             <td>{{ prjreq }}</td>
+            {% if showprjbtn %}
             <td>{% trans "Waiting for approval" %}</td>
             <td>
                 <input class="btn btn-primary pull-right"  type="button" 
@@ -115,6 +116,9 @@
                        onclick="forceReject('{{ prjreq }}')" 
                        value="{% trans 'Force reject' %}"/>
             </td>
+            {% else %}
+            <td colspan="3">{% trans "Waiting for approval" %}</td>
+            {% endif %}
         </tr>
         {% endfor %}
         
@@ -144,12 +148,16 @@
             {% else %}
             <td>{{ prjreq }} ({% trans "Private" %})</td>
             {% endif %}
+            {% if showprjbtn %}
             <td colspan="2">{% trans "User wants to create" %}</td>
             <td>
                 <input class="btn btn-primary pull-right"  type="button" 
                        onclick="forceReject('{{ prjreq }}')" 
                        value="{% trans 'Force reject' %}"/>
             </td>
+            {% else %}
+            <td colspan="3">{% trans "User wants to create" %}</td>
+            {% endif %}
         </tr>
         {% endfor %}
     {% endif %}

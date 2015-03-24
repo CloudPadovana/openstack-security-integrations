@@ -171,6 +171,7 @@ class ProcessView(forms.ModalFormView):
         context['emails'] = self.get_object().emails
 
         context['approveenabled'] = True
+        context['showprjbtn'] = False
         if self.get_object().reqlevel == RSTATUS_PENDING:
             context['processingtitle'] = _('Pre-check registrations')
             context['processingbtn'] = _('Pre-check')
@@ -178,6 +179,8 @@ class ProcessView(forms.ModalFormView):
             context['processingtitle'] = _('Pre-check project subscriptions')
             context['processingbtn'] = _('Pre-check')
         else:
+            if self.get_object().reqlevel <> RSTATUS_NOFLOW:
+                context['showprjbtn'] = True
             context['processingtitle'] = _('Approve registrations')
             context['processingbtn'] = _('Approve')
             
@@ -190,6 +193,12 @@ class ProcessView(forms.ModalFormView):
                 
             if len(self.get_object().rejprojects) > 0 and tmpsum == 0:
                 context['approveenabled'] = False
+            
+            tmpsum += len(self.get_object().pendprojects)
+            tmpsum += len(self.get_object().rejprojects)
+            
+            if len(self.get_object().newprojects) == tmpsum and tmpsum == 1:
+                context['showprjbtn'] = False
 
         return context
 
