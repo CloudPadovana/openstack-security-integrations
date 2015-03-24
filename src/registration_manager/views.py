@@ -63,9 +63,12 @@ class IndexView(tables.DataTableView):
 
 
 class PrjInfo:
-    def __init__(self, name, status):
-        self.name = name
-        self.visible = status
+    def __init__(self, prj_req):
+        self.name = prj_req.project.projectname
+        self.visible = prj_req.project.status
+        self.notes = prj_req.notes
+        if not self.notes:
+            self.notes = _("Nothing to declare")
     
     def __str__(self):
         return self.name
@@ -111,20 +114,19 @@ class RegReqItem:
                     found_guest = True
                 
                 if prj_req.flowstatus == PSTATUS_REG:
-                    self.regprojects.append(prj_req.project.projectname)
+                    self.regprojects.append(PrjInfo(prj_req))
                 elif prj_req.flowstatus == PSTATUS_PENDING:
-                    self.pendprojects.append(prj_req.project.projectname)
+                    self.pendprojects.append(PrjInfo(prj_req))
                 elif prj_req.flowstatus == PSTATUS_APPR:
-                    self.apprprojects.append(prj_req.project.projectname)
+                    self.apprprojects.append(PrjInfo(prj_req))
                 else:
-                    self.rejprojects.append(prj_req.project.projectname)
+                    self.rejprojects.append(PrjInfo(prj_req))
                 
             else:
                 if prj_req.flowstatus == PSTATUS_REJ:
-                    self.rejprojects.append(prj_req.project.projectname)
+                    self.rejprojects.append(PrjInfo(prj_req))
                 else:
-                    tmpp = PrjInfo(prj_req.project.projectname, prj_req.project.status)
-                    self.newprojects.append(tmpp)
+                    self.newprojects.append(PrjInfo(prj_req))
                 
         if prj_mark and self.reqlevel == RSTATUS_PRECHKD:
             self.reqlevel = RSTATUS_CHECKED

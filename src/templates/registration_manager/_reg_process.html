@@ -97,6 +97,7 @@
         <tr>
             <td>{{ prjreq }}</td><td colspan="3">{% trans "User wants to subscribe" %}</td>
         </tr>
+        <tr style="background-color: #f1f1f1"><td></td><td colspan="3">{{ prjreq.notes }}</td></tr>
         {% endfor %}
     {% endif %}
     
@@ -120,6 +121,7 @@
             <td colspan="3">{% trans "Waiting for approval" %}</td>
             {% endif %}
         </tr>
+        <tr style="background-color: #f1f1f1"><td></td><td colspan="3">{{ prjreq.notes }}</td></tr>
         {% endfor %}
         
     {% endif %}
@@ -129,6 +131,7 @@
         <tr>
             <td>{{ prjreq }}</td><td colspan="3">{% trans "Approved" %}</td>
         </tr>
+        <tr style="background-color: #f1f1f1"><td></td><td colspan="3">{{ prjreq.notes }}</td></tr>
         {% endfor %}
     {% endif %}
 
@@ -137,6 +140,7 @@
         <tr>
             <td>{{ prjreq }}</td><td colspan="3">{% trans "Rejected" %}</td>
         </tr>
+        <tr style="background-color: #f1f1f1"><td></td><td colspan="3">{{ prjreq.notes }}</td></tr>
         {% endfor %}
     {% endif %}
 
@@ -159,6 +163,7 @@
             <td colspan="3">{% trans "User wants to create" %}</td>
             {% endif %}
         </tr>
+        <tr style="background-color: #f1f1f1"><td></td><td colspan="3">{{ prjreq.notes }}</td></tr>
         {% endfor %}
     {% endif %}
     </table>    
