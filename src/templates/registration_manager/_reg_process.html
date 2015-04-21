@@ -95,9 +95,9 @@
     {% if regprojects %}
         {% for prjreq in regprojects %}
         <tr>
-            <td>{{ prjreq }}</td><td colspan="3">{% trans "User wants to subscribe" %}</td>
+            <td>{{ prjreq }}</td><td colspan="2">{% trans "Subscription pending" %}</td>
         </tr>
-        <tr style="background-color: #f1f1f1"><td></td><td colspan="3">{{ prjreq.notes }}</td></tr>
+        <tr style="background-color: #f1f1f1"><td></td><td colspan="2">{{ prjreq.notes }}</td></tr>
         {% endfor %}
     {% endif %}
     
@@ -106,22 +106,20 @@
         <tr>
             <td>{{ prjreq }}</td>
             {% if showprjbtn %}
-            <td>{% trans "Waiting for approval" %}</td>
-            <td>
-                <input class="btn btn-primary pull-right"  type="button" 
-                       onclick="forceApprove('{{ prjreq }}')" 
-                       value="{% trans 'Force approve' %}"/>
-            </td>
+            <td>{% trans "Subscription waiting for approval" %}</td>
             <td>
                 <input class="btn btn-primary pull-right"  type="button" 
                        onclick="forceReject('{{ prjreq }}')" 
                        value="{% trans 'Force reject' %}"/>
+                <input class="btn btn-primary pull-right"  type="button" 
+                       onclick="forceApprove('{{ prjreq }}')" 
+                       value="{% trans 'Force approve' %}"/>
             </td>
             {% else %}
-            <td colspan="3">{% trans "Waiting for approval" %}</td>
+            <td colspan="2">{% trans "Subscription waiting for approval" %}</td>
             {% endif %}
         </tr>
-        <tr style="background-color: #f1f1f1"><td></td><td colspan="3">{{ prjreq.notes }}</td></tr>
+        <tr style="background-color: #f1f1f1"><td></td><td colspan="2">{{ prjreq.notes }}</td></tr>
         {% endfor %}
         
     {% endif %}
@@ -129,18 +127,18 @@
     {% if apprprojects %}
         {% for prjreq in apprprojects %}
         <tr>
-            <td>{{ prjreq }}</td><td colspan="3">{% trans "Approved" %}</td>
+            <td>{{ prjreq }}</td><td colspan="2">{% trans "Subscription approved" %}</td>
         </tr>
-        <tr style="background-color: #f1f1f1"><td></td><td colspan="3">{{ prjreq.notes }}</td></tr>
+        <tr style="background-color: #f1f1f1"><td></td><td colspan="2">{{ prjreq.notes }}</td></tr>
         {% endfor %}
     {% endif %}
 
     {% if rejprojects %}
         {% for prjreq in rejprojects %}
         <tr>
-            <td>{{ prjreq }}</td><td colspan="3">{% trans "Rejected" %}</td>
+            <td>{{ prjreq }}</td><td colspan="2">{% trans "Subscription rejected" %}</td>
         </tr>
-        <tr style="background-color: #f1f1f1"><td></td><td colspan="3">{{ prjreq.notes }}</td></tr>
+        <tr style="background-color: #f1f1f1"><td></td><td colspan="2">{{ prjreq.notes }}</td></tr>
         {% endfor %}
     {% endif %}
 
@@ -153,17 +151,17 @@
             <td>{{ prjreq }} ({% trans "Private" %})</td>
             {% endif %}
             {% if showprjbtn %}
-            <td colspan="2">{% trans "User wants to create" %}</td>
+            <td colspan="1">{% trans "Project to be created" %}</td>
             <td>
                 <input class="btn btn-primary pull-right"  type="button" 
                        onclick="forceReject('{{ prjreq }}')" 
                        value="{% trans 'Force reject' %}"/>
             </td>
             {% else %}
-            <td colspan="3">{% trans "User wants to create" %}</td>
+            <td colspan="2">{% trans "Project to be created" %}</td>
             {% endif %}
         </tr>
-        <tr style="background-color: #f1f1f1"><td></td><td colspan="3">{{ prjreq.notes }}</td></tr>
+        <tr style="background-color: #f1f1f1"><td></td><td colspan="2">{{ prjreq.notes }}</td></tr>
         {% endfor %}
     {% endif %}
     </table>    
