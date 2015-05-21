@@ -63,12 +63,9 @@ class IndexView(tables.DataTableView):
 
 
 class PrjInfo:
-    def __init__(self, prj_req):
-        self.name = prj_req.project.projectname
-        self.visible = prj_req.project.status
-        self.notes = prj_req.notes
-        if not self.notes:
-            self.notes = _("Nothing to declare")
+    def __init__(self, name, status):
+        self.name = name
+        self.visible = status
     
     def __str__(self):
         return self.name
@@ -114,19 +111,17 @@ class RegReqItem:
                     found_guest = True
                 
                 if prj_req.flowstatus == PSTATUS_REG:
-                    self.regprojects.append(PrjInfo(prj_req))
+                    self.regprojects.append(prj_req.project.projectname)
                 elif prj_req.flowstatus == PSTATUS_PENDING:
-                    self.pendprojects.append(PrjInfo(prj_req))
+                    self.pendprojects.append(prj_req.project.projectname)
                 elif prj_req.flowstatus == PSTATUS_APPR:
-                    self.apprprojects.append(PrjInfo(prj_req))
+                    self.apprprojects.append(prj_req.project.projectname)
                 else:
-                    self.rejprojects.append(PrjInfo(prj_req))
+                    self.rejprojects.append(prj_req.project.projectname)
                 
             else:
-                if prj_req.flowstatus == PSTATUS_REJ:
-                    self.rejprojects.append(PrjInfo(prj_req))
-                else:
-                    self.newprojects.append(PrjInfo(prj_req))
+                tmpp = PrjInfo(prj_req.project.projectname, prj_req.project.status)
+                self.newprojects.append(tmpp)
                 
         if prj_mark and self.reqlevel == RSTATUS_PRECHKD:
             self.reqlevel = RSTATUS_CHECKED
@@ -173,7 +168,6 @@ class ProcessView(forms.ModalFormView):
         context['emails'] = self.get_object().emails
 
         context['approveenabled'] = True
-        context['showprjbtn'] = False
         if self.get_object().reqlevel == RSTATUS_PENDING:
             context['processingtitle'] = _('Pre-check registrations')
             context['processingbtn'] = _('Pre-check')
@@ -181,8 +175,6 @@ class ProcessView(forms.ModalFormView):
             context['processingtitle'] = _('Pre-check project subscriptions')
             context['processingbtn'] = _('Pre-check')
         else:
-            if self.get_object().reqlevel <> RSTATUS_NOFLOW:
-                context['showprjbtn'] = True
             context['processingtitle'] = _('Approve registrations')
             context['processingbtn'] = _('Approve')
             
@@ -195,12 +187,6 @@ class ProcessView(forms.ModalFormView):
                 
             if len(self.get_object().rejprojects) > 0 and tmpsum == 0:
                 context['approveenabled'] = False
-            
-            tmpsum += len(self.get_object().pendprojects)
-            tmpsum += len(self.get_object().rejprojects)
-            
-            if len(self.get_object().newprojects) == tmpsum and tmpsum == 1:
-                context['showprjbtn'] = False
 
         return context
 

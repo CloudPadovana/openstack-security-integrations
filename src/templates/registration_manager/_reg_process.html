@@ -59,8 +59,6 @@
     {% endfor %}
     </fieldset>
     
-</div>
-<div id="rdiv01" class="right">
     {% if extaccounts %}
     <h3>{% trans "External Identities" %}:</h3>
     <ul>
@@ -87,84 +85,76 @@
     {% endfor %}
     </ul>
     {% endif%}
+    
 </div>
+<div id="rdiv01" class="right">
 
-<div style="float:left;margin-right:15px;width:650px">
-    <h3>Projects</h3>
-    <table width="100%">
     {% if regprojects %}
+    <div class="modal-body clearfix">
+        <h3>{% trans "User wants to subscribe to the following projects" %}:</h3>
+        <ul>
         {% for prjreq in regprojects %}
-        <tr>
-            <td>{{ prjreq }}</td><td colspan="2">{% trans "Subscription pending" %}</td>
-        </tr>
-        <tr style="background-color: #f1f1f1"><td></td><td colspan="2">{{ prjreq.notes }}</td></tr>
+            <li>{{ prjreq }}</li>
         {% endfor %}
+        </ul>
+    </div>
     {% endif %}
     
     {% if pendprojects %}
+    <div class="modal-body clearfix">
+        <h3>{% trans "Waiting for project admin approval for" %}:</h3>
+        <ul>
         {% for prjreq in pendprojects %}
-        <tr>
-            <td>{{ prjreq }}</td>
-            {% if showprjbtn %}
-            <td>{% trans "Subscription waiting for approval" %}</td>
-            <td>
-                <input class="btn btn-primary pull-right"  type="button" 
-                       onclick="forceReject('{{ prjreq }}')" 
-                       value="{% trans 'Force reject' %}"/>
-                <input class="btn btn-primary pull-right"  type="button" 
-                       onclick="forceApprove('{{ prjreq }}')" 
-                       value="{% trans 'Force approve' %}"/>
-            </td>
-            {% else %}
-            <td colspan="2">{% trans "Subscription waiting for approval" %}</td>
-            {% endif %}
-        </tr>
-        <tr style="background-color: #f1f1f1"><td></td><td colspan="2">{{ prjreq.notes }}</td></tr>
+            <li>{{ prjreq }}</li>
         {% endfor %}
+        </ul>
         
+        <a href="{% url 'horizon:admin:registration_manager:forceapprove' regid %}"
+            class="btn btn-primary ajax-modal pull-right">{% trans "Force approval" %}</a>
+    </div>
     {% endif %}
 
     {% if apprprojects %}
+    <div class="modal-body clearfix">
+        <h3>{% trans "Project admin approved the subscription for" %}:</h3>
+        <ul>
         {% for prjreq in apprprojects %}
-        <tr>
-            <td>{{ prjreq }}</td><td colspan="2">{% trans "Subscription approved" %}</td>
-        </tr>
-        <tr style="background-color: #f1f1f1"><td></td><td colspan="2">{{ prjreq.notes }}</td></tr>
+            <li>{{ prjreq }}</li>
         {% endfor %}
+        </ul>
+    </div>
     {% endif %}
 
     {% if rejprojects %}
+    <div class="modal-body clearfix">
+        <h3>{% trans "Project admin reject the subscription for" %}:</h3>
+        <ul>
         {% for prjreq in rejprojects %}
-        <tr>
-            <td>{{ prjreq }}</td><td colspan="2">{% trans "Subscription rejected" %}</td>
-        </tr>
-        <tr style="background-color: #f1f1f1"><td></td><td colspan="2">{{ prjreq.notes }}</td></tr>
+            <li>{{ prjreq }}</li>
         {% endfor %}
+        </ul>
+    </div>
     {% endif %}
 
     {% if newprojects %}
+    <div class="modal-body clearfix">
+        <h3>{% trans "User wants to create the following projects" %}:</h3>
+        <ul>
         {% for prjreq in newprojects %}
-        <tr>
             {% if prjreq.visible %}
-            <td>{{ prjreq }}</td>
+            <li>{{ prjreq.name }}</li>
             {% else %}
-            <td>{{ prjreq }} ({% trans "Private" %})</td>
+            <li>{{ prjreq.name }} ({% trans "Private" %})</li>
             {% endif %}
-            {% if showprjbtn %}
-            <td colspan="1">{% trans "Project to be created" %}</td>
-            <td>
-                <input class="btn btn-primary pull-right"  type="button" 
-                       onclick="forceReject('{{ prjreq }}')" 
-                       value="{% trans 'Force reject' %}"/>
-            </td>
-            {% else %}
-            <td colspan="2">{% trans "Project to be created" %}</td>
-            {% endif %}
-        </tr>
-        <tr style="background-color: #f1f1f1"><td></td><td colspan="2">{{ prjreq.notes }}</td></tr>
         {% endfor %}
+        </ul>
+    </div>
     {% endif %}
-    </table>    
+    
+</div>
+<div id="rdiv02" class="right" style="visibility: hidden">
+    <h3>{% trans "Description" %}:</h3>
+    <p>{% trans "From here you can specify a reason for rejecting the request." %}</p>
 </div>
 {% endblock %}
 
@@ -197,6 +187,8 @@
             rejbtnstatus = !rejbtnstatus;
             document.getElementById('rejbtnid').value = '{% trans "Confirm" %}';
             document.getElementById('okbtnid').style.visibility = 'hidden';
+            document.getElementById('rdiv01').remove();
+            document.getElementById('rdiv02').style.visibility = 'visible';
             
             if ( document.getElementById('id_div_username') != null ) {
                 document.getElementById('id_div_username').remove();
@@ -204,23 +196,14 @@
             if ( document.getElementById('id_div_expiration') != null ) {
                 document.getElementById('id_div_expiration').remove();
             }
+            if ( document.getElementById('id_div_role_id') != null ) {
+                document.getElementById('id_div_role_id').remove();
+            }
             document.getElementById('id_div_reason').style.visibility = 'visible';
         } else {
             document.getElementById('id_checkaction').value = 'reject';
             document.getElementById('process_reg_form').submit();        
         }
-    }
-    
-    function forceReject(prjname) {
-        document.getElementById('id_wprjname').value = prjname;
-        document.getElementById('id_checkaction').value = 'forcereject';
-        document.getElementById('process_reg_form').submit();
-    }
-    
-    function forceApprove(prjname) {
-        document.getElementById('id_wprjname').value = prjname;
-        document.getElementById('id_checkaction').value = 'forceapprove';
-        document.getElementById('process_reg_form').submit();
     }
   </script>
 

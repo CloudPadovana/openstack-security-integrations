@@ -26,26 +26,13 @@ LOG = logging.getLogger(__name__)
 TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 TENANTADMIN_ROLEID = None
 
-DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', '')
-DEFAULT_ROLEID = None
-
 def get_admin_roleid(request):
     global TENANTADMIN_ROLEID
     if TENANTADMIN_ROLEID == None:
         for role in keystone_api.role_list(request):
             if role.name == TENANTADMIN_ROLE:
                 TENANTADMIN_ROLEID = role.id
-        if not TENANTADMIN_ROLEID:
-            TENANTADMIN_ROLEID = keystone_api.role_create(request, TENANTADMIN_ROLE)
     return TENANTADMIN_ROLEID
-
-def get_default_roleid(request):
-    global DEFAULT_ROLEID
-    if DEFAULT_ROLEID == None:
-        for role in keystone_api.role_list(request):
-            if role.name == DEFAULT_ROLE:
-                DEFAULT_ROLEID = role.id
-    return DEFAULT_ROLEID
 
 
 def get_project_managers(request, project_id):

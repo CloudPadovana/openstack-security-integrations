@@ -44,7 +44,6 @@ SUBSCR_NO_TYPE = 'subscription_rejected'
 SUBSCR_FORCED_OK_TYPE = 'subscription_forced_approved'
 SUBSCR_FORCED_NO_TYPE = 'subscription_forced_rejected'
 USER_EXP_TYPE = 'user_expiring'
-MEMBER_DEL_TYPE = 'project_member_deleted'
 
 
 class NotificationTemplate():

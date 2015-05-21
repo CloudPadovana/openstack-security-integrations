@@ -62,14 +62,11 @@ from openstack_auth_shib.models import RSTATUS_NOFLOW
 
 from openstack_auth_shib.models import OS_LNAME_LEN
 from openstack_auth_shib.utils import get_project_managers
-from openstack_auth_shib.utils import get_admin_roleid
-from openstack_auth_shib.utils import get_default_roleid
 
 from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
 TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
-DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', '')
 
 class ProjectResultInfo():
 
@@ -89,13 +86,13 @@ class ProjectResultInfo():
 class ProcessRegForm(forms.SelfHandlingForm):
 
     checkaction = forms.CharField(widget=HiddenInput, initial='accept')
-    wprjname = forms.CharField(widget=HiddenInput, initial='null')
     
     def __init__(self, request, *args, **kwargs):
         super(ProcessRegForm, self).__init__(request, *args, **kwargs)
         
         self.fields['regid'] = forms.IntegerField(widget=HiddenInput)
         self.fields['processinglevel'] = forms.IntegerField(widget=HiddenInput)
+        self.prjman_roleid = None
         
         flowstatus = kwargs['initial']['processinglevel']
         if flowstatus == RSTATUS_PENDING or flowstatus == RSTATUS_NOFLOW:
@@ -120,6 +117,27 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 required=False,
                 widget = forms.TextInput(attrs={'readonly': 'readonly'})
             )
+            
+        if flowstatus == RSTATUS_CHECKED or flowstatus == RSTATUS_NOFLOW:
+            self.fields['role_id'] = forms.ChoiceField(
+                label=_("Role"),
+                required=False)
+            
+            role_list = list()
+            for role in keystone_api.role_list(request):
+                if role.name == TENANTADMIN_ROLE:
+                    self.prjman_roleid = role.id
+                else:
+                    role_list.append((role.id, role.name))
+                
+            #
+            # Creation of project-manager role if necessary
+            #
+            if not self.prjman_roleid:
+                self.prjman_roleid = keystone_api.role_create(request, TENANTADMIN_ROLE)
+            role_list.append((self.prjman_roleid, TENANTADMIN_ROLE))
+            
+            self.fields['role_id'].choices = role_list
             
         self.fields['reason'] = forms.CharField(
             label=_('Message'),
@@ -156,10 +174,6 @@ class ProcessRegForm(forms.SelfHandlingForm):
         try:
             if data['checkaction'] == 'accept':
                 self._handle_accept(request, data)
-            elif data['checkaction'] == 'forceapprove':
-                self._handle_forceapprove(request, data)
-            elif data['checkaction'] == 'forcereject':
-                self._handle_forcereject(request, data)
             else:
                 self._handle_reject(request, data)
         except:
@@ -309,27 +323,23 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 else:
                     email = self._retrieve_email(request, registration.userid)
                 
-                prjman_roleid = get_admin_roleid(request)
-                if not prjman_roleid:
-                    raise Exception(_("Cannot process request: missing project admin role"))
-                default_roleid = get_default_roleid(request)
-                if not default_roleid:
-                    raise Exception(_("Cannot process request: missing default role"))
-                    
+                if not data['role_id']:
+                    raise Exception(_("Cannot process request: missing role"))
+                
                 prj_infos = list()
     
                 for prj_req in prjs_approved:
                     keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
-                                                    registration.userid, default_roleid)
+                                                    registration.userid, data['role_id'])
                     prj_infos.append(ProjectResultInfo(prj_req.project.projectname, 'a'))
                     
                 for prj_req in prjs_to_create:
                     keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
-                                                    registration.userid, default_roleid)
+                                                    registration.userid, data['role_id'])
 
-                    keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
-                                                    registration.userid, prjman_roleid)
-                    
+                    if self.prjman_roleid and self.prjman_roleid <> data['role_id']:
+                        keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
+                                                    registration.userid, self.prjman_roleid)
                     prj_infos.append(ProjectResultInfo(prj_req.project.projectname, 'c'))
                     
                 for prj_req in prjs_rejected:
@@ -410,67 +420,6 @@ class ProcessRegForm(forms.SelfHandlingForm):
             }
             noti_sbj, noti_body = notification_render(SUBSCR_NO_TYPE, noti_params)
             notifyUsers(recipients, noti_sbj, noti_body)
-
-
-
-
-
-    def _handle_forceapprove(self, request, data):
-    
-        prjid = None
-        tmpuser = None
-        
-        with transaction.commit_on_success():
-            q_args = {
-                'registration__regid' : int(data['regid']),
-                'project__projectname' : data['wprjname']
-            }
-            prjreqs = PrjRequest.objects.filter(**q_args)
-            if len(prjreqs):
-                prjid = prjreqs[0].project.projectid
-                tmpuser = prjreqs[0].registration.username
-            prjreqs.update(flowstatus=PSTATUS_APPR)
-
-        if prjid:
-            m_users = get_project_managers(request, prjid)
-            noti_params = {
-                'username' : tmpuser,
-                'project' : data['wprjname']
-            }
-            noti_sbj, noti_body = notification_render(SUBSCR_FORCED_OK_TYPE, noti_params)
-            notifyUsers([ usr.email for usr in m_users ], noti_sbj, noti_body)
-
-
-
-    def _handle_forcereject(self, request, data):
-    
-        prjid = None
-        tmpuser = None
-        LOG.debug("Called force reject for %s" % data['wprjname'])
-        
-        with transaction.commit_on_success():
-            q_args = {
-                'registration__regid' : int(data['regid']),
-                'project__projectname' : data['wprjname']
-            }
-            prjreqs = PrjRequest.objects.filter(**q_args)
-            if len(prjreqs):
-                prjid = prjreqs[0].project.projectid
-                tmpuser = prjreqs[0].registration.username
-            prjreqs.update(flowstatus=PSTATUS_REJ)
-
-        if prjid:
-            m_users = get_project_managers(request, prjid)
-            noti_params = {
-                'username' : tmpuser,
-                'project' : data['wprjname']
-            }
-            noti_sbj, noti_body = notification_render(SUBSCR_FORCED_NO_TYPE, noti_params)
-            notifyUsers([ usr.email for usr in m_users ], noti_sbj, noti_body)
-
-
-
-
 
 
 class ForceApproveForm(forms.SelfHandlingForm):

@@ -27,11 +27,6 @@ from horizon.utils import functions as utils
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
-from openstack_auth_shib.notifications import notification_render
-from openstack_auth_shib.notifications import notifyManagers
-from openstack_auth_shib.notifications import notify as notifyUsers
-from openstack_auth_shib.notifications import MEMBER_DEL_TYPE
-
 LOG = logging.getLogger(__name__)
 TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', '')
@@ -47,31 +42,15 @@ class DeleteMemberAction(tables.DeleteAction):
     
         try:
             
-            kclient = client_factory(request)
-            roles_manager = kclient.roles
-            role_assign_manager = kclient.role_assignments
-            users_manager = kclient.users
+            roles_obj = client_factory(request).roles
+            role_assign_obj = client_factory(request).role_assignments
             
             arg_dict = {
                 'project' : request.user.tenant_id,
                 'user' : obj_id
             }
-            for r_item in role_assign_manager.list(**arg_dict):
-                roles_manager.revoke(r_item.role['id'], **arg_dict)
-                
-            try:
-                d_user = users_manager.get(obj_id)
-                
-                noti_params = {
-                    'username' : d_user.name,
-                    'project' : request.user.project_name
-                }
-                noti_sbj, noti_body = notification_render(MEMBER_DEL_TYPE, noti_params)
-                notifyUsers([ d_user.email ], noti_sbj, noti_body)
-                notifyManagers(noti_sbj, noti_body)
-                
-            except:
-                LOG.warning('Cannot notify deletion to %s' % obj_id, exc_info=True)
+            for r_item in role_assign_obj.list(**arg_dict):
+                roles_obj.revoke(r_item.role['id'], **arg_dict)
             
         except:
             LOG.error("Grant revoke error", exc_info=True)
