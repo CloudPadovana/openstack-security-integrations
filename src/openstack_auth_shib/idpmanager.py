@@ -48,7 +48,11 @@ class SAML2_IdP:
         if len(self.username) > OS_LNAME_LEN:
             self.username = self.username[0:OS_LNAME_LEN]
         
-        self.email = request.META.get('mail', None)
+        tmpmail = request.META.get('mail', None)
+        if tmpmail:
+            self.email = tmpmail.split(';')[0]
+        else:
+            self.email = None
         self.givenname = request.META.get('givenName', None)
         self.sn = request.META.get('sn', None)
         
