@@ -247,7 +247,10 @@ Keystone authentication plugin for secret token
 %endif
 
 %changelog
-* Thu May 21 2015 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
+* Wed Jun 24 2015 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
+- Changes for UniPD IdP
+
+* Thu May 21 2015 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.0.5-1
 - Fixed issue https://issues.infn.it/jira/browse/PDCL-232
 
 * Fri Feb 13 2015 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.0.4-1
