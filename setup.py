@@ -136,6 +136,7 @@ module_list = [
 ]
 
 confile_list = [
+    'config/attribute-map.xml',
     'config/idem-template-metadata.xml',
     'config/logging.conf',
     'config/actions.conf'
@@ -163,7 +164,9 @@ setup(
                   (css_dir, ['src/templates/aai_infn_integrations.less']),
                   (img_dir, logo_list),
                   ('etc/openstack-auth-shib', confile_list),
+                  ('etc/keystone-skey-auth', ['config/policy.json']),
                   ('etc/cron.d', ['config/openstack-auth-shib-cron']),
+                  ('usr/share/openstack-auth-shib', ['config/attribute-map.xml']),
                   ('usr/share/openstack-auth-shib/templates', ['config/notifications_en.txt'])
                  ],
       cmdclass={'bdist_rpm': bdist_rpm}
