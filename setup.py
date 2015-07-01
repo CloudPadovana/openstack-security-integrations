@@ -136,7 +136,6 @@ module_list = [
 ]
 
 confile_list = [
-    'config/attribute-map.xml',
     'config/idem-template-metadata.xml',
     'config/logging.conf',
     'config/actions.conf'
