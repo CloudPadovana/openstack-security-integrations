@@ -115,6 +115,7 @@ logo_list = [
     'src/templates/logoCloudAreapd.png',
     'src/templates/logoCloudAreapdStrip.png',
     'src/templates/logoInfnAAI.png',
+    'src/templates/logoUniPD.png',
     'src/templates/logoGoogle.png',
     'src/templates/logoUsrPwd.png',
     'src/templates/logoIDEM.png',
