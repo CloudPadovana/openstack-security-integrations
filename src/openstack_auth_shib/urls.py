@@ -22,8 +22,10 @@
 # url(r'^auth/', include('openstack_auth.urls'))
 #
 
-
-from django.conf.urls.defaults import patterns, url
+try:
+    from django.conf.urls import patterns, url
+except:
+    from django.conf.urls.defaults import patterns, url
 
 from openstack_auth.utils import patch_middleware_get_user
 

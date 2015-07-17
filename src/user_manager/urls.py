@@ -14,8 +14,10 @@
 #  under the License. 
 
 
-from django.conf.urls.defaults import patterns  # noqa
-from django.conf.urls.defaults import url  # noqa
+try:
+    from django.conf.urls import patterns, url
+except:
+    from django.conf.urls.defaults import patterns, url
 
 from openstack_dashboard.dashboards.admin.user_manager import views
 
