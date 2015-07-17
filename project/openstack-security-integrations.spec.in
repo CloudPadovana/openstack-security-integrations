@@ -275,7 +275,10 @@ if [ $1 == 0 -o $2 == 0 ] ; then
 fi
 
 %changelog
-* Wed Jun 24 2015 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
+* Fri Jul 17 2015 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
+- Porting su CentOS7
+
+* Wed Jun 24 2015 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.0.6-1
 - Changes for UniPD IdP
 
 * Thu May 21 2015 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.0.5-1
