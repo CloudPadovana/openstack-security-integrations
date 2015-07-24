@@ -108,6 +108,10 @@
         </div>
     
         <div class="modal-footer">
+            <a target="_new" href="{{ HORIZON_CONFIG.help_url }}">
+                <img class="btn" src="/static/dashboard/img/help-transparent.png"/>
+                <label>{% trans "Read the User Guide" %}</label>
+            </a>
         </div>
     
         {% if form.non_field_errors %}
