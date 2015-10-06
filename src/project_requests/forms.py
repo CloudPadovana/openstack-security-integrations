@@ -125,7 +125,7 @@ class ProjectRequestForm(forms.SelfHandlingForm):
     @sensitive_variables('data')
     def handle(self, request, data):
     
-        with transaction.commit_on_success():
+        with transaction.atomic():
         
             registration = Registration.objects.filter(userid=request.user.id)[0]
         

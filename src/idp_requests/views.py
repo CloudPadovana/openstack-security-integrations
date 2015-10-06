@@ -85,7 +85,7 @@ def resume(request):
     if attributes:
     
         try:
-            with transaction.commit_on_success():
+            with transaction.atomic():
         
                 extId = attributes.username
         

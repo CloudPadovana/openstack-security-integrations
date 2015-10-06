@@ -16,7 +16,6 @@
 import logging
 
 from django import shortcuts
-from django.db import transaction
 from django.conf import settings
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _

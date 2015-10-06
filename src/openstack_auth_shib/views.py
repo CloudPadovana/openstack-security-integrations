@@ -270,7 +270,7 @@ def processForm(request, reg_form, domain, attributes=None):
 
         LOG.debug("Saving %s" % username)
                 
-        with transaction.commit_on_success():
+        with transaction.atomic():
     
             queryArgs = {
                 'username' : username,

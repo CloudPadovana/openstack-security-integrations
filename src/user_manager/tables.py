@@ -58,7 +58,7 @@ class DeleteUsersAction(BaseDeleteUsersAction):
         
         else:
 
-            with transaction.commit_on_success():
+            with transaction.atomic():
                 Registration.objects.filter(userid=obj_id).delete()
                 super(DeleteUsersAction, self).delete(request, obj_id)
         

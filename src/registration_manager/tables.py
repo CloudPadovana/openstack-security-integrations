@@ -15,7 +15,6 @@
 
 import logging
 
-from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
 
 from openstack_auth_shib.models import Registration, RegRequest

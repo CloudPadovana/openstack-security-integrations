@@ -62,7 +62,7 @@ class DeleteProjectAction(DeleteTenantsAction):
 
     def delete(self, request, obj_id):
     
-        with transaction.commit_on_success():
+        with transaction.atomic():
             Project.objects.filter(projectid=obj_id).delete()
             super(DeleteProjectAction, self).delete(request, obj_id)
 
@@ -72,7 +72,7 @@ class ToggleVisibility(tables.Action):
     
     def single(self, data_table, request, object_id):
     
-        with transaction.commit_on_success():
+        with transaction.atomic():
         
             prj_list = Project.objects.filter(projectid=object_id)
             if len(prj_list):

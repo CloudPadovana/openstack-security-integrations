@@ -99,7 +99,7 @@ class CreateProject(BaseCreateProject):
         #
         # TODO rollback of keystone action
         #
-        with transaction.commit_on_success():
+        with transaction.atomic():
         
             super(CreateProject, self).handle(request, data)
             newprj_id = self.object.id

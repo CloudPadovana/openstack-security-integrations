@@ -15,7 +15,6 @@
 
 import logging
 
-from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import tables
