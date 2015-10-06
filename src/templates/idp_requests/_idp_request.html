@@ -21,7 +21,7 @@
 {% load url from future %}
 
 {% block form_id %}idp_request_form{% endblock %}
-{% block form_action %}{% url 'horizon:project:idp_requests:index' %}{% endblock %}
+{% block form_action %}{% url 'horizon:identity:idp_requests:index' %}{% endblock %}
 
 {% block modal_id %}idp_request_modal{% endblock %}
 {% block modal-header %}{% trans "Manage providers" %}{% endblock %}

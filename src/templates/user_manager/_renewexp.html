@@ -21,7 +21,7 @@
 {% load url from future %}
 
 {% block form_id %}renew_exp_form{% endblock %}
-{% block form_action %}{% url 'horizon:admin:user_manager:renew' userid %}{% endblock %}
+{% block form_action %}{% url 'horizon:identity:user_manager:renew' userid %}{% endblock %}
 
 {% block modal-header %}{% trans "Renew Expiration Date" %}{% endblock %}
 
@@ -49,5 +49,5 @@
 
 {% block modal-footer %}
   <input class="btn btn-primary pull-right" type="submit" value="{% trans "Renew" %}" />
-  <a href="{% url 'horizon:admin:user_manager:index' %}" class="btn secondary cancel close">{% trans "Cancel" %}</a>
+  <a href="{% url 'horizon:identity:user_manager:index' %}" class="btn secondary cancel close">{% trans "Cancel" %}</a>
 {% endblock %}

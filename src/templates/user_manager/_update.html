@@ -21,7 +21,7 @@
 {% load url from future %}
 
 {% block form_id %}update_user_form{% endblock %}
-{% block form_action %}{% url 'horizon:admin:user_manager:update' user.id %}{% endblock %}
+{% block form_action %}{% url 'horizon:identity:user_manager:update' user.id %}{% endblock %}
 
 {% block modal-header %}{% trans "Update User" %}{% endblock %}
 
@@ -49,6 +49,6 @@
 
 {% block modal-footer %}
   <input class="btn btn-primary pull-right" type="submit" value="{% trans "Update User" %}" />
-  <a href="{% url 'horizon:admin:user_manager:index' %}" class="btn secondary cancel close">{% trans "Cancel" %}</a>
+  <a href="{% url 'horizon:identity:user_manager:index' %}" class="btn secondary cancel close">{% trans "Cancel" %}</a>
 {% endblock %}
 

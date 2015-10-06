@@ -21,7 +21,7 @@
 {% load url from future %}
 
 {% block form_id %}prj_request_form{% endblock %}
-{% block form_action %}{% url 'horizon:project:project_requests:index' %}{% endblock %}
+{% block form_action %}{% url 'horizon:identity:project_requests:index' %}{% endblock %}
 
 {% block modal_id %}prj_request_modal{% endblock %}
 {% block modal-header %}{% trans "Submit request" %}{% endblock %}

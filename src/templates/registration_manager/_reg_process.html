@@ -21,7 +21,7 @@
 {% load url from future %}
 
 {% block form_id %}process_reg_form{% endblock %}
-{% block form_action %}{% url 'horizon:admin:registration_manager:process' regid %}{% endblock %}
+{% block form_action %}{% url 'horizon:identity:registration_manager:process' regid %}{% endblock %}
 
 {% block modal-header %}{{ processingtitle }}{% endblock %}
 
@@ -109,7 +109,7 @@
         {% endfor %}
         </ul>
         
-        <a href="{% url 'horizon:admin:registration_manager:forceapprove' regid %}"
+        <a href="{% url 'horizon:identity:registration_manager:forceapprove' regid %}"
             class="btn btn-primary ajax-modal pull-right">{% trans "Force approval" %}</a>
     </div>
     {% endif %}
@@ -162,7 +162,7 @@
     
     <input type="button"
            class="btn btn-primary pull-right"
-           onclick="location.href='{% url 'horizon:admin:registration_manager:index' %}'"
+           onclick="location.href='{% url 'horizon:identity:registration_manager:index' %}'"
            value="{% trans 'Cancel' %}"/>  
     <input id="rejbtnid" 
            class="btn btn-primary pull-right" 
