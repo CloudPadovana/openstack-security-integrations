@@ -16,42 +16,34 @@
 import logging
 import horizon
 
-from openstack_dashboard.dashboards.admin.projects.panel import Tenants
-from openstack_dashboard.dashboards.admin.users.panel import Users
-from openstack_dashboard.dashboards.settings.password.panel import PasswordPanel
+#from openstack_dashboard.dashboards.identity.projects.panel import Tenants
+#from openstack_dashboard.dashboards.identity.users.panel import Users
+#from openstack_dashboard.dashboards.settings.password.panel import PasswordPanel
 
 #
 # Panels must be loaded in advance
 #
-import openstack_dashboard.dashboards.admin.registration_manager.panel
-import openstack_dashboard.dashboards.admin.project_manager.panel
-import openstack_dashboard.dashboards.admin.user_manager.panel
-import openstack_dashboard.dashboards.project.subscription_manager.panel
-import openstack_dashboard.dashboards.project.member_manager.panel
-import openstack_dashboard.dashboards.project.project_requests.panel
-import openstack_dashboard.dashboards.project.idp_requests.panel
-import openstack_dashboard.dashboards.settings.password_manager.panel
+import openstack_dashboard.dashboards.identity.registration_manager.panel
+#import openstack_dashboard.dashboards.identity.project_manager.panel
+#import openstack_dashboard.dashboards.identity.user_manager.panel
+#import openstack_dashboard.dashboards.project.subscription_manager.panel
+#import openstack_dashboard.dashboards.project.member_manager.panel
+#import openstack_dashboard.dashboards.project.project_requests.panel
+#import openstack_dashboard.dashboards.project.idp_requests.panel
+#import openstack_dashboard.dashboards.settings.password_manager.panel
 
 LOG = logging.getLogger(__name__)
 
-admin_dash = horizon.get_dashboard("admin")
-identity_group = admin_dash.get_panel_group('identity')
-identity_group.panels.append('registration_manager')
+identity_dash = horizon.get_dashboard("identity")
+identity_dash.panels = ('domains', 'projects', 'users', 'groups', 'roles', 'registration_manager',)
 
-identity_group.panels[1] = 'project_manager'
-admin_dash.unregister(Tenants)
+#identity_dash.unregister(Tenants)
+#identity_dash.unregister(Users)
 
-identity_group.panels[2] = 'user_manager'
-admin_dash.unregister(Users)
+#settings_dash = horizon.get_dashboard("settings")
+#settings_dash.panels = ('user', 'password_manager', )
 
-settings_dash = horizon.get_dashboard("settings")
-defset_group = settings_dash.get_panel_group('default')
-defset_group.panels.append('password_manager')
-
-try:
-    settings_dash.unregister(PasswordPanel)
-except:
-    LOG.warning("Cannot unregister password panel")
+#settings_dash.unregister(PasswordPanel)
 
 
 
