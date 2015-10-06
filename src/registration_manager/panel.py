@@ -23,5 +23,6 @@ from openstack_dashboard.dashboards.identity import dashboard
 class RegisterManager(horizon.Panel):
     name = _("Registrations")
     slug = 'registration_manager'
+    permissions = ('openstack.roles.admin',)
 
 dashboard.Identity.register(RegisterManager)
