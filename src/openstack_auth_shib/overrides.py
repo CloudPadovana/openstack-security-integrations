@@ -17,7 +17,7 @@ import logging
 import horizon
 
 #from openstack_dashboard.dashboards.identity.projects.panel import Tenants
-#from openstack_dashboard.dashboards.identity.users.panel import Users
+from openstack_dashboard.dashboards.identity.users.panel import Users
 #from openstack_dashboard.dashboards.settings.password.panel import PasswordPanel
 
 #
@@ -25,7 +25,7 @@ import horizon
 #
 import openstack_dashboard.dashboards.identity.registration_manager.panel
 #import openstack_dashboard.dashboards.identity.project_manager.panel
-#import openstack_dashboard.dashboards.identity.user_manager.panel
+import openstack_dashboard.dashboards.identity.user_manager.panel
 import openstack_dashboard.dashboards.identity.subscription_manager.panel
 import openstack_dashboard.dashboards.identity.member_manager.panel
 import openstack_dashboard.dashboards.identity.project_requests.panel
@@ -38,7 +38,7 @@ identity_dash = horizon.get_dashboard("identity")
 identity_dash.panels = ('domains', 'projects', 'users', 'groups', 'roles', 'registration_manager',)
 
 #identity_dash.unregister(Tenants)
-#identity_dash.unregister(Users)
+identity_dash.unregister(Users)
 
 #settings_dash = horizon.get_dashboard("settings")
 #settings_dash.panels = ('user', 'password_manager', )

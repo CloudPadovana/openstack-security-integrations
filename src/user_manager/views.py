@@ -22,9 +22,9 @@ from django.core.urlresolvers import reverse_lazy
 from horizon import forms
 from horizon import exceptions
 
-from openstack_dashboard.dashboards.admin.users.views import IndexView as BaseIndexView
-from openstack_dashboard.dashboards.admin.users.views import UpdateView as BaseUpdateView
-from openstack_dashboard.dashboards.admin.users.views import CreateView as BaseCreateView
+from openstack_dashboard.dashboards.identity.users.views import IndexView as BaseIndexView
+from openstack_dashboard.dashboards.identity.users.views import UpdateView as BaseUpdateView
+from openstack_dashboard.dashboards.identity.users.views import CreateView as BaseCreateView
 
 from openstack_auth_shib.models import Registration
 
@@ -48,7 +48,7 @@ class ExtUserItem:
 
 class IndexView(BaseIndexView):
     table_class = UsersTable
-    template_name = 'admin/user_manager/index.html'
+    template_name = 'identity/user_manager/index.html'
 
     def get_data(self):
         usr_table = dict()
@@ -72,8 +72,8 @@ class IndexView(BaseIndexView):
         return result
 
 class UpdateView(BaseUpdateView):
-    template_name = 'admin/user_manager/update.html'
-    success_url = reverse_lazy('horizon:admin:user_manager:index')
+    template_name = 'identity/user_manager/update.html'
+    success_url = reverse_lazy('horizon:identity:user_manager:index')
 
     def get_object(self):
         if not hasattr(self, "_object"):
@@ -82,19 +82,19 @@ class UpdateView(BaseUpdateView):
                                                      self.kwargs['user_id'],
                                                      admin=True)
             except Exception:
-                redirect = reverse_lazy('horizon:admin:user_manager:index')
+                redirect = reverse_lazy('horizon:identity:user_manager:index')
                 exceptions.handle(self.request, _('Unable to update user.'),
                                   redirect=redirect)
         return self._object
 
 class CreateView(BaseCreateView):
-    template_name = 'admin/user_manager/create.html'
-    success_url = reverse_lazy('horizon:admin:user_manager:index')
+    template_name = 'identity/user_manager/create.html'
+    success_url = reverse_lazy('horizon:identity:user_manager:index')
 
 class RenewView(forms.ModalFormView):
     form_class = RenewExpForm
-    template_name = 'admin/user_manager/renewexp.html'
-    success_url = reverse_lazy('horizon:admin:user_manager:index')
+    template_name = 'identity/user_manager/renewexp.html'
+    success_url = reverse_lazy('horizon:identity:user_manager:index')
 
     def get_context_data(self, **kwargs):
         context = super(RenewView, self).get_context_data(**kwargs)

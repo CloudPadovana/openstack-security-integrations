@@ -19,10 +19,10 @@ try:
 except:
     from django.conf.urls.defaults import patterns, url
 
-from openstack_dashboard.dashboards.admin.user_manager import views
+from openstack_dashboard.dashboards.identity.user_manager import views
 
 
-urlpatterns = patterns('openstack_dashboard.dashboards.admin.user_manager.views',
+urlpatterns = patterns('openstack_dashboard.dashboards.identity.user_manager.views',
     url(r'^$', views.IndexView.as_view(), name='index'),
     url(r'^(?P<user_id>[^/]+)/update/$', views.UpdateView.as_view(), name='update'),
     url(r'^(?P<user_id>[^/]+)/renew/$', views.RenewView.as_view(), name='renew'),
