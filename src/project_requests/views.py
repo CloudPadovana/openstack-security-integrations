@@ -35,6 +35,6 @@ LOG = logging.getLogger(__name__)
 
 class RequestView(forms.ModalFormView):
     form_class = ProjectRequestForm
-    template_name = 'project/project_requests/prj_request.html'
-    success_url = reverse_lazy('horizon:project:overview:index')
+    template_name = 'identity/project_requests/prj_request.html'
+    success_url = reverse_lazy('horizon:identity:overview:index')
 

@@ -25,7 +25,7 @@ LOG = logging.getLogger(__name__)
 class ApproveLink(tables.LinkAction):
     name = "approve"
     verbose_name = _("Process")
-    url = "horizon:project:subscription_manager:approve"
+    url = "horizon:identity:subscription_manager:approve"
     classes = ("ajax-modal", "btn-edit")
 
 class SubscriptionTable(tables.DataTable):

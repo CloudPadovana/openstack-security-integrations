@@ -26,10 +26,10 @@ import horizon
 import openstack_dashboard.dashboards.identity.registration_manager.panel
 #import openstack_dashboard.dashboards.identity.project_manager.panel
 #import openstack_dashboard.dashboards.identity.user_manager.panel
-#import openstack_dashboard.dashboards.project.subscription_manager.panel
-#import openstack_dashboard.dashboards.project.member_manager.panel
-#import openstack_dashboard.dashboards.project.project_requests.panel
-#import openstack_dashboard.dashboards.project.idp_requests.panel
+import openstack_dashboard.dashboards.identity.subscription_manager.panel
+import openstack_dashboard.dashboards.identity.member_manager.panel
+import openstack_dashboard.dashboards.identity.project_requests.panel
+#import openstack_dashboard.dashboards.identity.idp_requests.panel
 #import openstack_dashboard.dashboards.settings.password_manager.panel
 
 LOG = logging.getLogger(__name__)

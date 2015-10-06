@@ -53,14 +53,14 @@ class bdist_rpm(_bdist_rpm):
 
 os_main_dir = 'usr/share/openstack-dashboard/'
 templates_dir = os_main_dir + 'openstack_dashboard/templates'
-img_dir = os_main_dir + 'static/dashboard/img'
-reg_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/admin/registration_manager/templates/registration_manager'
-subscr_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/subscription_manager/templates/subscription_manager'
-member_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/member_manager/templates/member_manager'
-user_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/admin/user_manager/templates/user_manager'
+img_dir = os_main_dir + 'openstack_dashboard/static/dashboard/img'
+reg_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/identity/registration_manager/templates/registration_manager'
+subscr_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/identity/subscription_manager/templates/subscription_manager'
+member_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/identity/member_manager/templates/member_manager'
+user_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/identity/user_manager/templates/user_manager'
 pwd_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/settings/password_manager/templates/password_manager'
-preq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/project_requests/templates/project_requests'
-idpreq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/idp_requests/templates/idp_requests'
+preq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/identity/project_requests/templates/project_requests'
+idpreq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/identity/idp_requests/templates/idp_requests'
 css_dir = 'usr/share/openstack-dashboard/static/dashboard/less'
 
 template_list = [
