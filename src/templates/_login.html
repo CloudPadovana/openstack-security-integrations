@@ -21,7 +21,6 @@
 <div id="login_frame1_id" class="login {% if hide %}modal hide{% endif %}">
     <div class="modal-header">
         {% if hide %}<a href="#" class="close" data-dismiss="modal">&times;</a>{% endif %}
-        <h3>{% trans "Log In" %}</h3>
     </div>
   
     <form id="form1_id" autocomplete="{{ HORIZON_CONFIG.password_autocomplete }}"
@@ -35,7 +34,7 @@
             {# INFN provider is the default one #}
             <button type="button" 
                     onclick="location.href='/dashboard-shib/auth/login/';">
-                <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/static/dashboard/img/logoInfnAAI.png">
+                <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/dashboard/static/dashboard/img/logoInfnAAI.png">
             </button>
 
             {% if HORIZON_CONFIG.identity_providers %}
@@ -53,7 +52,7 @@
             
             <button type="button" 
                     onclick="document.getElementById('userandpwddiv').style.display='block';">
-                <img align="middle" height="60px" width="80px" alt="Local login" src="/static/dashboard/img/logoUsrPwd.png"/>
+                <img align="middle" height="60px" width="80px" alt="Local login" src="/dashboard/static/dashboard/img/logoUsrPwd.png"/>
             </button>
         
         </div>
@@ -107,35 +106,25 @@
             {% if next %}<input type="hidden" name="{{ redirect_field_name }}" value="{{ next }}" />{% endif %}
         </div>
     
-        <div class="modal-footer">
-        </div>
-    
         {% if form.non_field_errors %}
-        <div id="userandpwddiv" style="display: block;">
+        <div id="userandpwddiv" class="modal-footer" style="display: block;">
         {% else %}
-        <div id="userandpwddiv" style="display: none;">
+        <div id="userandpwddiv" class="modal-footer" style="display: none;">
         {% endif %}
         
-            <div class="modal hide in" style="top: 80px; display: block;">
-                <div class="modal-header"><h3>{% trans "Local account" %}</h3></div>
-                
-                <div class="modal-body clearfix">
-                    {% include "horizon/common/_form_fields.html" %}
-                </div>
-                
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary pull-right">{% trans "Sign In" %}</button>
-                    <button type="button"
-                            onclick="location.href='/dashboard/auth/register/'"
-                            class="btn btn-primary pull-right">{% trans "Register" %}</button>
-                    <button type="button"
-                            onclick="document.getElementById('userandpwddiv').style.display='none';"
-                            class="btn btn-primary pull-right">{% trans "Cancel" %}</button>
-                </div>
+            <div class="modal-body clearfix">
+                {% include "horizon/common/_form_fields.html" %}
             </div>
-  
-            <div class="modal-backdrop in"></div>
-            
+                
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary pull-right">{% trans "Sign In" %}</button>
+                <button type="button"
+                        onclick="location.href='/dashboard/auth/register/'"
+                        class="btn btn-primary pull-right">{% trans "Register" %}</button>
+                <button type="button"
+                        onclick="document.getElementById('userandpwddiv').style.display='none';"
+                        class="btn btn-primary pull-right">{% trans "Close" %}</button>
+            </div>
         </div>
   
     </fieldset>
