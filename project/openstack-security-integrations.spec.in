@@ -148,94 +148,95 @@ ln -sf /usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/pr
 
 
 
-#%triggerin -n openstack-auth-shib -- openstack-dashboard
-#if [ ! $1 == 2 ]; then
+%triggerin -n openstack-auth-shib -- openstack-dashboard
+if [ ! $1 == 2 ]; then
     #
     # Compressing aai_infn_integrations
     #
-#    echo "Compressing style-sheets ..."
-#    python /usr/share/openstack-dashboard/manage.py compress -v 0 >/dev/null 2>&1
+    echo "Compressing style-sheets ..."
+    python /usr/share/openstack-dashboard/manage.py compress -v 0 >/dev/null 2>&1
+
     #
     # Register the new backend driver
-    #
-#    sed -i -e 's|openstack_auth.backend.KeystoneBackend|openstack_auth_shib.backend.ExtKeystoneBackend|g' \
-#    /usr/share/openstack-dashboard/openstack_dashboard/settings.py
-    #
     # Register the views wrapper
-    #
-#    sed -i -e 's|openstack_auth.urls|openstack_auth_shib.urls|g' \
-#        /usr/share/openstack-dashboard/openstack_dashboard/urls.py
-    #
     # Register as an installed application
-    #
-#    sed -i -e "s|openstack_auth[\']|openstack_auth_shib\'|g" \
-#        /usr/share/openstack-dashboard/openstack_dashboard/settings.py
-    #
     # Insert customization point
     #
-#    echo -e "HORIZON_CONFIG[\"customization_module\"] = \"openstack_auth_shib.overrides\"\n" \
-#        >> /etc/openstack-dashboard/local_settings
+    printf "
+AUTHENTICATION_BACKENDS = ('openstack_auth_shib.backend.ExtKeystoneBackend',) #RPM-Trigger: do not edit this line
+AUTHENTICATION_URLS = ['openstack_auth_shib.urls']                            #RPM-Trigger: do not edit this line
+INSTALLED_APPS = [                                                            #RPM-Trigger: do not edit this line
+    'openstack_dashboard',                                                    #RPM-Trigger: do not edit this line
+    'django.contrib.contenttypes',                                            #RPM-Trigger: do not edit this line
+    'django.contrib.auth',                                                    #RPM-Trigger: do not edit this line
+    'django.contrib.sessions',                                                #RPM-Trigger: do not edit this line
+    'django.contrib.messages',                                                #RPM-Trigger: do not edit this line
+    'django.contrib.staticfiles',                                             #RPM-Trigger: do not edit this line
+    'django.contrib.humanize',                                                #RPM-Trigger: do not edit this line
+    'django_pyscss',                                                          #RPM-Trigger: do not edit this line
+    'openstack_dashboard.django_pyscss_fix',                                  #RPM-Trigger: do not edit this line
+    'compressor',                                                             #RPM-Trigger: do not edit this line
+    'horizon',                                                                #RPM-Trigger: do not edit this line
+    'openstack_auth_shib',                                                    #RPM-Trigger: do not edit this line
+]                                                                             #RPM-Trigger: do not edit this line
+HORIZON_CONFIG['customization_module'] = 'openstack_auth_shib.overrides'      #RPM-Trigger: do not edit this line
+" >> /etc/openstack-dashboard/local_settings
     
     #
     # Replace logo
     #
-#    if [ ! -e /usr/share/openstack-dashboard/static/dashboard/img/logo-orig.png ] ; then
-#        mv -f /usr/share/openstack-dashboard/static/dashboard/img/logo.png \
-#            /usr/share/openstack-dashboard/static/dashboard/img/logo-orig.png
-#    fi
-#    cp -f /usr/share/openstack-dashboard/static/dashboard/img/logoCloudAreapdStrip.png \
-#        /usr/share/openstack-dashboard/static/dashboard/img/logo.png
+    if [ ! -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo.png \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png
+    fi
+    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapdStrip.png \
+        /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo.png
     
-#    if [ ! -e /usr/share/openstack-dashboard/static/dashboard/img/logo-splash-orig.png ] ; then
-#        mv -f /usr/share/openstack-dashboard/static/dashboard/img/logo-splash.png \
-#            /usr/share/openstack-dashboard/static/dashboard/img/logo-splash-orig.png
-#    fi
-#    cp -f /usr/share/openstack-dashboard/static/dashboard/img/logoCloudAreapd.png \
-#        /usr/share/openstack-dashboard/static/dashboard/img/logo-splash.png
+    if [ ! -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png
+    fi
+    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.png \
+        /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png
 
-#    if [ ! -e /usr/share/openstack-dashboard/static/dashboard/img/favicon-orig.ico ] ; then
-#        mv -f /usr/share/openstack-dashboard/static/dashboard/img/favicon.ico \
-#            /usr/share/openstack-dashboard/static/dashboard/img/favicon-orig.ico
-#    fi
-#    cp -f /usr/share/openstack-dashboard/static/dashboard/img/logoCloudAreapd.ico \
-#        /usr/share/openstack-dashboard/static/dashboard/img/favicon.ico
+    if [ ! -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico
+    fi
+    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.ico \
+        /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
     
     #
     # Replace attribe map file
     #
-#    if [ ! -e /etc/shibboleth/attribute-map.xml.dist ] ; then
-#        mv -f /etc/shibboleth/attribute-map.xml /etc/shibboleth/attribute-map.xml.dist
-#    fi
-#    ln -sf /usr/share/openstack-auth-shib/attribute-map.xml /etc/shibboleth/attribute-map.xml
-#    
-#fi
+    if [ ! -e /etc/shibboleth/attribute-map.xml.dist ] ; then
+        mv -f /etc/shibboleth/attribute-map.xml /etc/shibboleth/attribute-map.xml.dist
+    fi
+    ln -sf /usr/share/openstack-auth-shib/attribute-map.xml /etc/shibboleth/attribute-map.xml
+    
+fi
 
-#%triggerun -n openstack-auth-shib -- openstack-dashboard
-#if [ $1 == 0 -o $2 == 0 ] ; then
-#    sed -i -e 's|openstack_auth_shib.backend.ExtKeystoneBackend|openstack_auth.backend.KeystoneBackend|g' \
-#        /usr/share/openstack-dashboard/openstack_dashboard/settings.py
-#    sed -i -e 's|openstack_auth_shib.urls|openstack_auth.urls|g' \
-#    /usr/share/openstack-dashboard/openstack_dashboard/urls.py
-#    sed -i -e "s|openstack_auth_shib[\']|openstack_auth\'|g" \
-#        /usr/share/openstack-dashboard/openstack_dashboard/settings.py
-#    sed -i -e 's|HORIZON_CONFIG\[\"customization_module\"\].*||g' \
-#        /etc/openstack-dashboard/local_settings
-#    if [ -e /usr/share/openstack-dashboard/static/dashboard/img/logo-orig.png ] ; then
-#        mv -f /usr/share/openstack-dashboard/static/dashboard/img/logo-orig.png \
-#            /usr/share/openstack-dashboard/static/dashboard/img/logo.png
-#    fi
-#    if [ -e /usr/share/openstack-dashboard/static/dashboard/img/logo-splash-orig.png ] ; then
-#        mv -f /usr/share/openstack-dashboard/static/dashboard/img/logo-splash-orig.png \
-#            /usr/share/openstack-dashboard/static/dashboard/img/logo-splash.png
-#    fi
-#    if [ -e /usr/share/openstack-dashboard/static/dashboard/img/favicon-orig.ico ] ; then
-#        mv -f /usr/share/openstack-dashboard/static/dashboard/img/favicon-orig.ico \
-#            /usr/share/openstack-dashboard/static/dashboard/img/favicon.ico
-#    fi
-#    if [ -e /etc/shibboleth/attribute-map.xml.dist ] ; then
-#        cp -f /etc/shibboleth/attribute-map.xml.dist /etc/shibboleth/attribute-map.xml
-#    fi
-#fi
+%triggerun -n openstack-auth-shib -- openstack-dashboard
+if [ $1 == 0 -o $2 == 0 ] ; then
+
+    sed -i -e '/RPM-Trigger/d' /etc/openstack-dashboard/local_settings
+    
+    if [ -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo.png
+    fi
+    if [ -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png
+    fi
+    if [ -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
+    fi
+    if [ -e /etc/shibboleth/attribute-map.xml.dist ] ; then
+        cp -f /etc/shibboleth/attribute-map.xml.dist /etc/shibboleth/attribute-map.xml
+    fi
+fi
 
 
 %package -n keystone-skey-auth
