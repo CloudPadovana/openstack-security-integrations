@@ -90,7 +90,7 @@ def login(request):
     try:
     
         attributes = get_manager(request)
-        domain, region = get_ostack_attributes(request)
+        domain, auth_url = get_ostack_attributes(request)
         
         if attributes:
         
@@ -98,11 +98,11 @@ def login(request):
             localuser = map_entry.registration.username
             LOG.debug("Mapped user %s on %s" % (attributes.username, localuser))
 
-            user = authenticate(request=request,
+            user = authenticate(auth_url,
+                                request=request,
                                 username=localuser,
                                 password=None,
-                                user_domain_name=domain,
-                                auth_url=region)
+                                user_domain_name=domain)
 
             auth_login(request, user)
             if request.user.is_authenticated():

@@ -135,13 +135,16 @@ def create_cryptoken(aes_key, data):
 #
 class ExtKeystoneBackend(base_backend.KeystoneBackend):
 
-    def authenticate(self, request=None, username=None, password=None,
-                     user_domain_name=None, auth_url=None):
+    def authenticate(self, auth_url=None, **kwargs):
+
+        request = kwargs.get('request', None)
+        username = kwargs.get('username', None)
+        password = kwargs.get('password', None)
+        user_domain_name = kwargs.get('user_domain_name', None)
         
         if password:
             parentObj = super(ExtKeystoneBackend, self)
-            return parentObj.authenticate(request, username, password,
-                                          user_domain_name, auth_url)
+            return parentObj.authenticate(auth_url, **kwargs)
 
         LOG.debug('Authenticating user "%s".' % username)
 
