@@ -23,40 +23,41 @@ from django.utils.translation import ugettext as _
 from horizon import tables
 from horizon import messages
 
-from openstack_dashboard.dashboards.admin.projects.tables import TenantsTable
+from openstack_dashboard.dashboards.identity.projects.tables import TenantsTable
 
-from openstack_dashboard.dashboards.admin.projects.tables import ViewMembersLink as BaseViewMembersLink
-from openstack_dashboard.dashboards.admin.projects.tables import ViewGroupsLink as BaseViewGroupsLink
-from openstack_dashboard.dashboards.admin.projects.tables import UpdateProject as BaseUpdateProject
-from openstack_dashboard.dashboards.admin.projects.tables import UsageLink as BaseUsageLink
-from openstack_dashboard.dashboards.admin.projects.tables import ModifyQuotas as BaseModifyQuotas
-from openstack_dashboard.dashboards.admin.projects.tables import DeleteTenantsAction
+from openstack_dashboard.dashboards.identity.projects.tables import UpdateMembersLink as BaseUpdateMembersLink
+from openstack_dashboard.dashboards.identity.projects.tables import UpdateGroupsLink as BaseUpdateGroupsLink
+from openstack_dashboard.dashboards.identity.projects.tables import UpdateProject as BaseUpdateProject
+from openstack_dashboard.dashboards.identity.projects.tables import UsageLink as BaseUsageLink
+from openstack_dashboard.dashboards.identity.projects.tables import ModifyQuotas as BaseModifyQuotas
+from openstack_dashboard.dashboards.identity.projects.tables import RescopeTokenToProject as BaseRescopeTokenToProject
+from openstack_dashboard.dashboards.identity.projects.tables import DeleteTenantsAction
 
-from openstack_dashboard.dashboards.admin.projects.tables import TenantFilterAction
-from openstack_dashboard.dashboards.admin.projects.tables import CreateProject as BaseCreateProject
+from openstack_dashboard.dashboards.identity.projects.tables import TenantFilterAction
+from openstack_dashboard.dashboards.identity.projects.tables import CreateProject as BaseCreateProject
 
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST
 
 LOG = logging.getLogger(__name__)
 
-class ViewMembersLink(BaseViewMembersLink):
-    url = "horizon:admin:project_manager:update"
+class UpdateMembersLink(BaseUpdateMembersLink):
+    url = "horizon:identity:project_manager:update"
 
-class ViewGroupsLink(BaseViewGroupsLink):
-    url = "horizon:admin:project_manager:update"
+class UpdateGroupsLink(BaseUpdateGroupsLink):
+    url = "horizon:identity:project_manager:update"
     
 class UpdateProject(BaseUpdateProject):
-    url = "horizon:admin:project_manager:update"
+    url = "horizon:identity:project_manager:update"
 
 class UsageLink(BaseUsageLink):
-    url = "horizon:admin:project_manager:usage"
+    url = "horizon:identity:project_manager:usage"
     
 class ModifyQuotas(BaseModifyQuotas):
-    url = "horizon:admin:project_manager:update"
+    url = "horizon:identity:project_manager:update"
 
 class CreateProject(BaseCreateProject):
-    url = "horizon:admin:project_manager:create"
+    url = "horizon:identity:project_manager:create"
 
 class DeleteProjectAction(DeleteTenantsAction):
 
@@ -65,6 +66,16 @@ class DeleteProjectAction(DeleteTenantsAction):
         with transaction.atomic():
             Project.objects.filter(projectid=obj_id).delete()
             super(DeleteProjectAction, self).delete(request, obj_id)
+
+class RescopeTokenToProject(BaseRescopeTokenToProject):
+
+    def get_link_url(self, project):
+        # redirects to the switch_tenants url which then will redirect
+        # back to this page
+        dash_url = reverse("horizon:identity:project_manager:index")
+        base_url = reverse(self.url, args=[project.id])
+        param = urlencode({"next": dash_url})
+        return "?".join([base_url, param])
 
 class ToggleVisibility(tables.Action):
     name = "toggle_visible"
@@ -86,7 +97,7 @@ class ToggleVisibility(tables.Action):
                 elif prj_status is PRJ_GUEST:
                     messages.error(request, _("Cannot toggle guest project"))
             
-        return shortcuts.redirect(reverse_lazy('horizon:admin:project_manager:index'))
+        return shortcuts.redirect(reverse_lazy('horizon:identity:project_manager:index'))
 
 def get_prj_status(data):
     if data.status == PRJ_GUEST:
@@ -101,9 +112,9 @@ class ProjectsTable(TenantsTable):
     class Meta:
         name = "projects"
         verbose_name = _("Projects")
-        row_actions = (ViewMembersLink, ViewGroupsLink, UpdateProject,
+        row_actions = (UpdateMembersLink, UpdateGroupsLink, UpdateProject,
                        UsageLink, ModifyQuotas, ToggleVisibility,
-                       DeleteProjectAction)
+                       DeleteTenantsAction, RescopeTokenToProject)
         table_actions = (TenantFilterAction, CreateProject,
                          DeleteProjectAction)
         pagination_param = "tenant_marker"

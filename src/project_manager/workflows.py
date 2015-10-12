@@ -21,14 +21,14 @@ from django.utils.translation import ugettext_lazy as _
 from horizon import forms
 from horizon import workflows
 
-from openstack_dashboard.dashboards.admin.projects.workflows import CreateProject as BaseCreateProject
-from openstack_dashboard.dashboards.admin.projects.workflows import UpdateProject as BaseUpdateProject
+from openstack_dashboard.dashboards.identity.projects.workflows import CreateProject as BaseCreateProject
+from openstack_dashboard.dashboards.identity.projects.workflows import UpdateProject as BaseUpdateProject
 
-from openstack_dashboard.dashboards.admin.projects.workflows import CreateProjectInfo
-from openstack_dashboard.dashboards.admin.projects.workflows import UpdateProjectMembers
-from openstack_dashboard.dashboards.admin.projects.workflows import UpdateProjectGroups
-from openstack_dashboard.dashboards.admin.projects.workflows import UpdateProjectQuota
-from openstack_dashboard.dashboards.admin.projects.workflows import CreateProjectInfoAction
+from openstack_dashboard.dashboards.identity.projects.workflows import CreateProjectInfo
+from openstack_dashboard.dashboards.identity.projects.workflows import UpdateProjectMembers
+from openstack_dashboard.dashboards.identity.projects.workflows import UpdateProjectGroups
+from openstack_dashboard.dashboards.identity.projects.workflows import UpdateProjectQuota
+from openstack_dashboard.dashboards.identity.projects.workflows import CreateProjectInfoAction
 
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PRJ_PUBLIC, PRJ_GUEST
@@ -39,7 +39,11 @@ from openstack_dashboard.api import keystone as keystone_api
 LOG = logging.getLogger(__name__)
 
 class UpdateProject(BaseUpdateProject):
-    success_url = "horizon:admin:project_manager:index"
+    success_url = "horizon:identity:project_manager:index"
+    
+    #
+    # TODO implement project renaming
+    #
 
 
 class ExtCreateProjectInfoAction(CreateProjectInfoAction):
@@ -73,7 +77,7 @@ class ExtCreateProjectInfo(CreateProjectInfo):
     
 
 class CreateProject(BaseCreateProject):
-    success_url = "horizon:admin:project_manager:index"
+    success_url = "horizon:identity:project_manager:index"
     
     def __init__(self, request=None, context_seed=None, entry_point=None, *args, **kwargs):
 
