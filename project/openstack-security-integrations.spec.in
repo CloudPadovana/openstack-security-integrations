@@ -163,7 +163,11 @@ if [ ! $1 == 2 ]; then
     # Insert customization point
     #
     printf "
-AUTHENTICATION_BACKENDS = ('openstack_auth_shib.backend.ExtKeystoneBackend',) #RPM-Trigger: do not edit this line
+AUTHENTICATION_PLUGINS = [                                                    #RPM-Trigger: do not edit this line
+    'openstack_auth_shib.backend.SKeyPluginFactory',                          #RPM-Trigger: do not edit this line
+    'openstack_auth.plugin.password.PasswordPlugin',                          #RPM-Trigger: do not edit this line
+    'openstack_auth.plugin.token.TokenPlugin'                                 #RPM-Trigger: do not edit this line
+]                                                                             #RPM-Trigger: do not edit this line
 AUTHENTICATION_URLS = ['openstack_auth_shib.urls']                            #RPM-Trigger: do not edit this line
 INSTALLED_APPS = [                                                            #RPM-Trigger: do not edit this line
     'openstack_dashboard',                                                    #RPM-Trigger: do not edit this line

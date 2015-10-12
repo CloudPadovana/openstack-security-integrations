@@ -98,11 +98,14 @@ def login(request):
             localuser = map_entry.registration.username
             LOG.debug("Mapped user %s on %s" % (attributes.username, localuser))
 
-            user = authenticate(auth_url,
-                                request=request,
-                                username=localuser,
-                                password=None,
-                                user_domain_name=domain)
+            kwargs = {
+                'auth_url' : auth_url,
+                'request' : request,
+                'username' : localuser,
+                'password' : None,
+                'user_domain_name' : domain
+            }
+            user = authenticate(**kwargs)
 
             auth_login(request, user)
             if request.user.is_authenticated():
