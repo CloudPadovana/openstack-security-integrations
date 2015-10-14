@@ -70,7 +70,7 @@ mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/en
 mv %{buildroot}/%{python_sitelib}/dashboard_conf/*id* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/enabled
    
-rm -rf %{buildroot}/%{python_sitelib}/*
+rm -rf %{buildroot}/%{python_sitelib}/dashboard_conf
 
 %clean
 rm -rf %{buildroot}
@@ -108,7 +108,6 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-auth-shib/templates/notifications_en.txt
 /usr/share/openstack-dashboard/openstack_dashboard/templates/*.html
 /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/*.html
-/usr/share/openstack-dashboard/static/dashboard/less/aai_infn_integrations.less
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/*.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/*.ico
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.py
