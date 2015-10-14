@@ -13,7 +13,7 @@
 #  License for the specific language governing permissions and limitations
 #  under the License. 
 
-DASHBOARD = 'identity_manager'
+DASHBOARD = 'idmanager'
 DEFAULT = False
 ADD_EXCEPTIONS = {}
 ADD_INSTALLED_APPS = ['openstack_dashboard.dashboards.idmanager']

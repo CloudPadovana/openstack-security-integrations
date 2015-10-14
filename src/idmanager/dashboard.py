@@ -19,7 +19,7 @@ import horizon
 
 class IdentityManager(horizon.Dashboard):
     name = _("Identity")
-    slug = "identity_manager"
+    slug = "idmanager"
     default_panel = 'project_manager'
     panels = ('project_manager', 
               'user_manager',
