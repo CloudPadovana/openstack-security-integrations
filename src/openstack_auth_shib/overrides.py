@@ -13,46 +13,19 @@
 #  License for the specific language governing permissions and limitations
 #  under the License. 
 
-import logging
 import horizon
-
-from openstack_dashboard.dashboards.identity.projects.panel import Tenants
-from openstack_dashboard.dashboards.identity.users.panel import Users
-from openstack_dashboard.dashboards.settings.password.panel import PasswordPanel
 
 #
 # Panels must be loaded in advance
 #
-import openstack_dashboard.dashboards.identity.registration_manager.panel
-import openstack_dashboard.dashboards.identity.project_manager.panel
-import openstack_dashboard.dashboards.identity.user_manager.panel
-import openstack_dashboard.dashboards.identity.subscription_manager.panel
-import openstack_dashboard.dashboards.identity.member_manager.panel
-import openstack_dashboard.dashboards.identity.project_requests.panel
-#import openstack_dashboard.dashboards.identity.idp_requests.panel
-import openstack_dashboard.dashboards.settings.password_manager.panel
-
-LOG = logging.getLogger(__name__)
-
-identity_dash = horizon.get_dashboard("identity")
-
-identity_dash.default_panel = 'project_manager'
-identity_dash.unregister(Tenants)
-identity_dash.unregister(Users)
-identity_dash.panels = ('domains',
-                        'projects',
-                        'user_manager',
-                        'groups',
-                        'roles',
-                        'registration_manager',
-                        'member_manager',
-                        'subscription_manager',
-                        'project_requests',)
+import openstack_dashboard.dashboards.settings.password_manager.panel as pwdPanel
 
 settings_dash = horizon.get_dashboard("settings")
+pwd_panel = settings_dash.get_panel('password')
+settings_dash.unregister(pwd_panel.__class__)
 settings_dash.panels = ('user', 'password_manager', )
 
-settings_dash.unregister(PasswordPanel)
+
 
 
 

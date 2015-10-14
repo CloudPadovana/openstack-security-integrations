@@ -39,7 +39,7 @@ from openstack_dashboard.api import keystone as keystone_api
 LOG = logging.getLogger(__name__)
 
 class UpdateProject(BaseUpdateProject):
-    success_url = "horizon:identity:project_manager:index"
+    success_url = "horizon:idmanager:project_manager:index"
     
     #
     # TODO implement project renaming
@@ -77,7 +77,7 @@ class ExtCreateProjectInfo(CreateProjectInfo):
     
 
 class CreateProject(BaseCreateProject):
-    success_url = "horizon:identity:project_manager:index"
+    success_url = "horizon:idmanager:project_manager:index"
     
     def __init__(self, request=None, context_seed=None, entry_point=None, *args, **kwargs):
 

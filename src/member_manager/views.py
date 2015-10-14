@@ -46,7 +46,7 @@ class MemberItem():
 
 class IndexView(tables.DataTableView):
     table_class = MemberTable
-    template_name = 'identity/member_manager/member_manager.html'
+    template_name = 'idmanager/member_manager/member_manager.html'
 
     def get_data(self):
     

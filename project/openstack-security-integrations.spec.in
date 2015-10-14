@@ -30,37 +30,47 @@ Shibboleth-Openstack integrations.
 rm -rf %{buildroot}
 mkdir -p %{buildroot}
 python setup.py install -O1 --prefix %{buildroot}/usr --install-data %{buildroot}
+
+mv %{buildroot}/%{python_sitelib}/idmanager/* \
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager
+   
 mv %{buildroot}/%{python_sitelib}/registration_manager/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/registration_manager
-rm -rf %{buildroot}/%{python_sitelib}/registration_manager
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager
+
 mv %{buildroot}/%{python_sitelib}/subscription_manager/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/subscription_manager
-rm -rf %{buildroot}/%{python_sitelib}/subscription_manager
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager
+
 mv %{buildroot}/%{python_sitelib}/member_manager/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/member_manager
-rm -rf %{buildroot}/%{python_sitelib}/member_manager
-mv %{buildroot}/%{python_sitelib}/project_manager \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager
+
+mv %{buildroot}/%{python_sitelib}/project_manager/* \
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager
+
 mv %{buildroot}/%{python_sitelib}/user_manager/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/user_manager
-rm -rf %{buildroot}/%{python_sitelib}/user_manager
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager
+
+mv %{buildroot}/%{python_sitelib}/project_requests/* \
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests
+
+mv %{buildroot}/%{python_sitelib}/idp_requests/* \
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests
+
 mv %{buildroot}/%{python_sitelib}/password_manager/* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager
-rm -rf %{buildroot}/%{python_sitelib}/password_manager
-mv %{buildroot}/%{python_sitelib}/project_requests/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/project_requests
-rm -rf %{buildroot}/%{python_sitelib}/project_requests
-mv %{buildroot}/%{python_sitelib}/idp_requests/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/idp_requests
-rm -rf %{buildroot}/%{python_sitelib}/idp_requests
+
 mkdir -p %{buildroot}/%{python_sitelib}/horizon/management/commands
 mv %{buildroot}/%{python_sitelib}/commands/* \
    %{buildroot}/%{python_sitelib}/horizon/management/commands/
-rm -rf %{buildroot}/%{python_sitelib}/commands
+
 mkdir -p %{buildroot}/etc/openstack-auth-shib/notifications
 cp %{buildroot}/usr/share/openstack-auth-shib/templates/notifications_*.txt \
    %{buildroot}/etc/openstack-auth-shib/notifications
 
+mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/enabled
+mv %{buildroot}/%{python_sitelib}/dashboard_conf/*id* \
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/enabled
+   
+rm -rf %{buildroot}/%{python_sitelib}/*
 
 %clean
 rm -rf %{buildroot}
@@ -101,50 +111,47 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/static/dashboard/less/aai_infn_integrations.less
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/*.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/*.ico
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/registration_manager/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/registration_manager/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/registration_manager/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/registration_manager/templates/registration_manager/*.html
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/project_manager/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/project_manager/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/project_manager/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/user_manager/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/user_manager/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/user_manager/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/user_manager/templates/user_manager/*.html
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/templates/registration_manager/*.html
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/templates/project_manager/*.html
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/templates/user_manager/*.html
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/templates/subscription_manager/*.html
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/templates/member_manager/*.html
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/templates/project_requests/*.html
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/templates/idp_requests/*.html
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/templates/password_manager/*.html
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/subscription_manager/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/subscription_manager/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/subscription_manager/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/subscription_manager/templates/subscription_manager/*.html
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/member_manager/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/member_manager/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/member_manager/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/member_manager/templates/member_manager/*.html
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/project_requests/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/project_requests/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/project_requests/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/project_requests/templates/project_requests/*.html
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/idp_requests/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/idp_requests/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/idp_requests/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/idp_requests/templates/idp_requests/*.html
 %{python_sitelib}/horizon/management/commands/*.py
 %{python_sitelib}/horizon/management/commands/*.pyc
 %{python_sitelib}/horizon/management/commands/*.pyo
-
-%post -n openstack-auth-shib
-#
-# Duplicate templates for Project dashboard
-#
-mkdir -p /usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/project_manager/templates
-ln -sf /usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/projects/templates/projects \
-       /usr/share/openstack-dashboard/openstack_dashboard/dashboards/identity/project_manager/templates/project_manager
-
-
+/usr/share/openstack-dashboard/openstack_dashboard/local/enabled/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/local/enabled/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/local/enabled/*.pyo
 
 
 

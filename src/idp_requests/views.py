@@ -43,14 +43,14 @@ def manage(request):
 
     attributes = get_manager(request)
     if attributes:
-        ctx['currpath'] = '%s/identity/idp_requests/suspend/' % attributes.root_url
+        ctx['currpath'] = '%s/idmanager/idp_requests/suspend/' % attributes.root_url
     else:
-        ctx['currpath'] = '/dashboard/identity/idp_requests/suspend/'
+        ctx['currpath'] = '/dashboard/idmanager/idp_requests/suspend/'
     
     ctx['idp_data_list'] = get_idp_list(myproviders)
     ctx['providers'] = myproviders
     
-    return shortcuts.render(request, 'identity/idp_requests/idp_request.html', ctx)
+    return shortcuts.render(request, 'idmanager/idp_requests/idp_request.html', ctx)
     
     
 
@@ -93,8 +93,8 @@ def resume(request):
                 u_map = UserMapping(globaluser=extId, registration=registr)
                 u_map.save(force_insert=True)
 
-            LOG.debug('Calling resume with %s/identity' % attributes.root_url)
-            response = shortcuts.redirect(attributes.root_url + '/identity')
+            LOG.debug('Calling resume with %s/idmanager' % attributes.root_url)
+            response = shortcuts.redirect(attributes.root_url + '/idmanager')
         
         except IntegrityError:
             LOG.error("Duplicate map for %s in %s" % (userid, extId))

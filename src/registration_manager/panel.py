@@ -18,11 +18,11 @@ from django.utils.translation import ugettext_lazy as _
 
 import horizon
 
-from openstack_dashboard.dashboards.identity import dashboard
+from openstack_dashboard.dashboards.idmanager import dashboard
 
 class RegisterManager(horizon.Panel):
     name = _("Registrations")
     slug = 'registration_manager'
     permissions = ('openstack.roles.admin',)
 
-dashboard.Identity.register(RegisterManager)
+dashboard.IdentityManager.register(RegisterManager)

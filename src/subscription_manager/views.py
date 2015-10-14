@@ -48,7 +48,7 @@ class PrjReqItem:
 
 class IndexView(tables.DataTableView):
     table_class = SubscriptionTable
-    template_name = 'identity/subscription_manager/subscr_manager.html'
+    template_name = 'idmanager/subscription_manager/subscr_manager.html'
 
     def get_data(self):
     
@@ -74,8 +74,8 @@ class IndexView(tables.DataTableView):
 
 class ApproveView(forms.ModalFormView):
     form_class = ApproveSubscrForm
-    template_name = 'identity/subscription_manager/subscr_approve.html'
-    success_url = reverse_lazy('horizon:identity:subscription_manager:index')
+    template_name = 'idmanager/subscription_manager/subscr_approve.html'
+    success_url = reverse_lazy('horizon:idmanager:subscription_manager:index')
     
     def get_object(self):
         if not hasattr(self, "_object"):

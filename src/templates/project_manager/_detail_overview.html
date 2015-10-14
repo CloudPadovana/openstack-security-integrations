@@ -13,18 +13,22 @@
 #  License for the specific language governing permissions and limitations
 #  under the License. 
 
+{% load i18n  %}
 
-try:
-    from django.conf.urls import patterns, url
-except:
-    from django.conf.urls.defaults import patterns, url
+<h3>{% trans "Project Overview" %}</h3>
 
-from openstack_dashboard.dashboards.idmanager.user_manager import views
-
-
-urlpatterns = patterns('openstack_dashboard.dashboards.idmanager.user_manager.views',
-    url(r'^$', views.IndexView.as_view(), name='index'),
-    url(r'^(?P<user_id>[^/]+)/update/$', views.UpdateView.as_view(), name='update'),
-    url(r'^(?P<user_id>[^/]+)/renew/$', views.RenewView.as_view(), name='renew'),
-    url(r'^create/$', views.CreateView.as_view(), name='create'))
+<div class="info detail">
+  <h4>{% trans "Information" %}</h4>
+  <hr class="header_rule">
+  <dl class="dl-horizontal">
+    <dt>{% trans "Project Name" %}</dt>
+    <dd>{{ project.name }}</dd>
+    <dt>{% trans "Project ID" %}</dt>
+    <dd>{{ project.id }}</dd>
+    <dt>{% trans "Enabled" %}</dt>
+    <dd>{{ project.enabled }}</dd>
+    <dt>{% trans "Description" %}</dt>
+    <dd>{{ project.description|default:_("None") }}</dd>
+  </dl>
+</div>
 

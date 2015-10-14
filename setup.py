@@ -54,14 +54,14 @@ class bdist_rpm(_bdist_rpm):
 os_main_dir = 'usr/share/openstack-dashboard/'
 templates_dir = os_main_dir + 'openstack_dashboard/templates'
 img_dir = os_main_dir + 'openstack_dashboard/static/dashboard/img'
-reg_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/identity/registration_manager/templates/registration_manager'
-subscr_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/identity/subscription_manager/templates/subscription_manager'
-member_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/identity/member_manager/templates/member_manager'
-user_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/identity/user_manager/templates/user_manager'
+reg_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/idmanager/registration_manager/templates/registration_manager'
+subscr_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/idmanager/subscription_manager/templates/subscription_manager'
+member_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/idmanager/member_manager/templates/member_manager'
+user_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/idmanager/user_manager/templates/user_manager'
+prj_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/idmanager/project_manager/templates/project_manager'
 pwd_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/settings/password_manager/templates/password_manager'
-preq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/identity/project_requests/templates/project_requests'
-idpreq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/identity/idp_requests/templates/idp_requests'
-css_dir = 'usr/share/openstack-dashboard/static/dashboard/less'
+preq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/idmanager/project_requests/templates/project_requests'
+idpreq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/idmanager/idp_requests/templates/idp_requests'
 
 template_list = [
     'src/templates/_register_form.html',
@@ -94,6 +94,14 @@ usr_templ_list = [
     'src/templates/user_manager/_renewexp.html',
     'src/templates/user_manager/update.html',
     'src/templates/user_manager/_update.html'
+]
+
+prj_templ_list = [
+    'src/templates/project_manager/index.html',
+    'src/templates/project_manager/usage.html',
+    'src/templates/project_manager/_detail_overview.html',
+    'src/templates/project_manager/detail.html',
+    'src/templates/project_manager/_common_horizontal_form.html'
 ]
 
 pwd_templ_list = [
@@ -133,6 +141,8 @@ module_list = [
     'password_manager',
     'project_requests',
     'idp_requests',
+    'idmanager',
+    'dashboard_conf',
     'commands'
 ]
 
@@ -156,12 +166,12 @@ setup(
                   (templates_dir + '/auth', ['src/templates/_login.html']),
                   (reg_panel_dir, reg_templ_list),
                   (user_panel_dir, usr_templ_list),
+                  (prj_panel_dir, prj_templ_list),
                   (pwd_panel_dir, pwd_templ_list),
                   (subscr_panel_dir, subscr_templ_list),
                   (member_panel_dir, member_templ_list),
                   (preq_panel_dir, preq_templ_list),
                   (idpreq_panel_dir, idpreq_templ_list),
-                  (css_dir, ['src/templates/aai_infn_integrations.less']),
                   (img_dir, logo_list),
                   ('etc/openstack-auth-shib', confile_list),
                   ('etc/keystone-skey-auth', ['config/policy.json']),

@@ -36,7 +36,7 @@ from keystoneclient.exceptions import AuthorizationFailure
 LOG = logging.getLogger(__name__)
 
 class EditUserLink(BaseEditUserLink):
-    url = "horizon:identity:user_manager:update"
+    url = "horizon:idmanager:user_manager:update"
 
 class DeleteUsersAction(BaseDeleteUsersAction):
 
@@ -65,7 +65,7 @@ class DeleteUsersAction(BaseDeleteUsersAction):
 class RenewLink(tables.LinkAction):
     name = "renewexp"
     verbose_name = _("Renew Expiration")
-    url = "horizon:identity:user_manager:renew"
+    url = "horizon:idmanager:user_manager:renew"
     classes = ("ajax-modal", "btn-edit")
 
 class UsersTable(BaseUsersTable):

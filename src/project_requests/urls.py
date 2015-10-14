@@ -18,9 +18,9 @@ try:
 except:
     from django.conf.urls.defaults import patterns, url
 
-from openstack_dashboard.dashboards.identity.project_requests import views
+from openstack_dashboard.dashboards.idmanager.project_requests import views
 
-prefix = 'openstack_dashboard.dashboards.identity.project_requests.views'
+prefix = 'openstack_dashboard.dashboards.idmanager.project_requests.views'
 
 urlpatterns = patterns(prefix,
     url(r'^$', views.RequestView.as_view(), name='index'))

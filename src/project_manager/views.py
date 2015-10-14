@@ -46,7 +46,7 @@ class ExtPrjItem:
 
 class IndexView(BaseIndexView):
     table_class = ProjectsTable
-    template_name = 'identity/project_manager/index.html'
+    template_name = 'idmanager/project_manager/index.html'
 
     def get_data(self):
     

@@ -17,10 +17,10 @@ from django.utils.translation import ugettext_lazy as _
 
 import horizon
 
-from openstack_dashboard.dashboards.identity import dashboard
+from openstack_dashboard.dashboards.idmanager import dashboard
 
 class UserManager(horizon.Panel):
     name = _("Users")
     slug = 'user_manager'
 
-dashboard.Identity.register(UserManager)
+dashboard.IdentityManager.register(UserManager)

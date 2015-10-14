@@ -42,22 +42,22 @@ from openstack_auth_shib.models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST
 LOG = logging.getLogger(__name__)
 
 class UpdateMembersLink(BaseUpdateMembersLink):
-    url = "horizon:identity:project_manager:update"
+    url = "horizon:idmanager:project_manager:update"
 
 class UpdateGroupsLink(BaseUpdateGroupsLink):
-    url = "horizon:identity:project_manager:update"
+    url = "horizon:idmanager:project_manager:update"
     
 class UpdateProject(BaseUpdateProject):
-    url = "horizon:identity:project_manager:update"
+    url = "horizon:idmanager:project_manager:update"
 
 class UsageLink(BaseUsageLink):
-    url = "horizon:identity:project_manager:usage"
+    url = "horizon:idmanager:project_manager:usage"
     
 class ModifyQuotas(BaseModifyQuotas):
-    url = "horizon:identity:project_manager:update"
+    url = "horizon:idmanager:project_manager:update"
 
 class CreateProject(BaseCreateProject):
-    url = "horizon:identity:project_manager:create"
+    url = "horizon:idmanager:project_manager:create"
 
 class DeleteProjectAction(DeleteTenantsAction):
 
@@ -72,7 +72,7 @@ class RescopeTokenToProject(BaseRescopeTokenToProject):
     def get_link_url(self, project):
         # redirects to the switch_tenants url which then will redirect
         # back to this page
-        dash_url = reverse("horizon:identity:project_manager:index")
+        dash_url = reverse("horizon:idmanager:project_manager:index")
         base_url = reverse(self.url, args=[project.id])
         param = urlencode({"next": dash_url})
         return "?".join([base_url, param])
@@ -97,7 +97,7 @@ class ToggleVisibility(tables.Action):
                 elif prj_status is PRJ_GUEST:
                     messages.error(request, _("Cannot toggle guest project"))
             
-        return shortcuts.redirect(reverse_lazy('horizon:identity:project_manager:index'))
+        return shortcuts.redirect(reverse_lazy('horizon:idmanager:project_manager:index'))
 
 def get_prj_status(data):
     if data.status == PRJ_GUEST:

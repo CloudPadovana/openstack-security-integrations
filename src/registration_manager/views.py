@@ -49,7 +49,7 @@ LOG = logging.getLogger(__name__)
 
 class IndexView(tables.DataTableView):
     table_class = RegisterTable
-    template_name = 'identity/registration_manager/reg_manager.html'
+    template_name = 'idmanager/registration_manager/reg_manager.html'
 
     def get_data(self):
     
@@ -139,8 +139,8 @@ class RegReqItem:
 
 class ProcessView(forms.ModalFormView):
     form_class = ProcessRegForm
-    template_name = 'identity/registration_manager/reg_process.html'
-    success_url = reverse_lazy('horizon:identity:registration_manager:index')
+    template_name = 'idmanager/registration_manager/reg_process.html'
+    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
     
     def get_object(self):
         if not hasattr(self, "_object"):
@@ -148,7 +148,7 @@ class ProcessView(forms.ModalFormView):
                 self._object = RegReqItem(int(self.kwargs['regid']))
             except Exception:
                 LOG.error("Registration error", exc_info=True)
-                redirect = reverse_lazy("horizon:identity:registration_manager:index")
+                redirect = reverse_lazy("horizon:idmanager:registration_manager:index")
                 exceptions.handle(self.request, _('Unable approve registration.'),
                                   redirect=redirect)
         return self._object
@@ -199,10 +199,10 @@ class ProcessView(forms.ModalFormView):
 
 class ForceApprView(forms.ModalFormView):
     form_class = ForceApproveForm
-    template_name = 'identity/registration_manager/reg_approve.html'
+    template_name = 'idmanager/registration_manager/reg_approve.html'
     
     def get_success_url(self):
-        return reverse_lazy('horizon:identity:registration_manager:process',
+        return reverse_lazy('horizon:idmanager:registration_manager:process',
                             kwargs=self.kwargs)
         
     def get_object(self):

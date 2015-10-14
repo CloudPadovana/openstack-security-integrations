@@ -17,10 +17,10 @@ from django.utils.translation import ugettext_lazy as _
 
 import horizon
 
-from openstack_dashboard.dashboards.identity import dashboard
+from openstack_dashboard.dashboards.idmanager import dashboard
 
 class ProjectManager(horizon.Panel):
     name = _("Projects")
     slug = 'project_manager'
 
-dashboard.Identity.register(ProjectManager)
+dashboard.IdentityManager.register(ProjectManager)

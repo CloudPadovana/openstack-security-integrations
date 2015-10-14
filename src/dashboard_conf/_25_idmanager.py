@@ -13,18 +13,8 @@
 #  License for the specific language governing permissions and limitations
 #  under the License. 
 
-
-try:
-    from django.conf.urls import patterns, url
-except:
-    from django.conf.urls.defaults import patterns, url
-
-from openstack_dashboard.dashboards.idmanager.user_manager import views
-
-
-urlpatterns = patterns('openstack_dashboard.dashboards.idmanager.user_manager.views',
-    url(r'^$', views.IndexView.as_view(), name='index'),
-    url(r'^(?P<user_id>[^/]+)/update/$', views.UpdateView.as_view(), name='update'),
-    url(r'^(?P<user_id>[^/]+)/renew/$', views.RenewView.as_view(), name='renew'),
-    url(r'^create/$', views.CreateView.as_view(), name='create'))
+DASHBOARD = 'identity_manager'
+DEFAULT = False
+ADD_EXCEPTIONS = {}
+ADD_INSTALLED_APPS = ['openstack_dashboard.dashboards.idmanager']
 

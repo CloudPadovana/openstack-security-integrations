@@ -18,7 +18,7 @@ from django.conf import settings
 
 import horizon
 
-from openstack_dashboard.dashboards.identity import dashboard
+from openstack_dashboard.dashboards.idmanager import dashboard
 
 def enableIdPRequests(obj, context):
     request = context['request']
@@ -31,5 +31,5 @@ class IdPRequests(horizon.Panel):
     slug = 'idp_requests'
     nav = enableIdPRequests
 
-dashboard.Identity.register(IdPRequests)
+dashboard.IdentityManager.register(IdPRequests)
 

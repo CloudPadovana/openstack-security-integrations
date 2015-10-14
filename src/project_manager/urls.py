@@ -19,7 +19,7 @@ try:
 except:
     from django.conf.urls.defaults import patterns, url
 
-from openstack_dashboard.dashboards.identity.project_manager import views
+from openstack_dashboard.dashboards.idmanager.project_manager import views
 
 
 urlpatterns = patterns('',
