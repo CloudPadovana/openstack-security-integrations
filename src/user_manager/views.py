@@ -22,9 +22,7 @@ from django.core.urlresolvers import reverse_lazy
 from horizon import forms
 from horizon import exceptions
 
-from openstack_dashboard.dashboards.identity.users.views import IndexView as BaseIndexView
-from openstack_dashboard.dashboards.identity.users.views import UpdateView as BaseUpdateView
-from openstack_dashboard.dashboards.identity.users.views import CreateView as BaseCreateView
+from openstack_dashboard.dashboards.identity.users import views as baseViews
 
 from openstack_auth_shib.models import Registration
 
@@ -46,7 +44,7 @@ class ExtUserItem:
     def __cmp__(self, other):
         return cmp(self.name, other.name)
 
-class IndexView(BaseIndexView):
+class IndexView(baseViews.IndexView):
     table_class = UsersTable
     template_name = 'idmanager/user_manager/index.html'
 
@@ -71,8 +69,9 @@ class IndexView(BaseIndexView):
         result.sort()
         return result
 
-class UpdateView(BaseUpdateView):
+class UpdateView(baseViews.UpdateView):
     template_name = 'idmanager/user_manager/update.html'
+    submit_url = "horizon:idmanager:user_manager:update"
     success_url = reverse_lazy('horizon:idmanager:user_manager:index')
 
     def get_object(self):
@@ -86,10 +85,6 @@ class UpdateView(BaseUpdateView):
                 exceptions.handle(self.request, _('Unable to update user.'),
                                   redirect=redirect)
         return self._object
-
-class CreateView(BaseCreateView):
-    template_name = 'idmanager/user_manager/create.html'
-    success_url = reverse_lazy('horizon:idmanager:user_manager:index')
 
 class RenewView(forms.ModalFormView):
     form_class = RenewExpForm
@@ -108,5 +103,10 @@ class RenewView(forms.ModalFormView):
             'expiration' : datetime.datetime.now() + datetime.timedelta(365)
         }
 
+class DetailView(baseViews.DetailView):
+    template_name = 'idmanager/user_manager/detail.html'
+
+    def get_redirect_url(self):
+        return reverse('horizon:idmanager:user_manager:index')
 
 
