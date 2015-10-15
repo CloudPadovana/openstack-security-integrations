@@ -19,10 +19,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from horizon import exceptions
 
-from openstack_dashboard.dashboards.identity.projects.views import IndexView as BaseIndexView
-from openstack_dashboard.dashboards.identity.projects.views import CreateProjectView as BaseCreateProjectView
-from openstack_dashboard.dashboards.identity.projects.views import UpdateProjectView as BaseUpdateProjectView
-from openstack_dashboard.dashboards.identity.projects.views import ProjectUsageView
+from openstack_dashboard.dashboards.identity.projects import views as baseViews
 from openstack_dashboard import api
 
 from .tables import ProjectsTable
@@ -44,7 +41,7 @@ class ExtPrjItem:
         self.status = PRJ_PRIVATE
         self.checked = False
 
-class IndexView(BaseIndexView):
+class IndexView(baseViews.IndexView):
     table_class = ProjectsTable
     template_name = 'idmanager/project_manager/index.html'
 
@@ -89,9 +86,14 @@ class IndexView(BaseIndexView):
         return result
 
 
-class UpdateProjectView(BaseUpdateProjectView):
+class UpdateProjectView(baseViews.UpdateProjectView):
     workflow_class = ExtUpdateProject
 
-class CreateProjectView(BaseCreateProjectView):
+class CreateProjectView(baseViews.CreateProjectView):
     workflow_class = ExtCreateProject
+
+class ProjectUsageView(baseViews.ProjectUsageView):
+    template_name = 'idmanager/project_manager/usage.html'
+
+
 
