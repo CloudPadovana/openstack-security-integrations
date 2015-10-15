@@ -223,6 +223,12 @@ HORIZON_CONFIG['customization_module'] = 'openstack_auth_shib.overrides'      #R
         mv -f /etc/shibboleth/attribute-map.xml /etc/shibboleth/attribute-map.xml.dist
     fi
     ln -sf /usr/share/openstack-auth-shib/attribute-map.xml /etc/shibboleth/attribute-map.xml
+
+    #
+    # Replace references in base templates
+    #
+    sed -i -e 's|horizon:identity:projects|horizon:idmanager:project_manager|g' \
+        /usr/share/openstack-dashboard/openstack_dashboard/templates/_header.html
     
 fi
 
@@ -230,6 +236,9 @@ fi
 if [ $1 == 0 -o $2 == 0 ] ; then
 
     sed -i -e '/RPM-Trigger/d' /etc/openstack-dashboard/local_settings
+
+    sed -i -e 's|horizon:idmanager:project_manager|horizon:identity:projects|g' \
+        /usr/share/openstack-dashboard/openstack_dashboard/templates/_header.html
     
     if [ -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png ] ; then
         mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png \
