@@ -21,14 +21,7 @@ from django.utils.translation import ugettext_lazy as _
 from horizon import forms
 from horizon import workflows
 
-from openstack_dashboard.dashboards.identity.projects.workflows import CreateProject as BaseCreateProject
-from openstack_dashboard.dashboards.identity.projects.workflows import UpdateProject as BaseUpdateProject
-
-from openstack_dashboard.dashboards.identity.projects.workflows import CreateProjectInfo
-from openstack_dashboard.dashboards.identity.projects.workflows import UpdateProjectMembers
-from openstack_dashboard.dashboards.identity.projects.workflows import UpdateProjectGroups
-from openstack_dashboard.dashboards.identity.projects.workflows import UpdateProjectQuota
-from openstack_dashboard.dashboards.identity.projects.workflows import CreateProjectInfoAction
+from openstack_dashboard.dashboards.identity.projects.workflows import *
 
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PRJ_PUBLIC, PRJ_GUEST
@@ -38,12 +31,6 @@ from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
 
-class UpdateProject(BaseUpdateProject):
-    success_url = "horizon:idmanager:project_manager:index"
-    
-    #
-    # TODO implement project renaming
-    #
 
 
 class ExtCreateProjectInfoAction(CreateProjectInfoAction):
@@ -66,6 +53,7 @@ class ExtCreateProjectInfoAction(CreateProjectInfoAction):
 
 class ExtCreateProjectInfo(CreateProjectInfo):
     action_class = ExtCreateProjectInfoAction
+    template_name = "idmanager/project_manager/_common_horizontal_form.html"
     contributes = ("domain_id",
                    "domain_name",
                    "project_id",
@@ -74,9 +62,10 @@ class ExtCreateProjectInfo(CreateProjectInfo):
                    "enabled",
                    "guest")
 
-    
+class ExtCreateProjectQuota(CreateProjectQuota):
+    template_name = "idmanager/project_manager/_common_horizontal_form.html"
 
-class CreateProject(BaseCreateProject):
+class ExtCreateProject(CreateProject):
     success_url = "horizon:idmanager:project_manager:index"
     
     def __init__(self, request=None, context_seed=None, entry_point=None, *args, **kwargs):
@@ -84,7 +73,7 @@ class CreateProject(BaseCreateProject):
         self.default_steps = (ExtCreateProjectInfo,
                               UpdateProjectMembers,
                               UpdateProjectGroups,
-                              UpdateProjectQuota)
+                              ExtCreateProjectQuota)
 
         workflows.Workflow.__init__(self, request=request,
                                             context_seed=context_seed,
@@ -129,4 +118,32 @@ class CreateProject(BaseCreateProject):
                 request.user.id, get_admin_roleid(request))
             
         return True
+
+class ExtUpdateProjectInfo(UpdateProjectInfo):
+    template_name = "idmanager/project_manager/_common_horizontal_form.html"
+
+class ExtUpdateProjectQuota(UpdateProjectQuota):
+    template_name = "idmanager/project_manager/_common_horizontal_form.html"
+
+class ExtUpdateProject(UpdateProject):
+    success_url = "horizon:idmanager:project_manager:index"
+    
+    def __init__(self, request=None, context_seed=None, entry_point=None, *args, **kwargs):
+
+        self.default_steps = (ExtUpdateProjectInfo,
+                              UpdateProjectMembers,
+                              UpdateProjectGroups,
+                              ExtUpdateProjectQuota)
+
+        workflows.Workflow.__init__(self,request=request,
+                                            context_seed=context_seed,
+                                            entry_point=entry_point,
+                                            *args,
+                                            **kwargs)
+
+    #
+    # TODO implement project renaming
+    #
+
+
 

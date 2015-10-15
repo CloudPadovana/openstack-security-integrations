@@ -21,45 +21,35 @@ from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext as _
 
 from horizon import tables
+from horizon import forms
 from horizon import messages
 
-from openstack_dashboard.dashboards.identity.projects.tables import TenantsTable
-
-from openstack_dashboard.dashboards.identity.projects.tables import UpdateMembersLink as BaseUpdateMembersLink
-from openstack_dashboard.dashboards.identity.projects.tables import UpdateGroupsLink as BaseUpdateGroupsLink
-from openstack_dashboard.dashboards.identity.projects.tables import UpdateProject as BaseUpdateProject
-from openstack_dashboard.dashboards.identity.projects.tables import UsageLink as BaseUsageLink
-from openstack_dashboard.dashboards.identity.projects.tables import ModifyQuotas as BaseModifyQuotas
-from openstack_dashboard.dashboards.identity.projects.tables import RescopeTokenToProject as BaseRescopeTokenToProject
-from openstack_dashboard.dashboards.identity.projects.tables import DeleteTenantsAction
-
-from openstack_dashboard.dashboards.identity.projects.tables import TenantFilterAction
-from openstack_dashboard.dashboards.identity.projects.tables import CreateProject as BaseCreateProject
+from openstack_dashboard.dashboards.identity.projects import tables as baseTables
 
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST
 
 LOG = logging.getLogger(__name__)
 
-class UpdateMembersLink(BaseUpdateMembersLink):
+class UpdateMembersLink(baseTables.UpdateMembersLink):
     url = "horizon:idmanager:project_manager:update"
 
-class UpdateGroupsLink(BaseUpdateGroupsLink):
+class UpdateGroupsLink(baseTables.UpdateGroupsLink):
     url = "horizon:idmanager:project_manager:update"
     
-class UpdateProject(BaseUpdateProject):
+class UpdateProject(baseTables.UpdateProject):
     url = "horizon:idmanager:project_manager:update"
 
-class UsageLink(BaseUsageLink):
+class UsageLink(baseTables.UsageLink):
     url = "horizon:idmanager:project_manager:usage"
     
-class ModifyQuotas(BaseModifyQuotas):
+class ModifyQuotas(baseTables.ModifyQuotas):
     url = "horizon:idmanager:project_manager:update"
 
-class CreateProject(BaseCreateProject):
+class CreateProject(baseTables.CreateProject):
     url = "horizon:idmanager:project_manager:create"
 
-class DeleteProjectAction(DeleteTenantsAction):
+class DeleteProjectAction(baseTables.DeleteTenantsAction):
 
     def delete(self, request, obj_id):
     
@@ -67,7 +57,7 @@ class DeleteProjectAction(DeleteTenantsAction):
             Project.objects.filter(projectid=obj_id).delete()
             super(DeleteProjectAction, self).delete(request, obj_id)
 
-class RescopeTokenToProject(BaseRescopeTokenToProject):
+class RescopeTokenToProject(baseTables.RescopeTokenToProject):
 
     def get_link_url(self, project):
         # redirects to the switch_tenants url which then will redirect
@@ -106,16 +96,22 @@ def get_prj_status(data):
         return _("Public")
     return _("Private")
 
-class ProjectsTable(TenantsTable):
+class ProjectsTable(baseTables.TenantsTable):
     status = tables.Column(get_prj_status, verbose_name=_('Status'), status=True)
 
     class Meta:
         name = "projects"
         verbose_name = _("Projects")
-        row_actions = (UpdateMembersLink, UpdateGroupsLink, UpdateProject,
-                       UsageLink, ModifyQuotas, ToggleVisibility,
-                       DeleteTenantsAction, RescopeTokenToProject)
-        table_actions = (TenantFilterAction, CreateProject,
+        row_actions = (UpdateMembersLink,
+                       UpdateGroupsLink,
+                       UpdateProject,
+                       UsageLink,
+                       ModifyQuotas,
+                       ToggleVisibility,
+                       DeleteProjectAction,
+                       RescopeTokenToProject)
+        table_actions = (baseTables.TenantFilterAction, 
+                         CreateProject,
                          DeleteProjectAction)
         pagination_param = "tenant_marker"
 

@@ -26,8 +26,8 @@ from openstack_dashboard.dashboards.identity.projects.views import ProjectUsageV
 from openstack_dashboard import api
 
 from .tables import ProjectsTable
-from .workflows import UpdateProject
-from .workflows import CreateProject
+from .workflows import ExtUpdateProject
+from .workflows import ExtCreateProject
 
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PRJ_PRIVATE
@@ -90,8 +90,8 @@ class IndexView(BaseIndexView):
 
 
 class UpdateProjectView(BaseUpdateProjectView):
-    workflow_class = UpdateProject
+    workflow_class = ExtUpdateProject
 
 class CreateProjectView(BaseCreateProjectView):
-    workflow_class = CreateProject
+    workflow_class = ExtCreateProject
 
