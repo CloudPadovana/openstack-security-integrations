@@ -19,15 +19,23 @@
 
 {% load i18n branding %}
 
+{% block css %}
+  {% include "_stylesheets.html" %}
+
+  {% load compress %}
+  {% compress css %}
+  <link href="{{ STATIC_URL }}dashboard/scss/aai_infn_integrations.less" 
+        type='text/scss'
+        media='screen'
+        rel='stylesheet' />
+  {% endcompress %}
+{% endblock %}
+
 {% block title %}{% trans "Register" %} - {% site_branding %}{% endblock %}
 
 {% block body_id %}registration{% endblock %}
 
 {% block content %}
-        <div class="container">
-            <div class="row large-rounded">
-                {% include "_register_form.html" %}
-            </div>
-        </div>
+  {% include "_register_form.html" %}
 {% endblock %}
 

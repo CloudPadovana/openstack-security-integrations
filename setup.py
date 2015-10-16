@@ -51,21 +51,24 @@ class bdist_rpm(_bdist_rpm):
         cmdline = "rpmbuild -ba --define '_topdir %s' %s.spec" % (topdir, os.path.join(specdir, pkg_name))
         execScript(shlex.split(cmdline)).communicate()
 
-os_main_dir = 'usr/share/openstack-dashboard/'
-templates_dir = os_main_dir + 'openstack_dashboard/templates'
-img_dir = os_main_dir + 'openstack_dashboard/static/dashboard/img'
-reg_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/idmanager/registration_manager/templates/registration_manager'
-subscr_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/idmanager/subscription_manager/templates/subscription_manager'
-member_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/idmanager/member_manager/templates/member_manager'
-user_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/idmanager/user_manager/templates/user_manager'
-prj_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/idmanager/project_manager/templates/project_manager'
-pwd_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/settings/password_manager/templates/password_manager'
-preq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/idmanager/project_requests/templates/project_requests'
-idpreq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/idmanager/idp_requests/templates/idp_requests'
+os_main_dir = 'usr/share/openstack-dashboard/openstack_dashboard/'
+os_dash_dir = os_main_dir + 'dashboards/'
+templates_dir = os_main_dir + 'templates'
+scss_dir = os_main_dir + 'static/dashboard/scss'
+img_dir = os_main_dir + 'static/dashboard/img'
+reg_panel_dir = os_dash_dir + 'idmanager/registration_manager/templates/registration_manager'
+subscr_panel_dir = os_dash_dir + 'idmanager/subscription_manager/templates/subscription_manager'
+member_panel_dir = os_dash_dir + 'idmanager/member_manager/templates/member_manager'
+user_panel_dir = os_dash_dir + 'idmanager/user_manager/templates/user_manager'
+prj_panel_dir = os_dash_dir + 'idmanager/project_manager/templates/project_manager'
+pwd_panel_dir = os_dash_dir + 'settings/password_manager/templates/password_manager'
+preq_panel_dir = os_dash_dir + 'idmanager/project_requests/templates/project_requests'
+idpreq_panel_dir = os_dash_dir + 'idmanager/idp_requests/templates/idp_requests'
 
 template_list = [
     'src/templates/_register_form.html',
     'src/templates/registration.html',
+    'src/templates/aup.html',
     'src/templates/aai_error.html',
     'src/templates/aai_registration_ok.html'
 ]
@@ -164,6 +167,7 @@ setup(
       data_files=[
                   (templates_dir, template_list),
                   (templates_dir + '/auth', ['src/templates/_login.html']),
+                  (scss_dir, ['src/templates/aai_infn_integrations.less']),
                   (reg_panel_dir, reg_templ_list),
                   (user_panel_dir, usr_templ_list),
                   (prj_panel_dir, prj_templ_list),

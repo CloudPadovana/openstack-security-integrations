@@ -1,3 +1,5 @@
+{% extends "horizon/common/_modal_form.html" %}
+
 {% comment %}
   Copyright (c) 2014 INFN - "Istituto Nazionale di Fisica Nucleare" - Italy
   All Rights Reserved.
@@ -17,144 +19,60 @@
 
 {% load i18n %}
 
-<div id="register_div_id" class="register{% if hide %} modal hide{% endif %}">
-    <div class="modal-header">
-        {% if hide %}<a href="#" class="close" data-dismiss="modal">&times;</a>{% endif %}
-        <h3>{% trans "User Registration" %}</h3>
-    </div>
+{% block modal_class %}register{% if hide %} modal hide{% endif %}{% endblock %}
+{% block header %}{% trans "User Registration" %}{% endblock %}
+
+{% block form_id %}register_form_id{% endblock %}
+{% block form_action %}{{ form_action_url }}{% endblock %}
+{% block ng_controller %}hzLoginCtrl{% endblock %}
+{% block autocomplete %}{{ HORIZON_CONFIG.password_autocomplete }}{% endblock %}
+
+{% block modal-body %}
+  <fieldset>
     
-    {% if table %}
-    <div class="modal-body">
-        {{ table.render }}
-    </div>
-    
-    <hr />
+    {% if userid %}
+    <label>User ID</label>
+    <p>{{userid}}</p>
     {% endif %}
+        
+    {% include "horizon/common/_form_fields.html" %}
     
-    <form id="register_form_id" autocomplete="{{ HORIZON_CONFIG.password_autocomplete }}" class="" 
-        action="{{ form_action_url }}" method="POST">
-        
-        {% csrf_token %}
-        
-        <div class="modal-body clearfix">
-            <fieldset>
-    
-                {% if userid %}
-                <label>User ID</label>
-                <p>{{userid}}</p>
-                {% endif %}
-        
-                {% include "horizon/common/_form_fields.html" %}
-                
-                <button type="button"
-                        onclick="document.getElementById('aupdiv').style.display='block';"
-                        class="btn btn-primary pull-right">
-                    {% trans "Read the AUP" %}
-                </button>
-                
-            </fieldset>
-        </div>
-        
-        <div class="modal-footer">
-            <button type="submit" class="btn btn-primary pull-right">{% trans "Register" %}</button>
-            <button type="button"
-                    onclick="location.href='/dashboard'"
-                    class="btn btn-primary pull-right">{% trans "Cancel" %}</button>
-        </div>
-        
-        <div id="aupdiv" style="display: none;">
-        
-            <div class="modal hide in" style="top: 80px; display: block;">
-                <div class="modal-header"><h3>{% trans "Access User Policies" %}</h3></div>
-                
-                <div class="modal-body clearfix">
-                    {% blocktrans %}
-                    I declare that:
-                    {% endblocktrans %}
-                    <ul>
-                        
-                        <li>
-                            {% blocktrans %}
-                            I agree with the policies published on the web at http://www.pd.infn.it/calcolo
-                            and specifically with the Conditions of Use of INFN'S Computing Resources, 
-                            with GARR Acceptable Use Policy and with Internet Netiquette; I'm also aware that 
-                            I'm subject to Italian laws about computer crimes, and specifically 
-                            Italian law n. 547 of Dec. 23, 1993. 
-                            {% endblocktrans %}
-                        </li>
-                        
-                        <li>
-                            {% blocktrans %}
-                            I'll access to computing resources, hardware, software, services, local network 
-                            and Internet only for activities related to my role at INFN.
-                            {% endblocktrans %}
-                        </li>
-                        
-                        <li>
-                            {% blocktrans %}
-                            I'll be the only user of my account and that I'll not share or pass it to anyone, 
-                            for any reason, not even temporary. 
-                            {% endblocktrans %}
-                        </li>
-                        <li>
-                            {% blocktrans %}
-                            I commit myself not to install network or users activity monitoring programs 
-                            and not to violate other users privacy.
-                            {% endblocktrans %}
-                        </li>
-                        <li>
-                            {% blocktrans %}
-                            I commit myself not to modify the computer access restrictions and not to install 
-                            networking services without permission of the Computing and Networking Service. 
-                            {% endblocktrans %}
-                        </li>
-                        <li>
-                            {% blocktrans %}
-                            I commit myself to allow access to the Virtual Machines (VMs) created only and 
-                            exclusively to people who filled up the proper application form here or 
-                            a later version. 
-                            {% endblocktrans %}
-                        </li>
-                        <li>
-                            {% blocktrans %}
-                            I am aware that I will be held responsible for all the activities performed 
-                            on the VMs created by myself. 
-                            {% endblocktrans %}
-                        </li>
-                        <li>
-                            {% blocktrans %}
-                            I commit myself to report incidents, suspected abuse or security violation to 
-                            the Computing and Networking Service and to cooperate to any problem solution. 
-                            {% endblocktrans %}
-                        </li>
-                    </ul>
-                </div>
-                
-                <div class="modal-footer">
-                    <button type="button"
-                            onclick="acceptAUP()"
-                            class="btn btn-primary pull-right">{% trans "Accept" %}</button>
-                    <button type="button"
-                            onclick="document.getElementById('aupdiv').style.display='none';"
-                            class="btn btn-primary pull-right">{% trans "Reject" %}</button>
-                </div>
+    <div id="aup_list_div" class="modal-body" style="display: block;">
+      <hr/>
+      {% include "aup.html" %}
+    </div>
 
-            </div>
+  </fieldset>
+{% endblock %}
 
-            <div class="modal-backdrop in"></div>
-            
-        </div>
-        
-    </form>
+{% block modal-footer %}
+  <div id="chk_aup_div" class="modal-footer" style="display: block;">
+    <button type="button"
+            onclick="acceptAUP()"
+            class="btn btn-primary pull-right">{% trans "Accept AUP" %}</button>
+    <button type="button"
+            onclick="location.href='/dashboard'"
+            class="btn btn-primary pull-right">{% trans "Reject AUP" %}</button>
+  </div>
+  
+  <div id="ready_div" class="modal-footer" style="display: none;">
+    <button type="submit"
+            class="btn btn-primary pull-right">{% trans "Register" %}</button>
+    <button type="button"
+            onclick="location.href='/dashboard'"
+            class="btn btn-primary pull-right">{% trans "Cancel" %}</button>
+  </div>
+{% endblock %}
 
-    <script type="text/javascript">
-        function acceptAUP() {
-            document.getElementById('id_aupok').value = 'accept';
-            document.getElementById('aupdiv').style.display='none';
-        }
-    </script>
-    
-</div>
+{% block modal-js %}
+  <script type="text/javascript">
+      function acceptAUP() {
+          document.getElementById('aup_list_div').style.display='none';
+          document.getElementById('chk_aup_div').style.display='none';
+          document.getElementById('ready_div').style.display='block';
+     }
+  </script>
+{% endblock %}
 
 
 
