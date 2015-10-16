@@ -67,7 +67,10 @@ cp %{buildroot}/usr/share/openstack-auth-shib/templates/notifications_*.txt \
    %{buildroot}/etc/openstack-auth-shib/notifications
 
 mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/enabled
-mv %{buildroot}/%{python_sitelib}/dashboard_conf/*id* \
+mv %{buildroot}/%{python_sitelib}/dashboard_conf/_10_identity.py* \
+   %{buildroot}/%{python_sitelib}/dashboard_conf/_25_changepwd.py* \
+   %{buildroot}/%{python_sitelib}/dashboard_conf/_25_idmanager.py* \
+   %{buildroot}/%{python_sitelib}/dashboard_conf/_30_pwdmanager.py* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/enabled
    
 rm -rf %{buildroot}/%{python_sitelib}/dashboard_conf
@@ -190,7 +193,6 @@ INSTALLED_APPS = [                                                            #R
     'horizon',                                                                #RPM-Trigger: do not edit this line
     'openstack_auth_shib',                                                    #RPM-Trigger: do not edit this line
 ]                                                                             #RPM-Trigger: do not edit this line
-HORIZON_CONFIG['customization_module'] = 'openstack_auth_shib.overrides'      #RPM-Trigger: do not edit this line
 " >> /etc/openstack-dashboard/local_settings
     
     #

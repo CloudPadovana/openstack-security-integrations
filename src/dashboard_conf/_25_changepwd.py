@@ -13,19 +13,8 @@
 #  License for the specific language governing permissions and limitations
 #  under the License. 
 
-import horizon
-
-#
-# Panels must be loaded in advance
-#
-#import openstack_dashboard.dashboards.settings.password_manager.panel as pwdPanel
-
-#settings_dash = horizon.get_dashboard("settings")
-#pwd_panel = settings_dash.get_panel('password')
-#settings_dash.unregister(pwd_panel.__class__)
-#settings_dash.panels = ('user', 'password_manager', )
-
-
-
-
+PANEL = 'password'
+PANEL_DASHBOARD = 'settings'
+PANEL_GROUP = 'default'
+REMOVE_PANEL = True
 
