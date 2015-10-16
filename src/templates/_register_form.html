@@ -67,6 +67,7 @@
 {% block modal-js %}
   <script type="text/javascript">
       function acceptAUP() {
+          document.getElementById('id_aupok').value = 'accept';
           document.getElementById('aup_list_div').style.display='none';
           document.getElementById('chk_aup_div').style.display='none';
           document.getElementById('ready_div').style.display='block';
