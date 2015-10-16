@@ -99,11 +99,12 @@ def resume(request):
         except IntegrityError:
             LOG.error("Duplicate map for %s in %s" % (userid, extId))
             response = shortcuts.redirect(reverse('logout'))
-            response.set_cookie('aai_error', 'NOREMAP')
+            response.set_cookie('logout_reason', _("An account already uses the selected identity"))
         except:
             LOG.error("Cannot map userid %s" % userid, exc_info=True)
             response = shortcuts.redirect(reverse('logout'))
-            response.set_cookie('aai_error', 'GENERICERROR')
+            err_msg = "A failure occurs authenticating user\nPlease, contact the cloud managers"
+            response.set_cookie('logout_reason', err_msg)
 
     else:
         response = shortcuts.redirect('/dashboard')

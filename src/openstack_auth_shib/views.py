@@ -60,17 +60,13 @@ def get_ostack_attributes(request):
     domain = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN', 'Default')
     return (domain, region)
 
-def build_err_response(request, code, attributes):
+def build_err_response(request, err_msg, attributes):
     response = shortcuts.redirect(attributes.get_logout_url())
     if attributes:
         response = attributes.postproc_logout(response)
 
-    response.set_cookie('aai_error', code)
+    response.set_cookie('logout_reason', err_msg)
 
-    return response
-
-def adj_response(response):
-    response.delete_cookie('aai_error')
     return response
 
 def build_safe_redirect(request, location, attributes):
@@ -118,8 +114,9 @@ def login(request):
                 region_name = regions.get(region)
                 request.session['region_endpoint'] = region
                 request.session['region_name'] = region_name
+                request.session['global_user'] = attributes.username
             
-            return adj_response(shortcuts.redirect( '%s/project' % attributes.root_url))
+            return shortcuts.redirect( '%s/project' % attributes.root_url)
             
     except (UserMapping.DoesNotExist, keystone_exceptions.NotFound):
 
@@ -128,14 +125,15 @@ def login(request):
 
     except keystone_exceptions.Unauthorized:
 
-        return build_err_response(request, 'NOAUTHZ', attributes)
+        return build_err_response(request, _("User not authorized: invalid or disabled"), attributes)
 
     except Exception as exc:
 
         LOG.error(exc.message, exc_info=True)
-        return build_err_response(request, 'GENERICERROR', attributes)
+        err_msg = "A failure occurs authenticating user\nPlease, contact the cloud managers"
+        return build_err_response(request, _(err_msg), attributes)
         
-    return adj_response(basic_login(request))
+    return basic_login(request)
 
 
 def logout(request):
@@ -204,7 +202,7 @@ def _register(request, attributes):
     tempDict = { 'form': reg_form,
                  'userid' : attributes.username,
                  'form_action_url' : '%s/auth/register/' % attributes.root_url }
-    return adj_response(shortcuts.render(request, 'registration.html', tempDict))
+    return shortcuts.render(request, 'registration.html', tempDict)
 
 
 def register(request):
@@ -230,7 +228,7 @@ def register(request):
     
         tempDict = { 'form': reg_form,
                      'form_action_url' : '/dashboard/auth/register/' }
-        return adj_response(shortcuts.render(request, 'registration.html', tempDict))
+        return shortcuts.render(request, 'registration.html', tempDict)
 
 
 def processForm(request, reg_form, domain, attributes=None):

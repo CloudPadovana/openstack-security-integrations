@@ -82,23 +82,6 @@
     </div>
     {% endif %}
     
-    {% if request.COOKIES.aai_error %}
-    <div class="form-group clearfix error">
-        <span class="help-block alert alert-danger">
-        {% if request.COOKIES.aai_error == 'NOAUTHZ'%}
-            <p>{% trans "User not authorized: invalid or disabled" %}</p>
-        {% endif %}
-        {% if request.COOKIES.aai_error == 'NOREMAP'%}
-            <p>{% trans "An account already uses the selected identity" %}</p>
-        {% endif %}
-        {% if request.COOKIES.aai_error == 'GENERICERROR'%}
-            <p>{% trans "A failure occurs authenticating user" %}</p>
-            <p>{% trans "Please, contact the cloud managers" %}</p>
-        {% endif %}
-        </span>
-    </div>
-    {% endif %}
-    
     {% if next %}<input type="hidden" name="{{ redirect_field_name }}" value="{{ next }}" />{% endif %}
 
     <div id="usrpwd_bodydiv" class="modal-body" style="display: none;">
