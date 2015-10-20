@@ -94,7 +94,7 @@ class ExtCreateProject(CreateProject):
         #
         with transaction.atomic():
         
-            super(CreateProject, self).handle(request, data)
+            super(ExtCreateProject, self).handle(request, data)
             newprj_id = self.object.id
             
             qargs = {
