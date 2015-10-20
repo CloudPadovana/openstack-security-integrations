@@ -16,6 +16,7 @@
 import logging
 
 from django.db import transaction
+from django.db import IntegrityError
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import forms
@@ -23,7 +24,7 @@ from horizon import workflows
 
 from openstack_dashboard.dashboards.identity.projects.workflows import *
 
-from openstack_auth_shib.models import Project
+from openstack_auth_shib.models import Project, PrjRequest
 from openstack_auth_shib.models import PRJ_PUBLIC, PRJ_GUEST
 from openstack_auth_shib.utils import get_admin_roleid, get_project_managers
 
@@ -85,16 +86,14 @@ class ExtCreateProject(CreateProject):
 
     def handle(self, request, data):
         
-        domain_id = data['domain_id']
-        desc = data['description']
         name=data['name']
+        desc = data['description']
+        
+        if not super(ExtCreateProject, self).handle(request, data):
+            return False
 
-        #
-        # TODO rollback of keystone action
-        #
         with transaction.atomic():
         
-            super(ExtCreateProject, self).handle(request, data)
             newprj_id = self.object.id
             
             qargs = {
@@ -141,9 +140,40 @@ class ExtUpdateProject(UpdateProject):
                                             *args,
                                             **kwargs)
 
-    #
-    # TODO implement project renaming
-    #
+    def handle(self, request, data):
+
+        new_name=data['name']
+        new_desc = data['description']
+        project_id = data['project_id']
+
+        with transaction.atomic():
+            #
+            # TODO missing index
+            #
+            pr_list = Project.objects.filter(projectid=project_id)
+            
+            if len(pr_list) == 0:
+                LOG.error("Missing project %s in database" % project_id)
+                return False
+
+            if new_name == pr_list[0].projectname:
+                pr_list[0].description = new_desc
+                pr_list[0].save()
+            else:
+                newpr = Project()
+                newpr.projectname = new_name
+                newpr.projectid = project_id
+                newpr.description = new_desc
+                newpr.status = pr_list[0].status
+                newpr.save()
+            
+                PrjRequest.objects.filter(project=pr_list[0]).update(project=newpr)
+                pr_list[0].delete()
+            
+            if not super(ExtUpdateProject, self).handle(request, data):
+                raise IntegrityError('Cannot complete update on Keystone')
+
+        return True
 
 
 
