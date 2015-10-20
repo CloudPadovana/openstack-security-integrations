@@ -161,12 +161,6 @@ Django plugin for Shibboleth authentication
 %triggerin -n openstack-auth-shib -- openstack-dashboard
 if [ ! $1 == 2 ]; then
     #
-    # Compressing aai_infn_integrations
-    #
-    echo "Compressing style-sheets ..."
-    python /usr/share/openstack-dashboard/manage.py compress -v 0 >/dev/null 2>&1
-
-    #
     # Register the new backend driver
     # Register the views wrapper
     # Register as an installed application
