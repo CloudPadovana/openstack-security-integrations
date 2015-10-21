@@ -91,6 +91,12 @@ class ToggleVisibility(tables.Action):
             
         return shortcuts.redirect(reverse('horizon:idmanager:project_manager:index'))
 
+class ReqProjectLink(tables.LinkAction):
+    name = "reqproject"
+    verbose_name = _("Subscribe to project")
+    url = "horizon:idmanager:project_requests:index"
+    classes = ("ajax-modal", "btn-edit")
+
 def get_prj_status(data):
     if data.status == PRJ_GUEST:
         return _("Guest")
@@ -114,6 +120,7 @@ class ProjectsTable(baseTables.TenantsTable):
                        RescopeTokenToProject)
         table_actions = (baseTables.TenantFilterAction, 
                          CreateProject,
+                         ReqProjectLink,
                          DeleteProjectAction)
         pagination_param = "tenant_marker"
 
