@@ -17,8 +17,9 @@ import logging
 
 from django import shortcuts
 from django.db import transaction
-from django.core.urlresolvers import reverse_lazy
+from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext as _
+from django.utils.http import urlencode
 
 from horizon import tables
 from horizon import forms
@@ -87,7 +88,7 @@ class ToggleVisibility(tables.Action):
                 elif prj_status is PRJ_GUEST:
                     messages.error(request, _("Cannot toggle guest project"))
             
-        return shortcuts.redirect(reverse_lazy('horizon:idmanager:project_manager:index'))
+        return shortcuts.redirect(reverse('horizon:idmanager:project_manager:index'))
 
 def get_prj_status(data):
     if data.status == PRJ_GUEST:
