@@ -20,12 +20,18 @@
 {% load i18n %}
 
 {% block header %}
-  <div id="usrpwd_headerdiv" class="modal-header" style="display: block;">
+  <div id="allbtn_headerdiv" class="modal-header" style="display: block;">
+
+    <button type="button" 
+            onclick="showLoginForm()">
+      <img align="middle" height="80px" width="80px" alt="Local login" src="/dashboard/static/dashboard/img/logoUsrPwd.png"/>
+    </button>
+
     {# TODO check if the provider list is well-formed #}
     {# INFN provider is the default one #}
     <button type="button" 
             onclick="location.href='/dashboard-shib/auth/login/';">
-      <img align="middle" height="60px" width="80px" alt="Login Infn AAI" src="/dashboard/static/dashboard/img/logoInfnAAI.png">
+      <img align="middle" height="80px" width="80px" alt="Login Infn AAI" src="/dashboard/static/dashboard/img/logoInfnAAI.png">
     </button>
 
     {% if HORIZON_CONFIG.identity_providers %}
@@ -33,7 +39,7 @@
     {# For definition of idpdata see openstack_auth_shib.idpmanager #}
       {% if not idpdata.type == 'experimental' or 'INFN-testing' in request.META.HTTP_USER_AGENT %}
       <button type="button" onclick="location.href='{{ idpdata.path }}';">
-         <img align="middle" height="60px" width="80px" 
+         <img align="middle" height="80px" width="80px" 
               alt="Login {{ idpdata.description }}" 
               src="{{ idpdata.logo }}"/>
       </button>
@@ -41,10 +47,14 @@
     {% endfor %}
     {% endif %}
             
+  </div>
+  <div id="usrpwd_headerdiv" class="modal-header" style="display: none;">
+
     <button type="button" 
-            onclick="showLoginForm()">
-      <img align="middle" height="60px" width="80px" alt="Local login" src="/dashboard/static/dashboard/img/logoUsrPwd.png"/>
+            onclick="showIDPs()">
+      <img align="middle" height="80px" width="80px" alt="Local login" src="/dashboard/static/dashboard/img/logoUsrPwd.png"/>
     </button>
+
   </div>
 {% endblock %}
 
@@ -99,20 +109,22 @@
             class="btn btn-primary pull-right">{% trans "Register" %}</button>
     <button type="button"
             onclick="showIDPs()"
-            class="btn btn-primary pull-right">{% trans "Back" %}</button>
+            class="btn btn-primary pull-right">{% trans "Cancel" %}</button>
   </div>
 {% endblock %}
 
 {% block modal-js %}
   <script type="text/javascript">
     function showIDPs() {
-        document.getElementById('usrpwd_headerdiv').style.display='block';
+        document.getElementById('allbtn_headerdiv').style.display='block';
+        document.getElementById('usrpwd_headerdiv').style.display='none';
         document.getElementById('usrpwd_bodydiv').style.display='none';
         document.getElementById('usrpwd_footerdiv').style.display='none';
     }
     
     function showLoginForm() {
-        document.getElementById('usrpwd_headerdiv').style.display='none';
+        document.getElementById('allbtn_headerdiv').style.display='none';
+        document.getElementById('usrpwd_headerdiv').style.display='block';
         document.getElementById('usrpwd_bodydiv').style.display='block';
         document.getElementById('usrpwd_footerdiv').style.display='block';
     }
