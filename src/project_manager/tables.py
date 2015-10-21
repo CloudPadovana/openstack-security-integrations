@@ -71,6 +71,7 @@ class RescopeTokenToProject(baseTables.RescopeTokenToProject):
 class ToggleVisibility(tables.Action):
     name = "toggle_visible"
     verbose_name = _("Toggle Visibility")
+    policy_rules = (('identity', 'identity:update_project'),)
     
     def single(self, data_table, request, object_id):
     
