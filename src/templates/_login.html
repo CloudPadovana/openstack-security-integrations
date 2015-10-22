@@ -55,6 +55,20 @@
       <img align="middle" height="80px" width="80px" alt="Local login" src="/dashboard/static/dashboard/img/logoUsrPwd.png"/>
     </button>
 
+    <button type="button" disabled>
+      <img align="middle" height="80px" width="80px" src="/dashboard/static/dashboard/img/empty.png">
+    </button>
+
+    {% if HORIZON_CONFIG.identity_providers %}
+    {% for idpdata in HORIZON_CONFIG.identity_providers %}
+      {% if not idpdata.type == 'experimental' or 'INFN-testing' in request.META.HTTP_USER_AGENT %}
+      <button type="button" disabled>
+         <img align="middle" height="80px" width="80px" src="/dashboard/static/dashboard/img/empty.png"/>
+      </button>
+      {% endif %}
+    {% endfor %}
+    {% endif %}
+
   </div>
 {% endblock %}
 
@@ -109,7 +123,7 @@
             class="btn btn-primary pull-right">{% trans "Register" %}</button>
     <button type="button"
             onclick="showIDPs()"
-            class="btn btn-primary pull-right">{% trans "Cancel" %}</button>
+            class="btn btn-primary pull-right">{% trans "Close" %}</button>
   </div>
 {% endblock %}
 

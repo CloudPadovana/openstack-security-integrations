@@ -130,7 +130,8 @@ logo_list = [
     'src/templates/logoGoogle.png',
     'src/templates/logoUsrPwd.png',
     'src/templates/logoIDEM.png',
-    'src/templates/logoCloudAreapd.ico'
+    'src/templates/empty.png',
+    'src/templates/logoCloudAreapd.ico',
 ]
 
 module_list = [
