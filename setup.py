@@ -21,7 +21,7 @@ from distutils.core import setup
 from distutils.command.bdist_rpm import bdist_rpm as _bdist_rpm
 
 pkg_name = 'openstack-security-integrations'
-pkg_version = '1.0.7'
+pkg_version = '1.1.0'
 pkg_release = '1'
 
 source_items = "setup.py src config"
@@ -51,21 +51,24 @@ class bdist_rpm(_bdist_rpm):
         cmdline = "rpmbuild -ba --define '_topdir %s' %s.spec" % (topdir, os.path.join(specdir, pkg_name))
         execScript(shlex.split(cmdline)).communicate()
 
-os_main_dir = 'usr/share/openstack-dashboard/'
-templates_dir = os_main_dir + 'openstack_dashboard/templates'
+os_main_dir = 'usr/share/openstack-dashboard/openstack_dashboard/'
+os_dash_dir = os_main_dir + 'dashboards/'
+templates_dir = os_main_dir + 'templates'
+scss_dir = os_main_dir + 'static/dashboard/scss'
 img_dir = os_main_dir + 'static/dashboard/img'
-reg_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/admin/registration_manager/templates/registration_manager'
-subscr_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/subscription_manager/templates/subscription_manager'
-member_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/member_manager/templates/member_manager'
-user_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/admin/user_manager/templates/user_manager'
-pwd_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/settings/password_manager/templates/password_manager'
-preq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/project_requests/templates/project_requests'
-idpreq_panel_dir = os_main_dir + 'openstack_dashboard/dashboards/project/idp_requests/templates/idp_requests'
-css_dir = 'usr/share/openstack-dashboard/static/dashboard/less'
+reg_panel_dir = os_dash_dir + 'idmanager/registration_manager/templates/registration_manager'
+subscr_panel_dir = os_dash_dir + 'idmanager/subscription_manager/templates/subscription_manager'
+member_panel_dir = os_dash_dir + 'idmanager/member_manager/templates/member_manager'
+user_panel_dir = os_dash_dir + 'idmanager/user_manager/templates/user_manager'
+prj_panel_dir = os_dash_dir + 'idmanager/project_manager/templates/project_manager'
+pwd_panel_dir = os_dash_dir + 'settings/password_manager/templates/password_manager'
+preq_panel_dir = os_dash_dir + 'idmanager/project_requests/templates/project_requests'
+idpreq_panel_dir = os_dash_dir + 'idmanager/idp_requests/templates/idp_requests'
 
 template_list = [
     'src/templates/_register_form.html',
     'src/templates/registration.html',
+    'src/templates/aup.html',
     'src/templates/aai_error.html',
     'src/templates/aai_registration_ok.html'
 ]
@@ -96,6 +99,14 @@ usr_templ_list = [
     'src/templates/user_manager/_update.html'
 ]
 
+prj_templ_list = [
+    'src/templates/project_manager/index.html',
+    'src/templates/project_manager/usage.html',
+    'src/templates/project_manager/_detail_overview.html',
+    'src/templates/project_manager/detail.html',
+    'src/templates/project_manager/_common_horizontal_form.html'
+]
+
 pwd_templ_list = [
     'src/templates/password_manager/activate.html',
     'src/templates/password_manager/_activate.html'
@@ -119,6 +130,7 @@ logo_list = [
     'src/templates/logoGoogle.png',
     'src/templates/logoUsrPwd.png',
     'src/templates/logoIDEM.png',
+    'src/templates/empty.png',
     'src/templates/logoCloudAreapd.ico',
     'src/templates/help-transparent.png'
 ]
@@ -134,6 +146,8 @@ module_list = [
     'password_manager',
     'project_requests',
     'idp_requests',
+    'idmanager',
+    'dashboard_conf',
     'commands'
 ]
 
@@ -155,14 +169,15 @@ setup(
       data_files=[
                   (templates_dir, template_list),
                   (templates_dir + '/auth', ['src/templates/_login.html']),
+                  (scss_dir, ['src/templates/aai_infn_integrations.less']),
                   (reg_panel_dir, reg_templ_list),
                   (user_panel_dir, usr_templ_list),
+                  (prj_panel_dir, prj_templ_list),
                   (pwd_panel_dir, pwd_templ_list),
                   (subscr_panel_dir, subscr_templ_list),
                   (member_panel_dir, member_templ_list),
                   (preq_panel_dir, preq_templ_list),
                   (idpreq_panel_dir, idpreq_templ_list),
-                  (css_dir, ['src/templates/aai_infn_integrations.less']),
                   (img_dir, logo_list),
                   ('etc/openstack-auth-shib', confile_list),
                   ('etc/keystone-skey-auth', ['config/policy.json']),

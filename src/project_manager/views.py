@@ -19,15 +19,12 @@ from django.utils.translation import ugettext_lazy as _
 
 from horizon import exceptions
 
-from openstack_dashboard.dashboards.admin.projects.views import IndexView as BaseIndexView
-from openstack_dashboard.dashboards.admin.projects.views import CreateProjectView as BaseCreateProjectView
-from openstack_dashboard.dashboards.admin.projects.views import UpdateProjectView as BaseUpdateProjectView
-from openstack_dashboard.dashboards.admin.projects.views import ProjectUsageView
+from openstack_dashboard.dashboards.identity.projects import views as baseViews
 from openstack_dashboard import api
 
 from .tables import ProjectsTable
-from .workflows import UpdateProject
-from .workflows import CreateProject
+from .workflows import ExtUpdateProject
+from .workflows import ExtCreateProject
 
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PRJ_PRIVATE
@@ -44,24 +41,19 @@ class ExtPrjItem:
         self.status = PRJ_PRIVATE
         self.checked = False
 
-class IndexView(BaseIndexView):
+class IndexView(baseViews.IndexView):
     table_class = ProjectsTable
-    template_name = 'admin/project_manager/index.html'
-
-    def has_more_data(self, table):
-        return self._more
+    template_name = 'idmanager/project_manager/index.html'
 
     def get_data(self):
     
         import_guest_project()
         
         result = list()
-        marker = self.request.GET.get(ProjectsTable._meta.pagination_param, None)
-        domain_context = self.request.session.get('domain_context', None)
         try:
-            tenants, self._more = api.keystone.tenant_list(
-                self.request, domain=domain_context,
-                paginate=True, marker=marker)
+            tenants = super(IndexView, self).get_data()
+            if len(tenants) == 0:
+                return result
             
             prj_table = dict()
             for item in tenants:
@@ -90,14 +82,18 @@ class IndexView(BaseIndexView):
                 result.append(prj_table[item])
             
         except Exception:
-            self._more = False
             exceptions.handle(self.request, _("Unable to retrieve project list."))
         return result
 
 
-class UpdateProjectView(BaseUpdateProjectView):
-    workflow_class = UpdateProject
+class UpdateProjectView(baseViews.UpdateProjectView):
+    workflow_class = ExtUpdateProject
 
-class CreateProjectView(BaseCreateProjectView):
-    workflow_class = CreateProject
+class CreateProjectView(baseViews.CreateProjectView):
+    workflow_class = ExtCreateProject
+
+class ProjectUsageView(baseViews.ProjectUsageView):
+    template_name = 'idmanager/project_manager/usage.html'
+
+
 

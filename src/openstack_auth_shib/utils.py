@@ -67,7 +67,7 @@ def import_guest_project():
         prjid = guest_data['id'].strip()
         prjdescr = guest_data.get('description', 'Guest project')
         
-        with transaction.commit_on_success():
+        with transaction.atomic():
             try:
                 guestprj = Project.objects.get(projectname=prjname)
             except Project.DoesNotExist:

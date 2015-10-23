@@ -15,7 +15,6 @@
 
 import logging
 
-from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
 
 from openstack_auth_shib.models import Registration, RegRequest
@@ -27,7 +26,7 @@ LOG = logging.getLogger(__name__)
 class ProcessLink(tables.LinkAction):
     name = "reqprocess"
     verbose_name = _("Process")
-    url = "horizon:admin:registration_manager:process"
+    url = "horizon:idmanager:registration_manager:process"
     classes = ("ajax-modal", "btn-edit")
 
 class RegisterTable(tables.DataTable):

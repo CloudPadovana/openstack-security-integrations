@@ -13,21 +13,21 @@
 #  License for the specific language governing permissions and limitations
 #  under the License. 
 
+from django.utils.translation import ugettext_lazy as _
 
-try:
-    from django.conf.urls import patterns, url
-except:
-    from django.conf.urls.defaults import patterns, url
+import horizon
 
-from openstack_dashboard.dashboards.idmanager.project_manager import views
+class IdentityManager(horizon.Dashboard):
+    name = _("Identity")
+    slug = "idmanager"
+    default_panel = 'project_manager'
+    panels = ('project_manager', 
+              'user_manager',
+              'registration_manager',
+              'member_manager',
+              'subscription_manager',
+              'project_requests',)
 
+horizon.register(IdentityManager)
 
-urlpatterns = patterns('',
-    url(r'^$', views.IndexView.as_view(), name='index'),
-    url(r'^create$', views.CreateProjectView.as_view(), name='create'),
-    url(r'^(?P<tenant_id>[^/]+)/update/$',
-        views.UpdateProjectView.as_view(), name='update'),
-    url(r'^(?P<tenant_id>[^/]+)/usage/$',
-        views.ProjectUsageView.as_view(), name='usage'),
-)
 

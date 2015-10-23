@@ -59,7 +59,7 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
             if not TENANTADMIN_ROLE in role_names:
                 raise Exception(_('Permissions denied: cannot approve subscriptions'))
         
-            with transaction.commit_on_success():
+            with transaction.atomic():
             
                 LOG.debug("Approving subscription for %s" % data['username'])
                 

@@ -18,7 +18,7 @@ from django.utils.translation import ugettext_lazy as _
 
 import horizon
 
-from openstack_dashboard.dashboards.project import dashboard
+from openstack_dashboard.dashboards.idmanager import dashboard
 
 TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 
@@ -27,4 +27,4 @@ class MemberManager(horizon.Panel):
     slug = 'member_manager'
     permissions = ('openstack.roles.%s' % TENANTADMIN_ROLE,)
 
-dashboard.Project.register(MemberManager)
+dashboard.IdentityManager.register(MemberManager)

@@ -13,45 +13,19 @@
 #  License for the specific language governing permissions and limitations
 #  under the License. 
 
-import logging
 import horizon
-
-from openstack_dashboard.dashboards.admin.projects.panel import Tenants
-from openstack_dashboard.dashboards.admin.users.panel import Users
-from openstack_dashboard.dashboards.settings.password.panel import PasswordPanel
 
 #
 # Panels must be loaded in advance
 #
-import openstack_dashboard.dashboards.admin.registration_manager.panel
-import openstack_dashboard.dashboards.admin.project_manager.panel
-import openstack_dashboard.dashboards.admin.user_manager.panel
-import openstack_dashboard.dashboards.project.subscription_manager.panel
-import openstack_dashboard.dashboards.project.member_manager.panel
-import openstack_dashboard.dashboards.project.project_requests.panel
-import openstack_dashboard.dashboards.project.idp_requests.panel
-import openstack_dashboard.dashboards.settings.password_manager.panel
+#import openstack_dashboard.dashboards.settings.password_manager.panel as pwdPanel
 
-LOG = logging.getLogger(__name__)
+#settings_dash = horizon.get_dashboard("settings")
+#pwd_panel = settings_dash.get_panel('password')
+#settings_dash.unregister(pwd_panel.__class__)
+#settings_dash.panels = ('user', 'password_manager', )
 
-admin_dash = horizon.get_dashboard("admin")
-identity_group = admin_dash.get_panel_group('identity')
-identity_group.panels.append('registration_manager')
 
-identity_group.panels[1] = 'project_manager'
-admin_dash.unregister(Tenants)
-
-identity_group.panels[2] = 'user_manager'
-admin_dash.unregister(Users)
-
-settings_dash = horizon.get_dashboard("settings")
-defset_group = settings_dash.get_panel_group('default')
-defset_group.panels.append('password_manager')
-
-try:
-    settings_dash.unregister(PasswordPanel)
-except:
-    LOG.warning("Cannot unregister password panel")
 
 
 

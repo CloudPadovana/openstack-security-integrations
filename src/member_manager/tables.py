@@ -16,7 +16,6 @@
 import logging
 
 from django import shortcuts
-from django.db import transaction
 from django.conf import settings
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
@@ -104,7 +103,7 @@ class ToggleRoleAction(tables.Action):
             utils.add_logout_reason(request, response, msg)
             return response
             
-        return shortcuts.redirect(reverse_lazy('horizon:project:member_manager:index'))
+        return shortcuts.redirect(reverse_lazy('horizon:idmanager:member_manager:index'))
 
 def get_role(data):
     if data.is_t_admin:

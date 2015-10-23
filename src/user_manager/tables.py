@@ -20,11 +20,7 @@ from django.utils.translation import ugettext as _
 
 from horizon import tables
 
-from openstack_dashboard.dashboards.admin.users.tables import UsersTable as BaseUsersTable
-from openstack_dashboard.dashboards.admin.users.tables import EditUserLink as BaseEditUserLink
-from openstack_dashboard.dashboards.admin.users.tables import ToggleEnabled
-from openstack_dashboard.dashboards.admin.users.tables import DeleteUsersAction as BaseDeleteUsersAction
-from openstack_dashboard.dashboards.admin.users.tables import UserFilterAction
+from openstack_dashboard.dashboards.identity.users import tables as baseTables
 
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.utils import get_project_managers
@@ -35,10 +31,10 @@ from keystoneclient.exceptions import AuthorizationFailure
 
 LOG = logging.getLogger(__name__)
 
-class EditUserLink(BaseEditUserLink):
-    url = "horizon:admin:user_manager:update"
+class EditUserLink(baseTables.EditUserLink):
+    url = "horizon:idmanager:user_manager:update"
 
-class DeleteUsersAction(BaseDeleteUsersAction):
+class DeleteUsersAction(baseTables.DeleteUsersAction):
 
     def delete(self, request, obj_id):
     
@@ -58,17 +54,17 @@ class DeleteUsersAction(BaseDeleteUsersAction):
         
         else:
 
-            with transaction.commit_on_success():
+            with transaction.atomic():
                 Registration.objects.filter(userid=obj_id).delete()
                 super(DeleteUsersAction, self).delete(request, obj_id)
         
 class RenewLink(tables.LinkAction):
     name = "renewexp"
     verbose_name = _("Renew Expiration")
-    url = "horizon:admin:user_manager:renew"
+    url = "horizon:idmanager:user_manager:renew"
     classes = ("ajax-modal", "btn-edit")
 
-class UsersTable(BaseUsersTable):
+class UsersTable(baseTables.UsersTable):
 
     expiration = tables.Column('expiration', verbose_name=_('Expiration date'))
 
@@ -77,9 +73,9 @@ class UsersTable(BaseUsersTable):
         verbose_name = _("Users")
         row_actions = (
             EditUserLink,
-            ToggleEnabled,
+            baseTables.ToggleEnabled,
             RenewLink,
             DeleteUsersAction
         )
-        table_actions = (UserFilterAction, DeleteUsersAction)
+        table_actions = (baseTables.UserFilterAction, DeleteUsersAction)
 

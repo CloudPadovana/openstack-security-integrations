@@ -16,9 +16,11 @@
 import base64
 import json
 
-from keystone import identity
+from oslo_log import log
+from oslo.config import cfg
+
 from keystone.auth import AuthMethodHandler
-from keystone.openstack.common import log as logging
+from keystone.common import dependency
 from keystone.exception import Unauthorized, UserNotFound, NotFound
 
 from Crypto.Cipher import AES
@@ -28,11 +30,9 @@ if crypto_version.startswith('2.0'):
 else:
     from Crypto import Random
 
-from oslo.config import cfg
-
 METHOD_NAME = 'sKey'
 
-LOG = logging.getLogger(__name__)
+LOG = log.getLogger(__name__)
 
 #
 # TODO
@@ -44,13 +44,14 @@ LOG = logging.getLogger(__name__)
 # move token in the body
 #
 
+@dependency.requires('identity_api')
 class SecretKeyAuth(AuthMethodHandler):
 
     method = METHOD_NAME
     
     def __init__(self):
+        super(SecretKeyAuth, self).__init__()
         cfg.CONF.register_opt(cfg.StrOpt('secret_key', default=None), group='skey')
-        self.identity_api = identity.Manager()
         
         self.aes_key = cfg.CONF.skey.secret_key
         if len(self.aes_key) >= 32:
@@ -89,12 +90,9 @@ class SecretKeyAuth(AuthMethodHandler):
                 LOG.info("Accepted secret for user %s" % userdata['username'])
                 
                 uDict = self.identity_api.get_user_by_name(userdata['username'], userdata['domain'])
-                dDict = self.identity_api.get_domain_by_name(userdata['domain'])
                 
                 if not uDict['enabled']:
                     raise Unauthorized("User %s is disabled" % uDict['name'])
-                if not dDict['enabled']:
-                    raise Unauthorized("Domain %s is disabled" % dDict['name'])
                 
                 auth_context['user_id'] = uDict['id']
                 return None

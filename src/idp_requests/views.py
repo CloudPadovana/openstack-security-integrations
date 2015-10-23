@@ -43,14 +43,14 @@ def manage(request):
 
     attributes = get_manager(request)
     if attributes:
-        ctx['currpath'] = '%s/project/idp_requests/suspend/' % attributes.root_url
+        ctx['currpath'] = '%s/idmanager/idp_requests/suspend/' % attributes.root_url
     else:
-        ctx['currpath'] = '/dashboard/project/idp_requests/suspend/'
+        ctx['currpath'] = '/dashboard/idmanager/idp_requests/suspend/'
     
     ctx['idp_data_list'] = get_idp_list(myproviders)
     ctx['providers'] = myproviders
     
-    return shortcuts.render(request, 'project/idp_requests/idp_request.html', ctx)
+    return shortcuts.render(request, 'idmanager/idp_requests/idp_request.html', ctx)
     
     
 
@@ -85,7 +85,7 @@ def resume(request):
     if attributes:
     
         try:
-            with transaction.commit_on_success():
+            with transaction.atomic():
         
                 extId = attributes.username
         
@@ -93,17 +93,18 @@ def resume(request):
                 u_map = UserMapping(globaluser=extId, registration=registr)
                 u_map.save(force_insert=True)
 
-            LOG.debug('Calling resume with %s/project' % attributes.root_url)
-            response = shortcuts.redirect(attributes.root_url + '/project')
+            LOG.debug('Calling resume with %s/idmanager' % attributes.root_url)
+            response = shortcuts.redirect(attributes.root_url + '/idmanager')
         
         except IntegrityError:
             LOG.error("Duplicate map for %s in %s" % (userid, extId))
             response = shortcuts.redirect(reverse('logout'))
-            response.set_cookie('aai_error', 'NOREMAP')
+            response.set_cookie('logout_reason', _("An account already uses the selected identity"))
         except:
             LOG.error("Cannot map userid %s" % userid, exc_info=True)
             response = shortcuts.redirect(reverse('logout'))
-            response.set_cookie('aai_error', 'GENERICERROR')
+            err_msg = "A failure occurs authenticating user\nPlease, contact the cloud managers"
+            response.set_cookie('logout_reason', err_msg)
 
     else:
         response = shortcuts.redirect('/dashboard')

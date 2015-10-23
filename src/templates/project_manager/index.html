@@ -1,4 +1,4 @@
-{% extends "horizon/common/_modal_form.html" %}
+{% extends 'base.html' %}
 
 {% comment %}
   Copyright (c) 2014 INFN - "Istituto Nazionale di Fisica Nucleare" - Italy
@@ -18,18 +18,12 @@
 {% endcomment %}
 
 {% load i18n %}
+{% block title %}{% trans "Projects" %}{% endblock %}
 
-{% block modal-body-right %}
-  <h3>{% trans "Description:" %}</h3>
-  <p>{% trans "Edit the user's details, including the Primary Project." %}</p>
-  <script type="text/javascript">
-    if (typeof horizon.user !== 'undefined') {
-      horizon.user.init();
-    } else {
-      addHorizonLoadEvent(function() {
-        horizon.user.init();
-      });
-    }
-  </script>
+{% block page_header %}
+  {% include "horizon/common/_domain_page_header.html" with title=page_title %}
+{% endblock page_header %}
+
+{% block main %}
+  {{ table.render }}
 {% endblock %}
-

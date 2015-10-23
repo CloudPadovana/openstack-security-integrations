@@ -129,19 +129,23 @@ def create_cryptoken(aes_key, data):
         cipher = AES.new(aes_key, AES.MODE_CFB, iv)
         return base64.b64encode(iv + cipher.encrypt(data))
 
-#
-# Register this backend in /usr/share/openstack-dashboard/openstack_dashboard/settings.py
+################################################################################################
+# Register this backend in /etc/openstack-dashboard/local_settings
 # AUTHENTICATION_BACKENDS = ('openstack_auth_shib.backend.ExtKeystoneBackend',)
-#
+################################################################################################
 class ExtKeystoneBackend(base_backend.KeystoneBackend):
 
-    def authenticate(self, request=None, username=None, password=None,
-                     user_domain_name=None, auth_url=None):
+    def authenticate(self, **kwargs):
+
+        auth_url = kwargs.get('auth_url', None)
+        request = kwargs.get('request', None)
+        username = kwargs.get('username', None)
+        password = kwargs.get('password', None)
+        user_domain_name = kwargs.get('user_domain_name', None)
         
         if password:
             parentObj = super(ExtKeystoneBackend, self)
-            return parentObj.authenticate(request, username, password,
-                                          user_domain_name, auth_url)
+            return parentObj.authenticate(**kwargs)
 
         LOG.debug('Authenticating user "%s".' % username)
 
@@ -243,4 +247,75 @@ class ExtKeystoneBackend(base_backend.KeystoneBackend):
 
         LOG.debug('Authentication completed for user "%s".' % username)
         return user
+
+
+
+################################################################################################
+#  Authentication plugin
+################################################################################################
+
+from openstack_auth.plugin import base as base_plugin
+from keystoneclient.auth.identity.base import BaseIdentityPlugin
+
+__all__ = ['SKeyPluginFactory']
+
+class SKeyPlugin(BaseIdentityPlugin):
+
+    def __init__(self, auth_url=None, **kwargs):
+        self.auth_url = auth_url
+        self.request = kwargs.get('request', None)
+        self.username = kwargs.get('username', None)
+        self.user_domain_name = kwargs.get('user_domain_name', None)
+        
+        super(SKeyPlugin, self).__init__(auth_url=self.auth_url,
+                                         username=self.username)
+        LOG.debug('SkeyPlugin initialized')
+            
+    def get_auth_ref(self, session, **kwargs):
+        LOG.debug('Authenticating user "%s".' % self.username)
+
+        insecure = getattr(settings, 'OPENSTACK_SSL_NO_VERIFY', False)
+        cacert = getattr(settings, 'OPENSTACK_SSL_CACERT', None)
+        ep_type = getattr(settings, 'OPENSTACK_ENDPOINT_TYPE', 'publicURL')
+        secret_key = getattr(settings, 'KEYSTONE_SECRET_KEY', None)
+        
+        fqun = json.dumps({
+            'username' : self.username,
+            'domain' : self.user_domain_name
+        })
+
+        try:
+        
+            secret_token = create_cryptoken(secret_key, fqun)
+            
+            client = ExtClient(user_domain_name=self.user_domain_name,
+                               username=self.username,
+                               secret_token=secret_token,
+                               auth_url=self.auth_url,
+                               insecure=insecure,
+                               cacert=cacert,
+                               debug=settings.DEBUG)
+
+            unscoped_auth_ref = client.auth_ref
+            LOG.debug('User %s authenticated' % self.username)
+            return unscoped_auth_ref
+            
+        except ClientException as exc:
+            LOG.debug(exc.message, exc_info=True)
+            raise
+        except Exception as exc:
+            msg = _("An error occurred authenticating. Please try again later.")
+            LOG.debug(exc.message, exc_info=True)
+            raise KeystoneAuthException(msg)
+        
+
+class SKeyPluginFactory(base_plugin.BasePlugin):
+
+    def get_plugin(self, auth_url=None, **kwargs):
+        password = kwargs.get('password', None)
+        if password:
+            return None
+        
+        return SKeyPlugin(auth_url, **kwargs)
+
 

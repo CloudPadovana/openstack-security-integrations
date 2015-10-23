@@ -1,5 +1,3 @@
-{% extends "horizon/common/_modal_form.html" %}
-
 {% comment %}
   Copyright (c) 2014 INFN - "Istituto Nazionale di Fisica Nucleare" - Italy
   All Rights Reserved.
@@ -17,19 +15,6 @@
   under the License. 
 {% endcomment %}
 
-{% load i18n %}
-
-{% block modal-body-right %}
-  <h3>{% trans "Description:" %}</h3>
-  <p>{% trans "Edit the user's details, including the Primary Project." %}</p>
-  <script type="text/javascript">
-    if (typeof horizon.user !== 'undefined') {
-      horizon.user.init();
-    } else {
-      addHorizonLoadEvent(function() {
-        horizon.user.init();
-      });
-    }
-  </script>
-{% endblock %}
-
+<div class="form-horizontal">
+  {% include "horizon/common/_horizontal_fields.html" %}
+</div>

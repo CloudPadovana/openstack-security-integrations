@@ -187,7 +187,7 @@ class ProcessRegForm(forms.SelfHandlingForm):
 
     def _handle_accept(self, request, data):
     
-        with transaction.commit_on_success():
+        with transaction.atomic():
             
             registration = Registration.objects.get(regid=int(data['regid']))
             flowstatus = int(data['processinglevel'])
@@ -373,7 +373,7 @@ class ProcessRegForm(forms.SelfHandlingForm):
         recipients = None
         first_reg_rej = False
 
-        with transaction.commit_on_success():
+        with transaction.atomic():
             
             registration = Registration.objects.get(regid=int(data['regid']))
             prjReqList = PrjRequest.objects.filter(registration=registration)
@@ -472,7 +472,7 @@ class ForceApproveForm(forms.SelfHandlingForm):
                 elif pstatus == PSTATUS_REJ and p_id in self.prjcache:
                     rej_prjs.append(p_id)
         
-        with transaction.commit_on_success():
+        with transaction.atomic():
             
             if len(accpt_prjs):
                 q_args = {

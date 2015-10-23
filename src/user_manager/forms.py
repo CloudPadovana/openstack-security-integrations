@@ -43,7 +43,7 @@ class RenewExpForm(forms.SelfHandlingForm):
 
     def handle(self, request, data):
         
-        with transaction.commit_on_success():
+        with transaction.atomic():
         
             reg_list = Registration.objects.filter(userid=data['userid'])
             reg_list.update(expdate=data['expiration'])

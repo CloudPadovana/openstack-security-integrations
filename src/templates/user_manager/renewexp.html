@@ -20,12 +20,7 @@
 {% load i18n %}
 {% block title %}{% trans "Renew Expiration Date" %}{% endblock %}
 
-{% block page_header %}
-  {# to make searchable false, just remove it from the include statement #}
-  {% include "horizon/common/_page_header.html" with title=_("Renew Expiration Date") %}
-{% endblock page_header %}
-
 {% block main %}
-    {% include 'admin/user_manager/_renewexp.html' %}
+    {% include 'idmanager/user_manager/_renewexp.html' %}
 {% endblock %}
 
