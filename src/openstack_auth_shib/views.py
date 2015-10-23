@@ -183,6 +183,8 @@ def _register(request, attributes):
         init_dict['sn'] = attributes.sn
     if attributes.email:
         init_dict['email'] = attributes.email
+    if attributes.provider:
+        init_dict['organization'] = attributes.provider
     
     if request.method == 'POST':
         reg_form = MixRegistForm(request.POST, initial=init_dict)

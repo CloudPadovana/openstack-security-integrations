@@ -56,6 +56,13 @@ class SAML2_IdP:
         self.givenname = request.META.get('givenName', None)
         self.sn = request.META.get('sn', None)
         
+        # organization as in urn:mace:dir:attribute-def:eduPersonPrincipalName
+        idx = request.META['REMOTE_USER'].find('@')
+        if idx > 0:
+            self.provider = request.META['REMOTE_USER'][idx+1:]
+        else:
+            self.provider = None
+        
     def get_logout_url(self, *args):
         
         result = self.logout_prefix
@@ -85,6 +92,7 @@ class Google_IdP:
             self.username = self.username[0:OS_LNAME_LEN]
         self.givenname = request.META.get('HTTP_OIDC_CLAIM_GIVEN_NAME', None)
         self.sn = request.META.get('HTTP_OIDC_CLAIM_FAMILY_NAME', None)
+        self.provider = 'Google'
 
     def get_logout_url(self, *args):
         
