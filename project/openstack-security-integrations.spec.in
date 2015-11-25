@@ -111,8 +111,13 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-auth-shib/templates/notifications_en.txt
 /usr/share/openstack-dashboard/openstack_dashboard/templates/*.html
 /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/*.html
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/*.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/*.ico
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoGoogle.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoIDEM.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoInfnAAI.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoUniPD.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoUsrPwd.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/empty.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/help-transparent.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/scss/*.less
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.pyc
@@ -161,10 +166,8 @@ Django plugin for Shibboleth authentication
 %triggerin -n openstack-auth-shib -- openstack-dashboard
 if [ ! $1 == 2 ]; then
     #
-    # Register the new backend driver
-    # Register the views wrapper
-    # Register as an installed application
-    # Insert customization point
+    # Register custom authentication plugin
+    # Register new middleware
     #
     printf "
 AUTHENTICATION_PLUGINS = [                                                    #RPM-Trigger: do not edit this line
@@ -190,30 +193,6 @@ INSTALLED_APPS = [                                                            #R
 " >> /etc/openstack-dashboard/local_settings
     
     #
-    # Replace logo
-    #
-    if [ ! -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png ] ; then
-        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo.png \
-            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png
-    fi
-    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapdStrip.png \
-        /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo.png
-    
-    if [ ! -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png ] ; then
-        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png \
-            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png
-    fi
-    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.png \
-        /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png
-
-    if [ ! -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico ] ; then
-        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico \
-            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico
-    fi
-    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.ico \
-        /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
-    
-    #
     # Replace attribe map file
     #
     if [ ! -e /etc/shibboleth/attribute-map.xml.dist ] ; then
@@ -237,22 +216,13 @@ if [ $1 == 0 -o $2 == 0 ] ; then
     sed -i -e 's|horizon:idmanager:project_manager|horizon:identity:projects|g' \
         /usr/share/openstack-dashboard/openstack_dashboard/templates/_header.html
     
-    if [ -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png ] ; then
-        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png \
-            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo.png
-    fi
-    if [ -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png ] ; then
-        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png \
-            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png
-    fi
-    if [ -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico ] ; then
-        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico \
-            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
-    fi
     if [ -e /etc/shibboleth/attribute-map.xml.dist ] ; then
         cp -f /etc/shibboleth/attribute-map.xml.dist /etc/shibboleth/attribute-map.xml
     fi
 fi
+
+
+
 
 
 %package -n keystone-skey-auth
@@ -291,9 +261,159 @@ if [ $1 == 0 -o $2 == 0 ] ; then
     fi
 fi
 
+
+
+
+
+
+
+
+
+
+%package -n openstack-auth-cap
+Summary: Customization of Openstack Horizon for Cloud Area Padovana
+Group: System Environment/Libraries
+Requires: openstack-auth-shib
+Conflicts: openstack-auth-cedc
+
+%description -n openstack-auth-cap
+Customization of Openstack Horizon for Cloud Area Padovana
+
+%files -n openstack-auth-cap
+%defattr(-,root,root)
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapdStrip.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.ico
+/usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cap.html
+
+%post -n openstack-auth-cap
+ln -sf /usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cap.html \
+       /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
+
+%preun -n openstack-auth-cap
+rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
+
+%triggerin -n openstack-auth-cap -- openstack-dashboard
+if [ ! $1 == 2 ]; then
+    #
+    # Replace logo
+    #
+    if [ ! -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo.png \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png
+    fi
+    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapdStrip.png \
+        /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo.png
+    
+    if [ ! -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png
+    fi
+    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.png \
+        /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png
+
+    if [ ! -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico
+    fi
+    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.ico \
+        /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
+fi
+
+%triggerun -n openstack-auth-cap -- openstack-dashboard
+if [ $1 == 0 -o $2 == 0 ] ; then
+    if [ -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo.png
+    fi
+    if [ -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png
+    fi
+    if [ -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
+    fi
+fi
+
+
+
+
+
+
+%package -n openstack-auth-cedc
+Summary: Customization of Openstack Horizon for Cloud Veneto
+Group: System Environment/Libraries
+Requires: openstack-auth-shib
+Conflicts: openstack-auth-cap
+
+%description -n openstack-auth-cedc
+Customization of Openstack Horizon for Cloud Veneto
+
+%files -n openstack-auth-cedc
+%defattr(-,root,root)
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVenetoStrip.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.ico
+/usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cedc.html
+
+%post -n openstack-auth-cedc
+ln -sf /usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cedc.html \
+       /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
+
+%preun -n openstack-auth-cedc
+rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
+
+%triggerin -n openstack-auth-cedc -- openstack-dashboard
+if [ ! $1 == 2 ]; then
+    #
+    # Replace logo
+    #
+    if [ ! -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo.png \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png
+    fi
+    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVenetoStrip.png \
+        /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo.png
+    
+    if [ ! -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png
+    fi
+    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.png \
+        /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png
+
+    if [ ! -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico
+    fi
+    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.ico \
+        /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
+fi
+
+%triggerun -n openstack-auth-cedc -- openstack-dashboard
+if [ $1 == 0 -o $2 == 0 ] ; then
+    if [ -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-orig.png \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo.png
+    fi
+    if [ -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash-orig.png \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logo-splash.png
+    fi
+    if [ -e /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico ] ; then
+        mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon-orig.ico \
+            /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
+    fi
+fi
+
+
+
+
 %changelog
-* Thu Nov 03 2015 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
+* Wed Nov 25 2015 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
 - Porting on Kilo
+- New packages for CAP and CED-C
 
 * Fri Jul 17 2015 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.0.7-1
 - Porting on CentOS7

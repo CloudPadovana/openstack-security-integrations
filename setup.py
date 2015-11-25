@@ -22,7 +22,7 @@ from distutils.command.bdist_rpm import bdist_rpm as _bdist_rpm
 
 pkg_name = 'openstack-security-integrations'
 pkg_version = '1.1.0'
-pkg_release = '1'
+pkg_release = '2'
 
 source_items = "setup.py src config"
 
@@ -68,7 +68,6 @@ idpreq_panel_dir = os_dash_dir + 'idmanager/idp_requests/templates/idp_requests'
 template_list = [
     'src/templates/_register_form.html',
     'src/templates/registration.html',
-    'src/templates/aup.html',
     'src/templates/aai_error.html',
     'src/templates/aai_registration_ok.html'
 ]
@@ -125,13 +124,16 @@ idpreq_templ_list = [
 logo_list = [
     'src/templates/logoCloudAreapd.png',
     'src/templates/logoCloudAreapdStrip.png',
+    'src/templates/logoCloudAreapd.ico',
+    'src/templates/logoCloudVeneto.ico',
+    'src/templates/logoCloudVeneto.png',
+    'src/templates/logoCloudVenetoStrip.png',
     'src/templates/logoInfnAAI.png',
     'src/templates/logoUniPD.png',
     'src/templates/logoGoogle.png',
     'src/templates/logoUsrPwd.png',
     'src/templates/logoIDEM.png',
     'src/templates/empty.png',
-    'src/templates/logoCloudAreapd.ico',
     'src/templates/help-transparent.png'
 ]
 
@@ -169,6 +171,7 @@ setup(
       data_files=[
                   (templates_dir, template_list),
                   (templates_dir + '/auth', ['src/templates/_login.html']),
+                  (templates_dir + '/aup', ['src/templates/aup-cap.html','src/templates/aup-cedc.html']),
                   (scss_dir, ['src/templates/aai_infn_integrations.less']),
                   (reg_panel_dir, reg_templ_list),
                   (user_panel_dir, usr_templ_list),
