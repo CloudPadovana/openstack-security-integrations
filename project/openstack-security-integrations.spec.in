@@ -102,6 +102,7 @@ Django plugin for Shibboleth authentication
 %config(noreplace) /etc/openstack-auth-shib/logging.conf
 %config(noreplace) /etc/openstack-auth-shib/notifications/notifications_*.txt
 %config(noreplace) /etc/cron.d/openstack-auth-shib-cron
+%dir /usr/share/openstack-dashboard/openstack_dashboard/templates/aup
 %dir %{python_sitelib}/openstack_auth_shib
 %{python_sitelib}/openstack_auth_shib/*.py
 %{python_sitelib}/openstack_auth_shib/*.pyc
