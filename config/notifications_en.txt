@@ -91,7 +91,15 @@ body: The account for {{ username }} will expire in {{ days }} days.
   {% endif %}
   Please, don't reply to this message
 
-
+[subscription_ongoing]
+subject: Subscription under evaluation
+body: Your subscription to {{ project }} is now under evaluation.
+  For any information please contact:
+  {% for p_email in prjadmins %}
+  {{ p_email }}
+  {% endfor %}
+  
+  Please, don't reply to this message
 
 
 

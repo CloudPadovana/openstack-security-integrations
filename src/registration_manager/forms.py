@@ -37,6 +37,7 @@ from django.utils.translation import ugettext as _
 from openstack_auth_shib.notifications import notification_render
 from openstack_auth_shib.notifications import notify as notifyUsers
 from openstack_auth_shib.notifications import SUBSCR_WAIT_TYPE
+from openstack_auth_shib.notifications import SUBSCR_ONGOING
 from openstack_auth_shib.notifications import FIRST_REG_OK_TYPE
 from openstack_auth_shib.notifications import FIRST_REG_NO_TYPE
 from openstack_auth_shib.notifications import SUBSCR_OK_TYPE
@@ -223,18 +224,32 @@ class ProcessRegForm(forms.SelfHandlingForm):
                     'flowstatus' : PSTATUS_REG
                 }
                 prjReqList.filter(**q_args).update(flowstatus=PSTATUS_PENDING)
+                
+                email = None
+                for tmpReq in userReqList:
+                    if not email:
+                        email = tmpReq.email
                     
                 q_args['flowstatus'] = PSTATUS_PENDING
                 for p_item in prjReqList.filter(**q_args):
                 
                     m_users = get_project_managers(request, p_item.project.projectid)
+                    m_emails = [ usr.email for usr in m_users ]
                     
                     noti_params = {
                         'username' : registration.username,
                         'project' : p_item.project.projectname
                     }
                     noti_sbj, noti_body = notification_render(SUBSCR_WAIT_TYPE, noti_params)
-                    notifyUsers([ usr.email for usr in m_users ], noti_sbj, noti_body)
+                    notifyUsers(m_emails, noti_sbj, noti_body)
+                    
+                    if email:
+                        n2_params = {
+                            'project' : p_item.project.projectname,
+                            'prjadmins' : m_emails
+                        }
+                        noti_sbj, noti_body = notification_render(SUBSCR_ONGOING, n2_params)
+                        notifyUsers(email, noti_sbj, noti_body)
                     
             if flowstatus == RSTATUS_CHECKED or flowstatus == RSTATUS_NOFLOW:
                 main_tenant = None
