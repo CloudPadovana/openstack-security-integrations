@@ -101,7 +101,14 @@ body: Your subscription to {{ project }} is now under evaluation.
   
   Please, don't reply to this message
 
-
+[subscription_reminder]
+subject: Subscription reminder
+body: You have the following pending subscriptions for project {{ project}}:
+  {% for req in pendingreqs %}
+  {{ req.0 }} ({{ req.1}})
+  {% endfor %} 
+  
+  Please, don't reply to this message
 
 
 

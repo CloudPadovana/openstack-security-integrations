@@ -1,3 +1,4 @@
 5 0 * * *    root    python /usr/share/openstack-dashboard/manage.py checkexpiration --config /etc/openstack-auth-shib/actions.conf --logconf /etc/openstack-auth-shib/logging.conf 2>/dev/null
 10 0 * * *   root    python /usr/share/openstack-dashboard/manage.py notifyexpiration --config /etc/openstack-auth-shib/actions.conf --logconf /etc/openstack-auth-shib/logging.conf 2>/dev/null
+0 9 * * 1   root    python /usr/share/openstack-dashboard/manage.py pendingsubscr --config /etc/openstack-auth-shib/actions.conf --logconf /etc/openstack-auth-shib/logging.conf 2>/dev/null
 
