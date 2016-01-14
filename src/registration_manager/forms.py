@@ -67,7 +67,6 @@ from openstack_auth_shib.utils import get_project_managers
 from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
-TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 
 class ProjectResultInfo():
 
@@ -93,7 +92,6 @@ class ProcessRegForm(forms.SelfHandlingForm):
         
         self.fields['regid'] = forms.IntegerField(widget=HiddenInput)
         self.fields['processinglevel'] = forms.IntegerField(widget=HiddenInput)
-        self.prjman_roleid = None
         
         flowstatus = kwargs['initial']['processinglevel']
         if flowstatus == RSTATUS_PENDING or flowstatus == RSTATUS_NOFLOW:
@@ -119,32 +117,37 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 widget = forms.TextInput(attrs={'readonly': 'readonly'})
             )
             
-        if flowstatus == RSTATUS_CHECKED or flowstatus == RSTATUS_NOFLOW:
-            self.fields['role_id'] = forms.ChoiceField(
-                label=_("Role"),
-                required=False)
-            
-            role_list = list()
-            for role in keystone_api.role_list(request):
-                if role.name == TENANTADMIN_ROLE:
-                    self.prjman_roleid = role.id
-                else:
-                    role_list.append((role.id, role.name))
-                
-            #
-            # Creation of project-manager role if necessary
-            #
-            if not self.prjman_roleid:
-                self.prjman_roleid = keystone_api.role_create(request, TENANTADMIN_ROLE)
-            role_list.append((self.prjman_roleid, TENANTADMIN_ROLE))
-            
-            self.fields['role_id'].choices = role_list
-            
         self.fields['reason'] = forms.CharField(
             label=_('Message'),
             required=False,
             widget=forms.widgets.Textarea()
         )
+
+    def _check_and_get_roleids(self, request):
+        tenantadmin_roleid = None
+        default_roleid = None
+        
+        TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
+        DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
+        
+        for role in keystone_api.role_list(request):
+            if role.name == TENANTADMIN_ROLE:
+                tenantadmin_roleid = role.id
+            elif role.name == DEFAULT_ROLE:
+                default_roleid = role.id
+        
+        if not tenantadmin_roleid:
+            #
+            # Creation of project-manager role if necessary
+            #
+            tenantadmin_roleid = keystone_api.role_create(request, TENANTADMIN_ROLE)
+            if not tenantadmin_roleid:
+                raise Exception("Cannot retrieve tenant admin role id")
+        
+        if not default_roleid:
+            raise Exception("Cannot retrieve default role id")
+        
+        return (tenantadmin_roleid, default_roleid)
 
     def _generate_pwd(self):
         if crypto_version.startswith('2.0'):
@@ -338,23 +341,23 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 else:
                     email = self._retrieve_email(request, registration.userid)
                 
-                if not data['role_id']:
-                    raise Exception(_("Cannot process request: missing role"))
+                tenantadmin_roleid, default_roleid = self._check_and_get_roleids(request)
                 
                 prj_infos = list()
-    
+
+                #
+                # Use default member role for approved subscriptions
+                # Use tenant admin role for new created projects
+                #
                 for prj_req in prjs_approved:
                     keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
-                                                    registration.userid, data['role_id'])
+                                                    registration.userid, default_roleid)
                     prj_infos.append(ProjectResultInfo(prj_req.project.projectname, 'a'))
                     
                 for prj_req in prjs_to_create:
                     keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
-                                                    registration.userid, data['role_id'])
+                                                    registration.userid, tenantadmin_roleid)
 
-                    if self.prjman_roleid and self.prjman_roleid <> data['role_id']:
-                        keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
-                                                    registration.userid, self.prjman_roleid)
                     prj_infos.append(ProjectResultInfo(prj_req.project.projectname, 'c'))
                     
                 for prj_req in prjs_rejected:
