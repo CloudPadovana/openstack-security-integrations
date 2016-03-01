@@ -38,7 +38,7 @@ class ExtUserItem:
         self.id = usr_data.id
         self.name = usr_data.name
         self.enabled = usr_data.enabled
-        self.email = usr_data.email
+        self.email = getattr(usr_data, 'email', None)
         self.expiration = None
     
     def __cmp__(self, other):
