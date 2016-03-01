@@ -17,7 +17,10 @@ import base64
 import json
 
 from oslo_log import log
-from oslo.config import cfg
+try:
+    from oslo.config import cfg
+except:
+    from oslo_config import cfg
 
 from keystone.auth import AuthMethodHandler
 from keystone.common import dependency
