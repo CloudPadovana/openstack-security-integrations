@@ -108,15 +108,14 @@ def load_templates():
 def notify(recpt, subject, body):
     
     sender = settings.SERVER_EMAIL
+    if not recpt:
+        LOG.error('Missing recipients')
+        return
     if type(recpt) is ListType:
         recipients = recpt
     else:
         recipients = [ str(recpt) ]
     
-    if len(recipients) == 0:
-        LOG.error('Missing recipients')
-        return
-        
     try:
         send_mail(subject, body, sender, recipients)
         LOG.debug("Sending %s - %s - to %s" % (subject, body, str(recipients)))

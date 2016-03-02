@@ -167,10 +167,10 @@ class ProcessRegForm(forms.SelfHandlingForm):
     def _retrieve_email(self, request, uid):
         try:
             tmpusr = keystone_api.user_get(request, uid)
-            return [ tmpusr.email ]
+            return tmpusr.email
         except:
             LOG.error("Cannot retrieve email", exc_info=True)
-        return []
+        return None
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -199,7 +199,19 @@ class ProcessRegForm(forms.SelfHandlingForm):
             userReqList = RegRequest.objects.filter(registration=registration)
                 
             prjReqList = PrjRequest.objects.filter(registration=registration)
-                
+            
+            #
+            # get email first from registration request
+            # and then from keystone (user must be already registered)
+            #
+            email = None
+            for tmpReq in userReqList:
+                if not email:
+                    email = tmpReq.email
+            
+            if not email:
+                email = self._retrieve_email(request, registration.userid)
+                    
             if flowstatus == RSTATUS_PENDING or flowstatus == RSTATUS_NOFLOW:
                 #
                 # User renaming
@@ -228,11 +240,6 @@ class ProcessRegForm(forms.SelfHandlingForm):
                 }
                 prjReqList.filter(**q_args).update(flowstatus=PSTATUS_PENDING)
                 
-                email = None
-                for tmpReq in userReqList:
-                    if not email:
-                        email = tmpReq.email
-                    
                 q_args['flowstatus'] = PSTATUS_PENDING
                 for p_item in prjReqList.filter(**q_args):
                 
@@ -256,7 +263,6 @@ class ProcessRegForm(forms.SelfHandlingForm):
                     
             if flowstatus == RSTATUS_CHECKED or flowstatus == RSTATUS_NOFLOW:
                 main_tenant = None
-                email = None
                 password = None
                 first_registr = False
                 
@@ -272,8 +278,6 @@ class ProcessRegForm(forms.SelfHandlingForm):
                                         registration=tmpReq.registration)
                         mapping.save()
                         
-                    if not email:
-                        email = tmpReq.email
                     if not password:
                         password = tmpReq.password
                     
@@ -338,9 +342,6 @@ class ProcessRegForm(forms.SelfHandlingForm):
                     registration.save()
                     first_registr = True
                     
-                else:
-                    email = self._retrieve_email(request, registration.userid)
-                
                 tenantadmin_roleid, default_roleid = self._check_and_get_roleids(request)
                 
                 prj_infos = list()
