@@ -26,6 +26,13 @@ from horizon.utils import functions as utils
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
+from openstack_auth_shib.notifications import notification_render
+from openstack_auth_shib.notifications import notify as notifyUsers
+from openstack_auth_shib.notifications import notifyManagers
+from openstack_auth_shib.notifications import MEMBER_REMOVED
+from openstack_auth_shib.notifications import MEMBER_REMOVED_ADM
+from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
+
 LOG = logging.getLogger(__name__)
 TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', '')
@@ -43,6 +50,7 @@ class DeleteMemberAction(tables.DeleteAction):
             
             roles_obj = client_factory(request).roles
             role_assign_obj = client_factory(request).role_assignments
+            users_obj = client_factory(request).users
             
             arg_dict = {
                 'project' : request.user.tenant_id,
@@ -50,6 +58,18 @@ class DeleteMemberAction(tables.DeleteAction):
             }
             for r_item in role_assign_obj.list(**arg_dict):
                 roles_obj.revoke(r_item.role['id'], **arg_dict)
+            
+            member = users_obj.get(obj_id)
+            noti_params = {
+                'username' : member.name,
+                'admin_address' : users_obj.get(request.user.id).email,
+                'project' : request.user.tenant_name
+            }
+            noti_sbj, noti_body = notification_render(MEMBER_REMOVED, noti_params)
+            notifyUsers(member.email, noti_sbj, noti_body)
+            
+            noti_sbj, noti_body = notification_render(MEMBER_REMOVED_ADM, noti_params)
+            notifyManagers(noti_sbj, noti_body)
             
         except:
             LOG.error("Grant revoke error", exc_info=True)
@@ -76,6 +96,9 @@ class ToggleRoleAction(tables.Action):
                 'project' : request.user.tenant_id,
                 'user' : obj_id
             }
+            
+            users_obj = client_factory(request).users
+            member = users_obj.get(obj_id)
                         
             datum = data_table.get_object_by_id(obj_id)
             if datum.is_t_admin:
@@ -90,8 +113,27 @@ class ToggleRoleAction(tables.Action):
                         raise Exception('Cannot swith to member role')
                         
                 roles_obj.revoke(t_role_id, **arg_dict)
+                
+                noti_params = {
+                    'admin_address' : users_obj.get(request.user.id).email,
+                    'project' : request.user.tenant_name,
+                    's_role' : _('Project manager'),
+                    'd_role' : _('Project user')
+                }
+                noti_sbj, noti_body = notification_render(CHANGED_MEMBER_ROLE, noti_params)
+                notifyUsers(member.email, noti_sbj, noti_body)
+            
             else:
                 roles_obj.grant(t_role_id, **arg_dict)
+
+                noti_params = {
+                    'admin_address' : users_obj.get(request.user.id).email,
+                    'project' : request.user.tenant_name,
+                    's_role' : _('Project user'),
+                    'd_role' : _('Project manager')
+                }
+                noti_sbj, noti_body = notification_render(CHANGED_MEMBER_ROLE, noti_params)
+                notifyUsers(member.email, noti_sbj, noti_body)
 
         except:
             LOG.error("Toggle role error", exc_info=True)
@@ -107,9 +149,9 @@ class ToggleRoleAction(tables.Action):
 
 def get_role(data):
     if data.is_t_admin:
-        return _('Admin')
+        return _('Project manager')
     else:
-        return _('User')
+        return _('Project user')
 
 class MemberTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))

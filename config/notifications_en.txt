@@ -103,12 +103,35 @@ body: Your subscription to {{ project }} is now under evaluation.
 
 [subscription_reminder]
 subject: Subscription reminder
-body: You have the following pending subscriptions for project {{ project}}:
+body: You have the following pending subscriptions for project {{ project }}:
   {% for req in pendingreqs %}
-  {{ req.0 }} ({{ req.1}})
+  {{ req.0 }} ({{ req.1 }})
   {% endfor %} 
   
   Please, don't reply to this message
+
+[member_removed]
+subject: User removed from {{ project }}
+body: Your account has been removed from the project {{ project }}
+  For further information please contact {{ admin_address }}
+  
+  Please, don't reply to this message
+
+[member_removed_for_admin]
+subject: User {{ username }} removed from {{ project }}
+body: User {{ username }} has been removed from the project {{ project }}
+  For further information please contact {{ admin_address }}
+  
+  Please, don't reply to this message
+
+
+[changed_member_priv]
+subject: Your privileges for project {{ project }} have been changed
+body: Your role for project {{ project }} has been changed from {{ s_role }} to {{ d_role }}
+  For further information please contact {{ admin_address }}
+  
+  Please, don't reply to this message
+
 
 
 

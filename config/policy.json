@@ -5,7 +5,6 @@
 
     "prjman_role": [["role:project_manager", "project_id:%(project_id)s"]],
     "prjman2_role" : [["role:project_manager", "project_id:%(scope.project.id)s"]],
-    "prjman3_role" : [["role:project_manager", "project_id:%(target.user.default_project_id)s"]],
 
     "owner" : "user_id:%(user_id)s",
     "admin_or_owner": "rule:admin_required or rule:owner",
@@ -43,8 +42,8 @@
     "identity:update_project": "rule:admin_required",
     "identity:delete_project": "rule:admin_required",
 
-    "identity:get_user": "rule:admin_or_owner or rule:prjman3_role",
-    "identity:list_users": "rule:admin_required or role:project_manager",
+    "identity:get_user": "rule:admin_or_owner or role:project_manager",
+    "identity:list_users": "rule:admin_required",
     "identity:create_user": "rule:admin_required",
     "identity:update_user": "rule:admin_or_owner",
     "identity:delete_user": "rule:admin_required",
