@@ -189,6 +189,7 @@ INSTALLED_APPS = [                                                            #R
     'openstack_dashboard.django_pyscss_fix',                                  #RPM-Trigger: do not edit this line
     'compressor',                                                             #RPM-Trigger: do not edit this line
     'horizon',                                                                #RPM-Trigger: do not edit this line
+    'openstack_auth',                                                         #RPM-Trigger: do not edit this line
     'openstack_auth_shib',                                                    #RPM-Trigger: do not edit this line
 ]                                                                             #RPM-Trigger: do not edit this line
 " >> /etc/openstack-dashboard/local_settings
