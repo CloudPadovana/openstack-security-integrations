@@ -15,6 +15,7 @@
 
 import logging
 
+from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import exceptions
@@ -97,5 +98,14 @@ class ProjectUsageView(baseViews.ProjectUsageView):
     template_name = 'idmanager/project_manager/usage.html'
 
 class DetailProjectView(baseViews.DetailProjectView):
-    pass
+    template_name = 'idmanager/project_manager/detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(baseViews.DetailProjectView, self).get_context_data(**kwargs)
+        project = self.get_data()
+        table = ProjectsTable(self.request)
+        context["project"] = project
+        context["url"] = reverse("horizon:idmanager:project_manager:index")
+        context["actions"] = table.render_row_actions(project)
+        return context
 

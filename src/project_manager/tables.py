@@ -36,6 +36,12 @@ LOG = logging.getLogger(__name__)
 class UpdateMembersLink(baseTables.UpdateMembersLink):
     url = "horizon:idmanager:project_manager:update"
 
+    def get_link_url(self, project):
+        step = 'update_members'
+        base_url = reverse(self.url, args=[project.id])
+        param = urlencode({"step": step})
+        return "?".join([base_url, param])
+
 class UpdateGroupsLink(baseTables.UpdateGroupsLink):
     url = "horizon:idmanager:project_manager:update"
     
