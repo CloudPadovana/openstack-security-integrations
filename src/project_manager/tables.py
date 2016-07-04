@@ -25,6 +25,7 @@ from horizon import tables
 from horizon import forms
 from horizon import messages
 
+from openstack_dashboard import policy
 from openstack_dashboard.dashboards.identity.projects import tables as baseTables
 
 from openstack_auth_shib.models import Project
@@ -106,6 +107,13 @@ def get_prj_status(data):
 
 class ProjectsTable(baseTables.TenantsTable):
     status = tables.Column(get_prj_status, verbose_name=_('Status'), status=True)
+
+    def get_project_detail_link(self, project):
+        if policy.check((("identity", "identity:get_project"),),
+                        self.request, target={"project": project}):
+            return reverse("horizon:idmanager:project_manager:detail",
+                           args=(project.id,))
+        return None
 
     class Meta:
         name = "projects"

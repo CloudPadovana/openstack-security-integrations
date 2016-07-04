@@ -31,6 +31,7 @@ from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.utils import import_guest_project
 
 LOG = logging.getLogger(__name__)
+baseViews.INDEX_URL = "horizon:idmanager:project_manager:index"
 
 class ExtPrjItem:
     def __init__(self, prj_data):
@@ -95,5 +96,6 @@ class CreateProjectView(baseViews.CreateProjectView):
 class ProjectUsageView(baseViews.ProjectUsageView):
     template_name = 'idmanager/project_manager/usage.html'
 
-
+class DetailProjectView(baseViews.DetailProjectView):
+    pass
 

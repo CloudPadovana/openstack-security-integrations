@@ -23,6 +23,7 @@ from horizon import forms
 from horizon import workflows
 
 from openstack_dashboard.dashboards.identity.projects.workflows import *
+from openstack_dashboard.dashboards.identity.projects import workflows as baseWorkflows
 
 from openstack_auth_shib.models import Project, PrjRequest
 from openstack_auth_shib.models import PRJ_PUBLIC, PRJ_GUEST
@@ -31,8 +32,8 @@ from openstack_auth_shib.utils import get_admin_roleid, get_project_managers
 from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
-
-
+baseWorkflows.INDEX_URL = "horizon:idmanager:project_manager:index"
+baseWorkflows.ADD_USER_URL = "horizon:idmanager:project_manager:create_user"
 
 class ExtCreateProjectInfoAction(CreateProjectInfoAction):
 
