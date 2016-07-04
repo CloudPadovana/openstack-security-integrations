@@ -22,6 +22,7 @@ from openstack_dashboard.dashboards.idmanager import dashboard
 class ProjectRequests(horizon.Panel):
     name = _("Request for projects")
     slug = 'project_requests'
+    nav = False
 
 dashboard.IdentityManager.register(ProjectRequests)
 
