@@ -29,7 +29,7 @@ TENANTADMIN_ROLEID = None
 def get_admin_roleid(request):
     global TENANTADMIN_ROLEID
     if TENANTADMIN_ROLEID == None:
-        for role in keystone_api.role_list(request):
+        for role in keystone_api.keystoneclient(request).roles.list():
             if role.name == TENANTADMIN_ROLE:
                 TENANTADMIN_ROLEID = role.id
     return TENANTADMIN_ROLEID
