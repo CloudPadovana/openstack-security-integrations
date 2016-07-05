@@ -18,7 +18,6 @@ from django.utils.translation import ugettext_lazy as _
 
 import horizon
 
-from openstack_dashboard.dashboards.idmanager import dashboard
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
 class SubscriptionManager(horizon.Panel):
@@ -26,4 +25,3 @@ class SubscriptionManager(horizon.Panel):
     slug = 'subscription_manager'
     permissions = ('openstack.roles.%s' % TENANTADMIN_ROLE,)
 
-dashboard.IdentityManager.register(SubscriptionManager)

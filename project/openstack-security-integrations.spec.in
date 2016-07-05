@@ -67,10 +67,7 @@ cp %{buildroot}/usr/share/openstack-auth-shib/templates/notifications_*.txt \
    %{buildroot}/etc/openstack-auth-shib/notifications
 
 mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/enabled
-mv %{buildroot}/%{python_sitelib}/dashboard_conf/_10_identity.py* \
-   %{buildroot}/%{python_sitelib}/dashboard_conf/_25_changepwd.py* \
-   %{buildroot}/%{python_sitelib}/dashboard_conf/_25_idmanager.py* \
-   %{buildroot}/%{python_sitelib}/dashboard_conf/_30_pwdmanager.py* \
+mv %{buildroot}/%{python_sitelib}/dashboard_conf/_*.py* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/enabled
    
 rm -rf %{buildroot}/%{python_sitelib}/dashboard_conf

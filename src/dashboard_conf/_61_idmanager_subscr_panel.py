@@ -13,15 +13,11 @@
 #  License for the specific language governing permissions and limitations
 #  under the License. 
 
-from django.utils.translation import ugettext_lazy as _
+PANEL = 'subscription_manager'
 
-import horizon
+PANEL_DASHBOARD = 'idmanager'
 
-from openstack_auth_shib.utils import TENANTADMIN_ROLE
+PANEL_GROUP = 'default'
 
-class MemberManager(horizon.Panel):
-    name = _("Project Members")
-    slug = 'member_manager'
-    permissions = ('openstack.roles.%s' % TENANTADMIN_ROLE,)
-
+ADD_PANEL = 'openstack_dashboard.dashboards.idmanager.subscription_manager.panel.SubscriptionManager'
 

@@ -17,12 +17,9 @@ from django.utils.translation import ugettext_lazy as _
 
 import horizon
 
-from openstack_dashboard.dashboards.idmanager import dashboard
-
 class UserManager(horizon.Panel):
     name = _("Users")
     slug = 'user_manager'
     policy_rules = (("identity", "identity:get_user"),
                     ("identity", "identity:list_users"))
 
-dashboard.IdentityManager.register(UserManager)

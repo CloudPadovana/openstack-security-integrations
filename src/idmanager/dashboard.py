@@ -21,12 +21,6 @@ class IdentityManager(horizon.Dashboard):
     name = _("Identity")
     slug = "idmanager"
     default_panel = 'project_manager'
-    panels = ('project_manager', 
-              'user_manager',
-              'registration_manager',
-              'member_manager',
-              'subscription_manager',
-              'project_requests',)
 
 horizon.register(IdentityManager)
 
