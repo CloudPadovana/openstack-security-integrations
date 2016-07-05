@@ -17,6 +17,7 @@ import logging
 
 from django.conf import settings
 from django.db import transaction
+import horizon
 from openstack_dashboard.api import keystone as keystone_api
 
 from .models import Project, PRJ_GUEST
@@ -86,4 +87,16 @@ def import_guest_project():
         LOG.error("Failed guest auto-import", exc_info=True)
 
 
+def get_user_home(user):
+    dashboard = None
+    if user.is_superuser:
+        try:
+            dashboard = horizon.get_dashboard('admin')
+        except horizon.base.NotRegistered:
+            pass
+
+    if dashboard is None:
+        dashboard = horizon.get_default_dashboard()
+
+    return dashboard.get_absolute_url()
 

@@ -168,6 +168,7 @@ if [ ! $1 == 2 ]; then
     # Register new middleware
     #
     printf "
+HORIZON_CONFIG['user_home'] = 'openstack_auth_shib.utils.get_user_home'       #RPM-Trigger: do not edit this line
 AUTHENTICATION_PLUGINS = [                                                    #RPM-Trigger: do not edit this line
     'openstack_auth_shib.backend.SKeyPluginFactory',                          #RPM-Trigger: do not edit this line
     'openstack_auth.plugin.password.PasswordPlugin',                          #RPM-Trigger: do not edit this line
