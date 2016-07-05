@@ -33,11 +33,11 @@ from openstack_auth_shib.models import PSTATUS_REJ
 from openstack_auth_shib.notifications import notification_render
 from openstack_auth_shib.notifications import notifyManagers
 from openstack_auth_shib.notifications import SUBSCR_CHKD_TYPE
+from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
 from django.utils.translation import ugettext as _
 
 LOG = logging.getLogger(__name__)
-TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 
 class ApproveSubscrForm(forms.SelfHandlingForm):
 

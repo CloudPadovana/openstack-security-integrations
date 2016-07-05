@@ -63,6 +63,7 @@ from openstack_auth_shib.models import RSTATUS_NOFLOW
 
 from openstack_auth_shib.models import OS_LNAME_LEN
 from openstack_auth_shib.utils import get_project_managers
+from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -127,7 +128,6 @@ class ProcessRegForm(forms.SelfHandlingForm):
         tenantadmin_roleid = None
         default_roleid = None
         
-        TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
         DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
         
         for role in keystone_api.role_list(request):

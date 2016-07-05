@@ -25,12 +25,12 @@ from horizon import forms
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 from openstack_auth_shib.models import Registration
+from openstack_auth_shib.utils import TENANTADMIN_ROLE
+from openstack_auth_shib.utils import get_admin_roleid
 
 from .tables import MemberTable
 
 LOG = logging.getLogger(__name__)
-
-TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 
 class MemberItem():
 
@@ -54,7 +54,7 @@ class IndexView(tables.DataTableView):
             t_role_id = ''
             for role in self.request.user.roles:
                 if role['name'] == TENANTADMIN_ROLE:
-                    t_role_id = role['id']
+                    t_role_id = get_admin_roleid(self.request)
         
             role_assign_obj = client_factory(self.request).role_assignments
             member_id_dict = dict()

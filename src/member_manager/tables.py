@@ -32,9 +32,9 @@ from openstack_auth_shib.notifications import notifyManagers
 from openstack_auth_shib.notifications import MEMBER_REMOVED
 from openstack_auth_shib.notifications import MEMBER_REMOVED_ADM
 from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
+from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
 LOG = logging.getLogger(__name__)
-TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', '')
 
 class DeleteMemberAction(tables.DeleteAction):
