@@ -35,6 +35,9 @@ LOG = logging.getLogger(__name__)
 class EditUserLink(baseTables.EditUserLink):
     url = "horizon:idmanager:user_manager:update"
 
+class ChangePasswordLink(baseTables.ChangePasswordLink):
+    url = "horizon:idmanager:user_manager:change_password"
+    
 class DeleteUsersAction(baseTables.DeleteUsersAction):
 
     def delete(self, request, obj_id):
@@ -85,6 +88,7 @@ class UsersTable(baseTables.UsersTable):
         verbose_name = _("Users")
         row_actions = (
             EditUserLink,
+            ChangePasswordLink,
             baseTables.ToggleEnabled,
             RenewLink,
             DeleteUsersAction

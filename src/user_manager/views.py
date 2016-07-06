@@ -21,6 +21,7 @@ from django.core.urlresolvers import reverse_lazy
 
 from horizon import forms
 from horizon import exceptions
+from horizon.utils import memoized
 
 from openstack_dashboard.dashboards.identity.users import views as baseViews
 
@@ -109,4 +110,25 @@ class DetailView(baseViews.DetailView):
     def get_redirect_url(self):
         return reverse_lazy('horizon:idmanager:user_manager:index')
 
+    def get_context_data(self, **kwargs):
+        context = super(DetailView, self).get_context_data(**kwargs)
+        table = UsersTable(self.request)
+        context["actions"] = table.render_row_actions(self.get_data())
+        return context
+
+class ChangePasswordView(baseViews.ChangePasswordView):
+    template_name = 'idmanager/user_manager/change_password.html'
+    submit_url = 'horizon:idmanager:user_manager:change_password'
+    success_url = reverse_lazy('horizon:idmanager:user_manager:index')
+
+    @memoized.memoized_method
+    def get_object(self):
+        try:
+            return api.keystone.user_get(self.request, self.kwargs['user_id'],
+                                         admin=True)
+        except Exception:
+            redirect = reverse_lazy("horizon:idmanager:user_manager:index")
+            exceptions.handle(self.request,
+                              _('Unable to retrieve user information.'),
+                              redirect=redirect)
 
