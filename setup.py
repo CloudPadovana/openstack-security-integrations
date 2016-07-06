@@ -174,7 +174,7 @@ setup(
       package_dir = {'': 'src'},
       data_files=[
                   (templates_dir, template_list),
-                  (templates_dir + '/auth', ['src/templates/_login.html']),
+                  (templates_dir + '/auth', ['src/templates/_login_page.html']),
                   (templates_dir + '/aup', ['src/templates/aup-cap.html','src/templates/aup-cedc.html']),
                   (scss_dir, ['src/templates/aai_infn_integrations.less']),
                   (reg_panel_dir, reg_templ_list),

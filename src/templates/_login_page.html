@@ -1,0 +1,138 @@
+{% extends 'auth/_login_form.html' %}
+
+{% comment %}
+  Copyright (c) 2014 INFN - "Istituto Nazionale di Fisica Nucleare" - Italy
+  All Rights Reserved.
+
+  Licensed under the Apache License, Version 2.0 (the "License"); you may
+  not use this file except in compliance with the License. You may obtain
+  a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  License for the specific language governing permissions and limitations
+  under the License. 
+{% endcomment %}
+
+{% load i18n %}
+
+{% block pre_login %}
+  <div class="container login">
+    <div class="row">
+      <div class="col-xs-11 col-sm-8 col-md-6 col-lg-5 horizontal-center">
+        {{ block.super }}
+{% endblock %}
+
+{% block login_header %}
+  <div class="text-center">
+    <img class="splash-logo" src="/dashboard/static/dashboard/img/logo-splash.png" %}>
+  </div>
+{% endblock %}
+
+{% block login_body %}
+  {% comment %}
+    These fake fields are required to prevent Chrome v34+ from autofilling form.
+  {% endcomment %}
+  {% if HORIZON_CONFIG.password_autocomplete != "on" %}
+    <div class="fake_credentials" style="display: none">
+      <input type="text" name="fake_email" value="" />
+      <input type="password" name="fake_password" value="" />
+    </div>
+  {%endif%}
+  
+  {% include "auth/_description.html" %}
+  <fieldset hz-login-finder>
+  
+    {% if request.user.is_authenticated and 'next' in request.GET %}
+      <div class="form-group clearfix error help-block alert alert-danger">
+        <p>{% trans "You do not have permission to access the resource:" %}</p>
+        <p><strong>{{ request.GET.next }}</strong></p>
+        <p>
+          {% url 'horizon:user_home' as home_url %}
+          {% blocktrans %}Login as different user or go back to <a href="{{ home_url }}">home page</a>{% endblocktrans %}
+        </p>
+      </div>
+    {% endif  %}
+    
+    {% if request.COOKIES.logout_reason %}
+      <div class="form-group clearfix error help-block alert alert-danger" id="logout_reason">
+        <p>{{ request.COOKIES.logout_reason }}</p>
+      </div>
+    {% endif %}
+    
+    {% if next %}
+      <input type="hidden" name="{{ redirect_field_name }}" value="{{ next }}" />
+    {% endif %}
+    
+    <div id="idpbtndiv" class="text-center" style="display: block;">
+      <button type="button" onclick="showLoginForm()">
+        <img align="middle" height="80px" width="80px" alt="Local login" 
+             src="/dashboard/static/dashboard/img/logoUsrPwd.png"/>
+      </button>
+      <button type="button" onclick="location.href='/dashboard-shib/auth/login/';">
+        <img align="middle" height="80px" width="80px" alt="Login Infn AAI" 
+             src="/dashboard/static/dashboard/img/logoInfnAAI.png">
+      </button>
+      {% if HORIZON_CONFIG.identity_providers %}
+      {% for idpdata in HORIZON_CONFIG.identity_providers %}
+      {# For definition of idpdata see openstack_auth_shib.idpmanager #}
+        {% if not idpdata.type == 'experimental' or 'INFN-testing' in request.META.HTTP_USER_AGENT %}
+        <button type="button" onclick="location.href='{{ idpdata.path }}';">
+           <img align="middle" height="80px" width="80px" 
+                alt="Login {{ idpdata.description }}" 
+                src="{{ idpdata.logo }}"/>
+        </button>
+        {% endif %}
+      {% endfor %}
+      {% endif %}
+    </div>
+
+    <div id="fieldsdiv" style="display: none;">
+      {% include "horizon/common/_form_fields.html" %}
+    </div>
+  </fieldset>
+{% endblock %}
+
+{% block login_footer %}
+  <div id="cmdbtndiv" style="display: none;">
+    <button type="submit" class="btn btn-primary pull-right">{% trans "Sign In" %}</button>
+    <button type="button" 
+            onclick="location.href='/dashboard/auth/register/'"
+            class="btn btn-primary pull-right">{% trans "Register" %}</button>
+    <button type="button" 
+            onclick="showIDPs()"
+            class="btn btn-primary pull-right">{% trans "Close" %}</button>
+    <div class="clearfix"></div>
+  </div>
+  <div>
+    <a target="_new" href="{{ HORIZON_CONFIG.help_url }}">
+      <img class="btn" src="/dashboard/static/dashboard/img/help-transparent.png"/>
+      <label>{% trans "Read the User Guide" %}</label>
+    </a>
+  </div>
+{% endblock %}
+
+{% block post_login %}
+      {{ block.super }}
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    function showIDPs() {
+        document.getElementById('idpbtndiv').style.display='block';
+        document.getElementById('fieldsdiv').style.display='none';
+        document.getElementById('cmdbtndiv').style.display='none';
+    }
+    
+    function showLoginForm() {
+        document.getElementById('idpbtndiv').style.display='none';
+        document.getElementById('fieldsdiv').style.display='block';
+        document.getElementById('cmdbtndiv').style.display='block';
+    }
+  </script>
+{% endblock %}
+
