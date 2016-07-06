@@ -200,12 +200,6 @@ INSTALLED_APPS = [                                                            #R
     fi
     ln -sf /usr/share/openstack-auth-shib/attribute-map.xml /etc/shibboleth/attribute-map.xml
 
-    #
-    # Replace references in base templates
-    #
-    sed -i -e 's|horizon:identity:projects|horizon:idmanager:project_manager|g' \
-        /usr/share/openstack-dashboard/openstack_dashboard/templates/_header.html
-    
 fi
 
 %triggerun -n openstack-auth-shib -- openstack-dashboard
@@ -213,9 +207,6 @@ if [ $1 == 0 -o $2 == 0 ] ; then
 
     sed -i -e '/RPM-Trigger/d' /etc/openstack-dashboard/local_settings
 
-    sed -i -e 's|horizon:idmanager:project_manager|horizon:identity:projects|g' \
-        /usr/share/openstack-dashboard/openstack_dashboard/templates/_header.html
-    
     if [ -e /etc/shibboleth/attribute-map.xml.dist ] ; then
         cp -f /etc/shibboleth/attribute-map.xml.dist /etc/shibboleth/attribute-map.xml
     fi
