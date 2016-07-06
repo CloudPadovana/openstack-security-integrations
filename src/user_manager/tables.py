@@ -15,6 +15,7 @@
 
 import logging
 
+from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.utils.translation import ugettext as _
 
@@ -68,6 +69,17 @@ class UsersTable(baseTables.UsersTable):
 
     expiration = tables.Column('expiration', verbose_name=_('Expiration date'))
 
+    # patch for user detail
+    def __init__(self, request, data=None, needs_form_wrapper=None, **kwargs):
+        super(UsersTable, self).__init__(request, data=data,
+                                         needs_form_wrapper=needs_form_wrapper, **kwargs)
+        
+        self.columns['name'].get_link_url = self._get_detail_link
+
+    def _get_detail_link(self, user):
+        return reverse("horizon:idmanager:user_manager:detail", args=(user.id,))
+    # end of patch
+    
     class Meta:
         name = "user_table"
         verbose_name = _("Users")

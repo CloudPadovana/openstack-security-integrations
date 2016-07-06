@@ -107,6 +107,6 @@ class DetailView(baseViews.DetailView):
     template_name = 'idmanager/user_manager/detail.html'
 
     def get_redirect_url(self):
-        return reverse('horizon:idmanager:user_manager:index')
+        return reverse_lazy('horizon:idmanager:user_manager:index')
 
 

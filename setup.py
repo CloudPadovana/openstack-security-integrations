@@ -91,6 +91,8 @@ member_templ_list = [
 ]
 
 usr_templ_list = [
+    'src/templates/user_manager/_detail_overview.html',
+    'src/user_manager/views.py',
     'src/templates/user_manager/index.html',
     'src/templates/user_manager/renewexp.html',
     'src/templates/user_manager/_renewexp.html',
