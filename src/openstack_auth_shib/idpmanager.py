@@ -15,6 +15,9 @@
 
 import logging
 import urllib
+import glob
+import json
+import os.path
 
 from django.conf import settings
 
@@ -111,28 +114,46 @@ class Google_IdP:
 
 
 def get_idp_list(excl_list=list()):
+    #
+    # TODO check if item is well-formed, see _login.html
+    # Accepted keys:
+    # id: IdP id (infn.it, unipd.it, etc)
+    # path: URL path prefix (/dashboard-shib, /dashboard-google, etc.)
+    # description: IdP short description
+    # logo: URL path for the logo (/static/dashboard/img/logoInfnAAI.png)
+    #
 
     result = list()
     
-    idp_list = settings.HORIZON_CONFIG.get('identity_providers', [])
+    providers_dir = settings.HORIZON_CONFIG.get('providers_directory', '/etc/openstack-auth-shib/idp-conf.d')
+    idp_list = settings.HORIZON_CONFIG.get('identity_providers', None)
 
-    for idp_data in idp_list:
-        #
-        # TODO check if item is well-formed, see _login.html
-        # Accepted keys:
-        # id: IdP id (infn.it, unipd.it, etc)
-        # path: URL path prefix (/dashboard-shib, /dashboard-google, etc.)
-        # description: IdP short description
-        # logo: URL path for the logo (/static/dashboard/img/logoInfnAAI.png)
-        #
-        if not idp_data['id'] in excl_list:
-            resume_url = '%s/project/idp_requests/resume/' % idp_data['path']
-            idp_data['resume_query'] = urllib.urlencode({'url' : resume_url})
-            result.append(idp_data)
+    if idp_list:
+        # old mechanism: providers in local-settings
+        for idp_data in idp_list:
+            if not idp_data['id'] in excl_list:
+                resume_url = '%s/project/idp_requests/resume/' % idp_data['path']
+                idp_data['resume_query'] = urllib.urlencode({'url' : resume_url})
+                result.append(idp_data)
+
+    elif os.path.isdir(providers_dir):
+        # new mechanism: provider data in json file
+        for jfilename in glob.glob(providers_dir + '/*.json'):
+            jdatafile = None
+            try:
+                jdatafile = open(jfilename)
+                idp_data = json.load(jdatafile)
+                
+                if not idp_data['id'] in excl_list:
+                    resume_url = '%s/project/idp_requests/resume/' % idp_data['path']
+                    idp_data['resume_query'] = urllib.urlencode({'url' : resume_url})
+                    result.append(idp_data)
+                
+            except:
+                if jdatafile:
+                    jdatafile.close()
 
     return result
-
-
 
 
 
