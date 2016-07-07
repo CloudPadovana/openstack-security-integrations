@@ -67,7 +67,12 @@
       <input type="hidden" name="{{ redirect_field_name }}" value="{{ next }}" />
     {% endif %}
     
-    <div id="idpbtndiv" class="text-center" style="display: block;">
+    <div id="idpbtndiv" class="text-center"
+      {% if form.warnings or form.non_field_errors %}
+         style="display: none;">
+      {% else %}
+         style="display: block;">
+      {% endif %}
       <button type="button" onclick="showLoginForm()">
         <img align="middle" height="80px" width="80px" alt="Local login" 
              src="/dashboard/static/dashboard/img/logoUsrPwd.png"/>
@@ -90,21 +95,31 @@
       {% endif %}
     </div>
 
-    <div id="fieldsdiv" style="display: none;">
+    <div id="fieldsdiv" 
+      {% if form.warnings or form.non_field_errors %}
+         style="display: block;">
+      {% else %}
+         style="display: none;">
+      {% endif %}
       {% include "horizon/common/_form_fields.html" %}
     </div>
   </fieldset>
 {% endblock %}
 
 {% block login_footer %}
-  <div id="cmdbtndiv" style="display: none;">
+  <div id="cmdbtndiv"
+    {% if form.warnings or form.non_field_errors %}
+       style="display: block;">
+    {% else %}
+       style="display: none;">
+    {% endif %}
     <button type="submit" class="btn btn-primary pull-right">{% trans "Sign In" %}</button>
     <button type="button" 
             onclick="location.href='/dashboard/auth/register/'"
             class="btn btn-primary pull-right">{% trans "Register" %}</button>
     <button type="button" 
             onclick="showIDPs()"
-            class="btn btn-primary pull-right">{% trans "Close" %}</button>
+            class="btn btn-primary pull-right">{% trans "Back" %}</button>
     <div class="clearfix"></div>
   </div>
   <div>
