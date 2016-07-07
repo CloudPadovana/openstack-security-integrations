@@ -52,6 +52,7 @@ from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST, PSTATUS_APPR
 from .forms import MixRegistForm
 from .notifications import notifyManagers, notification_render, REGISTR_AVAIL_TYPE
 from .idpmanager import get_manager
+from .utils import get_user_home
 
 LOG = logging.getLogger(__name__)
 
@@ -116,7 +117,7 @@ def login(request):
                 request.session['region_name'] = region_name
                 request.session['global_user'] = attributes.username
             
-            return shortcuts.redirect( '%s/project' % attributes.root_url)
+            return shortcuts.redirect(get_user_home(user))
             
     except (UserMapping.DoesNotExist, keystone_exceptions.NotFound):
 
@@ -166,10 +167,12 @@ def logout(request):
 
 @login_required
 def switch(request, tenant_id, redirect_field_name=REDIRECT_FIELD_NAME):
-    return basic_switch(request, tenant_id, redirect_field_name)
+    # workaround for switch redirect: don't user the redirect field name
+    return basic_switch(request, tenant_id, '')
 
 def switch_region(request, region_name, redirect_field_name=REDIRECT_FIELD_NAME):
-    return basic_switch_region(request, region_name, redirect_field_name)
+    # workaround for switch redirect: don't user the redirect field name
+    return basic_switch_region(request, region_name, '')
 
 
 def _register(request, attributes):

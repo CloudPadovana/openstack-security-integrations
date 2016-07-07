@@ -20,7 +20,10 @@ from django.db import transaction
 import horizon
 from openstack_dashboard.api import keystone as keystone_api
 
-from .models import Project, PRJ_GUEST
+from .models import Project
+from .models import PrjRequest
+from .models import PRJ_GUEST
+from .models import PSTATUS_PENDING
 
 LOG = logging.getLogger(__name__)
 
@@ -88,15 +91,24 @@ def import_guest_project():
 
 
 def get_user_home(user):
-    dashboard = None
-    if user.is_superuser:
-        try:
-            dashboard = horizon.get_dashboard('admin')
-        except horizon.base.NotRegistered:
-            pass
 
-    if dashboard is None:
-        dashboard = horizon.get_default_dashboard()
+    try:
 
-    return dashboard.get_absolute_url()
+        if user.is_superuser:
+            return horizon.get_dashboard('admin').get_absolute_url()
+
+        if user.has_perms(('openstack.roles.' + TENANTADMIN_ROLE,)):
+        
+            q_args = {
+                'project__projectname' : user.tenant_name,
+                'flowstatus' : PSTATUS_PENDING
+            }
+            if PrjRequest.objects.filter(**q_args).count() > 0:
+                idmanager_url = horizon.get_dashboard('idmanager').get_absolute_url()
+                return idmanager_url + 'subscription_manager/'
+
+    except horizon.base.NotRegistered:
+        LOG.error("Cannot retrieve user home", exc_info=True)
+
+    return horizon.get_default_dashboard().get_absolute_url()
 
