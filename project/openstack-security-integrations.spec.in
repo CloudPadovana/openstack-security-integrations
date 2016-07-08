@@ -190,6 +190,8 @@ INSTALLED_APPS = [                                                            #R
     'openstack_auth',                                                         #RPM-Trigger: do not edit this line
     'openstack_auth_shib',                                                    #RPM-Trigger: do not edit this line
 ]                                                                             #RPM-Trigger: do not edit this line
+NOTIFICATION_TEMPLATE_DIR = '/etc/openstack-auth-shib/notifications'          #RPM-Trigger: do not edit this line
+
 " >> /etc/openstack-dashboard/local_settings
     
     #
