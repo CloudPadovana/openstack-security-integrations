@@ -34,6 +34,7 @@ from openstack_auth.views import logout as basic_logout
 from openstack_auth.views import switch as basic_switch
 from openstack_auth.views import switch_region as basic_switch_region
 from openstack_auth.user import set_session_from_user
+from openstack_auth import exceptions as auth_exceptions
 
 try:
     from openstack_auth.views import delete_all_tokens
@@ -124,7 +125,7 @@ def login(request):
         LOG.debug("User %s authenticated but not authorized" % attributes.username)
         return _register(request, attributes)
 
-    except keystone_exceptions.Unauthorized:
+    except (keystone_exceptions.Unauthorized, auth_exceptions.KeystoneAuthException):
 
         return build_err_response(request, _("User not authorized: invalid or disabled"), attributes)
 
@@ -167,11 +168,11 @@ def logout(request):
 
 @login_required
 def switch(request, tenant_id, redirect_field_name=REDIRECT_FIELD_NAME):
-    # workaround for switch redirect: don't user the redirect field name
+    # workaround for switch redirect: don't use the redirect field name
     return basic_switch(request, tenant_id, '')
 
 def switch_region(request, region_name, redirect_field_name=REDIRECT_FIELD_NAME):
-    # workaround for switch redirect: don't user the redirect field name
+    # workaround for switch redirect: don't use the redirect field name
     return basic_switch_region(request, region_name, '')
 
 
