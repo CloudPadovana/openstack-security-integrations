@@ -114,6 +114,16 @@ def get_prj_status(data):
 class ProjectsTable(baseTables.TenantsTable):
     status = tables.Column(get_prj_status, verbose_name=_('Status'), status=True)
 
+    # patch for ajax update disabled
+    def __init__(self, request, data=None, needs_form_wrapper=None, **kwargs):
+        super(ProjectsTable, self).__init__(request, data=data,
+                                            needs_form_wrapper=needs_form_wrapper, **kwargs)
+        self.columns['name'].update_action = None
+        if 'description' in self.columns:
+            self.columns['description'].update_action = None
+        self.columns['enabled'].update_action = None
+    # end of patch
+
     def get_project_detail_link(self, project):
         if policy.check((("identity", "identity:get_project"),),
                         self.request, target={"project": project}):

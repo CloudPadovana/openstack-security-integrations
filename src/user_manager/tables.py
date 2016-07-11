@@ -72,12 +72,17 @@ class UsersTable(baseTables.UsersTable):
 
     expiration = tables.Column('expiration', verbose_name=_('Expiration date'))
 
-    # patch for user detail
+    # patch for user detail and ajax update disabled
     def __init__(self, request, data=None, needs_form_wrapper=None, **kwargs):
         super(UsersTable, self).__init__(request, data=data,
                                          needs_form_wrapper=needs_form_wrapper, **kwargs)
         
         self.columns['name'].get_link_url = self._get_detail_link
+        self.columns['name'].update_action = None
+        if 'description' in self.columns:
+            self.columns['description'].update_action = None
+        if 'email' in self.columns:
+            self.columns['email'].update_action = None
 
     def _get_detail_link(self, user):
         return reverse("horizon:idmanager:user_manager:detail", args=(user.id,))
