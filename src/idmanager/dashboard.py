@@ -24,4 +24,8 @@ class IdentityManager(horizon.Dashboard):
 
 horizon.register(IdentityManager)
 
+# workaround: just hide the identity dashboard
+identity_dashboard = horizon.get_dashboard('identity')
+identity_dashboard.nav = False
+
 
