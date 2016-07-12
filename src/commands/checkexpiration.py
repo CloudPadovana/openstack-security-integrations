@@ -92,7 +92,7 @@ class Command(BaseCommand):
                 keystone = client.Client(username=params['USERNAME'],
                                          password=params['PASSWD'],
                                          project_name=params['TENANTNAME'],
-                                         cacert=params['CAFILE'],
+                                         cacert=params.get('CAFILE',''),
                                          auth_url=params['AUTHURL'])
                 
                 keystone.users.update(reg_item.userid, enabled=False)

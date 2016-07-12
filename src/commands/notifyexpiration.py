@@ -15,7 +15,6 @@
 
 import logging
 import logging.config
-import re
 
 from datetime import datetime
 from datetime import timedelta
@@ -73,13 +72,15 @@ class Command(BaseCommand):
     
     def _get_days_to_exp(self, params):
         result = list()
-        eregex = re.compile('NOTIFY\[(\d+)\]')
         
-        for item in params:
-            res = eregex.search(item)
-            if res:
-                result.append(int(params[item]))
-        
+        n_plan = params.get('NOTIFICATION_PLAN', None)
+        if n_plan:
+            try:
+                for tok in n_plan.split(','):
+                    result.append(int(tok.strip()))
+            except:
+                LOG.error("Cannot parse notification plan, default used", exc_info=True)
+                
         if len(result) == 0:
             result.append(5)
             result.append(10)
@@ -122,7 +123,7 @@ class Command(BaseCommand):
                         keystone = client.Client(username=params['USERNAME'],
                                                  password=params['PASSWD'],
                                                  project_name=params['TENANTNAME'],
-                                                 cacert=params['CAFILE'],
+                                                 cacert=params.get('CAFILE',''),
                                                  auth_url=params['AUTHURL'])
                         
                         tmpuser = keystone.users.get(reg_item.userid)
