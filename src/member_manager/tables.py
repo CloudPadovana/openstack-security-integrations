@@ -33,6 +33,7 @@ from openstack_auth_shib.notifications import MEMBER_REMOVED
 from openstack_auth_shib.notifications import MEMBER_REMOVED_ADM
 from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
+from openstack_auth_shib.utils import get_admin_roleid
 
 LOG = logging.getLogger(__name__)
 DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', '')
@@ -89,7 +90,7 @@ class ToggleRoleAction(tables.Action):
             t_role_id = ''
             for role in request.user.roles:
                 if role['name'] == TENANTADMIN_ROLE:
-                    t_role_id = role['id']
+                    t_role_id = get_admin_roleid(request)
             
             roles_obj = client_factory(request).roles
             arg_dict = {
