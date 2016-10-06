@@ -409,7 +409,10 @@ fi
 
 
 %changelog
-* Wed Nov 25 2015 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
+* Thu Oct 6 2016 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
+- Porting on Mitaka
+
+* Wed Nov 25 2015 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.1.0-4
 - Porting on Kilo
 - New packages for CAP and CED-C
 
