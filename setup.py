@@ -158,7 +158,8 @@ module_list = [
 ]
 
 confile_list = [
-    'config/idem-template-metadata.xml',
+    'config/cap-metadata.xml',
+    'config/cedc-metadata.xml',
     'config/logging.conf',
     'config/actions.conf'
 ]

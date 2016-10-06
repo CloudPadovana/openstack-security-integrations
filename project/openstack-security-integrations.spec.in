@@ -94,7 +94,6 @@ Django plugin for Shibboleth authentication
 %files -n openstack-auth-shib
 %defattr(-,root,root)
 %dir /etc/openstack-auth-shib
-%config(noreplace) /etc/openstack-auth-shib/idem-template-metadata.xml
 %config(noreplace) /etc/openstack-auth-shib/actions.conf
 %config(noreplace) /etc/openstack-auth-shib/logging.conf
 %config(noreplace) /etc/openstack-auth-shib/notifications/notifications_*.txt
@@ -274,6 +273,7 @@ Customization of Openstack Horizon for Cloud Area Padovana
 
 %files -n openstack-auth-cap
 %defattr(-,root,root)
+%config(noreplace) /etc/openstack-auth-shib/cap-metadata.xml
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapdStrip.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.ico
@@ -282,9 +282,11 @@ Customization of Openstack Horizon for Cloud Area Padovana
 %post -n openstack-auth-cap
 ln -sf /usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cap.html \
        /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
+cp -f /etc/openstack-auth-shib/cap-metadata.xml /etc/openstack-auth-shib/idem-template-metadata.xml
 
 %preun -n openstack-auth-cap
 rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
+rm -f /etc/openstack-auth-shib/idem-template-metadata.xml
 
 %triggerin -n openstack-auth-cap -- openstack-dashboard
 if [ ! $1 == 2 ]; then
@@ -345,6 +347,7 @@ Customization of Openstack Horizon for Cloud Veneto
 
 %files -n openstack-auth-cedc
 %defattr(-,root,root)
+%config(noreplace) /etc/openstack-auth-shib/cedc-metadata.xml
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVenetoStrip.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.ico
@@ -353,9 +356,11 @@ Customization of Openstack Horizon for Cloud Veneto
 %post -n openstack-auth-cedc
 ln -sf /usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cedc.html \
        /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
+cp -f /etc/openstack-auth-shib/cedc-metadata.xml /etc/openstack-auth-shib/idem-template-metadata.xml
 
 %preun -n openstack-auth-cedc
 rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
+rm -f /etc/openstack-auth-shib/idem-template-metadata.xml
 
 %triggerin -n openstack-auth-cedc -- openstack-dashboard
 if [ ! $1 == 2 ]; then
