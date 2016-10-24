@@ -18,6 +18,7 @@ import logging
 from django.utils.translation import ugettext_lazy as _
 from django.core.urlresolvers import reverse
 from django.core.urlresolvers import reverse_lazy
+from django.db import transaction
 from django.db.models import Q
 
 from horizon import tables
@@ -41,7 +42,7 @@ from openstack_auth_shib.models import RSTATUS_PRECHKD
 from openstack_auth_shib.models import RSTATUS_CHECKED
 from openstack_auth_shib.models import RSTATUS_NOFLOW
 
-from .tables import RegisterTable
+from .tables import RegisterTable, OperationTable
 from .forms import ProcessRegForm, ForceApproveForm
 
 LOG = logging.getLogger(__name__)
@@ -218,7 +219,109 @@ class ForceApprView(forms.ModalFormView):
     def get_initial(self):
         return { 'regid' : self.kwargs['regid'] }
 
+###############################################################################
+#
+#  New implementation
+#
+###############################################################################
+import datetime
 
+from .tables import RegistrData
+from .forms import PreCheckForm
+
+class MainView(tables.DataTableView):
+    table_class = OperationTable
+    template_name = 'idmanager/registration_manager/reg_manager.html'
+
+    def get_data(self):
+    
+        reqTable = dict()
+        
+        with transaction.atomic():
+        
+            allPrjReqs = PrjRequest.objects.all()
+            
+            allRegReqs = RegRequest.objects.filter(flowstatus=RSTATUS_PENDING)
+            
+            regid_list = [ tmpRegReq.registration.regid for tmpRegReq in allRegReqs ]
+            
+            for prjReq in allPrjReqs:
+                
+                rData = RegistrData()
+                rData.username = prjReq.registration.username
+                rData.givenname = prjReq.registration.givenname
+                rData.sn = prjReq.registration.sn
+                rData.organization = prjReq.registration.organization
+                rData.phone = prjReq.registration.phone
+                
+                if prjReq.project.projectid:
+                    if prjReq.registration.regid in regid_list:
+                        rData.code = RegistrData.NEW_USR_EX_PRJ
+                        requestid = "%d:" % prjReq.registration.regid
+                    else:
+                        rData.code = RegistrData.EX_USR_EX_PRJ
+                        rData.project = prjReq.project.projectname
+                        requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
+                else:
+                    if prjReq.registration.regid in regid_list:
+                        rData.code = RegistrData.NEW_USR_NEW_PRJ
+                        rData.project = prjReq.project.projectname
+                        requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
+                    else:
+                        rData.code = RegistrData.EX_USR_NEW_PRJ
+                        rData.project = prjReq.project.projectname
+                        requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
+
+                rData.requestid = requestid
+                
+                if not requestid in reqTable:
+                    reqTable[requestid] = rData
+
+        result = reqTable.values()
+        result.sort()
+        return result
+
+
+
+class PreCheckView(forms.ModalFormView):
+    form_class = PreCheckForm
+    template_name = 'idmanager/registration_manager/precheck.html'
+    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            try:
+                tmpTuple = self.kwargs['requestid'].split(':')
+                regid = int(tmpTuple[0])
+                
+                tmplist = RegRequest.objects.filter(registration__regid=regid)
+                if len(tmplist):
+                    self._object = tmplist[0]
+                else:
+                    raise Exception("Database error")
+                    
+            except Exception:
+                LOG.error("Registration error", exc_info=True)
+                redirect = reverse_lazy("horizon:idmanager:registration_manager:index")
+                exceptions.handle(self.request, _('Unable to pre-check request.'), redirect=redirect)
+
+        return self._object
+
+
+    def get_context_data(self, **kwargs):
+        context = super(PreCheckView, self).get_context_data(**kwargs)
+        context['requestid'] = "%d:" % self.get_object().registration.regid
+        context['extaccount'] = self.get_object().externalid
+        context['contact'] = self.get_object().contactper
+        context['email'] = self.get_object().email
+        return context
+
+    def get_initial(self):
+        return {
+            'regid' : self.get_object().registration.regid,
+            'username' : self.get_object().registration.username,
+            'expiration' : datetime.datetime.now() + datetime.timedelta(365)
+        }
 
 
 

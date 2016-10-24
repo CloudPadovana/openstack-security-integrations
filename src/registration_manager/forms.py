@@ -528,6 +528,260 @@ class ForceApproveForm(forms.SelfHandlingForm):
 
         return True
 
+###############################################################################
+#
+#  New implementation
+#
+###############################################################################
+
+class PreCheckForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(PreCheckForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['checkaction'] = forms.CharField(widget=HiddenInput, initial='accept')
+        
+        self.fields['regid'] = forms.IntegerField(widget=HiddenInput)
+
+        self.fields['username'] = forms.CharField(
+            label=_("User name"),
+            required=False,
+            max_length=OS_LNAME_LEN
+        )
+
+        curr_year = datetime.datetime.now().year            
+        self.fields['expiration'] = forms.DateTimeField(
+            label=_("Expiration date"),
+            required=False,
+            widget=SelectDateWidget(None, range(curr_year, curr_year + 25))
+        )
+
+    def _retrieve_email(self, request, uid):
+        try:
+            tmpusr = keystone_api.user_get(request, uid)
+            return tmpusr.email
+        except:
+            LOG.error("Cannot retrieve email", exc_info=True)
+        return None
+
+    def _generate_pwd(self):
+        if crypto_version.startswith('2.0'):
+            prng = randpool.RandomPool()
+            iv = prng.get_bytes(256)
+        else:
+            prng = Random.new()
+            iv = prng.read(16)
+        return base64.b64encode(iv)
+    
+    def _convert_domain(self, request, domain_name):
+        for ditem in keystone_api.domain_list(request):
+            if ditem.name == domain_name:
+                return ditem.id
+        return None
+    
+    @sensitive_variables('data')
+    def handle(self, request, data):
+        try:
+            if data['checkaction'] == 'accept':
+                self._handle_accept(request, data)
+            else:
+                self._handle_reject(request, data)
+        except:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            messages.error(request, exc_value)
+            return False
+        return True
+
+
+
+
+
+
+
+
+
+
+
+
+    def _handle_accept(self, request, data):
+    
+        if not data['username']:
+            raise Exception(_("Cannot process request: missing username"))
+        if not data['expiration']:
+            raise Exception(_("Cannot process request: missing expiration date"))
+                
+        with transaction.atomic():
+
+            registration = Registration.objects.get(regid=int(data['regid']))
+
+            userReqList = RegRequest.objects.filter(registration=registration)
+            if len(userReqList) == 0:
+                raise Exception("Cannot find registration request")
+                
+            prjReqList = PrjRequest.objects.filter(registration=registration)
+
+            #
+            # User renaming (move down)
+            #
+            if registration.userid == None:
+            
+                registration.username = data['username']
+                registration.expdate = data['expiration']
+                registration.save()
+
+            #
+            # Forward request to project administrators
+            #
+            q_args = {
+                'project__projectid__isnull' : False,
+                'flowstatus' : PSTATUS_REG
+            }
+            prjreq_new = prjReqList.filter(**q_args)
+            prjreq_new.update(flowstatus=PSTATUS_PENDING)
+
+            #
+            # Send notifications to project administrators and users
+            #
+            for p_item in prjreq_new:
+            
+                m_users = get_project_managers(request, p_item.project.projectid)
+                m_emails = [ usr.email for usr in m_users ]
+                
+                noti_params = {
+                    'username' : registration.username,
+                    'project' : p_item.project.projectname
+                }
+                noti_sbj, noti_body = notification_render(SUBSCR_WAIT_TYPE, noti_params)
+                notifyUsers(m_emails, noti_sbj, noti_body)
+                
+                if email:
+                    n2_params = {
+                        'project' : p_item.project.projectname,
+                        'prjadmins' : m_emails
+                    }
+                    noti_sbj, noti_body = notification_render(SUBSCR_ONGOING, n2_params)
+                    notifyUsers(email, noti_sbj, noti_body)
+
+            #
+            # Mapping of external accounts
+            #                
+            if userReqList[0].externalid:
+                LOG.debug("Registering external account %s" % userReqList[0].externalid)
+                mapping = UserMapping(globaluser=userReqList[0].externalid,
+                                registration=userReqList[0].registration)
+                mapping.save()
+                
+            password = userReqList[0].password
+            if not password:
+                password = self._generate_pwd()
+
+            #
+            # User creation
+            #
+            if not registration.userid:
+                
+                domain_id = self._convert_domain(request, registration.domain)
+                
+                kuser = keystone_api.user_create(request, 
+                                                name=registration.username,
+                                                password=password,
+                                                email=userReqList[0].email,
+                                                enabled=True, domain=domain_id)
+                    
+                registration.userid = kuser.id
+                registration.save()
+                first_registr = True
+
+            #
+            # cache cleanup
+            #
+            userReqList.delete()
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def _handle_reject(self, request, data):
+            
+        all_prj_req = list()
+        recipients = None
+        first_reg_rej = False
+
+        with transaction.atomic():
+            
+            registration = Registration.objects.get(regid=int(data['regid']))
+            prjReqList = PrjRequest.objects.filter(registration=registration)
+            regReqList = RegRequest.objects.filter(registration=registration)
+                
+            #
+            # Delete request for projects to be created
+            #
+            newprj_list = list()
+            for prj_req in prjReqList:
+                all_prj_req.append(prj_req.project.projectname)
+                if not prj_req.project.projectid:
+                    newprj_list.append(prj_req.project.projectname)
+                
+            if len(newprj_list):
+                Project.objects.filter(projectname__in=newprj_list).delete()
+                
+            if registration.userid:
+                #
+                # User already registered, remove just the pending requests
+                #
+                
+                prjReqList.delete()
+                    
+                regReqList.delete()
+                
+                recipients = self._retrieve_email(request, registration.userid)
+                    
+            else:
+                #
+                # First registration request, remove all (via foreign key)
+                #
+            
+                recipients = [ x for x in regReqList.values_list('email', flat=True) ]
+                
+                registration.delete()
+                first_reg_rej = True
+        
+        if first_reg_rej:
+        
+            noti_params = {
+                'notes' : data['reason']
+            }
+            noti_sbj, noti_body = notification_render(FIRST_REG_NO_TYPE, noti_params)
+            notifyUsers(recipients, noti_sbj, noti_body)
+        
+        elif all_prj_req:
+            noti_params = {
+                'projects_rejected' : all_prj_req
+            }
+            noti_sbj, noti_body = notification_render(SUBSCR_NO_TYPE, noti_params)
+            notifyUsers(recipients, noti_sbj, noti_body)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

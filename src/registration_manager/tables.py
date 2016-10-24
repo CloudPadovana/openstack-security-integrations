@@ -36,7 +36,6 @@ class RegisterTable(tables.DataTable):
     sn = tables.Column('sn', verbose_name=_('Last name'))
     organization = tables.Column('organization', verbose_name=_('Organization'))
     phone = tables.Column('phone', verbose_name=_('Phone number'))
-    domain = tables.Column('domain', verbose_name=_('Domain'))
 
     class Meta:
         name = "register_table"
@@ -47,6 +46,112 @@ class RegisterTable(tables.DataTable):
         return datum.regid
 
 
+###############################################################################
+#
+#  New implementation
+#
+###############################################################################
+class RegistrData:
 
+    NEW_USR_NEW_PRJ = 1
+    NEW_USR_EX_PRJ = 2
+    EX_USR_NEW_PRJ = 3
+    EX_USR_EX_PRJ = 4
 
+    def __init__(self):
+        self.requestid = None
+        self.username = None
+        self.givenname = None
+        self.sn = None
+        self.organization = None
+        self.phone = None
+        self.project = "-"
+        self.code = 0
+    
+    def __cmp__(self, other):
+        if self.username < other.username:
+            return -1
+        if self.username > other.username:
+            return 1
+        if self.project < other.project:
+            return -1
+        if self.project > other.project:
+            return 1
+        return 0
+
+class PreCheckLink(tables.LinkAction):
+    name = "prechklink"
+    verbose_name = _("Pre Check")
+    url = "horizon:idmanager:registration_manager:precheck"
+    classes = ("ajax-modal", "btn-edit")
+    
+    def allowed(self, request, datum):
+        return datum.code == RegistrData.NEW_USR_EX_PRJ
+
+class GrantAllLink(tables.LinkAction):
+    name = "grantalllink"
+    verbose_name = _("Authorize All")
+    url = "horizon:idmanager:registration_manager:precheck"
+    classes = ("ajax-modal", "btn-edit")
+    
+    def allowed(self, request, datum):
+        return datum.code == RegistrData.NEW_USR_NEW_PRJ
+
+class RejectLink(tables.LinkAction):
+    name = "rejectlink"
+    verbose_name = _("Reject")
+    url = "horizon:idmanager:registration_manager:precheck"
+    classes = ("ajax-modal", "btn-edit")
+    
+    def allowed(self, request, datum):
+        return datum.code == RegistrData.NEW_USR_EX_PRJ or datum.code == RegistrData.NEW_USR_NEW_PRJ
+
+class ForceApprLink(tables.LinkAction):
+    name = "forceapprlink"
+    verbose_name = _("Forced Approve")
+    url = "horizon:idmanager:registration_manager:precheck"
+    classes = ("ajax-modal", "btn-edit")
+    
+    def allowed(self, request, datum):
+        return datum.code == RegistrData.EX_USR_EX_PRJ
+
+class ForceRejLink(tables.LinkAction):
+    name = "forcerejlink"
+    verbose_name = _("Forced Reject")
+    url = "horizon:idmanager:registration_manager:precheck"
+    classes = ("ajax-modal", "btn-edit")
+    
+    def allowed(self, request, datum):
+        return datum.code == RegistrData.EX_USR_EX_PRJ
+
+def get_description(data):
+    if data.code == RegistrData.NEW_USR_NEW_PRJ:
+        return _('New user and new project')
+    elif data.code == RegistrData.NEW_USR_EX_PRJ:
+        return _('New user to be pre-checked')
+    elif data.code == RegistrData.EX_USR_NEW_PRJ:
+        return _('User requires a new project')
+    else:
+        return _('User requires membership')
+
+class OperationTable(tables.DataTable):
+    username = tables.Column('username', verbose_name=_('User name'))
+    givenname = tables.Column('givenname', verbose_name=_('First name'))
+    sn = tables.Column('sn', verbose_name=_('Last name'))
+    organization = tables.Column('organization', verbose_name=_('Organization'))
+    phone = tables.Column('phone', verbose_name=_('Phone number'))
+    project = tables.Column('project', verbose_name=_('Project'))
+    description = tables.Column(get_description, verbose_name=_('Description'))
+
+    class Meta:
+        name = "operation_table"
+        verbose_name = _("Pending requests")
+        row_actions = (PreCheckLink,
+                       GrantAllLink,
+                       RejectLink,
+                       ForceApprLink,
+                       ForceRejLink)
+
+    def get_object_id(self, datum):
+        return datum.requestid
 
