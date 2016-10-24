@@ -227,7 +227,7 @@ class ForceApprView(forms.ModalFormView):
 import datetime
 
 from .tables import RegistrData
-from .forms import PreCheckForm
+from .forms import PreCheckForm, RejectForm
 
 class MainView(tables.DataTableView):
     table_class = OperationTable
@@ -249,8 +249,7 @@ class MainView(tables.DataTableView):
                 
                 rData = RegistrData()
                 rData.username = prjReq.registration.username
-                rData.givenname = prjReq.registration.givenname
-                rData.sn = prjReq.registration.sn
+                rData.fullname = prjReq.registration.givenname + " " + prjReq.registration.sn
                 rData.organization = prjReq.registration.organization
                 rData.phone = prjReq.registration.phone
                 
@@ -324,4 +323,41 @@ class PreCheckView(forms.ModalFormView):
         }
 
 
+class RejectView(forms.ModalFormView):
+    form_class = RejectForm
+    template_name = 'idmanager/registration_manager/reject.html'
+    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            try:
+                tmpTuple = self.kwargs['requestid'].split(':')
+                regid = int(tmpTuple[0])
+                
+                tmplist = RegRequest.objects.filter(registration__regid=regid)
+                if len(tmplist):
+                    self._object = tmplist[0]
+                else:
+                    raise Exception("Database error")
+                    
+            except Exception:
+                LOG.error("Registration error", exc_info=True)
+                redirect = reverse_lazy("horizon:idmanager:registration_manager:index")
+                exceptions.handle(self.request, _('Unable to pre-check request.'), redirect=redirect)
+
+        return self._object
+
+
+    def get_context_data(self, **kwargs):
+        context = super(RejectView, self).get_context_data(**kwargs)
+        context['requestid'] = "%d:" % self.get_object().registration.regid
+        context['extaccount'] = self.get_object().externalid
+        context['contact'] = self.get_object().contactper
+        context['email'] = self.get_object().email
+        return context
+
+    def get_initial(self):
+        return {
+            'regid' : self.get_object().registration.regid
+        }
 

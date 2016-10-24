@@ -61,8 +61,7 @@ class RegistrData:
     def __init__(self):
         self.requestid = None
         self.username = None
-        self.givenname = None
-        self.sn = None
+        self.fullname = None
         self.organization = None
         self.phone = None
         self.project = "-"
@@ -100,7 +99,7 @@ class GrantAllLink(tables.LinkAction):
 class RejectLink(tables.LinkAction):
     name = "rejectlink"
     verbose_name = _("Reject")
-    url = "horizon:idmanager:registration_manager:precheck"
+    url = "horizon:idmanager:registration_manager:reject"
     classes = ("ajax-modal", "btn-edit")
     
     def allowed(self, request, datum):
@@ -136,8 +135,7 @@ def get_description(data):
 
 class OperationTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))
-    givenname = tables.Column('givenname', verbose_name=_('First name'))
-    sn = tables.Column('sn', verbose_name=_('Last name'))
+    fullname = tables.Column('fullname', verbose_name=_('Full name'))
     organization = tables.Column('organization', verbose_name=_('Organization'))
     phone = tables.Column('phone', verbose_name=_('Phone number'))
     project = tables.Column('project', verbose_name=_('Project'))

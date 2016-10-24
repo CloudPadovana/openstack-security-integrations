@@ -20,10 +20,10 @@
 {% load i18n %}
 {% load url from future %}
 
-{% block form_id %}precheck_reg_form{% endblock %}
-{% block form_action %}{% url 'horizon:idmanager:registration_manager:precheck' requestid %}{% endblock %}
+{% block form_id %}reject_reg_form{% endblock %}
+{% block form_action %}{% url 'horizon:idmanager:registration_manager:reject' requestid %}{% endblock %}
 
-{% block modal-header %}{% trans "New account" %}{% endblock %}
+{% block modal-header %}{% trans "Reject registration" %}{% endblock %}
 
 {% block modal-body %}
 <div class="left">
@@ -35,7 +35,7 @@
 </div>
 <div class="right">
     <h3>{% trans "Description" %}:</h3>
-    <p>{% trans "From here you can pre-check the request." %}</p>
+    <p>{% trans "From here you can reject the request." %}</p>
     
     {% if extaccount %}
     <h3>{% trans "External Identity" %}:</h3>

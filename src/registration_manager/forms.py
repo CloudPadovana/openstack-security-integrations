@@ -539,8 +539,6 @@ class PreCheckForm(forms.SelfHandlingForm):
     def __init__(self, request, *args, **kwargs):
         super(PreCheckForm, self).__init__(request, *args, **kwargs)
 
-        self.fields['checkaction'] = forms.CharField(widget=HiddenInput, initial='accept')
-        
         self.fields['regid'] = forms.IntegerField(widget=HiddenInput)
 
         self.fields['username'] = forms.CharField(
@@ -573,215 +571,203 @@ class PreCheckForm(forms.SelfHandlingForm):
             iv = prng.read(16)
         return base64.b64encode(iv)
     
-    def _convert_domain(self, request, domain_name):
-        for ditem in keystone_api.domain_list(request):
-            if ditem.name == domain_name:
-                return ditem.id
-        return None
-    
     @sensitive_variables('data')
     def handle(self, request, data):
+
+        if not data['username']:
+            messages.error(request, _("Cannot process request: missing username"))
+            return False
+        if not data['expiration']:
+            messages.error(request, _("Cannot process request: missing expiration date"))
+            return False
+
         try:
-            if data['checkaction'] == 'accept':
-                self._handle_accept(request, data)
-            else:
-                self._handle_reject(request, data)
+
+            with transaction.atomic():
+
+                registration = Registration.objects.get(regid=int(data['regid']))
+
+                userReqList = RegRequest.objects.filter(registration=registration)
+                if len(userReqList) == 0:
+                    raise Exception("Cannot find registration request")
+                    
+                prjReqList = PrjRequest.objects.filter(registration=registration)
+
+                #
+                # User renaming (move down)
+                #
+                if registration.userid == None:
+                
+                    registration.username = data['username']
+                    registration.expdate = data['expiration']
+                    registration.save()
+
+                #
+                # Forward request to project administrators
+                #
+                q_args = {
+                    'project__projectid__isnull' : False,
+                    'flowstatus' : PSTATUS_REG
+                }
+                prjreq_new = prjReqList.filter(**q_args)
+                prjreq_new.update(flowstatus=PSTATUS_PENDING)
+
+                #
+                # Send notifications to project administrators and users
+                #
+                for p_item in prjreq_new:
+                
+                    m_users = get_project_managers(request, p_item.project.projectid)
+                    m_emails = [ usr.email for usr in m_users ]
+                    
+                    noti_params = {
+                        'username' : registration.username,
+                        'project' : p_item.project.projectname
+                    }
+                    noti_sbj, noti_body = notification_render(SUBSCR_WAIT_TYPE, noti_params)
+                    notifyUsers(m_emails, noti_sbj, noti_body)
+                    
+                    if email:
+                        n2_params = {
+                            'project' : p_item.project.projectname,
+                            'prjadmins' : m_emails
+                        }
+                        noti_sbj, noti_body = notification_render(SUBSCR_ONGOING, n2_params)
+                        notifyUsers(email, noti_sbj, noti_body)
+
+                #
+                # Mapping of external accounts
+                #                
+                if userReqList[0].externalid:
+                    LOG.debug("Registering external account %s" % userReqList[0].externalid)
+                    mapping = UserMapping(globaluser=userReqList[0].externalid,
+                                    registration=userReqList[0].registration)
+                    mapping.save()
+                    
+                password = userReqList[0].password
+                if not password:
+                    password = self._generate_pwd()
+
+                #
+                # User creation
+                #
+                if not registration.userid:
+                    
+                    kuser = keystone_api.user_create(request, 
+                                                    name=registration.username,
+                                                    password=password,
+                                                    email=userReqList[0].email,
+                                                    enabled=True)
+                        
+                    registration.userid = kuser.id
+                    registration.save()
+                    first_registr = True
+
+                #
+                # cache cleanup
+                #
+                userReqList.delete()
+
         except:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             messages.error(request, exc_value)
             return False
+
         return True
 
-
-
-
-
-
-
-
-
-
-
-
-    def _handle_accept(self, request, data):
     
-        if not data['username']:
-            raise Exception(_("Cannot process request: missing username"))
-        if not data['expiration']:
-            raise Exception(_("Cannot process request: missing expiration date"))
                 
-        with transaction.atomic():
 
-            registration = Registration.objects.get(regid=int(data['regid']))
 
-            userReqList = RegRequest.objects.filter(registration=registration)
-            if len(userReqList) == 0:
-                raise Exception("Cannot find registration request")
+
+
+
+
+
+
+
+
+class RejectForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(RejectForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['regid'] = forms.IntegerField(widget=HiddenInput)
+
+        self.fields['reason'] = forms.CharField(
+            label=_('Message'),
+            required=False,
+            widget=forms.widgets.Textarea()
+        )
+
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+    
+        try:
+            all_prj_req = list()
+            recipients = None
+            first_reg_rej = False
+
+            with transaction.atomic():
                 
-            prjReqList = PrjRequest.objects.filter(registration=registration)
-
-            #
-            # User renaming (move down)
-            #
-            if registration.userid == None:
+                registration = Registration.objects.get(regid=int(data['regid']))
+                prjReqList = PrjRequest.objects.filter(registration=registration)
+                regReqList = RegRequest.objects.filter(registration=registration)
+                    
+                #
+                # Delete request for projects to be created
+                #
+                newprj_list = list()
+                for prj_req in prjReqList:
+                    all_prj_req.append(prj_req.project.projectname)
+                    if not prj_req.project.projectid:
+                        newprj_list.append(prj_req.project.projectname)
+                    
+                if len(newprj_list):
+                    Project.objects.filter(projectname__in=newprj_list).delete()
+                    
+                if registration.userid:
+                    #
+                    # User already registered, remove just the pending requests
+                    #
+                    
+                    prjReqList.delete()
+                        
+                    regReqList.delete()
+                    
+                    recipients = self._retrieve_email(request, registration.userid)
+                        
+                else:
+                    #
+                    # First registration request, remove all (via foreign key)
+                    #
+                
+                    recipients = [ x for x in regReqList.values_list('email', flat=True) ]
+                    
+                    registration.delete()
+                    first_reg_rej = True
             
-                registration.username = data['username']
-                registration.expdate = data['expiration']
-                registration.save()
-
-            #
-            # Forward request to project administrators
-            #
-            q_args = {
-                'project__projectid__isnull' : False,
-                'flowstatus' : PSTATUS_REG
-            }
-            prjreq_new = prjReqList.filter(**q_args)
-            prjreq_new.update(flowstatus=PSTATUS_PENDING)
-
-            #
-            # Send notifications to project administrators and users
-            #
-            for p_item in prjreq_new:
+            if first_reg_rej:
             
-                m_users = get_project_managers(request, p_item.project.projectid)
-                m_emails = [ usr.email for usr in m_users ]
-                
                 noti_params = {
-                    'username' : registration.username,
-                    'project' : p_item.project.projectname
+                    'notes' : data['reason']
                 }
-                noti_sbj, noti_body = notification_render(SUBSCR_WAIT_TYPE, noti_params)
-                notifyUsers(m_emails, noti_sbj, noti_body)
-                
-                if email:
-                    n2_params = {
-                        'project' : p_item.project.projectname,
-                        'prjadmins' : m_emails
-                    }
-                    noti_sbj, noti_body = notification_render(SUBSCR_ONGOING, n2_params)
-                    notifyUsers(email, noti_sbj, noti_body)
-
-            #
-            # Mapping of external accounts
-            #                
-            if userReqList[0].externalid:
-                LOG.debug("Registering external account %s" % userReqList[0].externalid)
-                mapping = UserMapping(globaluser=userReqList[0].externalid,
-                                registration=userReqList[0].registration)
-                mapping.save()
-                
-            password = userReqList[0].password
-            if not password:
-                password = self._generate_pwd()
-
-            #
-            # User creation
-            #
-            if not registration.userid:
-                
-                domain_id = self._convert_domain(request, registration.domain)
-                
-                kuser = keystone_api.user_create(request, 
-                                                name=registration.username,
-                                                password=password,
-                                                email=userReqList[0].email,
-                                                enabled=True, domain=domain_id)
-                    
-                registration.userid = kuser.id
-                registration.save()
-                first_registr = True
-
-            #
-            # cache cleanup
-            #
-            userReqList.delete()
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def _handle_reject(self, request, data):
+                noti_sbj, noti_body = notification_render(FIRST_REG_NO_TYPE, noti_params)
+                notifyUsers(recipients, noti_sbj, noti_body)
             
-        all_prj_req = list()
-        recipients = None
-        first_reg_rej = False
+            elif all_prj_req:
+                noti_params = {
+                    'projects_rejected' : all_prj_req
+                }
+                noti_sbj, noti_body = notification_render(SUBSCR_NO_TYPE, noti_params)
+                notifyUsers(recipients, noti_sbj, noti_body)
 
-        with transaction.atomic():
-            
-            registration = Registration.objects.get(regid=int(data['regid']))
-            prjReqList = PrjRequest.objects.filter(registration=registration)
-            regReqList = RegRequest.objects.filter(registration=registration)
-                
-            #
-            # Delete request for projects to be created
-            #
-            newprj_list = list()
-            for prj_req in prjReqList:
-                all_prj_req.append(prj_req.project.projectname)
-                if not prj_req.project.projectid:
-                    newprj_list.append(prj_req.project.projectname)
-                
-            if len(newprj_list):
-                Project.objects.filter(projectname__in=newprj_list).delete()
-                
-            if registration.userid:
-                #
-                # User already registered, remove just the pending requests
-                #
-                
-                prjReqList.delete()
-                    
-                regReqList.delete()
-                
-                recipients = self._retrieve_email(request, registration.userid)
-                    
-            else:
-                #
-                # First registration request, remove all (via foreign key)
-                #
-            
-                recipients = [ x for x in regReqList.values_list('email', flat=True) ]
-                
-                registration.delete()
-                first_reg_rej = True
-        
-        if first_reg_rej:
-        
-            noti_params = {
-                'notes' : data['reason']
-            }
-            noti_sbj, noti_body = notification_render(FIRST_REG_NO_TYPE, noti_params)
-            notifyUsers(recipients, noti_sbj, noti_body)
-        
-        elif all_prj_req:
-            noti_params = {
-                'projects_rejected' : all_prj_req
-            }
-            noti_sbj, noti_body = notification_render(SUBSCR_NO_TYPE, noti_params)
-            notifyUsers(recipients, noti_sbj, noti_body)
+        except:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            messages.error(request, exc_value)
+            return False
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return True
 
 
