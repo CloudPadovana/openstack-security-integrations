@@ -534,6 +534,32 @@ class ForceApproveForm(forms.SelfHandlingForm):
 #
 ###############################################################################
 
+def check_and_get_roleids(request):
+    tenantadmin_roleid = None
+    default_roleid = None
+    
+    DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
+    
+    for role in keystone_api.role_list(request):
+        if role.name == TENANTADMIN_ROLE:
+            tenantadmin_roleid = role.id
+        elif role.name == DEFAULT_ROLE:
+            default_roleid = role.id
+    
+    if not tenantadmin_roleid:
+        #
+        # Creation of project-manager role if necessary
+        #
+        tenantadmin_roleid = keystone_api.role_create(request, TENANTADMIN_ROLE)
+        if not tenantadmin_roleid:
+            raise Exception("Cannot retrieve tenant admin role id")
+    
+    if not default_roleid:
+        raise Exception("Cannot retrieve default role id")
+    
+    return (tenantadmin_roleid, default_roleid)
+
+
 class PreCheckForm(forms.SelfHandlingForm):
 
     def __init__(self, request, *args, **kwargs):
@@ -553,31 +579,6 @@ class PreCheckForm(forms.SelfHandlingForm):
             required=False,
             widget=SelectDateWidget(None, range(curr_year, curr_year + 25))
         )
-
-    def _check_and_get_roleids(self, request):
-        tenantadmin_roleid = None
-        default_roleid = None
-        
-        DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
-        
-        for role in keystone_api.role_list(request):
-            if role.name == TENANTADMIN_ROLE:
-                tenantadmin_roleid = role.id
-            elif role.name == DEFAULT_ROLE:
-                default_roleid = role.id
-        
-        if not tenantadmin_roleid:
-            #
-            # Creation of project-manager role if necessary
-            #
-            tenantadmin_roleid = keystone_api.role_create(request, TENANTADMIN_ROLE)
-            if not tenantadmin_roleid:
-                raise Exception("Cannot retrieve tenant admin role id")
-        
-        if not default_roleid:
-            raise Exception("Cannot retrieve default role id")
-        
-        return (tenantadmin_roleid, default_roleid)
 
     def _retrieve_email(self, request, uid):
         try:
@@ -618,7 +619,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                     
                 prjReqList = PrjRequest.objects.filter(registration=registration)
                 
-                tenantadmin_roleid, default_roleid = self._check_and_get_roleids(request)
+                tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
 
                 #
                 # Mapping of external accounts
@@ -797,6 +798,53 @@ class RejectForm(forms.SelfHandlingForm):
                 }
                 noti_sbj, noti_body = notification_render(SUBSCR_NO_TYPE, noti_params)
                 notifyUsers(recipients, noti_sbj, noti_body)
+
+        except:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            messages.error(request, exc_value)
+            return False
+
+        return True
+
+class ForcedCheckForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(ForcedCheckForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['requestid'] = forms.CharField(widget=HiddenInput)
+        self.fields['action'] = forms.CharField(widget=HiddenInput)
+
+        self.fields['reason'] = forms.CharField(
+            label=_('Message'),
+            required=False,
+            widget=forms.widgets.Textarea()
+        )
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+    
+        try:
+            tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
+
+            with transaction.atomic():
+                tmpt = data['requestid'].split(':')
+                regid = int(tmpt[0])
+                project = tmpt[1]
+                
+                q_args = {
+                    'registration__regid' : regid,
+                    'project__projectname' : project
+                }
+                prjReqList = PrjRequest.objects.filter(**q_args)
+
+                for prj_req in prjReqList:
+                    if data['action'] == 'accept':
+                        keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
+                                            prj_req.registration.userid, default_roleid)
+                    else:
+                        pass
+
+                prjReqList.delete()
 
         except:
             exc_type, exc_value, exc_traceback = sys.exc_info()

@@ -227,7 +227,7 @@ class ForceApprView(forms.ModalFormView):
 import datetime
 
 from .tables import RegistrData
-from .forms import PreCheckForm, RejectForm
+from .forms import PreCheckForm, RejectForm, ForcedCheckForm
 
 class MainView(tables.DataTableView):
     table_class = OperationTable
@@ -359,5 +359,49 @@ class RejectView(forms.ModalFormView):
     def get_initial(self):
         return {
             'regid' : self.get_object().registration.regid
+        }
+
+class ForcedApproveView(forms.ModalFormView):
+    form_class = ForcedCheckForm
+    template_name = 'idmanager/registration_manager/forced.html'
+    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            self._object = self.kwargs['requestid']
+        return self._object
+
+    def get_context_data(self, **kwargs):
+        context = super(ForcedApproveView, self).get_context_data(**kwargs)
+        context['requestid'] = self.kwargs['requestid']
+        context['action'] = 'accept'
+        return context
+        
+    def get_initial(self):
+        return { 
+            'requestid' : self.kwargs['requestid'],
+            'action' : 'accept'
+        }
+
+class ForcedRejectView(forms.ModalFormView):
+    form_class = ForcedCheckForm
+    template_name = 'idmanager/registration_manager/forced.html'
+    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            self._object = self.kwargs['requestid']
+        return self._object
+
+    def get_context_data(self, **kwargs):
+        context = super(ForcedRejectView, self).get_context_data(**kwargs)
+        context['requestid'] = self.kwargs['requestid']
+        context['action'] = 'reject'
+        return context
+        
+    def get_initial(self):
+        return { 
+            'requestid' : self.kwargs['requestid'],
+            'action' : 'reject'
         }
 
