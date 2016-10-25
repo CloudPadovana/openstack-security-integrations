@@ -554,6 +554,31 @@ class PreCheckForm(forms.SelfHandlingForm):
             widget=SelectDateWidget(None, range(curr_year, curr_year + 25))
         )
 
+    def _check_and_get_roleids(self, request):
+        tenantadmin_roleid = None
+        default_roleid = None
+        
+        DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
+        
+        for role in keystone_api.role_list(request):
+            if role.name == TENANTADMIN_ROLE:
+                tenantadmin_roleid = role.id
+            elif role.name == DEFAULT_ROLE:
+                default_roleid = role.id
+        
+        if not tenantadmin_roleid:
+            #
+            # Creation of project-manager role if necessary
+            #
+            tenantadmin_roleid = keystone_api.role_create(request, TENANTADMIN_ROLE)
+            if not tenantadmin_roleid:
+                raise Exception("Cannot retrieve tenant admin role id")
+        
+        if not default_roleid:
+            raise Exception("Cannot retrieve default role id")
+        
+        return (tenantadmin_roleid, default_roleid)
+
     def _retrieve_email(self, request, uid):
         try:
             tmpusr = keystone_api.user_get(request, uid)
@@ -592,15 +617,21 @@ class PreCheckForm(forms.SelfHandlingForm):
                     raise Exception("Cannot find registration request")
                     
                 prjReqList = PrjRequest.objects.filter(registration=registration)
+                
+                tenantadmin_roleid, default_roleid = self._check_and_get_roleids(request)
 
                 #
-                # User renaming (move down)
-                #
-                if registration.userid == None:
-                
-                    registration.username = data['username']
-                    registration.expdate = data['expiration']
-                    registration.save()
+                # Mapping of external accounts
+                #                
+                if userReqList[0].externalid:
+                    LOG.debug("Registering external account %s" % userReqList[0].externalid)
+                    mapping = UserMapping(globaluser=userReqList[0].externalid,
+                                    registration=userReqList[0].registration)
+                    mapping.save()
+                    
+                password = userReqList[0].password
+                if not password:
+                    password = self._generate_pwd()
 
                 #
                 # Forward request to project administrators
@@ -636,18 +667,25 @@ class PreCheckForm(forms.SelfHandlingForm):
                         notifyUsers(email, noti_sbj, noti_body)
 
                 #
-                # Mapping of external accounts
-                #                
-                if userReqList[0].externalid:
-                    LOG.debug("Registering external account %s" % userReqList[0].externalid)
-                    mapping = UserMapping(globaluser=userReqList[0].externalid,
-                                    registration=userReqList[0].registration)
-                    mapping.save()
-                    
-                password = userReqList[0].password
-                if not password:
-                    password = self._generate_pwd()
-
+                # Creation of new tenants
+                #
+                new_prj_list = list()
+                q_args = {
+                    'project__projectid__isnull' : True,
+                    'flowstatus' : PSTATUS_REG
+                }
+                
+                for p_reqs in prjReqList.filter(**q_args):
+                    LOG.debug("Creating tenant %s" % p_reqs.project.projectname)
+                    kprj = keystone_api.tenant_create(request, p_reqs.project.projectname,
+                                                        p_reqs.project.description, True)
+                    p_reqs.project.projectid = kprj.id
+                    p_reqs.project.save()
+                    new_prj_list.append(p_reqs.project)
+                
+                if len(new_prj_list):
+                    prjReqList.filter(project__in = new_prj_list).delete()
+                
                 #
                 # User creation
                 #
@@ -659,10 +697,18 @@ class PreCheckForm(forms.SelfHandlingForm):
                                                     email=userReqList[0].email,
                                                     enabled=True)
                         
+                    registration.username = data['username']
+                    registration.expdate = data['expiration']
                     registration.userid = kuser.id
                     registration.save()
                     first_registr = True
 
+                #
+                # The new user is the project manager of its tenant
+                #
+                for prj_item in new_prj_list:
+                    keystone_api.add_tenant_user_role(request, prj_item.projectid,
+                                            registration.userid, tenantadmin_roleid)
                 #
                 # cache cleanup
                 #
@@ -674,17 +720,6 @@ class PreCheckForm(forms.SelfHandlingForm):
             return False
 
         return True
-
-    
-                
-
-
-
-
-
-
-
-
 
 
 class RejectForm(forms.SelfHandlingForm):
@@ -740,7 +775,7 @@ class RejectForm(forms.SelfHandlingForm):
                         
                 else:
                     #
-                    # First registration request, remove all (via foreign key)
+                    # First registration request, remove all (using cascaded foreign key)
                     #
                 
                     recipients = [ x for x in regReqList.values_list('email', flat=True) ]
