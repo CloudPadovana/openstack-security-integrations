@@ -35,6 +35,8 @@ from openstack_auth_shib.notifications import notifyManagers
 from openstack_auth_shib.notifications import SUBSCR_CHKD_TYPE
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
+from openstack_dashboard.api.keystone import keystoneclient as client_factory
+
 from django.utils.translation import ugettext as _
 
 LOG = logging.getLogger(__name__)
@@ -67,14 +69,27 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 q_args = {
                     'registration__regid' : int(data['regid']),
                     'project__projectname' : curr_prjname
-                }
+                }                
+                prj_req = PrjRequest.objects.filter(**q_args)[0]
                 
                 if data['checkaction'] == 'accept':
-                    new_status = PSTATUS_APPR
-                else:
-                    new_status = PSTATUS_REJ
+                    default_role = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
+
+                    roles_obj = client_factory(request).roles
+                    arg_dict = {
+                        'project' : prj_req.project.projectid,
+                        'user' : prj_req.registration.userid
+                    }
                     
-                PrjRequest.objects.filter(**q_args).update(flowstatus=new_status)
+                    missing_default = True
+                    for item in roles_obj.list():
+                        if item.name == default_role:
+                            roles_obj.grant(item.id, **arg_dict)
+                            missing_default = False
+                    if missing_default:
+                        raise Exception("Default role is undefined")
+                
+                prj_req.delete()
             
                 noti_params = {
                     'username' : data['username'],
