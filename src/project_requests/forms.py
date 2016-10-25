@@ -27,6 +27,7 @@ from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
 
 from openstack_auth_shib.models import PRJ_PUBLIC,PRJ_PRIVATE
+from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import OS_SNAME_LEN
 
 from openstack_auth_shib.notifications import notification_render
@@ -170,6 +171,7 @@ class ProjectRequestForm(forms.SelfHandlingForm):
                 reqArgs = {
                     'registration' : registration,
                     'project' : project,
+                    'flowstatus' : PSTATUS_PENDING,
                     'notes' : data['notes']
                 }                
                 reqPrj = PrjRequest(**reqArgs)
