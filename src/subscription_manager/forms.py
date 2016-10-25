@@ -23,16 +23,12 @@ from django.conf import settings
 from django.forms.widgets import HiddenInput
 from django.views.decorators.debug import sensitive_variables
 
-from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
 
-from openstack_auth_shib.models import PSTATUS_APPR
-from openstack_auth_shib.models import PSTATUS_REJ
-
 from openstack_auth_shib.notifications import notification_render
 from openstack_auth_shib.notifications import notifyManagers
-from openstack_auth_shib.notifications import SUBSCR_CHKD_TYPE
+#from openstack_auth_shib.notifications import SUBSCR_CHKD_TYPE
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
@@ -43,13 +39,8 @@ LOG = logging.getLogger(__name__)
 
 class ApproveSubscrForm(forms.SelfHandlingForm):
 
-    #readonlyInput = forms.TextInput(attrs={'readonly': 'readonly'})
-    
     regid = forms.IntegerField(label=_("ID"), widget=HiddenInput)
     username = forms.CharField(label=_("User name"), widget=HiddenInput)
-    givenname = forms.CharField(label=_("First name"), widget=HiddenInput)
-    sn = forms.CharField(label=_("Last name"), widget=HiddenInput)
-    notes = forms.CharField(label=_("Notes"), required=False, widget=HiddenInput)
     checkaction = forms.CharField(widget=HiddenInput, initial='accept')
 
     @sensitive_variables('data')
@@ -91,12 +82,12 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 
                 prj_req.delete()
             
-                noti_params = {
-                    'username' : data['username'],
-                    'project' : curr_prjname
-                }
-                noti_sbj, noti_body = notification_render(SUBSCR_CHKD_TYPE, noti_params)
-                notifyManagers(noti_sbj, noti_body)
+                #noti_params = {
+                #    'username' : data['username'],
+                #    'project' : curr_prjname
+                #}
+                #noti_sbj, noti_body = notification_render(SUBSCR_CHKD_TYPE, noti_params)
+                #notifyManagers(noti_sbj, noti_body)
         
         except:
             exceptions.handle(request)

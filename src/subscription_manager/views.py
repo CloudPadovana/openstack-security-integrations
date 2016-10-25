@@ -55,9 +55,6 @@ class IndexView(tables.DataTableView):
         reqList = list()
         
         try:
-            #
-            # TODO paging
-            #
             curr_prjname = self.request.user.tenant_name
             q_args = {
                 'project__projectname' : curr_prjname,
@@ -117,9 +114,6 @@ class ApproveView(forms.ModalFormView):
             
         return {
             'regid' : self.get_object().regid,
-            'username' : self.get_object().username,
-            'givenname' : self.get_object().givenname,
-            'sn' : self.get_object().sn,
-            'notes' : self.get_object().notes
+            'username' : self.get_object().username
         }
 
