@@ -751,9 +751,6 @@ class RejectForm(forms.SelfHandlingForm):
     def handle(self, request, data):
     
         try:
-            all_prj_req = list()
-            recipients = None
-            first_reg_rej = False
 
             with transaction.atomic():
                 
@@ -766,48 +763,26 @@ class RejectForm(forms.SelfHandlingForm):
                 #
                 newprj_list = list()
                 for prj_req in prjReqList:
-                    all_prj_req.append(prj_req.project.projectname)
                     if not prj_req.project.projectid:
                         newprj_list.append(prj_req.project.projectname)
                     
                 if len(newprj_list):
                     Project.objects.filter(projectname__in=newprj_list).delete()
                     
-                if registration.userid:
-                    #
-                    # User already registered, remove just the pending requests
-                    #
-                    
-                    prjReqList.delete()
-                        
-                    regReqList.delete()
-                    
-                    recipients = self._retrieve_email(request, registration.userid)
-                        
-                else:
-                    #
-                    # First registration request, remove all (using cascaded foreign key)
-                    #
-                
-                    recipients = [ x for x in regReqList.values_list('email', flat=True) ]
-                    
-                    registration.delete()
-                    first_reg_rej = True
+                #
+                # First registration request, remove all (using cascaded foreign key)
+                #
             
-            if first_reg_rej:
+                user_email = regReqList[0].email
+                
+                registration.delete()
             
                 noti_params = {
                     'notes' : data['reason']
                 }
                 noti_sbj, noti_body = notification_render(FIRST_REG_NO_TYPE, noti_params)
-                notifyUsers(recipients, noti_sbj, noti_body)
+                notifyUsers(user_email, noti_sbj, noti_body)
             
-            elif all_prj_req:
-                noti_params = {
-                    'projects_rejected' : all_prj_req
-                }
-                noti_sbj, noti_body = notification_render(SUBSCR_NO_TYPE, noti_params)
-                notifyUsers(recipients, noti_sbj, noti_body)
 
         except:
             LOG.error("Error rejecting request", exc_info=True)
