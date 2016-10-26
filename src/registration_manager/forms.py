@@ -662,9 +662,6 @@ class PreCheckForm(forms.SelfHandlingForm):
                     p_reqs.project.save()
                     new_prj_list.append(p_reqs.project)
                 
-                if len(new_prj_list):
-                    prjReqList.filter(project__in = new_prj_list).delete()
-                
                 #
                 # User creation
                 #
@@ -680,7 +677,6 @@ class PreCheckForm(forms.SelfHandlingForm):
                     registration.expdate = data['expiration']
                     registration.userid = kuser.id
                     registration.save()
-                    first_registr = True
 
                 #
                 # The new user is the project manager of its tenant
@@ -712,9 +708,21 @@ class PreCheckForm(forms.SelfHandlingForm):
                         noti_sbj, noti_body = notification_render(SUBSCR_ONGOING, n2_params)
                         notifyUsers(user_email, noti_sbj, noti_body)
 
+                newprj_reqs = prjReqList.filter(flowstatus=PSTATUS_REG)
+                if user_email:
+                    for p_item in newprj_reqs:
+                        noti_params = {
+                            'username' : p_item.registration.username,
+                            'projects_info' : [
+                                { 'name' : p_item.project.projectname, 'appr' : True }
+                            ]
+                        }
+                        noti_sbj, noti_body = notification_render(FIRST_REG_OK_TYPE, noti_params)
+                        notifyUsers(user_email, noti_sbj, noti_body)
                 #
                 # cache cleanup
                 #
+                newprj_reqs.delete()
                 userReqList.delete()
 
         except:
