@@ -23,12 +23,12 @@ from django.conf import settings
 from django.forms.widgets import HiddenInput
 from django.views.decorators.debug import sensitive_variables
 
-from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
 
 from openstack_auth_shib.notifications import notification_render
-from openstack_auth_shib.notifications import notifyManagers
-#from openstack_auth_shib.notifications import SUBSCR_CHKD_TYPE
+from openstack_auth_shib.notifications import notify as notifyUsers
+from openstack_auth_shib.notifications import SUBSCR_OK_TYPE
+from openstack_auth_shib.notifications import SUBSCR_NO_TYPE
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
@@ -63,6 +63,8 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 }                
                 prj_req = PrjRequest.objects.filter(**q_args)[0]
                 
+                member = client_factory(request).users.get(prj_req.registration.userid)
+                
                 if data['checkaction'] == 'accept':
                     default_role = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
 
@@ -79,15 +81,27 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                             missing_default = False
                     if missing_default:
                         raise Exception("Default role is undefined")
-                
+                    
+                    #
+                    # send notification to the user
+                    #
+                    noti_params = {
+                        'projects_info' : [ { 'name' : prj_req.project.projectname, 'appr' : True } ]
+                    }
+                    noti_sbj, noti_body = notification_render(SUBSCR_OK_TYPE, noti_params)
+                    notifyUsers(member.email, noti_sbj, noti_body)
+                    
+                else:
+                    #
+                    # send notification to the user
+                    #
+                    noti_params = {
+                        'projects_rejected' : [ prj_req.project.projectname ]
+                    }
+                    noti_sbj, noti_body = notification_render(SUBSCR_NO_TYPE, noti_params)
+                    notifyUsers(member.email, noti_sbj, noti_body)
+                    
                 prj_req.delete()
-            
-                #noti_params = {
-                #    'username' : data['username'],
-                #    'project' : curr_prjname
-                #}
-                #noti_sbj, noti_body = notification_render(SUBSCR_CHKD_TYPE, noti_params)
-                #notifyManagers(noti_sbj, noti_body)
         
         except:
             exceptions.handle(request)
