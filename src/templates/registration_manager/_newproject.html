@@ -20,10 +20,23 @@
 {% load i18n %}
 {% load url from future %}
 
-{% block form_id %}precheck_reg_form{% endblock %}
-{% block form_action %}{% url 'horizon:idmanager:registration_manager:precheck' requestid %}{% endblock %}
+{% block form_id %}newproject_reg_form{% endblock %}
 
-{% block modal-header %}{% trans "New account" %}{% endblock %}
+
+{% block form_action %}
+    {% if action == 'accept' %}
+        {% url 'horizon:idmanager:registration_manager:newproject' requestid %}
+    {% else %}
+        {% url 'horizon:idmanager:registration_manager:rejectproject' requestid %}
+    {% endif %}
+{% endblock %}
+{% block modal-header %}
+    {% if action == 'accept' %}
+        {% trans "Create new project" %}
+    {% else %}
+        {% trans "Reject new project" %}
+    {% endif %}
+{% endblock %}
 
 {% block modal-body %}
 <div class="left">
@@ -35,23 +48,11 @@
 </div>
 <div class="right">
     <h3>{% trans "Description" %}:</h3>
-    <p>{% trans "From here you can pre-check the request." %}</p>
-    
-    {% if extaccount %}
-    <h3>{% trans "External Identity" %}:</h3>
-    <ul> <li>{{ extaccount }}</li> </ul>
-    {% endif %}
-    
-    {% if contact %}
-    <h3>{% trans "Contact" %}:</h3>
-    <ul><li>{{ contact }}</li></ul>
-    {% endif%}
-    
-    {% if email %}
-    <h3>{% trans "Email address" %}:</h3>
-    <ul><li><a href="mailto:{{ email }}">{{ email }}</a></li></ul>
-    {% endif%}
-    
+{% if action == 'accept' %}
+    <p>{% trans "From here you can create the new project." %}</p>
+{% else %}
+    <p>{% trans "From here you can reject the new project." %}</p>
+{% endif %}
 </div>
 {% endblock %}
 

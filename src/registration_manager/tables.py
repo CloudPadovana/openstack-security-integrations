@@ -106,12 +106,18 @@ class RejectLink(tables.LinkAction):
         return datum.code == RegistrData.NEW_USR_EX_PRJ or datum.code == RegistrData.NEW_USR_NEW_PRJ
 
 class NewPrjLink(tables.LinkAction):
-    #
-    # TODO implement
-    #
     name = "newprjlink"
     verbose_name = _("Create Project")
-    url = "horizon:idmanager:registration_manager:precheck"
+    url = "horizon:idmanager:registration_manager:newproject"
+    classes = ("ajax-modal", "btn-edit")
+    
+    def allowed(self, request, datum):
+        return datum.code == RegistrData.EX_USR_NEW_PRJ
+
+class RejectPrjLink(tables.LinkAction):
+    name = "rejectprjlink"
+    verbose_name = _("Reject")
+    url = "horizon:idmanager:registration_manager:rejectproject"
     classes = ("ajax-modal", "btn-edit")
     
     def allowed(self, request, datum):
@@ -160,6 +166,7 @@ class OperationTable(tables.DataTable):
                        GrantAllLink,
                        RejectLink,
                        NewPrjLink,
+                       RejectPrjLink,
                        ForceApprLink,
                        ForceRejLink)
 

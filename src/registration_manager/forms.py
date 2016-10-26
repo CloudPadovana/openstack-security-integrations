@@ -853,4 +853,63 @@ class ForcedCheckForm(forms.SelfHandlingForm):
 
         return True
 
+class NewProjectCheckForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(NewProjectCheckForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['requestid'] = forms.CharField(widget=HiddenInput)
+        self.fields['action'] = forms.CharField(widget=HiddenInput)
+
+        self.fields['reason'] = forms.CharField(
+            label=_('Message'),
+            required=False,
+            widget=forms.widgets.Textarea()
+        )
+
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+    
+        try:
+
+            tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
+
+            with transaction.atomic():
+
+                tmpt = data['requestid'].split(':')
+                regid = int(tmpt[0])
+                project = tmpt[1]
+
+                #
+                # Creation of new tenants
+                #
+                q_args = {
+                    'registration__regid' : regid,
+                    'project__projectname' : project
+                }
+                newprj_reqs = PrjRequest.objects.filter(**q_args)
+                
+                if data['action'] == 'accept':
+                    for p_reqs in newprj_reqs:
+                        LOG.debug("Creating tenant %s" % p_reqs.project.projectname)
+                        kprj = keystone_api.tenant_create(request, p_reqs.project.projectname,
+                                                            p_reqs.project.description, True)
+                        p_reqs.project.projectid = kprj.id
+                        p_reqs.project.save()
+                        
+                        #
+                        # The new user is the project manager of its tenant
+                        #
+                        keystone_api.add_tenant_user_role(request, p_reqs.project.projectid,
+                                            p_reqs.registration.userid, tenantadmin_roleid)
+                    
+                newprj_reqs.delete()
+                
+        except:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            messages.error(request, exc_value)
+            return False
+
+        return True
 
