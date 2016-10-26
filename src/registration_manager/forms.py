@@ -621,6 +621,12 @@ class PreCheckForm(forms.SelfHandlingForm):
                 
                 tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
 
+                password = userReqList[0].password
+                if not password:
+                    password = self._generate_pwd()
+                
+                user_email = userReqList[0].email
+
                 #
                 # Mapping of external accounts
                 #                
@@ -630,10 +636,6 @@ class PreCheckForm(forms.SelfHandlingForm):
                                     registration=userReqList[0].registration)
                     mapping.save()
                     
-                password = userReqList[0].password
-                if not password:
-                    password = self._generate_pwd()
-
                 #
                 # Forward request to project administrators
                 #
@@ -641,31 +643,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                     'project__projectid__isnull' : False,
                     'flowstatus' : PSTATUS_REG
                 }
-                prjreq_new = prjReqList.filter(**q_args)
-                prjreq_new.update(flowstatus=PSTATUS_PENDING)
-
-                #
-                # Send notifications to project administrators and users
-                #
-                for p_item in prjreq_new:
-                
-                    m_users = get_project_managers(request, p_item.project.projectid)
-                    m_emails = [ usr.email for usr in m_users ]
-                    
-                    noti_params = {
-                        'username' : registration.username,
-                        'project' : p_item.project.projectname
-                    }
-                    noti_sbj, noti_body = notification_render(SUBSCR_WAIT_TYPE, noti_params)
-                    notifyUsers(m_emails, noti_sbj, noti_body)
-                    
-                    if email:
-                        n2_params = {
-                            'project' : p_item.project.projectname,
-                            'prjadmins' : m_emails
-                        }
-                        noti_sbj, noti_body = notification_render(SUBSCR_ONGOING, n2_params)
-                        notifyUsers(email, noti_sbj, noti_body)
+                prjReqList.filter(**q_args).update(flowstatus=PSTATUS_PENDING)
 
                 #
                 # Creation of new tenants
@@ -710,14 +688,38 @@ class PreCheckForm(forms.SelfHandlingForm):
                 for prj_item in new_prj_list:
                     keystone_api.add_tenant_user_role(request, prj_item.projectid,
                                             registration.userid, tenantadmin_roleid)
+
+                #
+                # Send notifications to project administrators and users
+                #
+                for p_item in prjReqList.filter(flowstatus=PSTATUS_PENDING):
+                
+                    m_users = get_project_managers(request, p_item.project.projectid)
+                    m_emails = [ usr.email for usr in m_users ]
+                    
+                    noti_params = {
+                        'username' : data['username'],
+                        'project' : p_item.project.projectname
+                    }
+                    noti_sbj, noti_body = notification_render(SUBSCR_WAIT_TYPE, noti_params)
+                    notifyUsers(m_emails, noti_sbj, noti_body)
+                    
+                    if user_email:
+                        n2_params = {
+                            'project' : p_item.project.projectname,
+                            'prjadmins' : m_emails
+                        }
+                        noti_sbj, noti_body = notification_render(SUBSCR_ONGOING, n2_params)
+                        notifyUsers(user_email, noti_sbj, noti_body)
+
                 #
                 # cache cleanup
                 #
                 userReqList.delete()
 
         except:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            messages.error(request, exc_value)
+            LOG.error("Error pre-checking request", exc_info=True)
+            messages.error(request, _("Cannot pre-check request"))
             return False
 
         return True
@@ -800,8 +802,8 @@ class RejectForm(forms.SelfHandlingForm):
                 notifyUsers(recipients, noti_sbj, noti_body)
 
         except:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            messages.error(request, exc_value)
+            LOG.error("Error rejecting request", exc_info=True)
+            messages.error(request, _("Cannot reject request"))
             return False
 
         return True
@@ -847,8 +849,8 @@ class ForcedCheckForm(forms.SelfHandlingForm):
                 prjReqList.delete()
 
         except:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            messages.error(request, exc_value)
+            LOG.error("Error forced-checking request", exc_info=True)
+            messages.error(request, _("Cannot forced check request"))
             return False
 
         return True
@@ -907,8 +909,8 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 newprj_reqs.delete()
                 
         except:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            messages.error(request, exc_value)
+            LOG.error("Error pre-checking project", exc_info=True)
+            messages.error(request, _("Cannot pre-check project"))
             return False
 
         return True
