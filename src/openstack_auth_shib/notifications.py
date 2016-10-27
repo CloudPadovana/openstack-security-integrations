@@ -49,6 +49,8 @@ USER_EXP_TYPE = 'user_expiring'
 MEMBER_REMOVED = 'member_removed'
 MEMBER_REMOVED_ADM = 'member_removed_for_admin'
 CHANGED_MEMBER_ROLE = 'changed_member_priv'
+PRJ_CREATE_TYPE = 'project_created'
+PRJ_REJ_TYPE = 'project_rejected'
 
 
 class NotificationTemplate():

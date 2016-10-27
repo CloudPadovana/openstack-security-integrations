@@ -44,6 +44,8 @@ from openstack_auth_shib.notifications import SUBSCR_OK_TYPE
 from openstack_auth_shib.notifications import SUBSCR_NO_TYPE
 from openstack_auth_shib.notifications import SUBSCR_FORCED_OK_TYPE
 from openstack_auth_shib.notifications import SUBSCR_FORCED_NO_TYPE
+from openstack_auth_shib.notifications import PRJ_CREATE_TYPE
+from openstack_auth_shib.notifications import PRJ_REJ_TYPE
 
 from openstack_auth_shib.models import UserMapping
 from openstack_auth_shib.models import RegRequest
@@ -810,27 +812,56 @@ class ForcedCheckForm(forms.SelfHandlingForm):
     
         try:
             tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
+            usr_and_prj = data['requestid'].split(':')
 
             with transaction.atomic():
-                tmpt = data['requestid'].split(':')
-                regid = int(tmpt[0])
-                project = tmpt[1]
-                
                 q_args = {
-                    'registration__regid' : regid,
-                    'project__projectname' : project
+                    'registration__regid' : int(usr_and_prj[0]),
+                    'project__projectname' : usr_and_prj[1]
                 }
-                prjReqList = PrjRequest.objects.filter(**q_args)
+                prj_req = PrjRequest.objects.filter(**q_args)[0]
+                
+                project_name = prj_req.project.projectname
+                project_id = prj_req.project.projectid
+                user_name = prj_req.registration.username
+                user_id = prj_req.registration.userid
+                
+                if data['action'] == 'accept':
+                    keystone_api.add_tenant_user_role(request, project_id,
+                                                    user_id, default_roleid)
 
-                for prj_req in prjReqList:
-                    if data['action'] == 'accept':
-                        keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
-                                            prj_req.registration.userid, default_roleid)
-                    else:
-                        pass
+                #
+                # clear request
+                #
+                prj_req.delete()
 
-                prjReqList.delete()
+            #
+            # send notification to project managers and users
+            #
+            user_email = keystone_api.user_get(request, user_id).email
+            
+            prjman_list = get_project_managers(request, project_id)
+            noti_params = {
+                'username' : user_name,
+                'project' : project_name
+            }
 
+            if data['action'] == 'accept':
+                noti_params['projects_info'] = [ { 'name' : project_name, 'appr' : True } ]
+                tpl1_type = SUBSCR_FORCED_OK_TYPE
+                tpl2_type = SUBSCR_OK_TYPE
+            else:
+                noti_params['projects_rejected'] = [ project_name ]
+                noti_params['reason'] = data['reason']
+                tpl1_type = SUBSCR_FORCED_NO_TYPE
+                tpl2_type = SUBSCR_NO_TYPE
+
+            noti_sbj, noti_body = notification_render(tpl1_type, noti_params)
+            notifyUsers([ pman.email for pman in prjman_list ], noti_sbj, noti_body)
+            
+            noti_sbj, noti_body = notification_render(tpl2_type, noti_params)
+            notifyUsers(user_email, noti_sbj, noti_body)
+                
         except:
             LOG.error("Error forced-checking request", exc_info=True)
             messages.error(request, _("Cannot forced check request"))
@@ -859,38 +890,58 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
         try:
 
             tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
+            usr_and_prj = data['requestid'].split(':')
 
             with transaction.atomic():
 
-                tmpt = data['requestid'].split(':')
-                regid = int(tmpt[0])
-                project = tmpt[1]
-
                 #
-                # Creation of new tenants
+                # Creation of new tenant
                 #
                 q_args = {
-                    'registration__regid' : regid,
-                    'project__projectname' : project
+                    'registration__regid' : int(usr_and_prj[0]),
+                    'project__projectname' : usr_and_prj[1]
                 }
-                newprj_reqs = PrjRequest.objects.filter(**q_args)
+                prj_req = PrjRequest.objects.filter(**q_args)[0]
+                
+                project_name = prj_req.project.projectname
+                user_id = prj_req.registration.userid
                 
                 if data['action'] == 'accept':
-                    for p_reqs in newprj_reqs:
-                        LOG.debug("Creating tenant %s" % p_reqs.project.projectname)
-                        kprj = keystone_api.tenant_create(request, p_reqs.project.projectname,
-                                                            p_reqs.project.description, True)
-                        p_reqs.project.projectid = kprj.id
-                        p_reqs.project.save()
-                        
-                        #
-                        # The new user is the project manager of its tenant
-                        #
-                        keystone_api.add_tenant_user_role(request, p_reqs.project.projectid,
-                                            p_reqs.registration.userid, tenantadmin_roleid)
+                    LOG.debug("Creating tenant %s" % project_name)
+                    kprj = keystone_api.tenant_create(request, project_name,
+                                                        prj_req.project.description, True)
+                    prj_req.project.projectid = kprj.id
+                    prj_req.project.save()
                     
-                newprj_reqs.delete()
+                    #
+                    # The new user is the project manager of its tenant
+                    #
+                    keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
+                                                    user_id, tenantadmin_roleid)
+
+                #
+                # Clear request
+                #
+                prj_req.delete()
                 
+            #
+            # Send notification to the user
+            #
+            user_email = keystone_api.user_get(request, user_id).email
+            noti_params = {
+                'project' : project_name
+            }
+
+            if data['action'] == 'accept':
+                tpl_type = PRJ_CREATE_TYPE
+
+            else:
+                noti_params ['reason'] = data['reason']
+                tpl_type = PRJ_REJ_TYPE
+
+            noti_sbj, noti_body = notification_render(tpl_type, noti_params)
+            notifyUsers(user_email, noti_sbj, noti_body)
+
         except:
             LOG.error("Error pre-checking project", exc_info=True)
             messages.error(request, _("Cannot pre-check project"))

@@ -31,6 +31,7 @@ from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import OS_SNAME_LEN
 
 from openstack_auth_shib.notifications import notification_render
+from openstack_auth_shib.notifications import notifyManagers
 from openstack_auth_shib.notifications import SUBSCR_REQ_TYPE
 
 from django.utils.translation import ugettext_lazy as _
@@ -156,6 +157,7 @@ class ProjectRequestForm(forms.SelfHandlingForm):
                             'status' : prjitem[2]
                         }
                         project = Project.objects.create(**prjArgs)
+                        newprjlist.append(project.projectname)
 
                     except IntegrityError:
                         messages.error(request, _("Project %s already exists") % prjitem[0])
@@ -175,14 +177,19 @@ class ProjectRequestForm(forms.SelfHandlingForm):
                 }                
                 reqPrj = PrjRequest(**reqArgs)
                 reqPrj.save()
-                newprjlist.append(project.projectname)
 
         
             if len(newprjlist):
-                #
-                # TODO send notification to project admins
-                #
-                pass
+                noti_params = {
+                    'username' : request.user.username,
+                    'project_list' : newprjlist
+                }
+                noti_sbj, noti_body = notification_render(SUBSCR_REQ_TYPE, noti_params)
+                notifyManagers(noti_sbj, noti_body)
+
+            #
+            # TODO implement notifications to project managers
+            #
         
         return True
 

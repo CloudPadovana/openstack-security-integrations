@@ -78,6 +78,7 @@ body: Cloud manager forcedly approved the subscription of {{ username }} to {{ p
 [subscription_forced_rejected]
 subject: Cloud manager forcedly rejected subscription
 body: Cloud manager forcedly rejected the subscription of {{ username }} to {{ project }}
+  {{ reason }}
   
   Please, don't reply to this message
 
@@ -132,7 +133,18 @@ body: Your role for project {{ project }} has been changed from {{ s_role }} to 
   
   Please, don't reply to this message
 
+[project_created]
+subject: Project {{ project }} created
+body: Your request for the creation of project {{ project }} has been accepted
+  
+  Please, don't reply to this message
 
+[project_rejected]
+subject: Project {{ project }} rejected
+body: Your request for the creation of project {{ project }} has been rejected
+  {{ reason }}
+  
+  Please, don't reply to this message
 
 
 
