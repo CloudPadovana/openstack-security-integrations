@@ -33,6 +33,8 @@ urlpatterns = patterns(prefix,
     url(r'^(?P<requestid>[^/]+)/newproject/$', views.NewProjectView.as_view(), 
         name='newproject'),
     url(r'^(?P<requestid>[^/]+)/rejectproject/$', views.RejectProjectView.as_view(), 
-        name='rejectproject')
+        name='rejectproject'),
+    url(r'^(?P<requestid>[^/]+)/guestapprove/$', views.GuestApproveView.as_view(), 
+        name='guestapprove')
     )
 

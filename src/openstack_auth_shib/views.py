@@ -307,10 +307,8 @@ def processForm(request, reg_form, domain, attributes=None):
             #
             # empty list for guest prj
             #
-            found_guest = False
             if len(prjlist) == 0:
                 for item in Project.objects.filter(status=PRJ_GUEST):
-                    found_guest = True
                     prjlist.append((item.projectname, None, 0, False))
 
             for prjitem in prjlist:
@@ -332,10 +330,6 @@ def processForm(request, reg_form, domain, attributes=None):
                     'project' : project,
                     'notes' : notes
                 }
-                
-                # workaround for guest tenant (no tenant manager)
-                if found_guest:
-                    reqArgs['flowstatus'] = PSTATUS_APPR
                 
                 reqPrj = PrjRequest(**reqArgs)
                 reqPrj.save()

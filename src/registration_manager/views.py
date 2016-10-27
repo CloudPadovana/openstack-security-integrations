@@ -28,6 +28,7 @@ from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import PrjRequest
 
 from openstack_auth_shib.models import RSTATUS_PENDING
+from openstack_auth_shib.models import PRJ_GUEST
 
 from .tables import RegistrData
 from .tables import OperationTable
@@ -35,6 +36,7 @@ from .forms import PreCheckForm
 from .forms import RejectForm
 from .forms import ForcedCheckForm
 from .forms import NewProjectCheckForm
+from .forms import GuestCheckForm
 
 LOG = logging.getLogger(__name__)
 
@@ -62,7 +64,10 @@ class MainView(tables.DataTableView):
                 rData.organization = prjReq.registration.organization
                 rData.phone = prjReq.registration.phone
                 
-                if prjReq.project.projectid:
+                if prjReq.project.status == PRJ_GUEST:
+                    rData.code = RegistrData.NEW_USR_GUEST_PRJ
+                    requestid = "%d:" % prjReq.registration.regid
+                elif prjReq.project.projectid:
                     if prjReq.registration.regid in regid_list:
                         rData.code = RegistrData.NEW_USR_EX_PRJ
                         requestid = "%d:" % prjReq.registration.regid
@@ -89,12 +94,7 @@ class MainView(tables.DataTableView):
         result.sort()
         return result
 
-
-
-class PreCheckView(forms.ModalFormView):
-    form_class = PreCheckForm
-    template_name = 'idmanager/registration_manager/precheck.html'
-    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+class AbstractCheckView(forms.ModalFormView):
 
     def get_object(self):
         if not hasattr(self, "_object"):
@@ -115,14 +115,18 @@ class PreCheckView(forms.ModalFormView):
 
         return self._object
 
-
     def get_context_data(self, **kwargs):
-        context = super(PreCheckView, self).get_context_data(**kwargs)
+        context = super(AbstractCheckView, self).get_context_data(**kwargs)
         context['requestid'] = "%d:" % self.get_object().registration.regid
         context['extaccount'] = self.get_object().externalid
         context['contact'] = self.get_object().contactper
         context['email'] = self.get_object().email
         return context
+
+class PreCheckView(AbstractCheckView):
+    form_class = PreCheckForm
+    template_name = 'idmanager/registration_manager/precheck.html'
+    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
 
     def get_initial(self):
         return {
@@ -132,38 +136,10 @@ class PreCheckView(forms.ModalFormView):
         }
 
 
-class RejectView(forms.ModalFormView):
+class RejectView(AbstractCheckView):
     form_class = RejectForm
     template_name = 'idmanager/registration_manager/reject.html'
     success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
-
-    def get_object(self):
-        if not hasattr(self, "_object"):
-            try:
-                tmpTuple = self.kwargs['requestid'].split(':')
-                regid = int(tmpTuple[0])
-                
-                tmplist = RegRequest.objects.filter(registration__regid=regid)
-                if len(tmplist):
-                    self._object = tmplist[0]
-                else:
-                    raise Exception("Database error")
-                    
-            except Exception:
-                LOG.error("Registration error", exc_info=True)
-                redirect = reverse_lazy("horizon:idmanager:registration_manager:index")
-                exceptions.handle(self.request, _('Unable to pre-check request.'), redirect=redirect)
-
-        return self._object
-
-
-    def get_context_data(self, **kwargs):
-        context = super(RejectView, self).get_context_data(**kwargs)
-        context['requestid'] = "%d:" % self.get_object().registration.regid
-        context['extaccount'] = self.get_object().externalid
-        context['contact'] = self.get_object().contactper
-        context['email'] = self.get_object().email
-        return context
 
     def get_initial(self):
         return {
@@ -257,4 +233,22 @@ class RejectProjectView(forms.ModalFormView):
             'requestid' : self.kwargs['requestid'],
             'action' : 'reject'
         }
+
+class GuestApproveView(AbstractCheckView):
+    form_class = GuestCheckForm
+    template_name = 'idmanager/registration_manager/precheck.html'
+    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+    
+    def get_context_data(self, **kwargs):
+        context = super(GuestApproveView, self).get_context_data(**kwargs)
+        context['guestmode'] = True
+        return context
+
+    def get_initial(self):
+        return {
+            'regid' : self.get_object().registration.regid,
+            'username' : self.get_object().registration.username,
+            'expiration' : datetime.datetime.now() + datetime.timedelta(365)
+        }
+
 

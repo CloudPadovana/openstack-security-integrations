@@ -27,6 +27,7 @@ class RegistrData:
     NEW_USR_EX_PRJ = 2
     EX_USR_NEW_PRJ = 3
     EX_USR_EX_PRJ = 4
+    NEW_USR_GUEST_PRJ = 5
 
     def __init__(self):
         self.requestid = None
@@ -111,6 +112,24 @@ class ForceRejLink(tables.LinkAction):
     def allowed(self, request, datum):
         return datum.code == RegistrData.EX_USR_EX_PRJ
 
+class GuestApprLink(tables.LinkAction):
+    name = "guestapprlink"
+    verbose_name = _("Guest Approve")
+    url = "horizon:idmanager:registration_manager:guestapprove"
+    classes = ("ajax-modal", "btn-edit")
+    
+    def allowed(self, request, datum):
+        return datum.code == RegistrData.NEW_USR_GUEST_PRJ
+
+class GuestRejLink(tables.LinkAction):
+    name = "guestrejlink"
+    verbose_name = _("Guest Reject")
+    url = "horizon:idmanager:registration_manager:reject"
+    classes = ("ajax-modal", "btn-edit")
+    
+    def allowed(self, request, datum):
+        return datum.code == RegistrData.NEW_USR_GUEST_PRJ
+
 def get_description(data):
     if data.code == RegistrData.NEW_USR_NEW_PRJ:
         return _('New user and new project')
@@ -118,6 +137,8 @@ def get_description(data):
         return _('New user to be pre-checked')
     elif data.code == RegistrData.EX_USR_NEW_PRJ:
         return _('User requires a new project')
+    elif data.code == RegistrData.NEW_USR_GUEST_PRJ:
+        return _('New user requires access as guest')
     else:
         return _('User requires membership')
 
@@ -138,7 +159,9 @@ class OperationTable(tables.DataTable):
                        NewPrjLink,
                        RejectPrjLink,
                        ForceApprLink,
-                       ForceRejLink)
+                       ForceRejLink,
+                       GuestApprLink,
+                       GuestRejLink)
 
     def get_object_id(self, datum):
         return datum.requestid

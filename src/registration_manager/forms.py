@@ -55,6 +55,7 @@ from openstack_auth_shib.models import PrjRequest
 
 from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import PSTATUS_PENDING
+from openstack_auth_shib.models import PRJ_GUEST
 
 from openstack_auth_shib.models import OS_LNAME_LEN
 from openstack_auth_shib.utils import get_project_managers
@@ -64,6 +65,15 @@ from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
 
+def generate_pwd():
+    if crypto_version.startswith('2.0'):
+        prng = randpool.RandomPool()
+        iv = prng.get_bytes(256)
+    else:
+        prng = Random.new()
+        iv = prng.read(16)
+    return base64.b64encode(iv)
+    
 def check_and_get_roleids(request):
     tenantadmin_roleid = None
     default_roleid = None
@@ -110,23 +120,6 @@ class PreCheckForm(forms.SelfHandlingForm):
             widget=SelectDateWidget(None, range(curr_year, curr_year + 25))
         )
 
-    def _retrieve_email(self, request, uid):
-        try:
-            tmpusr = keystone_api.user_get(request, uid)
-            return tmpusr.email
-        except:
-            LOG.error("Cannot retrieve email", exc_info=True)
-        return None
-
-    def _generate_pwd(self):
-        if crypto_version.startswith('2.0'):
-            prng = randpool.RandomPool()
-            iv = prng.get_bytes(256)
-        else:
-            prng = Random.new()
-            iv = prng.read(16)
-        return base64.b64encode(iv)
-    
     @sensitive_variables('data')
     def handle(self, request, data):
 
@@ -138,33 +131,31 @@ class PreCheckForm(forms.SelfHandlingForm):
             return False
 
         try:
+                
+            tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
 
             with transaction.atomic():
 
                 registration = Registration.objects.get(regid=int(data['regid']))
 
-                userReqList = RegRequest.objects.filter(registration=registration)
-                if len(userReqList) == 0:
-                    raise Exception("Cannot find registration request")
+                reg_request = RegRequest.objects.filter(registration=registration)[0]
                     
                 prjReqList = PrjRequest.objects.filter(registration=registration)
-                
-                tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
 
-                password = userReqList[0].password
+                password = reg_request.password
                 if not password:
-                    password = self._generate_pwd()
+                    password = generate_pwd()
                 
-                user_email = userReqList[0].email
+                user_email = reg_request.email
 
                 #
                 # Mapping of external accounts
                 #                
-                if userReqList[0].externalid:
-                    LOG.debug("Registering external account %s" % userReqList[0].externalid)
-                    mapping = UserMapping(globaluser=userReqList[0].externalid,
-                                    registration=userReqList[0].registration)
+                if reg_request.externalid:
+                    mapping = UserMapping(globaluser=reg_request.externalid,
+                                    registration=reg_request.registration)
                     mapping.save()
+                    LOG.info("Registered external account %s" % reg_request.externalid)
                     
                 #
                 # Forward request to project administrators
@@ -185,12 +176,12 @@ class PreCheckForm(forms.SelfHandlingForm):
                 }
                 
                 for p_reqs in prjReqList.filter(**q_args):
-                    LOG.debug("Creating tenant %s" % p_reqs.project.projectname)
                     kprj = keystone_api.tenant_create(request, p_reqs.project.projectname,
                                                         p_reqs.project.description, True)
                     p_reqs.project.projectid = kprj.id
                     p_reqs.project.save()
                     new_prj_list.append(p_reqs.project)
+                    LOG.info("Created tenant %s" % p_reqs.project.projectname)
                 
                 #
                 # User creation
@@ -200,13 +191,14 @@ class PreCheckForm(forms.SelfHandlingForm):
                     kuser = keystone_api.user_create(request, 
                                                     name=registration.username,
                                                     password=password,
-                                                    email=userReqList[0].email,
+                                                    email=user_email,
                                                     enabled=True)
                         
                     registration.username = data['username']
                     registration.expdate = data['expiration']
                     registration.userid = kuser.id
                     registration.save()
+                    LOG.info("Created user %s" % registration.username)
 
                 #
                 # The new user is the project manager of its tenant
@@ -230,30 +222,29 @@ class PreCheckForm(forms.SelfHandlingForm):
                     noti_sbj, noti_body = notification_render(SUBSCR_WAIT_TYPE, noti_params)
                     notifyUsers(m_emails, noti_sbj, noti_body)
                     
-                    if user_email:
-                        n2_params = {
-                            'project' : p_item.project.projectname,
-                            'prjadmins' : m_emails
-                        }
-                        noti_sbj, noti_body = notification_render(SUBSCR_ONGOING, n2_params)
-                        notifyUsers(user_email, noti_sbj, noti_body)
+                    n2_params = {
+                        'project' : p_item.project.projectname,
+                        'prjadmins' : m_emails
+                    }
+                    noti_sbj, noti_body = notification_render(SUBSCR_ONGOING, n2_params)
+                    notifyUsers(user_email, noti_sbj, noti_body)
 
                 newprj_reqs = prjReqList.filter(flowstatus=PSTATUS_REG)
-                if user_email:
-                    for p_item in newprj_reqs:
-                        noti_params = {
-                            'username' : p_item.registration.username,
-                            'projects_info' : [
-                                { 'name' : p_item.project.projectname, 'appr' : True }
-                            ]
-                        }
-                        noti_sbj, noti_body = notification_render(FIRST_REG_OK_TYPE, noti_params)
-                        notifyUsers(user_email, noti_sbj, noti_body)
+                for p_item in newprj_reqs:
+                    noti_params = {
+                        'username' : p_item.registration.username,
+                        'projects_info' : [
+                            { 'name' : p_item.project.projectname, 'appr' : True }
+                        ]
+                    }
+                    noti_sbj, noti_body = notification_render(FIRST_REG_OK_TYPE, noti_params)
+                    notifyUsers(user_email, noti_sbj, noti_body)
+
                 #
                 # cache cleanup
                 #
                 newprj_reqs.delete()
-                userReqList.delete()
+                reg_request.delete()
 
         except:
             LOG.error("Error pre-checking request", exc_info=True)
@@ -435,11 +426,11 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 user_id = prj_req.registration.userid
                 
                 if data['action'] == 'accept':
-                    LOG.debug("Creating tenant %s" % project_name)
                     kprj = keystone_api.tenant_create(request, project_name,
                                                         prj_req.project.description, True)
                     prj_req.project.projectid = kprj.id
                     prj_req.project.save()
+                    LOG.info("Created tenant %s" % project_name)
                     
                     #
                     # The new user is the project manager of its tenant
@@ -469,6 +460,105 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
 
             noti_sbj, noti_body = notification_render(tpl_type, noti_params)
             notifyUsers(user_email, noti_sbj, noti_body)
+
+        except:
+            LOG.error("Error pre-checking project", exc_info=True)
+            messages.error(request, _("Cannot pre-check project"))
+            return False
+
+        return True
+
+class GuestCheckForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(GuestCheckForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['regid'] = forms.IntegerField(widget=HiddenInput)
+
+        self.fields['username'] = forms.CharField(
+            label=_("User name"),
+            required=False,
+            max_length=OS_LNAME_LEN
+        )
+
+        curr_year = datetime.datetime.now().year            
+        self.fields['expiration'] = forms.DateTimeField(
+            label=_("Expiration date"),
+            required=False,
+            widget=SelectDateWidget(None, range(curr_year, curr_year + 25))
+        )
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+    
+        try:
+
+            tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
+
+            with transaction.atomic():
+            
+                registration = Registration.objects.get(regid=int(data['regid']))
+
+                reg_request = RegRequest.objects.filter(registration=registration)[0]
+                
+                q_args = {
+                    'registration' : registration,
+                    'project__status' : PRJ_GUEST
+                }
+                prj_reqs = PrjRequest.objects.filter(**q_args)
+                project_id = prj_reqs[0].project.projectid
+                project_name = prj_reqs[0].project.projectname
+
+                password = reg_request.password
+                if not password:
+                    password = generate_pwd()
+                
+                user_email = reg_request.email
+
+                #
+                # Mapping of external accounts
+                #                
+                if reg_request.externalid:
+                    mapping = UserMapping(globaluser=reg_request.externalid,
+                                    registration=reg_request.registration)
+                    mapping.save()
+                    LOG.info("Registered external account %s" % reg_request.externalid)
+
+                #
+                # clear requests
+                #
+                prj_reqs.delete()
+                reg_request.delete()
+
+                #
+                # User creation
+                # 
+                kuser = keystone_api.user_create(request, 
+                                                name=registration.username,
+                                                password=password,
+                                                email=user_email,
+                                                enabled=True)
+                    
+                registration.username = data['username']
+                registration.expdate = data['expiration']
+                registration.userid = kuser.id
+                registration.save()
+                LOG.info("Created guest user %s" % registration.username)
+
+                keystone_api.add_tenant_user_role(request, project_id,
+                                            registration.userid, default_roleid)
+
+                #
+                # Send notification to the user
+                #
+                noti_params = {
+                    'username' : registration.username,
+                    'projects_info' : [
+                        { 'name' : project_name, 'appr' : True }
+                    ]
+                }
+                noti_sbj, noti_body = notification_render(FIRST_REG_OK_TYPE, noti_params)
+                notifyUsers(user_email, noti_sbj, noti_body)
 
         except:
             LOG.error("Error pre-checking project", exc_info=True)
