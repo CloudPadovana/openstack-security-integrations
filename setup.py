@@ -21,7 +21,7 @@ from distutils.core import setup
 from distutils.command.bdist_rpm import bdist_rpm as _bdist_rpm
 
 pkg_name = 'openstack-security-integrations'
-pkg_version = '1.1.1'
+pkg_version = '1.2.0'
 pkg_release = '1'
 
 source_items = "setup.py src config"
@@ -73,11 +73,15 @@ template_list = [
 ]
 
 reg_templ_list = [
-    'src/templates/registration_manager/reg_process.html',
-    'src/templates/registration_manager/_reg_process.html',
+    'src/templates/registration_manager/_forced.html',
+    'src/templates/registration_manager/forced.html',
+    'src/templates/registration_manager/_newproject.html',
+    'src/templates/registration_manager/newproject.html',
+    'src/templates/registration_manager/_precheck.html',
+    'src/templates/registration_manager/precheck.html',
     'src/templates/registration_manager/reg_manager.html',
-    'src/templates/registration_manager/reg_approve.html',
-    'src/templates/registration_manager/_reg_approve.html'
+    'src/templates/registration_manager/_reject.html',
+    'src/templates/registration_manager/reject.html'
 ]
 
 subscr_templ_list = [
