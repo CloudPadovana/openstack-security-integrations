@@ -116,6 +116,7 @@ body: Your role for project {{ project }} has been changed from {{ s_role }} to 
 [project_created]
 subject: Project {{ project }} created
 body: Your request for the creation of project {{ project }} has been accepted
+  You are the project administrator for the project {{ project }}
   
   Please, don't reply to this message
 

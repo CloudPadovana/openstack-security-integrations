@@ -233,7 +233,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                 for p_item in newprj_reqs:
                     noti_params = {
                         'username' : p_item.registration.username,
-                        'project' : project_name,
+                        'project' : p_item.project.projectname,
                         'guestmode' : False
                     }
                     noti_sbj, noti_body = notification_render(FIRST_REG_OK_TYPE, noti_params)
