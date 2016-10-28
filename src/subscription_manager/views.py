@@ -29,8 +29,6 @@ from openstack_auth_shib.models import PrjRequest
 
 from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import PSTATUS_PENDING
-from openstack_auth_shib.models import PSTATUS_APPR
-from openstack_auth_shib.models import PSTATUS_REJ
 
 from .tables import SubscriptionTable
 from .forms import ApproveSubscrForm

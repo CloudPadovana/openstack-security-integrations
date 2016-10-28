@@ -20,25 +20,19 @@ PRJ_PRIVATE = 0
 PRJ_PUBLIC = 1
 PRJ_GUEST = 3
 
-# Status for project approval
-PSTATUS_REG = 0
-PSTATUS_PENDING = 1
-PSTATUS_APPR = 2
-PSTATUS_REJ = 3
-
-# Status for registration approval
-RSTATUS_PENDING = 0
-RSTATUS_PRECHKD = 1
-RSTATUS_CHECKED = 2
-RSTATUS_NOFLOW = 3
 #
-#   PENDING -----------------------+
-#   (requests for registration)    |
-#                                  +--- CHECKED -- (approved)
-#                                  |
-#   PRECHKD -----------------------+
-#   (requests for prj membership) 
+# Project request must be handled by cloud admin first
+#
+PSTATUS_REG = 0
+#
+# Project request must be handled by project admin
+#
+PSTATUS_PENDING = 1
 
+#
+# Dummy value for RegRequest.flowstatus
+#
+RSTATUS_PENDING = 0
 
 OS_ID_LEN = 64
 OS_LNAME_LEN = 255
@@ -50,15 +44,23 @@ PWD_LEN = 64
 # Persistent data
 class Registration(models.Model):
     regid = models.AutoField(primary_key=True)
+    #
+    # user id as registered in keystone
+    # it's null if and only if the user is not yet
+    # registered in keystone
+    #
     userid = models.CharField(
         max_length=OS_ID_LEN,
         db_index=True,
         null=True
-    )                                   #local user id
+    )
+    #
+    # user name as registered in keystone
+    #
     username = models.CharField(
         max_length=OS_LNAME_LEN,
         unique=True
-    )                                   #local user name
+    )
     givenname = models.CharField(max_length=OS_LNAME_LEN)
     sn = models.CharField(max_length=OS_LNAME_LEN)
     organization = models.CharField(max_length=OS_LNAME_LEN)
@@ -70,18 +72,33 @@ class Registration(models.Model):
     )
 
 class Project(models.Model):
+    #
+    # project name as registered in keystone
+    #
     projectname = models.CharField(
         max_length=OS_SNAME_LEN,
         primary_key=True
     )
+    #
+    # project id as registered in keystone
+    # it's null if and only if the project is not yet
+    # registered in keystone
+    #
     projectid = models.CharField(
         max_length=OS_ID_LEN,
         null=True
     )
     description = models.TextField()
+    #
+    # Type of project (public, private, guest)
+    #
     status = models.IntegerField()
 
 class UserMapping(models.Model):
+    #
+    # the id provided by the SSO authority
+    # for example the eduPersonPrincipalName
+    #
     globaluser = models.CharField(
         max_length=EXT_ACCT_LEN,
         primary_key=True
@@ -97,6 +114,9 @@ class RegRequest(models.Model):
     password = models.CharField(max_length=PWD_LEN, null=True)
     externalid = models.CharField(max_length=EXT_ACCT_LEN, null=True)
     email = models.EmailField(max_length=EMAIL_LEN)
+    #
+    # not used, kept for back compatibility or for future features
+    #
     flowstatus = models.IntegerField(default=RSTATUS_PENDING)
     contactper = models.CharField(max_length=OS_LNAME_LEN, null=True)
     notes = models.TextField()
@@ -104,6 +124,9 @@ class RegRequest(models.Model):
 class PrjRequest(models.Model):
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    #
+    # Process status of the request, see PSTATUS_* for possible values
+    #
     flowstatus = models.IntegerField(default=PSTATUS_REG)
     notes = models.TextField()
 

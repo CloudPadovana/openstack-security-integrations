@@ -49,7 +49,7 @@ from keystoneclient import exceptions as keystone_exceptions
 from horizon import forms
 
 from .models import Registration, Project, RegRequest, PrjRequest, UserMapping
-from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST, PSTATUS_APPR
+from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST
 from .forms import MixRegistForm
 from .notifications import notifyManagers, notification_render, REGISTR_AVAIL_TYPE
 from .idpmanager import get_manager
