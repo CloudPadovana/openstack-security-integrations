@@ -233,9 +233,8 @@ class PreCheckForm(forms.SelfHandlingForm):
                 for p_item in newprj_reqs:
                     noti_params = {
                         'username' : p_item.registration.username,
-                        'projects_info' : [
-                            { 'name' : p_item.project.projectname, 'appr' : True }
-                        ]
+                        'project' : project_name,
+                        'guestmode' : False
                     }
                     noti_sbj, noti_body = notification_render(FIRST_REG_OK_TYPE, noti_params)
                     notifyUsers(user_email, noti_sbj, noti_body)
@@ -320,11 +319,12 @@ class ForcedCheckForm(forms.SelfHandlingForm):
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
         self.fields['action'] = forms.CharField(widget=HiddenInput)
 
-        self.fields['reason'] = forms.CharField(
-            label=_('Message'),
-            required=False,
-            widget=forms.widgets.Textarea()
-        )
+        if kwargs['initial']['action'] == 'reject':
+            self.fields['reason'] = forms.CharField(
+                label=_('Message'),
+                required=False,
+                widget=forms.widgets.Textarea()
+            )
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -366,12 +366,10 @@ class ForcedCheckForm(forms.SelfHandlingForm):
             }
 
             if data['action'] == 'accept':
-                noti_params['projects_info'] = [ { 'name' : project_name, 'appr' : True } ]
                 tpl1_type = SUBSCR_FORCED_OK_TYPE
                 tpl2_type = SUBSCR_OK_TYPE
             else:
-                noti_params['projects_rejected'] = [ project_name ]
-                noti_params['reason'] = data['reason']
+                noti_params['notes'] = data['reason']
                 tpl1_type = SUBSCR_FORCED_NO_TYPE
                 tpl2_type = SUBSCR_NO_TYPE
 
@@ -396,11 +394,12 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
         self.fields['action'] = forms.CharField(widget=HiddenInput)
 
-        self.fields['reason'] = forms.CharField(
-            label=_('Message'),
-            required=False,
-            widget=forms.widgets.Textarea()
-        )
+        if kwargs['initial']['action'] == 'reject':
+            self.fields['reason'] = forms.CharField(
+                label=_('Message'),
+                required=False,
+                widget=forms.widgets.Textarea()
+            )
 
 
     @sensitive_variables('data')
@@ -455,7 +454,7 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 tpl_type = PRJ_CREATE_TYPE
 
             else:
-                noti_params ['reason'] = data['reason']
+                noti_params ['notes'] = data['reason']
                 tpl_type = PRJ_REJ_TYPE
 
             noti_sbj, noti_body = notification_render(tpl_type, noti_params)
@@ -553,9 +552,8 @@ class GuestCheckForm(forms.SelfHandlingForm):
                 #
                 noti_params = {
                     'username' : registration.username,
-                    'projects_info' : [
-                        { 'name' : project_name, 'appr' : True }
-                    ]
+                    'project' : project_name,
+                    'guestmode' : True
                 }
                 noti_sbj, noti_body = notification_render(FIRST_REG_OK_TYPE, noti_params)
                 notifyUsers(user_email, noti_sbj, noti_body)

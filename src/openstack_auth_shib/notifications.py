@@ -34,8 +34,7 @@ TEMPLATE_REGEX = re.compile("notifications_(\w\w).txt")
 
 # List of available notification templates
 REGISTR_AVAIL_TYPE = 'registration_available'
-SUBSCR_REQ_TYPE = 'subscription_request'
-SUBSCR_CHKD_TYPE = 'subscription_checked'
+NEWPRJ_REQ_TYPE = 'project_creation_request'
 SUBSCR_WAIT_TYPE = 'subscription_waiting_approval'
 SUBSCR_ONGOING = 'subscription_ongoing'
 SUBSCR_REMINDER = 'subscription_reminder'

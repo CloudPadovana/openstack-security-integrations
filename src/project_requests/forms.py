@@ -32,7 +32,7 @@ from openstack_auth_shib.models import OS_SNAME_LEN
 
 from openstack_auth_shib.notifications import notification_render
 from openstack_auth_shib.notifications import notifyManagers
-from openstack_auth_shib.notifications import SUBSCR_REQ_TYPE
+from openstack_auth_shib.notifications import NEWPRJ_REQ_TYPE
 
 from django.utils.translation import ugettext_lazy as _
 
@@ -178,13 +178,15 @@ class ProjectRequestForm(forms.SelfHandlingForm):
                 reqPrj = PrjRequest(**reqArgs)
                 reqPrj.save()
 
-        
-            if len(newprjlist):
+            #
+            # Send notification to cloud admins for project creation
+            #
+            for prj_name in newprjlist:
                 noti_params = {
                     'username' : request.user.username,
-                    'project_list' : newprjlist
+                    'project' : prj_name
                 }
-                noti_sbj, noti_body = notification_render(SUBSCR_REQ_TYPE, noti_params)
+                noti_sbj, noti_body = notification_render(NEWPRJ_REQ_TYPE, noti_params)
                 notifyManagers(noti_sbj, noti_body)
 
             #

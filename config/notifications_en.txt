@@ -5,23 +5,11 @@ body: A new request for registration is available
 
   Please, don't reply to this message
 
-[subscription_request]
-subject: Project subscription request ({{ username }})
-body: New subscription request from {{ username }} for the following projects:
-  {% for prj in project_list %}
-  {{ prj }}
-  {% endfor %}
+[project_creation_request]
+subject: Project creation request ({{ username }})
+body: The user {{ username }} requires the creation of the project {{ project }}
   
   Please, don't reply to this message
-
-[subscription_checked]
-subject: Subscription has been checked
-body: A subscription has been checked by project manager
-  {% if username %}The username is {{ username }}{% endif %}
-  {% if project %}The project is {{ project }}{% endif %}
-  
-  Please, don't reply to this message
-
 
 [subscription_waiting_approval]
 subject: Subscription request waiting for approval
@@ -35,20 +23,15 @@ body: User {{ username }} requires access to project {{ project }}
 subject: Your registration has been accepted
 body: Your account has been registered
   Your login name is {{ username }}
-  The status of your project subscriptions are the following:
-  {% for prj in projects_info %}
-  Project {{ prj.name }} has been {% if prj.appr %}approved{% else %}{% if prj.rej %}rejected{% else %}created{% endif %}{% endif %}
-  {% endfor %}
+  {% if guestmode %}You join the guest project
+  {% else %}You're the project administrator of the project {{ project }}{% endif %}
+  
   
   Please, don't reply to this message
 
 [subscription_processed]
-subject: Your project subscriptions have been approved
-body: Your subscriptions have been approved
-  The status of your project subscriptions are the following:
-  {% for prj in projects_info %}
-  Project {{ prj.name }} has been {% if prj.appr %}approved{% else %}{% if prj.rej %}rejected{% else %}created{% endif %}{% endif %}
-  {% endfor %}
+subject: Subscription to project {{ project }} approved
+body: Your request to access the project {{ project }} has been approved
   
   Please, don't reply to this message
 
@@ -60,12 +43,9 @@ body: Your request to access the cloud infrastructure was rejected
   Please, don't reply to this message
 
 [subscription_rejected]
-subject: Your project subscriptions have been rejected
-body: Your subscriptions have been rejected
-  {% if projects_rejected %}You are not allowed to access to the following projects:{% endif %}
-  {% for prj in projects_rejected %}
-  {{ prj }}
-  {% endfor %}
+subject: Subscription to project {{ project }} rejected
+body: Your request to access the project {{ project }} has been rejected
+  {% if notes %}{{ notes }}{% endif %}
   
   Please, don't reply to this message
 
@@ -78,7 +58,7 @@ body: Cloud manager forcedly approved the subscription of {{ username }} to {{ p
 [subscription_forced_rejected]
 subject: Cloud manager forcedly rejected subscription
 body: Cloud manager forcedly rejected the subscription of {{ username }} to {{ project }}
-  {{ reason }}
+  {% if notes %}{{ notes }}{% endif %}
   
   Please, don't reply to this message
 
@@ -142,7 +122,7 @@ body: Your request for the creation of project {{ project }} has been accepted
 [project_rejected]
 subject: Project {{ project }} rejected
 body: Your request for the creation of project {{ project }} has been rejected
-  {{ reason }}
+  {% if notes %}{{ notes }}{% endif %}
   
   Please, don't reply to this message
 

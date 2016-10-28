@@ -64,6 +64,7 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 prj_req = PrjRequest.objects.filter(**q_args)[0]
                 
                 member = client_factory(request).users.get(prj_req.registration.userid)
+                project_name = prj_req.project.projectname
                 
                 if data['checkaction'] == 'accept':
                     default_role = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
@@ -82,26 +83,24 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                     if missing_default:
                         raise Exception("Default role is undefined")
                     
-                    #
-                    # send notification to the user
-                    #
-                    noti_params = {
-                        'projects_info' : [ { 'name' : prj_req.project.projectname, 'appr' : True } ]
-                    }
-                    noti_sbj, noti_body = notification_render(SUBSCR_OK_TYPE, noti_params)
-                    notifyUsers(member.email, noti_sbj, noti_body)
-                    
-                else:
-                    #
-                    # send notification to the user
-                    #
-                    noti_params = {
-                        'projects_rejected' : [ prj_req.project.projectname ]
-                    }
-                    noti_sbj, noti_body = notification_render(SUBSCR_NO_TYPE, noti_params)
-                    notifyUsers(member.email, noti_sbj, noti_body)
-                    
+                #
+                # clear request
+                #
                 prj_req.delete()
+
+            #
+            # send notification to the user
+            #
+            noti_params = {
+                'project' : project_name
+            }
+            if data['checkaction'] == 'accept':
+                tpl_type = SUBSCR_OK_TYPE
+            else:
+                tpl_type = SUBSCR_NO_TYPE
+
+            noti_sbj, noti_body = notification_render(tpl_type, noti_params)
+            notifyUsers(member.email, noti_sbj, noti_body)
         
         except:
             exceptions.handle(request)
