@@ -25,5 +25,7 @@ prefix = 'openstack_dashboard.dashboards.idmanager.subscription_manager.views'
 urlpatterns = patterns(prefix,
     url(r'^$', views.IndexView.as_view(), name='index'),
     url(r'^(?P<regid>[^/]+)/approve/$', views.ApproveView.as_view(), name='approve'),
-    url(r'^(?P<regid>[^/]+)/reject/$', views.RejectView.as_view(), name='reject'))
+    url(r'^(?P<regid>[^/]+)/reject/$', views.RejectView.as_view(), name='reject'),
+    url(r'^(?P<regid>[^/]+)/renew/$', views.RenewView.as_view(), name='renew'),
+    url(r'^(?P<regid>[^/]+)/discard/$', views.DiscardView.as_view(), name='discard'))
 

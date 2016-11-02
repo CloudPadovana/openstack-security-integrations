@@ -28,6 +28,15 @@ PSTATUS_REG = 0
 # Project request must be handled by project admin
 #
 PSTATUS_PENDING = 1
+#
+# Subscription renewal to be handled by cloud admin first
+#
+PSTATUS_RENEW_ADMIN = 10
+#
+# Subscription renewal to be handled by project admin
+#
+PSTATUS_RENEW_MEMB = 11
+
 
 #
 # Dummy value for RegRequest.flowstatus

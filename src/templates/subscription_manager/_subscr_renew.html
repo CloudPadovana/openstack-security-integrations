@@ -1,0 +1,91 @@
+{% extends "horizon/common/_modal_form.html" %}
+
+{% comment %}
+  Copyright (c) 2014 INFN - "Istituto Nazionale di Fisica Nucleare" - Italy
+  All Rights Reserved.
+
+  Licensed under the Apache License, Version 2.0 (the "License"); you may
+  not use this file except in compliance with the License. You may obtain
+  a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  License for the specific language governing permissions and limitations
+  under the License. 
+{% endcomment %}
+
+{% load i18n %}
+{% load url from future %}
+
+{% block form_id %}renew_subscr_form{% endblock %}
+{% block form_action %}
+    {% if action == 'accept' %}
+        {% url 'horizon:idmanager:subscription_manager:renew' regid %}
+    {% else %}
+        {% url 'horizon:idmanager:subscription_manager:discard' regid %}
+    {% endif %}
+{% endblock %}
+{% block modal-header %}
+    {% if action == 'accept' %}
+        {% trans "Renew subscription" %}
+    {% else %}
+        {% trans "Discard subscription" %}
+    {% endif %}
+{% endblock %}
+
+{% block modal-body %}
+{% if subscr_err %}
+<div class="modal-body">
+    <h3>{% trans "Error" %}:</h3>
+    <p>{{ subscr_err }}</p>
+    {% if contacts %}
+        <p>{% trans "Please, contact the cloud managers:" %}</p>
+        <ul>
+        {% for item in contacts %}
+            <li><a href="mailto:{{ item.1 }}">{{ item.0 }}</a></li>
+        {% endfor%}
+        </ul>
+    {% endif%}
+</div>
+{% else %}
+<div class="left">
+
+    <h3>{% trans "User name" %}:</h3>
+    <p>{{ username }}</p>
+    <h3>{% trans "Full name" %}:</h3>
+    <p>{{ fullname }}</p>
+    
+    <fieldset>
+    {% include "horizon/common/_form_fields.html" %}
+    </fieldset>
+</div>
+<div class="right">
+    <h3>{% trans "Description" %}:</h3>
+{% if action == 'accept' %}
+    <p>{% trans "From here you can renew the user subscription." %}</p>
+{% else %}
+    <p>{% trans "From here you can discard the user subscription." %}</p>
+{% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block modal-footer %}
+    
+    <input type="button"
+           class="btn btn-primary pull-right"
+           onclick="location.href='{% url 'horizon:idmanager:subscription_manager:index' %}'"
+           value="{% trans 'Cancel' %}"/>  
+{% if not subscr_err %}
+    <input id="okbtnid"
+           class="btn btn-primary pull-right" 
+           type="submit" 
+           value="{% trans 'Ok' %}" />
+{% endif %}
+
+{% endblock %}
+
+

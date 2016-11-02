@@ -85,6 +85,8 @@ reg_templ_list = [
 ]
 
 subscr_templ_list = [
+    'src/templates/subscription_manager/_subscr_renew.html',
+    'src/templates/subscription_manager/subscr_renew.html',
     'src/templates/subscription_manager/subscr_manager.html',
     'src/templates/subscription_manager/subscr_approve.html',
     'src/templates/subscription_manager/_subscr_approve.html'

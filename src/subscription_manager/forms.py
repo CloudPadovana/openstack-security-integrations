@@ -14,6 +14,7 @@
 #  under the License. 
 
 import logging
+from datetime import datetime
 
 from horizon import forms
 from horizon import exceptions
@@ -21,14 +22,17 @@ from horizon import exceptions
 from django.db import transaction
 from django.conf import settings
 from django.forms.widgets import HiddenInput
+from django.forms.extras.widgets import SelectDateWidget
 from django.views.decorators.debug import sensitive_variables
 
 from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 
 from openstack_auth_shib.notifications import notification_render
 from openstack_auth_shib.notifications import notify as notifyUsers
 from openstack_auth_shib.notifications import SUBSCR_OK_TYPE
 from openstack_auth_shib.notifications import SUBSCR_NO_TYPE
+from openstack_auth_shib.notifications import MEMBER_REMOVED
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
@@ -43,7 +47,6 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
         super(ApproveSubscrForm, self).__init__(request, *args, **kwargs)
 
         self.fields['regid'] = forms.CharField(widget=HiddenInput)
-        self.fields['username'] = forms.CharField(widget=HiddenInput)
         self.fields['action'] = forms.CharField(widget=HiddenInput)
 
         if kwargs['initial']['action'] == 'reject':
@@ -64,8 +67,6 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
         
             with transaction.atomic():
             
-                LOG.debug("Approving subscription for %s" % data['username'])
-                
                 curr_prjname = self.request.user.tenant_name
                 q_args = {
                     'registration__regid' : int(data['regid']),
@@ -77,6 +78,9 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 project_name = prj_req.project.projectname
                 
                 if data['action'] == 'accept':
+
+                    LOG.debug("Approving subscription for %s" % prj_req.registration.username)
+                
                     default_role = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
 
                     roles_obj = client_factory(request).roles
@@ -117,6 +121,100 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
             return False
             
         return True
+
+
+class RenewSubscrForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(RenewSubscrForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['regid'] = forms.CharField(widget=HiddenInput)
+        self.fields['action'] = forms.CharField(widget=HiddenInput)
+
+        if kwargs['initial']['action'] == 'reject':
+            self.fields['reason'] = forms.CharField(
+                label=_('Message'),
+                required=False,
+                widget=forms.widgets.Textarea()
+            )
+        else:
+            curr_year = datetime.now().year
+            years_list = range(curr_year, curr_year+25)
+
+            self.fields['expiration'] = forms.DateTimeField(
+                label=_("Expiration date"),
+                widget=SelectDateWidget(None, years_list)
+            )
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+
+        try:
+        
+            with transaction.atomic():
+
+                curr_prjname = self.request.user.tenant_name
+                q_args = {
+                    'registration__regid' : int(data['regid']),
+                    'project__projectname' : curr_prjname,
+                    'flowstatus' : PSTATUS_RENEW_MEMB
+                }                
+                prj_reqs = PrjRequest.objects.filter(**q_args)
+                
+                if len(prj_reqs) == 0:
+                    return True
+                
+                if data['action'] == 'accept' and \
+                    data['expiration'] > prj_reqs[0].registration.expdate:
+
+                    LOG.debug("Renewing %s" % prj_reqs[0].registration.username)
+                    prj_reqs[0].registration.update(expdate=data['expiration'])
+
+                else:
+                
+                    #
+                    # Remove member from project
+                    #
+                    roles_obj = client_factory(request).roles
+                    role_assign_obj = client_factory(request).role_assignments
+            
+                    arg_dict = {
+                        'project' : request.user.tenant_id,
+                        'user' : prj_reqs[0].registration.userid
+                    }
+                    for r_item in role_assign_obj.list(**arg_dict):
+                        roles_obj.revoke(r_item.role['id'], **arg_dict)
+            
+                #
+                # Clear requests
+                #
+                prj_reqs.delete()
+
+            #
+            # Send notification to the user
+            #
+            if data['action'] == 'accept':
+
+                pass
+
+            else:
+            
+                users_obj = client_factory(request).users
+                member = users_obj.get(prj_reqs[0].registration.userid)
+                noti_params = {
+                    'username' : member.name,
+                    'admin_address' : users_obj.get(request.user.id).email,
+                    'project' : request.user.tenant_name
+                }
+                noti_sbj, noti_body = notification_render(MEMBER_REMOVED, noti_params)
+                notifyUsers(member.email, noti_sbj, noti_body)
+                
+        except:
+            exceptions.handle(request)
+            return False
+        
+        return True
+
 
 
 

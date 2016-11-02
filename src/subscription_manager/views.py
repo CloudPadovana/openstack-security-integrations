@@ -27,11 +27,12 @@ from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
 
-from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import PSTATUS_PENDING
+from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 
 from .tables import SubscriptionTable
 from .forms import ApproveSubscrForm
+from .forms import RenewSubscrForm
 
 LOG = logging.getLogger(__name__)
 
@@ -39,9 +40,11 @@ class PrjReqItem:
     def __init__(self, prjReq):
         self.regid = prjReq.registration.regid
         self.username = prjReq.registration.username
+        self.userid = prjReq.registration.userid
         self.fullname = prjReq.registration.givenname + " " + prjReq.registration.sn
         self.expiration = prjReq.registration.expdate
         self.notes = prjReq.notes
+        self.status = prjReq.flowstatus
     
 
 class IndexView(tables.DataTableView):
@@ -56,7 +59,7 @@ class IndexView(tables.DataTableView):
             curr_prjname = self.request.user.tenant_name
             q_args = {
                 'project__projectname' : curr_prjname,
-                'flowstatus' : PSTATUS_PENDING
+                'flowstatus__in' : [ PSTATUS_PENDING, PSTATUS_RENEW_MEMB ]
             }
             for p_entry in PrjRequest.objects.filter(**q_args):
                 reqList.append(PrjReqItem(p_entry))
@@ -108,7 +111,6 @@ class AbstractProcessView(forms.ModalFormView):
             
         return {
             'regid' : self.get_object().regid,
-            'username' : self.get_object().username
         }
 
 class ApproveView(AbstractProcessView):
@@ -141,4 +143,34 @@ class RejectView(AbstractProcessView):
         result['action'] = 'reject'
         return result
 
+class RenewView(AbstractProcessView):
+    form_class = RenewSubscrForm
+    template_name = 'idmanager/subscription_manager/subscr_renew.html'
+    success_url = reverse_lazy('horizon:idmanager:subscription_manager:index')
+
+    def get_context_data(self, **kwargs):
+        context = super(RenewView, self).get_context_data(**kwargs)
+        context['action'] = 'accept'
+        return context
+
+    def get_initial(self):
+        result = super(RenewView, self).get_initial()
+        result['action'] = 'accept'
+        return result
+
+class DiscardView(AbstractProcessView):
+    form_class = RenewSubscrForm
+    template_name = 'idmanager/subscription_manager/subscr_renew.html'
+    success_url = reverse_lazy('horizon:idmanager:subscription_manager:index')
+
+    def get_context_data(self, **kwargs):
+        context = super(DiscardView, self).get_context_data(**kwargs)
+        context['action'] = 'reject'
+        return context
+
+    def get_initial(self):
+        result = super(DiscardView, self).get_initial()
+        result['action'] = 'reject'
+        result['expiration'] = self.get_object().expiration
+        return result
 
