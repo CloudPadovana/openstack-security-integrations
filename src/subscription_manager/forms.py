@@ -39,9 +39,19 @@ LOG = logging.getLogger(__name__)
 
 class ApproveSubscrForm(forms.SelfHandlingForm):
 
-    regid = forms.IntegerField(label=_("ID"), widget=HiddenInput)
-    username = forms.CharField(label=_("User name"), widget=HiddenInput)
-    checkaction = forms.CharField(widget=HiddenInput, initial='accept')
+    def __init__(self, request, *args, **kwargs):
+        super(ApproveSubscrForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['regid'] = forms.CharField(widget=HiddenInput)
+        self.fields['username'] = forms.CharField(widget=HiddenInput)
+        self.fields['action'] = forms.CharField(widget=HiddenInput)
+
+        if kwargs['initial']['action'] == 'reject':
+            self.fields['reason'] = forms.CharField(
+                label=_('Message'),
+                required=False,
+                widget=forms.widgets.Textarea()
+            )
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -66,7 +76,7 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 member = client_factory(request).users.get(prj_req.registration.userid)
                 project_name = prj_req.project.projectname
                 
-                if data['checkaction'] == 'accept':
+                if data['action'] == 'accept':
                     default_role = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
 
                     roles_obj = client_factory(request).roles
@@ -94,7 +104,7 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
             noti_params = {
                 'project' : project_name
             }
-            if data['checkaction'] == 'accept':
+            if data['action'] == 'accept':
                 tpl_type = SUBSCR_OK_TYPE
             else:
                 tpl_type = SUBSCR_NO_TYPE

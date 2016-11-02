@@ -21,8 +21,20 @@
 {% load url from future %}
 
 {% block form_id %}approve_subscr_form{% endblock %}
-{% block form_action %}{% url 'horizon:idmanager:subscription_manager:approve' regid %}{% endblock %}
-{% block modal-header %}{% trans "Approve Subscription" %}{% endblock %}
+{% block form_action %}
+    {% if action == 'accept' %}
+        {% url 'horizon:idmanager:subscription_manager:approve' regid %}
+    {% else %}
+        {% url 'horizon:idmanager:subscription_manager:reject' regid %}
+    {% endif %}
+{% endblock %}
+{% block modal-header %}
+    {% if action == 'accept' %}
+        {% trans "Approve subscription" %}
+    {% else %}
+        {% trans "Reject subscription" %}
+    {% endif %}
+{% endblock %}
 
 {% block modal-body %}
 {% if subscr_err %}
@@ -43,10 +55,8 @@
 
     <h3>{% trans "User name" %}:</h3>
     <p>{{ username }}</p>
-    <h3>{% trans "First name" %}:</h3>
-    <p>{{ givenname }}</p>
-    <h3>{% trans "Last name" %}:</h3>
-    <p>{{ sn }}</p>
+    <h3>{% trans "Full name" %}:</h3>
+    <p>{{ fullname }}</p>
     <h3>{% trans "Notes" %}:</h3>
     <p>{{ notes }}</p>
     
@@ -56,24 +66,28 @@
 </div>
 <div class="right">
     <h3>{% trans "Description" %}:</h3>
-    <p>{% trans "From here you can approve user subscription." %}</p>
+{% if action == 'accept' %}
+    <p>{% trans "From here you can approve the user subscription." %}</p>
+{% else %}
+    <p>{% trans "From here you can reject the user subscription." %}</p>
+{% endif %}
 </div>
 {% endif %}
 {% endblock %}
 
 {% block modal-footer %}
+    
+    <input type="button"
+           class="btn btn-primary pull-right"
+           onclick="location.href='{% url 'horizon:idmanager:subscription_manager:index' %}'"
+           value="{% trans 'Cancel' %}"/>  
 {% if not subscr_err %}
-  <input class="btn btn-primary pull-right" type="submit" value="{% trans "Approve" %}" />
-  <input class="btn btn-primary pull-right" type="button" onclick="rejSubmit()" value="{% trans "Reject" %}"/>
+    <input id="okbtnid"
+           class="btn btn-primary pull-right" 
+           type="submit" 
+           value="{% trans 'Ok' %}" />
 {% endif %}
-  <a href="{% url 'horizon:idmanager:subscription_manager:index' %}" class="btn secondary cancel close">{% trans "Cancel" %}</a>
-
-  <script type="text/javascript">
-    function rejSubmit() {
-        document.getElementById('id_checkaction').value = 'reject';
-        document.getElementById('approve_subscr_form').submit();
-    }
-  </script>
 
 {% endblock %}
+
 

@@ -22,9 +22,15 @@ from horizon import tables
 LOG = logging.getLogger(__name__)
 
 class ApproveLink(tables.LinkAction):
-    name = "approve"
-    verbose_name = _("Process")
+    name = "apprsubscr"
+    verbose_name = _("Approve")
     url = "horizon:idmanager:subscription_manager:approve"
+    classes = ("ajax-modal", "btn-edit")
+
+class RejectLink(tables.LinkAction):
+    name = "rejsubscr"
+    verbose_name = _("Reject")
+    url = "horizon:idmanager:subscription_manager:reject"
     classes = ("ajax-modal", "btn-edit")
 
 class SubscriptionTable(tables.DataTable):
@@ -36,7 +42,7 @@ class SubscriptionTable(tables.DataTable):
     class Meta:
         name = "subscription_table"
         verbose_name = _("Subscriptions")
-        row_actions = (ApproveLink,)
+        row_actions = (ApproveLink, RejectLink)
         table_actions = ()
 
     def get_object_id(self, datum):

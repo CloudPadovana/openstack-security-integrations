@@ -67,10 +67,7 @@ class IndexView(tables.DataTableView):
         return reqList
 
 
-class ApproveView(forms.ModalFormView):
-    form_class = ApproveSubscrForm
-    template_name = 'idmanager/subscription_manager/subscr_approve.html'
-    success_url = reverse_lazy('horizon:idmanager:subscription_manager:index')
+class AbstractProcessView(forms.ModalFormView):
     
     def get_object(self):
         if not hasattr(self, "_object"):
@@ -91,7 +88,7 @@ class ApproveView(forms.ModalFormView):
         return self._object
 
     def get_context_data(self, **kwargs):
-        context = super(ApproveView, self).get_context_data(**kwargs)
+        context = super(AbstractProcessView, self).get_context_data(**kwargs)
         context['regid'] = int(self.kwargs['regid'])
 
         if not self.get_object():
@@ -99,8 +96,7 @@ class ApproveView(forms.ModalFormView):
             context['contacts'] = settings.MANAGERS
         else:
             context['username'] = self.get_object().username
-            context['givenname'] = self.get_object().givenname
-            context['sn'] = self.get_object().sn
+            context['fullname'] = self.get_object().fullname
             context['notes'] = self.get_object().notes
             
         return context
@@ -114,4 +110,35 @@ class ApproveView(forms.ModalFormView):
             'regid' : self.get_object().regid,
             'username' : self.get_object().username
         }
+
+class ApproveView(AbstractProcessView):
+    form_class = ApproveSubscrForm
+    template_name = 'idmanager/subscription_manager/subscr_approve.html'
+    success_url = reverse_lazy('horizon:idmanager:subscription_manager:index')
+
+    def get_context_data(self, **kwargs):
+        context = super(ApproveView, self).get_context_data(**kwargs)
+        context['action'] = 'accept'
+        return context
+
+    def get_initial(self):
+        result = super(ApproveView, self).get_initial()
+        result['action'] = 'accept'
+        return result
+
+class RejectView(AbstractProcessView):
+    form_class = ApproveSubscrForm
+    template_name = 'idmanager/subscription_manager/subscr_approve.html'
+    success_url = reverse_lazy('horizon:idmanager:subscription_manager:index')
+
+    def get_context_data(self, **kwargs):
+        context = super(RejectView, self).get_context_data(**kwargs)
+        context['action'] = 'reject'
+        return context
+
+    def get_initial(self):
+        result = super(RejectView, self).get_initial()
+        result['action'] = 'reject'
+        return result
+
 
