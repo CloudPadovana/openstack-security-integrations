@@ -37,9 +37,9 @@ class MemberItem():
     def __init__(self, registration, role_params):
         self.username = registration.username
         self.userid = registration.userid
-        self.givenname = registration.givenname
-        self.sn = registration.sn
+        self.fullname = registration.givenname + " " + registration.sn
         self.organization = registration.organization
+        self.expiration = registration.expdate
         self.is_t_admin = role_params[0]
         self.num_of_roles = role_params[1]
         self.num_of_admins = role_params[2]

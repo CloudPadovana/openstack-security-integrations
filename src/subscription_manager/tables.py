@@ -29,8 +29,9 @@ class ApproveLink(tables.LinkAction):
 
 class SubscriptionTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))
-    givenname = tables.Column('givenname', verbose_name=_('First name'))
-    sn = tables.Column('sn', verbose_name=_('Last name'))
+    fullname = tables.Column('fullname', verbose_name=_('Full name'))
+    notes = tables.Column('notes', verbose_name=_('Notes'))
+    expiration = tables.Column('expiration', verbose_name=_('Expiration date'))
 
     class Meta:
         name = "subscription_table"

@@ -39,8 +39,8 @@ class PrjReqItem:
     def __init__(self, prjReq):
         self.regid = prjReq.registration.regid
         self.username = prjReq.registration.username
-        self.givenname = prjReq.registration.givenname
-        self.sn = prjReq.registration.sn
+        self.fullname = prjReq.registration.givenname + " " + prjReq.registration.sn
+        self.expiration = prjReq.registration.expdate
         self.notes = prjReq.notes
     
 
