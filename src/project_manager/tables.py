@@ -104,6 +104,9 @@ class ReqProjectLink(tables.LinkAction):
     url = "horizon:idmanager:project_requests:index"
     classes = ("ajax-modal", "btn-edit")
 
+    def allowed(self, request, datum):
+        return not request.user.is_superuser
+
 def get_prj_status(data):
     if data.status == PRJ_GUEST:
         return _("Guest")

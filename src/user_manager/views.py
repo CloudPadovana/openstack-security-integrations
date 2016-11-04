@@ -40,6 +40,7 @@ class ExtUserItem:
         self.name = usr_data.name
         self.enabled = usr_data.enabled
         self.email = getattr(usr_data, 'email', None)
+        self.domain_name = getattr(usr_data, 'domain_name', None)
         self.expiration = None
     
     def __cmp__(self, other):

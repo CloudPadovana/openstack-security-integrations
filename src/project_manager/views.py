@@ -40,6 +40,7 @@ class ExtPrjItem:
         self.name = prj_data.name
         self.description = prj_data.description if prj_data.description else ""
         self.enabled = prj_data.enabled
+        self.domain_name = getattr(prj_data, 'domain_name', None)
         self.status = PRJ_PRIVATE
         self.checked = False
 
