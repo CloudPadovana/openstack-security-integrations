@@ -29,6 +29,9 @@ from openstack_auth_shib.models import PrjRequest
 
 from openstack_auth_shib.models import RSTATUS_PENDING
 from openstack_auth_shib.models import PRJ_GUEST
+from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
+from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import PSTATUS_RENEW_PROP
 
 from .tables import RegistrData
 from .tables import OperationTable
@@ -65,9 +68,22 @@ class MainView(tables.DataTableView):
                 rData.phone = prjReq.registration.phone
                 
                 if prjReq.project.status == PRJ_GUEST:
+
                     rData.code = RegistrData.NEW_USR_GUEST_PRJ
                     requestid = "%d:" % prjReq.registration.regid
+
+                elif prjReq.flowstatus == PSTATUS_RENEW_MEMB or prjReq.flowstatus == PSTATUS_RENEW_PROP:
+
+                    rData.code = RegistrData.USR_RENEW
+                    requestid = "%d:" % prjReq.registration.regid
+
+                elif prjReq.flowstatus == PSTATUS_RENEW_ADMIN:
+
+                    rData.code = RegistrData.PRJADM_RENEW
+                    requestid = "%d:" % prjReq.registration.regid
+
                 elif prjReq.project.projectid:
+
                     if prjReq.registration.regid in regid_list:
                         rData.code = RegistrData.NEW_USR_EX_PRJ
                         requestid = "%d:" % prjReq.registration.regid
@@ -75,7 +91,9 @@ class MainView(tables.DataTableView):
                         rData.code = RegistrData.EX_USR_EX_PRJ
                         rData.project = prjReq.project.projectname
                         requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
+
                 else:
+
                     if prjReq.registration.regid in regid_list:
                         rData.code = RegistrData.NEW_USR_NEW_PRJ
                         rData.project = prjReq.project.projectname

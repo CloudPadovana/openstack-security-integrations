@@ -28,6 +28,8 @@ class RegistrData:
     EX_USR_NEW_PRJ = 3
     EX_USR_EX_PRJ = 4
     NEW_USR_GUEST_PRJ = 5
+    USR_RENEW = 6
+    PRJADM_RENEW = 7
 
     def __init__(self):
         self.requestid = None
@@ -137,10 +139,16 @@ def get_description(data):
         return _('New user to be pre-checked')
     elif data.code == RegistrData.EX_USR_NEW_PRJ:
         return _('User requires a new project')
+    elif data.code == RegistrData.EX_USR_EX_PRJ:
+        return _('User requires membership')
     elif data.code == RegistrData.NEW_USR_GUEST_PRJ:
         return _('New user requires access as guest')
-    else:
-        return _('User requires membership')
+    elif data.code == RegistrData.USR_RENEW:
+        return _('User requires renewal')
+    elif data.code == RegistrData.PRJADM_RENEW:
+        return _('Project administrator requires renewal')
+    
+    return '-'  
 
 class OperationTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))
