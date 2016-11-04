@@ -21,6 +21,7 @@ from horizon import tables
 
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import PSTATUS_RENEW_PROP
 
 LOG = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ class RenewLink(tables.LinkAction):
     classes = ("ajax-modal", "btn-edit")
 
     def allowed(self, request, datum):
-        return datum.status == PSTATUS_RENEW_MEMB
+        return datum.status == PSTATUS_RENEW_MEMB or datum.status == PSTATUS_RENEW_PROP
 
 class DiscardLink(tables.LinkAction):
     name = "discardsubscr"
@@ -58,13 +59,15 @@ class DiscardLink(tables.LinkAction):
     classes = ("ajax-modal", "btn-edit")
 
     def allowed(self, request, datum):
-        return datum.status == PSTATUS_RENEW_MEMB
+        return datum.status == PSTATUS_RENEW_MEMB or datum.status == PSTATUS_RENEW_PROP
 
 def get_description(data):
     if data.status == PSTATUS_PENDING:
         return _("User requires membership")
     elif data.status == PSTATUS_RENEW_MEMB:
         return _("User requires renewal")
+    elif data.status == PSTATUS_RENEW_PROP:
+        return _("Expiration date proposed")
     return None
 
 class SubscriptionTable(tables.DataTable):

@@ -27,6 +27,7 @@ from django.views.decorators.debug import sensitive_variables
 
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import PSTATUS_RENEW_PROP
 
 from openstack_auth_shib.notifications import notification_render
 from openstack_auth_shib.notifications import notify as notifyUsers
@@ -157,18 +158,38 @@ class RenewSubscrForm(forms.SelfHandlingForm):
                 q_args = {
                     'registration__regid' : int(data['regid']),
                     'project__projectname' : curr_prjname,
-                    'flowstatus' : PSTATUS_RENEW_MEMB
+                    'flowstatus__in' : [ PSTATUS_RENEW_MEMB, PSTATUS_RENEW_PROP ]
                 }                
                 prj_reqs = PrjRequest.objects.filter(**q_args)
                 
                 if len(prj_reqs) == 0:
                     return True
                 
-                if data['action'] == 'accept' and \
-                    data['expiration'] > prj_reqs[0].registration.expdate:
+                if data['action'] == 'accept':
+                
+                    f_status = prj_reqs[0].flowstatus
+                    curr_reg = prj_reqs[0].registration
 
-                    LOG.debug("Renewing %s" % prj_reqs[0].registration.username)
-                    prj_reqs[0].registration.update(expdate=data['expiration'])
+                    if data['expiration'] > curr_reg.expdate:
+
+                        LOG.debug("Renewing %s" % curr_reg.username)
+                        curr_reg.expdate = data['expiration']
+                        curr_reg.save()
+
+                    #
+                    # Clear requests
+                    #
+                    prj_reqs.delete()
+                    
+                    #
+                    # Change request to consensus for other projects
+                    #
+                    if f_status == PSTATUS_RENEW_MEMB:
+                        q2_args = {
+                           'registration__regid' : int(data['regid']),
+                           'flowstatus' : PSTATUS_RENEW_MEMB
+                        }
+                        PrjRequest.objects.filter(**q2_args).update(flowstatus=PSTATUS_RENEW_PROP)
 
                 else:
                 
@@ -185,10 +206,10 @@ class RenewSubscrForm(forms.SelfHandlingForm):
                     for r_item in role_assign_obj.list(**arg_dict):
                         roles_obj.revoke(r_item.role['id'], **arg_dict)
             
-                #
-                # Clear requests
-                #
-                prj_reqs.delete()
+                    #
+                    # Clear requests
+                    #
+                    prj_reqs.delete()
 
             #
             # Send notification to the user
@@ -210,6 +231,7 @@ class RenewSubscrForm(forms.SelfHandlingForm):
                 notifyUsers(member.email, noti_sbj, noti_body)
                 
         except:
+            LOG.error("Cannot renew user", exc_info=True)
             exceptions.handle(request)
             return False
         

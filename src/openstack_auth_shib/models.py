@@ -36,6 +36,10 @@ PSTATUS_RENEW_ADMIN = 10
 # Subscription renewal to be handled by project admin
 #
 PSTATUS_RENEW_MEMB = 11
+#
+# Subscription renewal proposed by one project admin
+#
+PSTATUS_RENEW_PROP = 12
 
 
 #

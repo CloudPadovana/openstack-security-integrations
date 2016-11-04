@@ -29,6 +29,7 @@ from openstack_auth_shib.models import PrjRequest
 
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import PSTATUS_RENEW_PROP
 
 from .tables import SubscriptionTable
 from .forms import ApproveSubscrForm
@@ -59,12 +60,13 @@ class IndexView(tables.DataTableView):
             curr_prjname = self.request.user.tenant_name
             q_args = {
                 'project__projectname' : curr_prjname,
-                'flowstatus__in' : [ PSTATUS_PENDING, PSTATUS_RENEW_MEMB ]
+                'flowstatus__in' : [ PSTATUS_PENDING, PSTATUS_RENEW_MEMB, PSTATUS_RENEW_PROP ]
             }
             for p_entry in PrjRequest.objects.filter(**q_args):
                 reqList.append(PrjReqItem(p_entry))
             
         except Exception:
+            LOG.error("Cannot retrieve list", exc_info=True)
             messages.error(self.request, _('Unable to retrieve subscription list.'))
 
         return reqList
