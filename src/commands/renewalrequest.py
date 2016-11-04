@@ -22,6 +22,8 @@ from optparse import make_option
 from django.db import transaction
 from django.core.management.base import BaseCommand, CommandError
 from openstack_auth_shib.models import Registration
+from openstack_auth_shib.models import Project
+from openstack_auth_shib.models import PrjRequest
 
 from keystoneclient.v3 import client
 
@@ -84,33 +86,50 @@ class Command(BaseCommand):
             if len(params) == 0:
                 return
             
-            dtime = timedelta(int(params.get('DEFER_DAYS', '30')))
-            exp_date = datetime.now() - dtime
+            dtime = timedelta(int(params.get('RENEW_DAYS', '30')))
+            now = datetime.now()
+            exp_date = now - dtime
             LOG.info("Checking expiration dates before %s" % str(exp_date))
             
-            users_expired = list()
+            keystone = client.Client(username=params['USERNAME'],
+                                     password=params['PASSWD'],
+                                     project_name=params['TENANTNAME'],
+                                     cacert=params.get('CAFILE',''),
+                                     auth_url=params['AUTHURL'])
+                            
             with transaction.atomic():
-                expired_regs = Registration.objects.filter(expdate__lt=exp_date)
-                
-                for reg_item in expired_regs:
-                    LOG.info("Deleting user %s" % reg_item.username)
-                    users_expired.append((reg_item.username, reg_item.userid))
-
-                expired_regs.delete()
-
-            #
-            # TODO check for project admin role
-            #
             
-            for user_name, user_id in users_expired:   
-                keystone = client.Client(username=params['USERNAME'],
-                                         password=params['PASSWD'],
-                                         project_name=params['TENANTNAME'],
-                                         cacert=params.get('CAFILE',''),
-                                         auth_url=params['AUTHURL'])
-                
-                keystone.users.delete(user_id)
-                LOG.info("Deleted user %s" % user_name)
+                q_args = {
+                    'expdate__lt' : exp_date,
+                    'expdate__ge' : now
+                }
+                for expiring_reg in Registration.objects.filter(**q_args):
+
+                    for assign_obj in keystone.role_assignments.list(expiring_reg.userid):
+                        project_name = None     # TODO
+                        is_prj_admin = False    # TODO
+                        if is_prj_admin:
+                            flowstatus = PSTATUS_RENEW_ADMIN
+                        else:
+                            flowstatus = PSTATUS_RENEW_MEMB
+                        
+                        #
+                        # TODO Use cache for projects
+                        #
+                        project = Project.objects.get(projectname=project_name)
+                        
+                        #
+                        # TODO Check if request already exists
+                        #
+                        reqArgs = {
+                            'registration' : expiring_reg,
+                            'project' : project,
+                            'flowstatus' : flowstatus,
+                            'notes' : _('Request for renewal')
+                        }
+                        
+                        PrjRequest(**reqArgs).save()
+
 
         except:
             LOG.error("Check expiration failed", exc_info=True)
