@@ -43,7 +43,6 @@ class PrjReqItem:
         self.username = prjReq.registration.username
         self.userid = prjReq.registration.userid
         self.fullname = prjReq.registration.givenname + " " + prjReq.registration.sn
-        self.expiration = prjReq.registration.expdate
         self.notes = prjReq.notes
         self.status = prjReq.flowstatus
     
@@ -173,6 +172,5 @@ class DiscardView(AbstractProcessView):
     def get_initial(self):
         result = super(DiscardView, self).get_initial()
         result['action'] = 'reject'
-        result['expiration'] = self.get_object().expiration
         return result
 

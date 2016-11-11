@@ -120,6 +120,10 @@ class UserMapping(models.Model):
                                     db_index=False,
                                     on_delete=models.CASCADE)
 
+class Expiration(models.Model):
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    expdate = models.DateTimeField(db_index=True)
 
 #Temporary data
 class RegRequest(models.Model):

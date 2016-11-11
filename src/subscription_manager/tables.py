@@ -74,7 +74,6 @@ class SubscriptionTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))
     fullname = tables.Column('fullname', verbose_name=_('Full name'))
     notes = tables.Column('notes', verbose_name=_('Notes'))
-    expiration = tables.Column('expiration', verbose_name=_('Expiration date'))
     description = tables.Column(get_description, verbose_name=_('Description'))
 
     class Meta:

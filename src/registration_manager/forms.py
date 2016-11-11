@@ -52,6 +52,7 @@ from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import Expiration
 
 from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import PSTATUS_PENDING
@@ -202,8 +203,16 @@ class PreCheckForm(forms.SelfHandlingForm):
 
                 #
                 # The new user is the project manager of its tenant
+                # register the expiration date per tenant
                 #
                 for prj_item in new_prj_list:
+
+                    expiration = Expiration()
+                    expiration.registration = registration
+                    expiration.project = prj_item
+                    expiration.expdate = data['expiration']
+                    expiration.save()
+
                     keystone_api.add_tenant_user_role(request, prj_item.projectid,
                                             registration.userid, tenantadmin_roleid)
 
@@ -325,6 +334,14 @@ class ForcedCheckForm(forms.SelfHandlingForm):
                 required=False,
                 widget=forms.widgets.Textarea()
             )
+        else:
+            curr_year = datetime.datetime.now().year
+            years_list = range(curr_year, curr_year+25)
+
+            self.fields['expiration'] = forms.DateTimeField(
+                label=_("Expiration date"),
+                widget=SelectDateWidget(None, years_list)
+            )
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -340,6 +357,15 @@ class ForcedCheckForm(forms.SelfHandlingForm):
                 }
                 prj_req = PrjRequest.objects.filter(**q_args)[0]
                 
+                #
+                # Insert expiration date per tenant
+                #
+                expiration = Expiration()
+                expiration.registration = prj_req.registration
+                expiration.project = prj_req.project
+                expiration.expdate = data['expiration']
+                expiration.save()
+
                 project_name = prj_req.project.projectname
                 project_id = prj_req.project.projectid
                 user_name = prj_req.registration.username
@@ -400,6 +426,14 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 required=False,
                 widget=forms.widgets.Textarea()
             )
+        else:
+            curr_year = datetime.datetime.now().year
+            years_list = range(curr_year, curr_year+25)
+
+            self.fields['expiration'] = forms.DateTimeField(
+                label=_("Expiration date"),
+                widget=SelectDateWidget(None, years_list)
+            )
 
 
     @sensitive_variables('data')
@@ -436,6 +470,16 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                     #
                     keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
                                                     user_id, tenantadmin_roleid)
+
+
+                    #
+                    # Insert expiration date per tenant
+                    #
+                    expiration = Expiration()
+                    expiration.registration = prj_req.registration
+                    expiration.project = prj_req.project
+                    expiration.expdate = data['expiration']
+                    expiration.save()
 
                 #
                 # Clear request
@@ -522,6 +566,15 @@ class GuestCheckForm(forms.SelfHandlingForm):
                                     registration=reg_request.registration)
                     mapping.save()
                     LOG.info("Registered external account %s" % reg_request.externalid)
+
+                #
+                # Insert expiration date per tenant
+                #
+                expiration = Expiration()
+                expiration.registration = prj_reqs[0].registration
+                expiration.project = prj_reqs[0].project
+                expiration.expdate = data['expiration']
+                expiration.save()
 
                 #
                 # clear requests

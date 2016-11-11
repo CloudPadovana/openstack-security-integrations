@@ -26,6 +26,7 @@ from django.forms.extras.widgets import SelectDateWidget
 from django.views.decorators.debug import sensitive_variables
 
 from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PSTATUS_RENEW_PROP
 
@@ -56,6 +57,15 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 required=False,
                 widget=forms.widgets.Textarea()
             )
+        else:
+            curr_year = datetime.now().year
+            years_list = range(curr_year, curr_year+25)
+
+            self.fields['expiration'] = forms.DateTimeField(
+                label=_("Expiration date"),
+                widget=SelectDateWidget(None, years_list)
+            )
+
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -83,6 +93,12 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                     LOG.debug("Approving subscription for %s" % prj_req.registration.username)
                 
                     default_role = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
+                    
+                    expiration = Expiration()
+                    expiration.registration = prj_req.registration
+                    expiration.project = prj_req.project
+                    expiration.expdate = data['expiration']
+                    expiration.save()
 
                     roles_obj = client_factory(request).roles
                     arg_dict = {
