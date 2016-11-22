@@ -23,29 +23,43 @@ from django.utils.translation import ugettext as _
 
 from horizon import forms
 
-from openstack_auth_shib.models import Registration
+from openstack_auth_shib.models import Registration, Expiration
 
 LOG = logging.getLogger(__name__)
 
 class RenewExpForm(forms.SelfHandlingForm):
 
-    curr_year = datetime.now().year
-    years_list = range(curr_year, curr_year+25)
 
-    userid = forms.CharField(
-        label=_("User ID"), 
-        widget=HiddenInput
-    )
-    expiration = forms.DateTimeField(
-        label=_("Expiration date"),
-        widget=SelectDateWidget(None, years_list)
-    )
+    def __init__(self, request, *args, **kwargs):
+
+        super(RenewExpForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['userid'] = forms.CharField(
+            label=_("User ID"), 
+            widget=HiddenInput
+        )
+        
+        curr_year = datetime.now().year
+        years_list = range(curr_year, curr_year+25)
+
+        for item in kwargs['initial']:
+            if item.startswith('prj_'):
+                self.fields[item] = forms.DateTimeField(
+                    label="%s %s" % (_("Project"), item[4:]),
+                    widget=SelectDateWidget(None, years_list)
+                )
 
     def handle(self, request, data):
         
         with transaction.atomic():
         
-            reg_list = Registration.objects.filter(userid=data['userid'])
-            reg_list.update(expdate=data['expiration'])
+            for d_item in data:
+                if d_item.startswith('prj_'):
+                    q_args = {
+                        'registration__userid' : data['userid'],
+                        'project__projectname' : d_item[4:]
+                    }
+                    exp_dates = Expiration.objects.filter(**q_args)
+                    exp_dates.update(expdate=data[d_item])
             
         return True

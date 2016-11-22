@@ -70,8 +70,6 @@ class RenewLink(tables.LinkAction):
 
 class UsersTable(baseTables.UsersTable):
 
-    expiration = tables.Column('expiration', verbose_name=_('Expiration date'))
-
     # patch for user detail and ajax update disabled
     def __init__(self, request, data=None, needs_form_wrapper=None, **kwargs):
         super(UsersTable, self).__init__(request, data=data,

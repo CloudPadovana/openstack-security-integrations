@@ -25,7 +25,7 @@ from horizon.utils import memoized
 
 from openstack_dashboard.dashboards.identity.users import views as baseViews
 
-from openstack_auth_shib.models import Registration
+from openstack_auth_shib.models import Expiration
 
 from openstack_dashboard import api
 
@@ -34,42 +34,9 @@ from .forms import RenewExpForm
 
 LOG = logging.getLogger(__name__)
 
-class ExtUserItem:
-    def __init__(self, usr_data):
-        self.id = usr_data.id
-        self.name = usr_data.name
-        self.enabled = usr_data.enabled
-        self.email = getattr(usr_data, 'email', None)
-        self.domain_name = getattr(usr_data, 'domain_name', None)
-        self.expiration = None
-    
-    def __cmp__(self, other):
-        return cmp(self.name, other.name)
-
 class IndexView(baseViews.IndexView):
     table_class = UsersTable
     template_name = 'idmanager/user_manager/index.html'
-
-    def get_data(self):
-        usr_table = dict()
-        
-        #
-        # TODO very heavy, need improvements
-        #      missing paging
-        #
-        for item in super(IndexView, self).get_data():
-            usr_table[item.id] = ExtUserItem(item)
-        
-        exp_list = Registration.objects.filter(
-            userid__in=usr_table.keys()
-        )
-        
-        for item in exp_list:
-            usr_table[item.userid].expiration = item.expdate
-        
-        result = usr_table.values()
-        result.sort()
-        return result
 
 class UpdateView(baseViews.UpdateView):
     template_name = 'idmanager/user_manager/update.html'
@@ -93,6 +60,20 @@ class RenewView(forms.ModalFormView):
     template_name = 'idmanager/user_manager/renewexp.html'
     success_url = reverse_lazy('horizon:idmanager:user_manager:index')
 
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            try:
+
+                self._object = Expiration.objects.filter(registration__userid=self.kwargs['user_id'])
+
+            except Exception:
+                LOG.error("Renew error", exc_info=True)
+                redirect = reverse_lazy('horizon:idmanager:user_manager:index')
+                exceptions.handle(self.request, _('Unable to renew user.'),
+                                  redirect=redirect)
+
+        return self._object
+
     def get_context_data(self, **kwargs):
         context = super(RenewView, self).get_context_data(**kwargs)
         context['userid'] = self.kwargs['user_id']
@@ -100,10 +81,13 @@ class RenewView(forms.ModalFormView):
 
     def get_initial(self):
     
-        return {
-            'userid' : self.kwargs['user_id'],
-            'expiration' : datetime.datetime.now() + datetime.timedelta(365)
-        }
+        result = dict()
+        result['userid'] = self.kwargs['user_id']
+        
+        for exp_item in self.get_object():
+            result['prj_%s' % exp_item.project.projectname] = exp_item.expdate
+
+        return result
 
 class DetailView(baseViews.DetailView):
     template_name = 'idmanager/user_manager/detail.html'
