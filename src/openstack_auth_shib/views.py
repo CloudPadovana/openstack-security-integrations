@@ -17,9 +17,8 @@ import logging
 import re
 
 from django import shortcuts
-from django.db import transaction
-from django.db import IntegrityError
 from django.conf import settings
+from django.core.urlresolvers import reverse_lazy
 from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.utils.translation import ugettext as _
@@ -48,19 +47,12 @@ from keystoneclient import exceptions as keystone_exceptions
 
 from horizon import forms
 
-from .models import Registration, Project, RegRequest, PrjRequest, UserMapping
-from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST
-from .forms import MixRegistForm
-from .notifications import notifyManagers, notification_render, REGISTR_AVAIL_TYPE
+from .models import UserMapping
+from .forms import RegistrForm
 from .idpmanager import get_manager
-from .utils import get_user_home
+from .utils import get_user_home, get_ostack_attributes
 
 LOG = logging.getLogger(__name__)
-
-def get_ostack_attributes(request):
-    region = getattr(settings, 'OPENSTACK_KEYSTONE_URL').replace('v2.0','v3')
-    domain = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN', 'Default')
-    return (domain, region)
 
 def build_err_response(request, err_msg, attributes):
     response = shortcuts.redirect(attributes.get_logout_url())
@@ -69,15 +61,6 @@ def build_err_response(request, err_msg, attributes):
 
     response.set_cookie('logout_reason', err_msg)
 
-    return response
-
-def build_safe_redirect(request, location, attributes):
-    if attributes:
-        response = shortcuts.redirect(attributes.get_logout_url(location))
-        response = attributes.postproc_logout(response)
-    else:
-        response = shortcuts.redirect(location)
-        
     return response
 
 @sensitive_post_parameters()
@@ -123,7 +106,7 @@ def login(request):
     except (UserMapping.DoesNotExist, keystone_exceptions.NotFound):
 
         LOG.debug("User %s authenticated but not authorized" % attributes.username)
-        return _register(request, attributes)
+        return shortcuts.redirect(reverse_lazy('register'))
 
     except (keystone_exceptions.Unauthorized, auth_exceptions.KeystoneAuthException):
 
@@ -175,179 +158,41 @@ def switch_region(request, region_name, redirect_field_name=REDIRECT_FIELD_NAME)
     # workaround for switch redirect: don't use the redirect field name
     return basic_switch_region(request, region_name, '')
 
+class RegistrView(forms.ModalFormView):
+    form_class = RegistrForm
+    template_name = 'registration.html'
 
-def _register(request, attributes):
+    def get_initial(self):
+        result = super(RegistrView, self).get_initial()
+        attributes = get_manager(self.request)
 
-    domain, region = get_ostack_attributes(request)
-    
-    init_dict = dict()
-    if attributes.givenname:
-        init_dict['givenname'] = attributes.givenname
-    if attributes.sn:
-        init_dict['sn'] = attributes.sn
-    if attributes.email:
-        init_dict['email'] = attributes.email
-    if attributes.provider:
-        init_dict['organization'] = attributes.provider
-    
-    if request.method == 'POST':
-        reg_form = MixRegistForm(request.POST, initial=init_dict)
-        if reg_form.is_valid():
-            
-            return processForm(request, reg_form, domain, attributes)
-                
-    else:
-        
-        num_req = RegRequest.objects.filter(externalid=attributes.username).count()
-        if num_req:
-        
-            return build_safe_redirect(request, '/dashboard/auth/dup_login/', attributes)
-
-        reg_form = MixRegistForm(initial=init_dict)
-    
-    tempDict = { 'form': reg_form,
-                 'userid' : attributes.username,
-                 'form_action_url' : '%s/auth/register/' % attributes.root_url }
-    return shortcuts.render(request, 'registration.html', tempDict)
-
-
-def register(request):
-
-    attributes = get_manager(request)
-    
-    if attributes:
-
-        return _register(request, attributes)
-        
-    else:
-
-        domain, region = get_ostack_attributes(request)
-        
-        if request.method == 'POST':
-            reg_form = MixRegistForm(request.POST, initial={'ftype' : 'full'})
-            if reg_form.is_valid():
-            
-                return processForm(request, reg_form, domain)
-                
+        if attributes:
+            result['needpwd'] = False
+            result['username'] = attributes.username
+            result['federated'] = "true"
+            if attributes.givenname:
+                result['givenname'] = attributes.givenname
+            if attributes.sn:
+                result['sn'] = attributes.sn
+            if attributes.email:
+                result['email'] = attributes.email
+            if attributes.provider:
+                result['organization'] = attributes.provider
         else:
-            reg_form = MixRegistForm(initial={'ftype' : 'full'})
-    
-        tempDict = { 'form': reg_form,
-                     'form_action_url' : '/dashboard/auth/register/' }
-        return shortcuts.render(request, 'registration.html', tempDict)
+            result['needpwd'] = True
+            result['federated'] = "false"
 
+        return result
 
-def processForm(request, reg_form, domain, attributes=None):
-
-    try:
-        pwd = None
-        
-        if not attributes:
-            username = reg_form.cleaned_data['username']
-            givenname = reg_form.cleaned_data['givenname']
-            sn = reg_form.cleaned_data['sn']
-            pwd = reg_form.cleaned_data['pwd']
-            email = reg_form.cleaned_data['email']
-            ext_account = None
+    def get_context_data(self, **kwargs):
+        context = super(RegistrView, self).get_context_data(**kwargs)
+        attributes = get_manager(self.request)
+        if attributes:
+            context['userid'] = attributes.username
+            context['form_action_url'] = '%s/auth/register/' % attributes.root_url
         else:
-            username = attributes.username
-            givenname = reg_form.cleaned_data['givenname']
-            sn = reg_form.cleaned_data['sn']
-            email = reg_form.cleaned_data['email']
-            ext_account = attributes.username
-            
-        organization = reg_form.cleaned_data['organization']
-        phone = reg_form.cleaned_data['phone']
-        contactper = reg_form.cleaned_data['contactper']
-        notes = reg_form.cleaned_data['notes']
-        
-        prj_action = reg_form.cleaned_data['prjaction']
-        prjlist = list()
-        if prj_action == 'selprj':
-            for project in reg_form.cleaned_data['selprj']:
-                prjlist.append((project, "", PRJ_PUBLIC, False))
-            
-        elif prj_action == 'newprj':
-            prjlist.append((
-                reg_form.cleaned_data['newprj'],
-                reg_form.cleaned_data['prjdescr'],
-                PRJ_PRIVATE if reg_form.cleaned_data['prjpriv'] else PRJ_PUBLIC,
-                True
-            ))
-
-        LOG.debug("Saving %s" % username)
-                
-        with transaction.atomic():
-    
-            queryArgs = {
-                'username' : username,
-                'givenname' : givenname,
-                'sn' : sn,
-                'organization' : organization,
-                'phone' : phone,
-                'domain' : domain
-            }
-            registration = Registration(**queryArgs)
-            registration.save()
-    
-            regArgs = {
-                'registration' : registration,
-                'password' : pwd,
-                'email' : email,
-                'contactper' : contactper,
-                'notes' : notes
-            }
-            if ext_account:
-                regArgs['externalid'] = ext_account
-            regReq = RegRequest(**regArgs)
-            regReq.save()
-            
-            LOG.debug("Saved %s" % username)
-
-            #
-            # empty list for guest prj
-            #
-            if len(prjlist) == 0:
-                for item in Project.objects.filter(status=PRJ_GUEST):
-                    prjlist.append((item.projectname, None, 0, False))
-
-            for prjitem in prjlist:
-        
-                if prjitem[3]:
-
-                    prjArgs = {
-                        'projectname' : prjitem[0],
-                        'description' : prjitem[1],
-                        'status' : prjitem[2]
-                    }
-                    project = Project.objects.create(**prjArgs)
-
-                else:
-                    project = Project.objects.get(projectname=prjitem[0])
-        
-                reqArgs = {
-                    'registration' : registration,
-                    'project' : project,
-                    'notes' : notes
-                }
-                
-                reqPrj = PrjRequest(**reqArgs)
-                reqPrj.save()
-            
-        noti_sbj, noti_body = notification_render(REGISTR_AVAIL_TYPE, {'username' : username})
-        notifyManagers(noti_sbj, noti_body)
-
-        return build_safe_redirect(request, '/dashboard/auth/reg_done/', attributes)
-    
-    except IntegrityError:
-    
-        return build_safe_redirect(request, '/dashboard/auth/name_exists/', attributes)
-
-    except:
-    
-        LOG.error("Generic failure", exc_info=True)
-        return build_safe_redirect(request, '/dashboard/auth/reg_failure/', attributes)
-                
+            context['form_action_url'] = '/dashboard/auth/register/'
+        return context
 
 def reg_done(request):
     tempDict = {
@@ -402,6 +247,16 @@ def auth_error(request):
         'redirect_label' : _("Home")
     }
     return shortcuts.render(request, 'aai_error.html', tempDict)
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -112,3 +112,8 @@ def get_user_home(user):
 
     return horizon.get_default_dashboard().get_absolute_url()
 
+def get_ostack_attributes(request):
+    region = getattr(settings, 'OPENSTACK_KEYSTONE_URL').replace('v2.0','v3')
+    domain = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN', 'Default')
+    return (domain, region)
+

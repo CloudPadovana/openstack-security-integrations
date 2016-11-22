@@ -28,6 +28,7 @@ except:
     from django.conf.urls.defaults import patterns, url
 
 from openstack_auth.utils import patch_middleware_get_user
+from openstack_auth_shib.views import RegistrView
 
 patch_middleware_get_user()
 
@@ -38,7 +39,7 @@ urlpatterns = patterns('openstack_auth_shib.views',
     url(r'^switch/(?P<tenant_id>[^/]+)/$', 'switch', name='switch_tenants'),
     url(r'^switch_services_region/(?P<region_name>[^/]+)/$', 'switch_region',
         name='switch_services_region'),
-    url(r"^register/$", "register", name='register'),
+    url(r"^register/$", RegistrView.as_view(), name='register'),
     url(r"^reg_done/$", "reg_done", name='reg_done'),
     url(r"^name_exists/$", "name_exists", name='name_exists'),
     url(r"^reg_failure/$", "reg_failure", name='reg_failure'),

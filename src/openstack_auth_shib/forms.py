@@ -18,31 +18,43 @@ import logging
 from horizon import forms
 from horizon.utils import validators
 
+from django import shortcuts
 from django.conf import settings
 from django.forms import ValidationError
 from django.utils.translation import ugettext as _
+from django.views.decorators.debug import sensitive_variables
+from django.db import transaction, IntegrityError
 
-from .models import Project
-from .models import PRJ_PRIVATE, PRJ_GUEST
+from .idpmanager import get_manager
+from .models import Registration, Project, RegRequest, PrjRequest
+from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST
 from .models import OS_LNAME_LEN, OS_SNAME_LEN, PWD_LEN, EMAIL_LEN
-from .utils import import_guest_project
+from .notifications import notifyManagers, notification_render, REGISTR_AVAIL_TYPE
+from .utils import import_guest_project, get_ostack_attributes
 
 LOG = logging.getLogger(__name__)
 
-class MixRegistForm(forms.Form):
+class RegistrForm(forms.SelfHandlingForm):
 
-    def __init__(self, *args, **kwargs):
-        super(MixRegistForm, self).__init__(*args, **kwargs)
+    def __init__(self, request, *args, **kwargs):
+
+        super(RegistrForm, self).__init__(request, *args, **kwargs)
         
+        self.registr_err = None
+
         initial = kwargs['initial'] if 'initial' in kwargs else dict()
-        self.isFullForm = 'ftype' in initial and initial['ftype'] == 'full'
+
+        self.fields['username'] = forms.CharField(
+            label=_('User name'),
+            max_length=OS_LNAME_LEN,
+            widget=forms.HiddenInput if 'username' in initial else forms.TextInput
+        )
         
-        if self.isFullForm:
-            self.fields['username'] = forms.CharField(
-                label=_('User name'),
-                max_length=OS_LNAME_LEN
-            )
-            
+        self.fields['federated'] = forms.CharField(
+            max_length=OS_LNAME_LEN,
+            widget=forms.HiddenInput
+        )
+
         self.fields['givenname'] = forms.CharField(
             label=_('First name'),
             max_length=OS_LNAME_LEN,
@@ -54,8 +66,8 @@ class MixRegistForm(forms.Form):
             max_length=OS_LNAME_LEN,
             widget=forms.HiddenInput if 'sn' in initial else forms.TextInput
         )
-            
-        if self.isFullForm:
+        
+        if initial['needpwd']:
             self.fields['pwd'] = forms.RegexField(
                 label=_("Password"),
                 max_length=PWD_LEN,
@@ -75,7 +87,7 @@ class MixRegistForm(forms.Form):
             max_length=EMAIL_LEN,
             widget=forms.HiddenInput if 'email' in initial else forms.TextInput
         )
-        
+
         self.fields['prjaction'] = forms.ChoiceField(
             label=_('Project action'),
             #choices = <see later>
@@ -129,7 +141,8 @@ class MixRegistForm(forms.Form):
 
         self.fields['organization'] = forms.CharField(
             label=_('Organization'),
-            required=True
+            required=True,
+            widget=forms.HiddenInput if 'organization' in initial else forms.TextInput
         )
     
         phone_regex = settings.HORIZON_CONFIG.get('phone_regex', '^\s*\+*[0-9]+[0-9\s.]+\s*$')
@@ -183,9 +196,8 @@ class MixRegistForm(forms.Form):
         self.fields['prjaction'].choices = p_choices
 
 
-
     def clean(self):
-        data = super(MixRegistForm, self).clean()
+        data = super(RegistrForm, self).clean()
         
         if data['prjaction'] == 'newprj':
             if not data['newprj']:
@@ -199,14 +211,136 @@ class MixRegistForm(forms.Form):
         if data.get('aupok', 'reject') <> 'accept':
             raise ValidationError(_('You must accept Cloud Padovana AUP.'))
             
-        if self.isFullForm:
-            if 'pwd' in data:
-                if data['pwd'] != data.get('repwd', None):
-                    raise ValidationError(_('Passwords do not match.'))
+        if 'pwd' in data and data['pwd'] != data.get('repwd', None):
+                raise ValidationError(_('Passwords do not match.'))
 
-            if '@' in data['username'] or ':' in data['username']:
+        if '@' in data['username'] or ':' in data['username']:
+            if data.get('federated', 'false') == 'false':
                 raise ValidationError(_("Invalid characters in user name (@:)"))
         
         return data
+
+    def _build_safe_redirect(self, request, location):
+        attributes = get_manager(request)
+        if attributes:
+            safe_loc = attributes.get_logout_url(location)
+            response = shortcuts.redirect(safe_loc)
+            response = attributes.postproc_logout(response)
+        else:
+            safe_loc = location
+            response = shortcuts.redirect(location)
+        
+        #
+        # See note in horizon.forms.ModalFormView
+        #
+        response['X-Horizon-Location'] = safe_loc
+            
+        return response
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+
+        domain, auth_url = get_ostack_attributes(request)
+        
+        try:
+            pwd = data.get('pwd', None)
+            
+            prj_action = data['prjaction']
+            prjlist = list()
+            if prj_action == 'selprj':
+                for project in data['selprj']:
+                    prjlist.append((project, "", PRJ_PUBLIC, False))
+                
+            elif prj_action == 'newprj':
+                prjlist.append((
+                    data['newprj'],
+                    data['prjdescr'],
+                    PRJ_PRIVATE if data['prjpriv'] else PRJ_PUBLIC,
+                    True
+                ))
+
+            LOG.debug("Saving %s" % data['username'])
+                    
+            with transaction.atomic():
+            
+                if RegRequest.objects.filter(externalid=data['username']).count():
+                    raise ValidationError("Request already sent")
+        
+                queryArgs = {
+                    'username' : data['username'],
+                    'givenname' : data['givenname'],
+                    'sn' : data['sn'],
+                    'organization' : data['organization'],
+                    'phone' : data['phone'],
+                    'domain' : domain
+                }
+                registration = Registration(**queryArgs)
+                registration.save()
+        
+                regArgs = {
+                    'registration' : registration,
+                    'password' : pwd,
+                    'email' : data['email'],
+                    'contactper' : data['contactper'],
+                    'notes' : data['notes']
+                }
+                if data.get('federated', 'false') == 'true':
+                    regArgs['externalid'] = data['username']
+                regReq = RegRequest(**regArgs)
+                regReq.save()
+                
+                LOG.debug("Saved %s" % data['username'])
+
+                #
+                # empty list for guest prj
+                #
+                if len(prjlist) == 0:
+                    for item in Project.objects.filter(status=PRJ_GUEST):
+                        prjlist.append((item.projectname, None, 0, False))
+
+                for prjitem in prjlist:
+            
+                    if prjitem[3]:
+
+                        prjArgs = {
+                            'projectname' : prjitem[0],
+                            'description' : prjitem[1],
+                            'status' : prjitem[2]
+                        }
+                        project = Project.objects.create(**prjArgs)
+
+                    else:
+                        project = Project.objects.get(projectname=prjitem[0])
+            
+                    reqArgs = {
+                        'registration' : registration,
+                        'project' : project,
+                        'notes' : data['notes']
+                    }
+                    
+                    reqPrj = PrjRequest(**reqArgs)
+                    reqPrj.save()
+                
+            noti_sbj, noti_body = notification_render(REGISTR_AVAIL_TYPE, {'username' : data['username']})
+            notifyManagers(noti_sbj, noti_body)
+
+            # Don't user reverse_lazy
+            # It is necessary to get out of the protected area
+            return self._build_safe_redirect(request, '/dashboard/auth/reg_done/')
+        
+        except ValidationError:
+        
+            return self._build_safe_redirect(request, '/dashboard/auth/dup_login/')
+            
+        except IntegrityError:
+        
+            return self._build_safe_redirect(request, '/dashboard/auth/name_exists/')
+
+        except:
+        
+            LOG.error("Generic failure", exc_info=True)
+
+        return self._build_safe_redirect(request, '/dashboard/auth/reg_failure/')
+
 
 
