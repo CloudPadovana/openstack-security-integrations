@@ -63,3 +63,10 @@ class RenewExpForm(forms.SelfHandlingForm):
                     exp_dates.update(expdate=data[d_item])
             
         return True
+
+class CheckOrphansForm(forms.SelfHandlingForm):
+
+    def handle(self, request, data):
+        return True
+
+

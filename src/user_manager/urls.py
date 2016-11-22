@@ -24,6 +24,7 @@ from openstack_dashboard.dashboards.idmanager.user_manager import views
 
 urlpatterns = patterns('openstack_dashboard.dashboards.idmanager.user_manager.views',
     url(r'^$', views.IndexView.as_view(), name='index'),
+    url(r'^checkorphans/$', views.CheckOrphansView.as_view(), name='checkorphans'),
     url(r'^(?P<user_id>[^/]+)/update/$', views.UpdateView.as_view(), name='update'),
     url(r'^(?P<user_id>[^/]+)/renew/$', views.RenewView.as_view(), name='renew'),
     url(r'^(?P<user_id>[^/]+)/change_password/$', views.ChangePasswordView.as_view(), name='change_password'),

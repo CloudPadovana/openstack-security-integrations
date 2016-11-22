@@ -68,6 +68,12 @@ class RenewLink(tables.LinkAction):
     url = "horizon:idmanager:user_manager:renew"
     classes = ("ajax-modal", "btn-edit")
 
+class CheckOrphanLink(tables.LinkAction):
+    name = "checkorphan"
+    verbose_name = _("Orphan users")
+    url = "horizon:idmanager:user_manager:checkorphans"
+    classes = ("ajax-modal", "btn-edit")
+
 class UsersTable(baseTables.UsersTable):
 
     # patch for user detail and ajax update disabled
@@ -96,5 +102,9 @@ class UsersTable(baseTables.UsersTable):
             RenewLink,
             DeleteUsersAction
         )
-        table_actions = (baseTables.UserFilterAction, DeleteUsersAction)
+        table_actions = (
+            baseTables.UserFilterAction,
+            CheckOrphanLink,
+            DeleteUsersAction
+        )
 
