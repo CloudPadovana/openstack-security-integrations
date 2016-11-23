@@ -94,6 +94,7 @@ body: You have the following pending subscriptions for project {{ project }}:
 [member_removed]
 subject: User removed from {{ project }}
 body: Your account has been removed from the project {{ project }}
+  {% if notes %}{{ notes }}{% endif %}
   For further information please contact {{ admin_address }}
   
   Please, don't reply to this message
@@ -101,6 +102,7 @@ body: Your account has been removed from the project {{ project }}
 [member_removed_for_admin]
 subject: User {{ username }} removed from {{ project }}
 body: User {{ username }} has been removed from the project {{ project }}
+  {% if notes %}{{ notes }}{% endif %}
   For further information please contact {{ admin_address }}
   
   Please, don't reply to this message

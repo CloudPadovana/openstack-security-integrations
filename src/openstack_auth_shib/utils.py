@@ -24,6 +24,7 @@ from .models import Project
 from .models import PrjRequest
 from .models import PRJ_GUEST
 from .models import PSTATUS_PENDING
+from .models import PSTATUS_RENEW_MEMB
 
 LOG = logging.getLogger(__name__)
 
@@ -101,7 +102,7 @@ def get_user_home(user):
         
             q_args = {
                 'project__projectname' : user.tenant_name,
-                'flowstatus' : PSTATUS_PENDING
+                'flowstatus__in' : [ PSTATUS_PENDING, PSTATUS_RENEW_MEMB ]
             }
             if PrjRequest.objects.filter(**q_args).count() > 0:
                 idmanager_url = horizon.get_dashboard('idmanager').get_absolute_url()

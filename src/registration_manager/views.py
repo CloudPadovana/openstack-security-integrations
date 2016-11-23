@@ -31,7 +31,6 @@ from openstack_auth_shib.models import RSTATUS_PENDING
 from openstack_auth_shib.models import PRJ_GUEST
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
-from openstack_auth_shib.models import PSTATUS_RENEW_PROP
 
 from .tables import RegistrData
 from .tables import OperationTable
@@ -73,7 +72,7 @@ class MainView(tables.DataTableView):
                     rData.code = RegistrData.NEW_USR_GUEST_PRJ
                     requestid = "%d:" % prjReq.registration.regid
 
-                elif prjReq.flowstatus == PSTATUS_RENEW_MEMB or prjReq.flowstatus == PSTATUS_RENEW_PROP:
+                elif prjReq.flowstatus == PSTATUS_RENEW_MEMB:
 
                     rData.code = RegistrData.USR_RENEW
                     requestid = "%d:" % prjReq.registration.regid
