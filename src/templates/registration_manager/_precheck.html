@@ -24,6 +24,8 @@
 {% block form_action %}
 {% if guestmode %}
     {% url 'horizon:idmanager:registration_manager:guestapprove' requestid %}
+{% elif grantallmode %}
+    {% url 'horizon:idmanager:registration_manager:grantall' requestid %}
 {% else %}
     {% url 'horizon:idmanager:registration_manager:precheck' requestid %}
 {% endif %}
@@ -48,6 +50,11 @@
     <ul> <li>{{ extaccount }}</li> </ul>
     {% endif %}
     
+    {% if organization %}
+    <h3>{% trans "Organization" %}:</h3>
+    <ul><li>{{ organization }}</li></ul>
+    {% endif%}
+
     {% if contact %}
     <h3>{% trans "Contact" %}:</h3>
     <ul><li>{{ contact }}</li></ul>

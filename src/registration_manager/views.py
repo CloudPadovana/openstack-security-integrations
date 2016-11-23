@@ -14,7 +14,7 @@
 #  under the License. 
 
 import logging
-import datetime
+from datetime import datetime, timedelta
 
 from django.utils.translation import ugettext_lazy as _
 from django.core.urlresolvers import reverse_lazy
@@ -36,6 +36,7 @@ from openstack_auth_shib.models import PSTATUS_RENEW_PROP
 from .tables import RegistrData
 from .tables import OperationTable
 from .forms import PreCheckForm
+from .forms import GrantAllForm
 from .forms import RejectForm
 from .forms import ForcedCheckForm
 from .forms import NewProjectCheckForm
@@ -138,6 +139,7 @@ class AbstractCheckView(forms.ModalFormView):
         context['requestid'] = "%d:" % self.get_object().registration.regid
         context['extaccount'] = self.get_object().externalid
         context['contact'] = self.get_object().contactper
+        context['organization'] = self.get_object().registration.organization
         context['email'] = self.get_object().email
         return context
 
@@ -149,10 +151,25 @@ class PreCheckView(AbstractCheckView):
     def get_initial(self):
         return {
             'regid' : self.get_object().registration.regid,
-            'username' : self.get_object().registration.username,
-            'expiration' : datetime.datetime.now() + datetime.timedelta(365)
+            'username' : self.get_object().registration.username
         }
 
+class GrantAllView(AbstractCheckView):
+    form_class = GrantAllForm
+    template_name = 'idmanager/registration_manager/precheck.html'
+    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+
+    def get_context_data(self, **kwargs):
+        context = super(GrantAllView, self).get_context_data(**kwargs)
+        context['grantallmode'] = True
+        return context
+
+    def get_initial(self):
+        return {
+            'regid' : self.get_object().registration.regid,
+            'username' : self.get_object().registration.username,
+            'expiration' : datetime.now() + timedelta(365)
+        }
 
 class RejectView(AbstractCheckView):
     form_class = RejectForm
@@ -266,7 +283,7 @@ class GuestApproveView(AbstractCheckView):
         return {
             'regid' : self.get_object().registration.regid,
             'username' : self.get_object().registration.username,
-            'expiration' : datetime.datetime.now() + datetime.timedelta(365)
+            'expiration' : datetime.now() + timedelta(365)
         }
 
 

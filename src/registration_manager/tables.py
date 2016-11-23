@@ -63,7 +63,7 @@ class PreCheckLink(tables.LinkAction):
 class GrantAllLink(tables.LinkAction):
     name = "grantalllink"
     verbose_name = _("Authorize All")
-    url = "horizon:idmanager:registration_manager:precheck"
+    url = "horizon:idmanager:registration_manager:grantall"
     classes = ("ajax-modal", "btn-edit")
     
     def allowed(self, request, datum):

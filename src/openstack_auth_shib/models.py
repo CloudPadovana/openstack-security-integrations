@@ -79,6 +79,10 @@ class Registration(models.Model):
     organization = models.CharField(max_length=OS_LNAME_LEN)
     phone = models.CharField(max_length=OS_SNAME_LEN)
     domain = models.CharField(max_length=OS_SNAME_LEN)
+    #
+    # deprecated
+    # but it can be used as max expiration date
+    #
     expdate = models.DateTimeField(
         db_index=True,
         null=True

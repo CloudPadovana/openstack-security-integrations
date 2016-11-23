@@ -16,7 +16,7 @@
 import sys
 import logging
 import base64
-import datetime
+from datetime import datetime, timedelta
 
 from Crypto import __version__ as crypto_version
 if crypto_version.startswith('2.0'):
@@ -110,16 +110,11 @@ class PreCheckForm(forms.SelfHandlingForm):
 
         self.fields['username'] = forms.CharField(
             label=_("User name"),
-            required=False,
+            required=True,
             max_length=OS_LNAME_LEN
         )
-
-        curr_year = datetime.datetime.now().year            
-        self.fields['expiration'] = forms.DateTimeField(
-            label=_("Expiration date"),
-            required=False,
-            widget=SelectDateWidget(None, range(curr_year, curr_year + 25))
-        )
+        
+        self.expiration = datetime.now() + timedelta(365)
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -127,10 +122,7 @@ class PreCheckForm(forms.SelfHandlingForm):
         if not data['username']:
             messages.error(request, _("Cannot process request: missing username"))
             return False
-        if not data['expiration']:
-            messages.error(request, _("Cannot process request: missing expiration date"))
-            return False
-
+        
         try:
                 
             tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
@@ -196,7 +188,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                                                     enabled=True)
                         
                     registration.username = data['username']
-                    registration.expdate = data['expiration']
+                    registration.expdate = self.expiration
                     registration.userid = kuser.id
                     registration.save()
                     LOG.info("Created user %s" % registration.username)
@@ -210,7 +202,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                     expiration = Expiration()
                     expiration.registration = registration
                     expiration.project = prj_item
-                    expiration.expdate = data['expiration']
+                    expiration.expdate = self.expiration
                     expiration.save()
 
                     keystone_api.add_tenant_user_role(request, prj_item.projectid,
@@ -260,6 +252,24 @@ class PreCheckForm(forms.SelfHandlingForm):
             return False
 
         return True
+
+
+class GrantAllForm(PreCheckForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(GrantAllForm, self).__init__(request, *args, **kwargs)
+
+        curr_year = datetime.now().year            
+        self.fields['expiration'] = forms.DateTimeField(
+            label=_("Expiration date"),
+            required=True,
+            widget=SelectDateWidget(None, range(curr_year, curr_year + 25))
+        )
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+        self.expiration = data['expiration']
+        return super(GrantAllForm, self).handle(request, data)
 
 
 class RejectForm(forms.SelfHandlingForm):
@@ -335,7 +345,7 @@ class ForcedCheckForm(forms.SelfHandlingForm):
                 widget=forms.widgets.Textarea()
             )
         else:
-            curr_year = datetime.datetime.now().year
+            curr_year = datetime.now().year
             years_list = range(curr_year, curr_year+25)
 
             self.fields['expiration'] = forms.DateTimeField(
@@ -427,7 +437,7 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 widget=forms.widgets.Textarea()
             )
         else:
-            curr_year = datetime.datetime.now().year
+            curr_year = datetime.now().year
             years_list = range(curr_year, curr_year+25)
 
             self.fields['expiration'] = forms.DateTimeField(
@@ -524,7 +534,7 @@ class GuestCheckForm(forms.SelfHandlingForm):
             max_length=OS_LNAME_LEN
         )
 
-        curr_year = datetime.datetime.now().year            
+        curr_year = datetime.now().year            
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
             required=False,

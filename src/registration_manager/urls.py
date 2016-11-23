@@ -25,6 +25,7 @@ prefix = 'openstack_dashboard.dashboards.idmanager.registration_manager.views'
 urlpatterns = patterns(prefix,
     url(r'^$', views.MainView.as_view(), name='index'),
     url(r'^(?P<requestid>[^/]+)/precheck/$', views.PreCheckView.as_view(), name='precheck'),
+    url(r'^(?P<requestid>[^/]+)/grantall/$', views.GrantAllView.as_view(), name='grantall'),
     url(r'^(?P<requestid>[^/]+)/reject/$', views.RejectView.as_view(), name='reject'),
     url(r'^(?P<requestid>[^/]+)/forcedapprove/$', views.ForcedApproveView.as_view(), 
         name='forcedapprove'),
