@@ -38,7 +38,9 @@ from .forms import PreCheckForm
 from .forms import GrantAllForm
 from .forms import RejectForm
 from .forms import ForcedCheckForm
+from .forms import ForcedRejectForm
 from .forms import NewProjectCheckForm
+from .forms import NewProjectRejectForm
 from .forms import GuestCheckForm
 
 LOG = logging.getLogger(__name__)
@@ -198,12 +200,11 @@ class ForcedApproveView(forms.ModalFormView):
         
     def get_initial(self):
         return { 
-            'requestid' : self.kwargs['requestid'],
-            'action' : 'accept'
+            'requestid' : self.kwargs['requestid']
         }
 
 class ForcedRejectView(forms.ModalFormView):
-    form_class = ForcedCheckForm
+    form_class = ForcedRejectForm
     template_name = 'idmanager/registration_manager/forced.html'
     success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
 
@@ -220,8 +221,7 @@ class ForcedRejectView(forms.ModalFormView):
         
     def get_initial(self):
         return { 
-            'requestid' : self.kwargs['requestid'],
-            'action' : 'reject'
+            'requestid' : self.kwargs['requestid']
         }
 
 class NewProjectView(forms.ModalFormView):
@@ -242,12 +242,11 @@ class NewProjectView(forms.ModalFormView):
         
     def get_initial(self):
         return { 
-            'requestid' : self.kwargs['requestid'],
-            'action' : 'accept'
+            'requestid' : self.kwargs['requestid']
         }
 
 class RejectProjectView(forms.ModalFormView):
-    form_class = NewProjectCheckForm
+    form_class = NewProjectRejectForm
     template_name = 'idmanager/registration_manager/newproject.html'
     success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
     
@@ -264,8 +263,7 @@ class RejectProjectView(forms.ModalFormView):
         
     def get_initial(self):
         return { 
-            'requestid' : self.kwargs['requestid'],
-            'action' : 'reject'
+            'requestid' : self.kwargs['requestid']
         }
 
 class GuestApproveView(AbstractCheckView):

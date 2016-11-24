@@ -330,28 +330,21 @@ class RejectForm(forms.SelfHandlingForm):
 
         return True
 
+
 class ForcedCheckForm(forms.SelfHandlingForm):
 
     def __init__(self, request, *args, **kwargs):
         super(ForcedCheckForm, self).__init__(request, *args, **kwargs)
 
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
-        self.fields['action'] = forms.CharField(widget=HiddenInput)
 
-        if kwargs['initial']['action'] == 'reject':
-            self.fields['reason'] = forms.CharField(
-                label=_('Message'),
-                required=False,
-                widget=forms.widgets.Textarea()
-            )
-        else:
-            curr_year = datetime.now().year
-            years_list = range(curr_year, curr_year+25)
+        curr_year = datetime.now().year
+        years_list = range(curr_year, curr_year+25)
 
-            self.fields['expiration'] = forms.DateTimeField(
-                label=_("Expiration date"),
-                widget=SelectDateWidget(None, years_list)
-            )
+        self.fields['expiration'] = forms.DateTimeField(
+            label=_("Expiration date"),
+            widget=SelectDateWidget(None, years_list)
+        )
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -381,9 +374,8 @@ class ForcedCheckForm(forms.SelfHandlingForm):
                 user_name = prj_req.registration.username
                 user_id = prj_req.registration.userid
                 
-                if data['action'] == 'accept':
-                    keystone_api.add_tenant_user_role(request, project_id,
-                                                    user_id, default_roleid)
+                keystone_api.add_tenant_user_role(request, project_id,
+                                                user_id, default_roleid)
 
                 #
                 # clear request
@@ -401,18 +393,10 @@ class ForcedCheckForm(forms.SelfHandlingForm):
                 'project' : project_name
             }
 
-            if data['action'] == 'accept':
-                tpl1_type = SUBSCR_FORCED_OK_TYPE
-                tpl2_type = SUBSCR_OK_TYPE
-            else:
-                noti_params['notes'] = data['reason']
-                tpl1_type = SUBSCR_FORCED_NO_TYPE
-                tpl2_type = SUBSCR_NO_TYPE
-
-            noti_sbj, noti_body = notification_render(tpl1_type, noti_params)
+            noti_sbj, noti_body = notification_render(SUBSCR_FORCED_OK_TYPE, noti_params)
             notifyUsers([ pman.email for pman in prjman_list ], noti_sbj, noti_body)
             
-            noti_sbj, noti_body = notification_render(tpl2_type, noti_params)
+            noti_sbj, noti_body = notification_render(SUBSCR_OK_TYPE, noti_params)
             notifyUsers(user_email, noti_sbj, noti_body)
                 
         except:
@@ -422,28 +406,85 @@ class ForcedCheckForm(forms.SelfHandlingForm):
 
         return True
 
+
+class ForcedRejectForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(ForcedRejectForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['requestid'] = forms.CharField(widget=HiddenInput)
+
+        self.fields['reason'] = forms.CharField(
+            label=_('Message'),
+            required=False,
+            widget=forms.widgets.Textarea()
+        )
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+    
+        try:
+            tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
+            usr_and_prj = data['requestid'].split(':')
+
+            with transaction.atomic():
+                q_args = {
+                    'registration__regid' : int(usr_and_prj[0]),
+                    'project__projectname' : usr_and_prj[1]
+                }
+                prj_req = PrjRequest.objects.filter(**q_args)[0]
+                
+
+                project_name = prj_req.project.projectname
+                project_id = prj_req.project.projectid
+                user_name = prj_req.registration.username
+                user_id = prj_req.registration.userid
+                
+                #
+                # clear request
+                #
+                prj_req.delete()
+
+            #
+            # send notification to project managers and users
+            #
+            user_email = keystone_api.user_get(request, user_id).email
+            
+            prjman_list = get_project_managers(request, project_id)
+            noti_params = {
+                'username' : user_name,
+                'project' : project_name,
+                'notes' : data['reason']
+            }
+
+            noti_sbj, noti_body = notification_render(SUBSCR_FORCED_NO_TYPE, noti_params)
+            notifyUsers([ pman.email for pman in prjman_list ], noti_sbj, noti_body)
+            
+            noti_sbj, noti_body = notification_render(SUBSCR_NO_TYPE, noti_params)
+            notifyUsers(user_email, noti_sbj, noti_body)
+                
+        except:
+            LOG.error("Error forced-checking request", exc_info=True)
+            messages.error(request, _("Cannot forced check request"))
+            return False
+
+        return True
+
+
 class NewProjectCheckForm(forms.SelfHandlingForm):
 
     def __init__(self, request, *args, **kwargs):
         super(NewProjectCheckForm, self).__init__(request, *args, **kwargs)
 
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
-        self.fields['action'] = forms.CharField(widget=HiddenInput)
 
-        if kwargs['initial']['action'] == 'reject':
-            self.fields['reason'] = forms.CharField(
-                label=_('Message'),
-                required=False,
-                widget=forms.widgets.Textarea()
-            )
-        else:
-            curr_year = datetime.now().year
-            years_list = range(curr_year, curr_year+25)
+        curr_year = datetime.now().year
+        years_list = range(curr_year, curr_year+25)
 
-            self.fields['expiration'] = forms.DateTimeField(
-                label=_("Expiration date"),
-                widget=SelectDateWidget(None, years_list)
-            )
+        self.fields['expiration'] = forms.DateTimeField(
+            label=_("Expiration date"),
+            widget=SelectDateWidget(None, years_list)
+        )
 
 
     @sensitive_variables('data')
@@ -468,28 +509,27 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 project_name = prj_req.project.projectname
                 user_id = prj_req.registration.userid
                 
-                if data['action'] == 'accept':
-                    kprj = keystone_api.tenant_create(request, project_name,
-                                                        prj_req.project.description, True)
-                    prj_req.project.projectid = kprj.id
-                    prj_req.project.save()
-                    LOG.info("Created tenant %s" % project_name)
-                    
-                    #
-                    # The new user is the project manager of its tenant
-                    #
-                    keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
-                                                    user_id, tenantadmin_roleid)
+                kprj = keystone_api.tenant_create(request, project_name,
+                                                    prj_req.project.description, True)
+                prj_req.project.projectid = kprj.id
+                prj_req.project.save()
+                LOG.info("Created tenant %s" % project_name)
+                
+                #
+                # The new user is the project manager of its tenant
+                #
+                keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
+                                                user_id, tenantadmin_roleid)
 
 
-                    #
-                    # Insert expiration date per tenant
-                    #
-                    expiration = Expiration()
-                    expiration.registration = prj_req.registration
-                    expiration.project = prj_req.project
-                    expiration.expdate = data['expiration']
-                    expiration.save()
+                #
+                # Insert expiration date per tenant
+                #
+                expiration = Expiration()
+                expiration.registration = prj_req.registration
+                expiration.project = prj_req.project
+                expiration.expdate = data['expiration']
+                expiration.save()
 
                 #
                 # Clear request
@@ -504,14 +544,7 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 'project' : project_name
             }
 
-            if data['action'] == 'accept':
-                tpl_type = PRJ_CREATE_TYPE
-
-            else:
-                noti_params ['notes'] = data['reason']
-                tpl_type = PRJ_REJ_TYPE
-
-            noti_sbj, noti_body = notification_render(tpl_type, noti_params)
+            noti_sbj, noti_body = notification_render(PRJ_CREATE_TYPE, noti_params)
             notifyUsers(user_email, noti_sbj, noti_body)
 
         except:
@@ -520,6 +553,68 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
             return False
 
         return True
+
+
+class NewProjectRejectForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(NewProjectRejectForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['requestid'] = forms.CharField(widget=HiddenInput)
+
+        self.fields['reason'] = forms.CharField(
+            label=_('Message'),
+            required=False,
+            widget=forms.widgets.Textarea()
+        )
+
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+    
+        try:
+
+            tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
+            usr_and_prj = data['requestid'].split(':')
+
+            with transaction.atomic():
+
+                #
+                # Creation of new tenant
+                #
+                q_args = {
+                    'registration__regid' : int(usr_and_prj[0]),
+                    'project__projectname' : usr_and_prj[1]
+                }
+                prj_req = PrjRequest.objects.filter(**q_args)[0]
+                
+                project_name = prj_req.project.projectname
+                user_id = prj_req.registration.userid
+                
+                #
+                # Clear request
+                #
+                prj_req.delete()
+                
+            #
+            # Send notification to the user
+            #
+            user_email = keystone_api.user_get(request, user_id).email
+            noti_params = {
+                'project' : project_name,
+                'notes' : data['reason']
+            }
+
+            noti_sbj, noti_body = notification_render(PRJ_REJ_TYPE, noti_params)
+            notifyUsers(user_email, noti_sbj, noti_body)
+
+        except:
+            LOG.error("Error pre-checking project", exc_info=True)
+            messages.error(request, _("Cannot pre-check project"))
+            return False
+
+        return True
+
 
 class GuestCheckForm(forms.SelfHandlingForm):
 
