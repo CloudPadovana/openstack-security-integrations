@@ -16,12 +16,14 @@
 import logging
 import logging.config
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from optparse import make_option
 
+from django.conf import settings
 from django.db import transaction
 from django.core.management.base import BaseCommand, CommandError
 from openstack_auth_shib.models import Registration
+from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
 
@@ -68,6 +70,17 @@ class Command(BaseCommand):
         
         return result
     
+    #
+    # TODO move in a common module
+    #
+    def get_prjman_roleid(self, keystone):
+        role_name = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
+        
+        for tmp_role in keystone.roles.list():
+            if tmp_role.name == role_name:
+                return tmp_role.id
+        raise CommandError("Cannot retrieve project manager role id")
+    
     def handle(self, *args, **options):
     
         logconffile = options.get('logconffile', None)
@@ -76,63 +89,80 @@ class Command(BaseCommand):
         
         conffile = options.get('conffile', None)
         if not conffile:
-            logging.error("Missing configuration file")
-            raise CommandError("Missing configuration file\n")
-            
-        try:
+            cron_user = getattr(settings, 'CRON_USER', 'admin')
+            cron_pwd = getattr(settings, 'CRON_PWD', '')
+            cron_prj = getattr(settings, 'CRON_PROJECT', 'admin')
+            cron_ca = getattr(settings, 'OPENSTACK_SSL_CACERT', '')
+            cron_kurl = getattr(settings, 'OPENSTACK_KEYSTONE_URL', '')
+            cron_renewd = getattr(settings, 'CRON_RENEW_DAYS', 30)
+        else:
             params = self.readParameters(conffile)
-            
             # Empty conf file used in rpm
             if len(params) == 0:
                 return
+
+            cron_user = params['USERNAME']
+            cron_pwd = params['PASSWD']
+            cron_prj = params['TENANTNAME']
+            cron_ca = params.get('CAFILE','')
+            cron_kurl = params['AUTHURL']
+            cron_renewd = int(params.get('RENEW_DAYS', '30'))
             
-            dtime = timedelta(int(params.get('RENEW_DAYS', '30')))
+        try:
+
             now = datetime.now()
-            exp_date = now - dtime
-            LOG.info("Checking expiration dates before %s" % str(exp_date))
+            exp_date = now - timedelta(cron_renewd)
+
+            LOG.info("Checking for renewal after %s" % str(exp_date))
             
-            keystone = client.Client(username=params['USERNAME'],
-                                     password=params['PASSWD'],
-                                     project_name=params['TENANTNAME'],
-                                     cacert=params.get('CAFILE',''),
-                                     auth_url=params['AUTHURL'])
+            keystone_client = client.Client(username=cron_user,
+                                            password=cron_pwd,
+                                            project_name=cron_prj,
+                                            cacert=cron_ca,
+                                            auth_url=cron_kurl)
                             
-            with transaction.atomic():
-            
-                q_args = {
-                    'expdate__lt' : exp_date,
-                    'expdate__ge' : now
-                }
-                for expiring_reg in Registration.objects.filter(**q_args):
+            q_args = {
+                'expdate__gte' : exp_date,
+                'expdate__lt' : now
+            }
+            exp_members = Expiration.objects.filter(**q_args)
 
-                    for assign_obj in keystone.role_assignments.list(expiring_reg.userid):
-                        project_name = None     # TODO
-                        is_prj_admin = False    # TODO
-                        if is_prj_admin:
-                            flowstatus = PSTATUS_RENEW_ADMIN
-                        else:
-                            flowstatus = PSTATUS_RENEW_MEMB
-                        
-                        #
-                        # TODO Use cache for projects
-                        #
-                        project = Project.objects.get(projectname=project_name)
-                        
-                        #
-                        # TODO Check if request already exists
-                        #
-                        reqArgs = {
-                            'registration' : expiring_reg,
-                            'project' : project,
-                            'flowstatus' : flowstatus,
-                            'notes' : _('Request for renewal')
-                        }
-                        
-                        PrjRequest(**reqArgs).save()
-
+            prjman_roleid = self.get_prjman_roleid(keystone_client)
 
         except:
-            LOG.error("Check expiration failed", exc_info=True)
-            raise CommandError("Check expiration failed")
+            LOG.error("Request for renewal failed", exc_info=True)
+            raise CommandError("Request for renewal failed")
+
+        with transaction.atomic():
+
+            
+            for e_item in exp_members:
+
+                try:
+
+                    arg_dict = {
+                        'project' : mem_item.project.projectid,
+                        'user' : mem_item.registration.userid
+                    }
+                    is_prj_admin = keystone_client.roles.check(prjman_roleid, **arg_dict)
+                    
+                    q_args = {
+                        'registration' : e_item.registration,
+                        'project' : e_item.project,
+                        'flowstatus__in' : [ PSTATUS_RENEW_ADMIN, PSTATUS_RENEW_MEMB ]
+                    }
+                    if len(PrjRequest.objects.filter(**q_args)) == 0:
+
+                        q_args = {
+                            'registration' : e_item.registration,
+                            'project' : e_item.project,
+                            'flowstatus' : PSTATUS_RENEW_ADMIN if is_prj_admin
+                                                            else PSTATUS_RENEW_MEMB
+                        }
+                        PrjRequest(**reqArgs).save()
+
+                except:
+                    LOG.error("Check expiration failed for", exc_info=True)
+                    raise CommandError("Check expiration failed")
 
 
