@@ -70,10 +70,9 @@ class Command(BaseCommand):
         
         return result
     
-    def _get_days_to_exp(self, params):
+    def _get_days_to_exp(self, n_plan):
         result = list()
         
-        n_plan = params.get('NOTIFICATION_PLAN', None)
         if n_plan:
             try:
                 for tok in n_plan.split(','):
@@ -95,21 +94,31 @@ class Command(BaseCommand):
         
         conffile = options.get('conffile', None)
         if not conffile:
-            logging.error("Missing configuration file")
-            raise CommandError("Missing configuration file\n")
-            
-        try:
-            
+            cron_user = getattr(settings, 'CRON_USER', 'admin')
+            cron_pwd = getattr(settings, 'CRON_PWD', '')
+            cron_prj = getattr(settings, 'CRON_PROJECT', 'admin')
+            cron_ca = getattr(settings, 'OPENSTACK_SSL_CACERT', '')
+            cron_kurl = getattr(settings, 'OPENSTACK_KEYSTONE_URL', '')
+            cron_plan = getattr(settings, 'NOTIFICATION_PLAN', None)
+        else:
             params = self.readParameters(conffile)
-            
             # Empty conf file used in rpm
             if len(params) == 0:
                 return
+
+            cron_user = params['USERNAME']
+            cron_pwd = params['PASSWD']
+            cron_prj = params['TENANTNAME']
+            cron_ca = params.get('CAFILE','')
+            cron_kurl = params['AUTHURL']
+            cron_plan = params.get('NOTIFICATION_PLAN', None)
+            
+        try:
             
             now = datetime.now()
             contact_list = getattr(settings, 'MANAGERS', None)      
             
-            for days_to_exp in self._get_days_to_exp(params):
+            for days_to_exp in self._get_days_to_exp(cron_plan):
                 
                 tframe = now + timedelta(days=days_to_exp)
                 tf1 = tframe.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -120,11 +129,11 @@ class Command(BaseCommand):
                 for reg_item in all_regs:
                     try:
                         
-                        keystone = client.Client(username=params['USERNAME'],
-                                                 password=params['PASSWD'],
-                                                 project_name=params['TENANTNAME'],
-                                                 cacert=params.get('CAFILE',''),
-                                                 auth_url=params['AUTHURL'])
+                        keystone = client.Client(username=cron_user,
+                                                 password=cron_pwd,
+                                                 project_name=cron_prj,
+                                                 cacert=cron_ca,
+                                                 auth_url=cron_kurl
                         
                         tmpuser = keystone.users.get(reg_item.userid)
                         

@@ -117,22 +117,30 @@ class Command(BaseCommand):
         
         conffile = options.get('conffile', None)
         if not conffile:
-            logging.error("Missing configuration file")
-            raise CommandError("Missing configuration file\n")
-            
-        try:
-            
+            cron_user = getattr(settings, 'CRON_USER', 'admin')
+            cron_pwd = getattr(settings, 'CRON_PWD', '')
+            cron_prj = getattr(settings, 'CRON_PROJECT', 'admin')
+            cron_ca = getattr(settings, 'OPENSTACK_SSL_CACERT', '')
+            cron_kurl = getattr(settings, 'OPENSTACK_KEYSTONE_URL', '')
+        else:
             params = self.readParameters(conffile)
-            
             # Empty conf file used in rpm
             if len(params) == 0:
                 return
+
+            cron_user = params['USERNAME']
+            cron_pwd = params['PASSWD']
+            cron_prj = params['TENANTNAME']
+            cron_ca = params.get('CAFILE','')
+            cron_kurl = params['AUTHURL']
             
-            keystone = client.Client(username=params['USERNAME'],
-                                     password=params['PASSWD'],
-                                     project_name=params['TENANTNAME'],
-                                     cacert=params.get('CAFILE',''),
-                                     auth_url=params['AUTHURL'])
+        try:
+            
+            keystone_client = client.Client(username=cron_user,
+                                            password=cron_pwd,
+                                            project_name=cron_prj,
+                                            cacert=cron_CA,
+                                            auth_url=cron_kurl)
             
             req_table = dict()
             prj_res_table = dict()
@@ -145,16 +153,16 @@ class Command(BaseCommand):
                 prj_res_table[p_req.project.projectid] = p_req.project.projectname
             
             admin_table = dict()
-            prjman_roleid = self.get_prjman_roleid(keystone)
+            prjman_roleid = self.get_prjman_roleid(keystone_client)
             for prj_id in req_table:
                 q_args = {
                     'scope.project.id' : prj_id,
                     'role.id' : prjman_roleid
                 }
                 
-                for assign in super(RoleAssignmentManager, keystone.role_assignments).list(**q_args):
+                for assign in super(RoleAssignmentManager, keystone_client.role_assignments).list(**q_args):
                 
-                    email = self.get_email(keystone, assign.user['id'], None)
+                    email = self.get_email(keystone_client, assign.user['id'], None)
                     
                     if not email in admin_table:
                         admin_table[email] = list()

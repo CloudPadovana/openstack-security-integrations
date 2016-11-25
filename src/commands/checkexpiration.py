@@ -88,27 +88,40 @@ class Command(BaseCommand):
         
         conffile = options.get('conffile', None)
         if not conffile:
-            logging.error("Missing configuration file")
-            raise CommandError("Missing configuration file\n")
-            
-        params = self.readParameters(conffile)
+            cron_user = getattr(settings, 'CRON_USER', 'admin')
+            cron_pwd = getattr(settings, 'CRON_PWD', '')
+            cron_prj = getattr(settings, 'CRON_PROJECT', 'admin')
+            cron_ca = getattr(settings, 'OPENSTACK_SSL_CACERT', '')
+            cron_kurl = getattr(settings, 'OPENSTACK_KEYSTONE_URL', '')
+            cron_defer = getattr(settings, 'CRON_DEFER_DAYS', 0)
+        else:
+            params = self.readParameters(conffile)
+            # Empty conf file used in rpm
+            if len(params) == 0:
+                return
+
+            cron_user = params['USERNAME']
+            cron_pwd = params['PASSWD']
+            cron_prj = params['TENANTNAME']
+            cron_ca = params.get('CAFILE','')
+            cron_kurl = params['AUTHURL']
+            cron_defer = int(params.get('DEFER_DAYS', '0'))
         
-        # Empty conf file used in rpm
-        if len(params) == 0:
-            return
 
         LOG.info("Checking expired users")
         try:
 
-            keystone_client = client.Client(username=params['USERNAME'],
-                                            password=params['PASSWD'],
-                                            project_name=params['TENANTNAME'],
-                                            cacert=params.get('CAFILE',''),
-                                            auth_url=params['AUTHURL'])
+            keystone_client = client.Client(username=cron_user,
+                                            password=cron_pwd,
+                                            project_name=cron_prj,
+                                            cacert=cron_ca,
+                                            auth_url=cron_kurl)
 
-            dtime = timedelta(int(params.get('DEFER_DAYS', '0')))
-            exp_date = datetime.now() - dtime
+            exp_date = datetime.now() - timedelta(cron_defer)
             exp_members = Expiration.objects.filter(expdate__lt=exp_date)
+
+            prjman_roleid = self.get_prjman_roleid(keystone_client)
+            cloud_adminid = keystone_client.auth_ref.user_id
 
         except:
             LOG.error("Check expiration failed", exc_info=True)
@@ -155,9 +168,6 @@ class Command(BaseCommand):
         # Check for tenants without admin (use cloud admin if missing)
         #
         
-        prjman_roleid = self.get_prjman_roleid(keystone_client)
-        cloud_adminid = keystone_client.auth_ref.user_id
-
         for prj_id in updated_prjs:
         
             try:
