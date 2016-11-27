@@ -369,6 +369,14 @@ class ForcedCheckForm(forms.SelfHandlingForm):
                 expiration.expdate = data['expiration']
                 expiration.save()
 
+                #
+                # Update the max expiration per user
+                #
+                user_reg = prj_req.registration
+                if data['expiration'] > user_reg.expdate:
+                    user_reg.expdate = data['expiration']
+                    user_reg.save()
+
                 project_name = prj_req.project.projectname
                 project_id = prj_req.project.projectid
                 user_name = prj_req.registration.username
@@ -530,6 +538,14 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 expiration.project = prj_req.project
                 expiration.expdate = data['expiration']
                 expiration.save()
+
+                #
+                # Update the max expiration per user
+                #
+                user_reg = prj_req.registration
+                if data['expiration'] > user_reg.expdate:
+                    user_reg.expdate = data['expiration']
+                    user_reg.save()
 
                 #
                 # Clear request

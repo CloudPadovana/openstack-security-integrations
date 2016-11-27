@@ -89,6 +89,14 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 expiration.project = prj_req.project
                 expiration.expdate = data['expiration']
                 expiration.save()
+                
+                #
+                # Update the max expiration per user
+                #
+                user_reg = prj_req.registration
+                if data['expiration'] > user_reg.expdate:
+                    user_reg.expdate = data['expiration']
+                    user_reg.save()
 
                 roles_obj = client_factory(request).roles
                 arg_dict = {
