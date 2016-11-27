@@ -42,6 +42,7 @@ from .forms import ForcedRejectForm
 from .forms import NewProjectCheckForm
 from .forms import NewProjectRejectForm
 from .forms import GuestCheckForm
+from .forms import RenewAdminForm
 
 LOG = logging.getLogger(__name__)
 
@@ -283,4 +284,24 @@ class GuestApproveView(AbstractCheckView):
             'expiration' : datetime.now() + timedelta(365)
         }
 
+class RenewAdminView(forms.ModalFormView):
+    form_class = RenewAdminForm
+    template_name = 'idmanager/registration_manager/renewadmin.html'
+    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            self._object = self.kwargs['requestid']
+        return self._object
+
+    def get_context_data(self, **kwargs):
+        context = super(ForcedApproveView, self).get_context_data(**kwargs)
+        context['requestid'] = self.kwargs['requestid']
+        context['action'] = 'accept'
+        return context
+        
+    def get_initial(self):
+        return { 
+            'requestid' : self.kwargs['requestid']
+        }
 

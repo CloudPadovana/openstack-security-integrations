@@ -76,7 +76,9 @@ class RejectLink(tables.LinkAction):
     classes = ("ajax-modal", "btn-edit")
     
     def allowed(self, request, datum):
-        return datum.code == RegistrData.NEW_USR_EX_PRJ or datum.code == RegistrData.NEW_USR_NEW_PRJ
+        result = datum.code == RegistrData.NEW_USR_EX_PRJ
+        result = result or datum.code == RegistrData.NEW_USR_NEW_PRJ
+        return result
 
 class NewPrjLink(tables.LinkAction):
     name = "newprjlink"
@@ -132,6 +134,15 @@ class GuestRejLink(tables.LinkAction):
     def allowed(self, request, datum):
         return datum.code == RegistrData.NEW_USR_GUEST_PRJ
 
+class RenewAdminLink(tables.LinkAction):
+    name = "renewadminlink"
+    verbose_name = _("Renew admin")
+    url = "horizon:idmanager:registration_manager:renewadmin"
+    classes = ("ajax-modal", "btn-edit")
+    
+    def allowed(self, request, datum):
+        return datum.code == RegistrData.PRJADM_RENEW
+
 def get_description(data):
     if data.code == RegistrData.NEW_USR_NEW_PRJ:
         return _('New user and new project')
@@ -169,7 +180,8 @@ class OperationTable(tables.DataTable):
                        ForceApprLink,
                        ForceRejLink,
                        GuestApprLink,
-                       GuestRejLink)
+                       GuestRejLink,
+                       RenewAdminLink)
 
     def get_object_id(self, datum):
         return datum.requestid

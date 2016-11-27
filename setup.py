@@ -81,7 +81,9 @@ reg_templ_list = [
     'src/templates/registration_manager/precheck.html',
     'src/templates/registration_manager/reg_manager.html',
     'src/templates/registration_manager/_reject.html',
-    'src/templates/registration_manager/reject.html'
+    'src/templates/registration_manager/reject.html',
+    'src/templates/registration_manager/_renewadmin.html',
+    'src/templates/registration_manager/renewadmin.html'
 ]
 
 subscr_templ_list = [

@@ -56,6 +56,7 @@ from openstack_auth_shib.models import Expiration
 
 from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import PSTATUS_PENDING
+from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PRJ_GUEST
 
 from openstack_auth_shib.models import OS_LNAME_LEN
@@ -737,5 +738,69 @@ class GuestCheckForm(forms.SelfHandlingForm):
             messages.error(request, _("Cannot pre-check project"))
             return False
 
+        return True
+
+
+class RenewAdminForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(ForcedCheckForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['requestid'] = forms.CharField(widget=HiddenInput)
+
+        curr_year = datetime.now().year
+        years_list = range(curr_year, curr_year+25)
+
+        self.fields['expiration'] = forms.DateTimeField(
+            label=_("Expiration date"),
+            widget=SelectDateWidget(None, years_list)
+        )
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+
+        try:
+        
+            with transaction.atomic():
+
+                usr_and_prj = data['requestid'].split(':')
+                regid = int(usr_and_prj[0])
+
+                q_args = {
+                    'registration__regid' : regid,
+                    'project__projectname' : usr_and_prj[1],
+                    'flowstatus' : PSTATUS_RENEW_ADMIN
+                }                
+                prj_reqs = PrjRequest.objects.filter(**q_args)
+                if len(prj_reqs) == 0:
+                    return True
+                
+                q_args = {
+                    'registration__regid' : regid,
+                    'project__projectname' : curr_prjname
+                }
+                
+                prj_exp = Expiration.objects.filter(**q_args)
+                prj_exp.update(expdate=data['expiration'])
+                
+                #
+                # Update the max expiration per user
+                #
+                user_reg = Registration.objects.get(regid=regid)
+                if data['expiration'] > user_reg.expdate:
+                    user_reg.expdate = data['expiration']
+                    user_reg.save()
+
+                #
+                # Clear requests
+                #
+                prj_reqs.delete()
+                
+                
+        except:
+            LOG.error("Cannot renew user", exc_info=True)
+            exceptions.handle(request)
+            return False
+        
         return True
 
