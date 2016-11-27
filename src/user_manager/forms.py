@@ -64,9 +64,4 @@ class RenewExpForm(forms.SelfHandlingForm):
             
         return True
 
-class CheckOrphansForm(forms.SelfHandlingForm):
-
-    def handle(self, request, data):
-        return True
-
 

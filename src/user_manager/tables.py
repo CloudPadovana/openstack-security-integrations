@@ -72,7 +72,6 @@ class CheckOrphanLink(tables.LinkAction):
     name = "checkorphan"
     verbose_name = _("Orphan users")
     url = "horizon:idmanager:user_manager:checkorphans"
-    classes = ("ajax-modal", "btn-edit")
 
 class UsersTable(baseTables.UsersTable):
 
@@ -107,4 +106,23 @@ class UsersTable(baseTables.UsersTable):
             CheckOrphanLink,
             DeleteUsersAction
         )
+
+class CloseOrphanLink(tables.LinkAction):
+    name = "closeorphan"
+    verbose_name = _("Active users")
+    url = "horizon:idmanager:user_manager:index"
+
+class OrphanTable(tables.DataTable):
+    name = tables.Column('name', verbose_name=_('User name'))
+    fullname = tables.Column('fullname', verbose_name=_('Full name'))
+    expdate = tables.Column('expdate', verbose_name=_('Expiration Date'))
+
+    class Meta:
+        name = "orphan_table"
+        verbose_name = _("Orphans")
+        row_actions = (DeleteUsersAction,)
+        table_actions = (CloseOrphanLink,)
+
+    def get_object_id(self, datum):
+        return datum.id
 

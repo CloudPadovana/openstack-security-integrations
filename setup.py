@@ -104,6 +104,7 @@ usr_templ_list = [
     'src/templates/user_manager/_detail_overview.html',
     'src/templates/user_manager/detail.html',
     'src/templates/user_manager/index.html',
+    'src/templates/user_manager/orphans.html',
     'src/templates/user_manager/renewexp.html',
     'src/templates/user_manager/_renewexp.html',
     'src/templates/user_manager/update.html',

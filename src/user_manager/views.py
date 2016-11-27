@@ -21,6 +21,7 @@ from django.core.urlresolvers import reverse_lazy
 
 from horizon import forms
 from horizon import exceptions
+from horizon import tables
 from horizon.utils import memoized
 
 from openstack_dashboard.dashboards.identity.users import views as baseViews
@@ -29,8 +30,8 @@ from openstack_auth_shib.models import Registration, Expiration
 
 from openstack_dashboard import api
 
-from .tables import UsersTable
-from .forms import RenewExpForm, CheckOrphansForm
+from .tables import UsersTable, OrphanTable
+from .forms import RenewExpForm
 
 LOG = logging.getLogger(__name__)
 
@@ -117,36 +118,32 @@ class ChangePasswordView(baseViews.ChangePasswordView):
                               _('Unable to retrieve user information.'),
                               redirect=redirect)
 
-class CheckOrphansView(forms.ModalFormView):
-    form_class = CheckOrphansForm
-    template_name = 'idmanager/user_manager/check_orphans.html'
-    success_url = reverse_lazy('horizon:idmanager:user_manager:index')
+class OrphanData:
+    def __init__(self, uid, uname, full_name, expdate):
+        self.id = uid
+        self.name = uname
+        self.fullname = full_name
+        self.expdate = expdate
 
-    def get_object(self):
-        if not hasattr(self, "_object"):
-            try:
-                #
-                # TODO improve query
-                #      exclude pre-checked users
-                #      use models.Registration.expdate as last expiration date
-                #
-                active_ids = [ item.registration.regid for item in Expiration.objects.all() ];
-                self._object = Registration.objects.exclude(regid__in=active_ids)
+class CheckOrphansView(tables.DataTableView):
+    table_class = OrphanTable
+    template_name = 'idmanager/user_manager/orphans.html'
 
-            except Exception:
-                redirect = reverse_lazy("horizon:idmanager:user_manager:index")
-                exceptions.handle(self.request,
-                                  _('Unable to retrieve user information.'),
-                                  redirect=redirect)
-        return self._object
-
-    def get_context_data(self, **kwargs):
-        context = super(CheckOrphansView, self).get_context_data(**kwargs)
-        context['orphans'] = self.get_object()
-        return context
-
-
-
-
+    def get_data(self):
+        result = list()
+        #
+        # TODO improve query
+        #      exclude pre-checked users
+        #      use models.Registration.expdate as last expiration date
+        #
+        active_ids = [ item.registration.regid for item in Expiration.objects.all() ];
+        for item in Registration.objects.exclude(regid__in=active_ids):
+            result.append(OrphanData(
+                item.userid,
+                item.username,
+                item.givenname + " " + item.sn,
+                item.expdate
+            ))
+        return result
 
 
