@@ -22,7 +22,7 @@ from optparse import make_option
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from openstack_auth_shib.models import Registration
+from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.notifications import notification_render
 from openstack_auth_shib.notifications import notify as notifyUsers
 from openstack_auth_shib.notifications import USER_EXP_TYPE
@@ -121,33 +121,38 @@ class Command(BaseCommand):
             for days_to_exp in self._get_days_to_exp(cron_plan):
                 
                 tframe = now + timedelta(days=days_to_exp)
-                tf1 = tframe.replace(hour=0, minute=0, second=0, microsecond=0)
-                tf2 = tframe.replace(hour=23, minute=59, second=59, microsecond=999999)
-                all_regs = Registration.objects.filter(expdate__gte=tf1)
-                all_regs = all_regs.filter(expdate__lte=tf2)
+                
+                q_args = {
+                    'expdate__gte' : tframe.replace(hour=0, minute=0, second=0, microsecond=0),
+                    'expdate__lte' : tframe.replace(hour=23, minute=59, second=59, microsecond=999999)
+                }
             
-                for reg_item in all_regs:
+                for exp_item in Expiration.objects.filter(**q_args):
                     try:
                         
                         keystone = client.Client(username=cron_user,
                                                  password=cron_pwd,
                                                  project_name=cron_prj,
                                                  cacert=cron_ca,
-                                                 auth_url=cron_kurl
+                                                 auth_url=cron_kurl)
                         
-                        tmpuser = keystone.users.get(reg_item.userid)
+                        tmpuser = keystone.users.get(exp_item.registration.userid)
                         
                         
                         noti_params = {
-                            'username' : reg_item.username,
+                            'username' : exp_item.registration.username,
                             'days' : days_to_exp,
                             'contacts' : contact_list
                         }
                         noti_sbj, noti_body = notification_render(USER_EXP_TYPE, noti_params)
                         notifyUsers(tmpuser.email, noti_sbj, noti_body)
                         
+                        #
+                        # TODO send notification to project admins
+                        #
+                        
                     except:
-                        LOG.warning("Cannot notify %s" % reg_item.username, exc_info=True)
+                        LOG.warning("Cannot notify %s" % exp_item.registration.username, exc_info=True)
                 
         except:
             LOG.error("Notification failed", exc_info=True)
