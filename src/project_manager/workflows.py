@@ -201,32 +201,47 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
             field_name = tmp_step.get_member_field_name(role.id)
 
             with transaction.atomic():
-                for user_id in data[field_name]:
-                    q_args = {
-                        'userid' : user_id,
-                        'expdate__isnull' : False
-                    }
-                    tmp_list = Registration.objects.filter(**q_args)
-                    if len(tmp_list):
-                        q_args = {
-                            'registration' : tmp_list[0],
-                            'project' : self.this_project
-                        }
-                        if not Expiration.objects.filter(**q_args).count():
-                            c_args = {
-                                'registration' : tmp_list[0],
-                                'project' : self.this_project,
-                                'expdate' : tmp_list[0].expdate
-                            }
-                            Expiration(**c_args).save()
 
-                    q_args = {
-                        'registration' : tmp_list[0],
+                ep_qset = Expiration.objects.filter(project=self.this_project)
+                
+                tmp_set = set()
+                for item in ep_qset.filter(registration__userid__in=data[field_name]):
+                    tmp_set.add(item.registration.userid)
+                
+                new_memids = list()
+                for item in data[field_name]:
+                    if not item in tmp_set:
+                        new_memids.append(item)
+                
+                q_args = {
+                    'userid__in' : new_memids,
+                    'expdate__isnull' : False
+                }
+                nreg_qset = Registration.objects.filter(**q_args)
+
+                for item in nreg_qset:
+
+                    c_args = {
+                        'registration' : item,
                         'project' : self.this_project,
-                        'flowstatus' : PSTATUS_PENDING
+                        'expdate' : item.expdate
                     }
-                    PrjRequest.objects.filter(**q_args).delete()
-                        
+                    Expiration(**c_args).save()
+                
+                #
+                # Remove subscription request for manually added members
+                #    
+                q_args = {
+                    'registration__in' : nreg_qset,
+                    'project' : self.this_project,
+                    'flowstatus' : PSTATUS_PENDING
+                }
+                PrjRequest.objects.filter(**q_args).delete()                    
+                    
+                #
+                # Delete expiration for removed users
+                #
+                ep_qset.exclude(registration__userid__in=data[field_name]).delete()
 
         return super(ExtUpdateProject, self)._update_project_members(request, data, project_id)
 
