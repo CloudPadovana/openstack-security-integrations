@@ -15,6 +15,8 @@
 
 import logging
 
+from datetime import datetime, timedelta
+
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.core.urlresolvers import reverse_lazy
@@ -125,6 +127,11 @@ class ApproveView(AbstractProcessView):
         context['action'] = 'accept'
         return context
 
+    def get_initial(self):
+        inidata = super(ApproveView, self).get_initial()
+        inidata['expiration'] = datetime.now() + timedelta(365)
+        return inidata
+
 class RejectView(AbstractProcessView):
     form_class = RejectSubscrForm
     template_name = 'idmanager/subscription_manager/subscr_approve.html'
@@ -144,6 +151,11 @@ class RenewView(AbstractProcessView):
         context = super(RenewView, self).get_context_data(**kwargs)
         context['action'] = 'accept'
         return context
+
+    def get_initial(self):
+        inidata = super(RenewView, self).get_initial()
+        inidata['expiration'] = datetime.now() + timedelta(365)
+        return inidata
 
 class DiscardView(AbstractProcessView):
     form_class = DiscSubscrForm

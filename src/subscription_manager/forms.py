@@ -21,8 +21,10 @@ from horizon import exceptions
 
 from django.db import transaction
 from django.conf import settings
+from django.forms import ValidationError
 from django.forms.widgets import HiddenInput
 from django.forms.extras.widgets import SelectDateWidget
+from django.utils.translation import ugettext as _
 from django.views.decorators.debug import sensitive_variables
 
 from openstack_auth_shib.models import Registration
@@ -43,6 +45,11 @@ from django.utils.translation import ugettext as _
 
 LOG = logging.getLogger(__name__)
 
+try:
+    MAX_RENEW = int(getattr(settings, 'TENANT_MAX_RENEW', '4'))
+except:
+    MAX_RENEW = 4
+
 class ApproveSubscrForm(forms.SelfHandlingForm):
 
     def __init__(self, request, *args, **kwargs):
@@ -50,14 +57,22 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
 
         self.fields['regid'] = forms.CharField(widget=HiddenInput)
 
-        curr_year = datetime.now().year
-        years_list = range(curr_year, curr_year+25)
+        curr_year = datetime.utcnow().year
+        years_list = range(curr_year, curr_year + MAX_RENEW)
 
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
             widget=SelectDateWidget(None, years_list)
         )
 
+    def clean(self):
+        data = super(ApproveSubscrForm, self).clean()
+        now = datetime.utcnow()
+        if data['expiration'].date() < now.date():
+            raise ValidationError(_('Invalid expiration time.'))
+        if data['expiration'].year > now.year + MAX_RENEW:
+            raise ValidationError(_('Invalid expiration time.'))
+        return data
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -198,13 +213,22 @@ class RenewSubscrForm(forms.SelfHandlingForm):
 
         self.fields['regid'] = forms.CharField(widget=HiddenInput)
 
-        curr_year = datetime.now().year
-        years_list = range(curr_year, curr_year+25)
+        curr_year = datetime.utcnow().year
+        years_list = range(curr_year, curr_year + MAX_RENEW)
 
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
             widget=SelectDateWidget(None, years_list)
         )
+
+    def clean(self):
+        data = super(RenewSubscrForm, self).clean()
+        now = datetime.utcnow()
+        if data['expiration'].date() < now.date():
+            raise ValidationError(_('Invalid expiration time.'))
+        if data['expiration'].year > now.year + MAX_RENEW:
+            raise ValidationError(_('Invalid expiration time.'))
+        return data
 
     @sensitive_variables('data')
     def handle(self, request, data):
