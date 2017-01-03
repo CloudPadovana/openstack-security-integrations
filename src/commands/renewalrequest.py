@@ -26,6 +26,8 @@ from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
+from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 
 from keystoneclient.v3 import client
 
@@ -111,7 +113,7 @@ class Command(BaseCommand):
         try:
 
             now = datetime.now()
-            exp_date = now - timedelta(cron_renewd)
+            exp_date = now + timedelta(cron_renewd)
 
             LOG.info("Checking for renewal after %s" % str(exp_date))
             
@@ -122,8 +124,8 @@ class Command(BaseCommand):
                                             auth_url=cron_kurl)
                             
             q_args = {
-                'expdate__gte' : exp_date,
-                'expdate__lt' : now
+                'expdate__lte' : exp_date,
+                'expdate__gt' : now
             }
             exp_members = Expiration.objects.filter(**q_args)
 
@@ -137,15 +139,19 @@ class Command(BaseCommand):
 
             
             for e_item in exp_members:
-
+                #
+                # TODO check API
+                #
+                try:
+                    is_prj_admin = keystone_client.roles.check(prjman_roleid,
+                        e_item.registration.userid,
+                        None, None,
+                        e_item.project.projectid)
+                except:
+                     is_prj_admin = False 
+                    
                 try:
 
-                    arg_dict = {
-                        'project' : mem_item.project.projectid,
-                        'user' : mem_item.registration.userid
-                    }
-                    is_prj_admin = keystone_client.roles.check(prjman_roleid, **arg_dict)
-                    
                     q_args = {
                         'registration' : e_item.registration,
                         'project' : e_item.project,
@@ -153,13 +159,15 @@ class Command(BaseCommand):
                     }
                     if len(PrjRequest.objects.filter(**q_args)) == 0:
 
-                        q_args = {
+                        reqArgs = {
                             'registration' : e_item.registration,
                             'project' : e_item.project,
                             'flowstatus' : PSTATUS_RENEW_ADMIN if is_prj_admin
                                                             else PSTATUS_RENEW_MEMB
                         }
                         PrjRequest(**reqArgs).save()
+                        
+                        LOG.info("Issued renewal for %s" % e_item.registration.username)
 
                 except:
                     LOG.error("Check expiration failed for", exc_info=True)
