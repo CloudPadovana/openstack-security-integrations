@@ -744,12 +744,12 @@ class GuestCheckForm(forms.SelfHandlingForm):
 class RenewAdminForm(forms.SelfHandlingForm):
 
     def __init__(self, request, *args, **kwargs):
-        super(ForcedCheckForm, self).__init__(request, *args, **kwargs)
+        super(RenewAdminForm, self).__init__(request, *args, **kwargs)
 
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
 
         curr_year = datetime.now().year
-        years_list = range(curr_year, curr_year+25)
+        years_list = range(curr_year, curr_year + 25)
 
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
@@ -766,21 +766,19 @@ class RenewAdminForm(forms.SelfHandlingForm):
                 usr_and_prj = data['requestid'].split(':')
                 regid = int(usr_and_prj[0])
 
-                q_args = {
-                    'registration__regid' : regid,
-                    'project__projectname' : usr_and_prj[1],
-                    'flowstatus' : PSTATUS_RENEW_ADMIN
-                }                
-                prj_reqs = PrjRequest.objects.filter(**q_args)
+                prj_reqs = PrjRequest.objects.filter(
+                    registration__regid = regid,
+                    project__projectname = usr_and_prj[1],
+                    flowstatus = PSTATUS_RENEW_ADMIN
+                )
+                
                 if len(prj_reqs) == 0:
                     return True
                 
-                q_args = {
-                    'registration__regid' : regid,
-                    'project__projectname' : curr_prjname
-                }
-                
-                prj_exp = Expiration.objects.filter(**q_args)
+                prj_exp = Expiration.objects.filter(
+                    registration__regid = regid,
+                    project__projectname = usr_and_prj[1]
+                )
                 prj_exp.update(expdate=data['expiration'])
                 
                 #
@@ -798,8 +796,8 @@ class RenewAdminForm(forms.SelfHandlingForm):
                 
                 
         except:
-            LOG.error("Cannot renew user", exc_info=True)
-            exceptions.handle(request)
+            LOG.error("Cannot renew project admin", exc_info=True)
+            messages.error(request, _("Cannot renew project admin"))
             return False
         
         return True

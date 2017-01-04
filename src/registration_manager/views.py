@@ -78,12 +78,12 @@ class MainView(tables.DataTableView):
                 elif prjReq.flowstatus == PSTATUS_RENEW_MEMB:
 
                     rData.code = RegistrData.USR_RENEW
-                    requestid = "%d:" % prjReq.registration.regid
+                    requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
 
                 elif prjReq.flowstatus == PSTATUS_RENEW_ADMIN:
 
                     rData.code = RegistrData.PRJADM_RENEW
-                    requestid = "%d:" % prjReq.registration.regid
+                    requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
 
                 elif prjReq.project.projectid:
 
@@ -295,7 +295,7 @@ class RenewAdminView(forms.ModalFormView):
         return self._object
 
     def get_context_data(self, **kwargs):
-        context = super(ForcedApproveView, self).get_context_data(**kwargs)
+        context = super(RenewAdminView, self).get_context_data(**kwargs)
         context['requestid'] = self.kwargs['requestid']
         context['action'] = 'accept'
         return context
