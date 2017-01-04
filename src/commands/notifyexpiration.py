@@ -18,14 +18,17 @@ import logging.config
 
 from datetime import datetime
 from datetime import timedelta
-from optparse import make_option
 
-from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.notifications import notification_render
 from openstack_auth_shib.notifications import notify as notifyUsers
 from openstack_auth_shib.notifications import USER_EXP_TYPE
+
+from horizon.management.commands.cronscript_utils import build_option_list
+from horizon.management.commands.cronscript_utils import configure_log
+from horizon.management.commands.cronscript_utils import configure_app
+from horizon.management.commands.cronscript_utils import build_contact_list
 
 from keystoneclient.v3 import client
 
@@ -33,42 +36,7 @@ LOG = logging.getLogger("notifyexpiration")
 
 class Command(BaseCommand):
 
-    option_list = BaseCommand.option_list + (
-        make_option('--config',
-            dest='conffile',
-            action='store',
-            default=None,
-            help='The configuration file for this plugin'
-        ),
-        make_option('--logconf',
-            dest='logconffile',
-            action='store',
-            default=None,
-            help='The configuration file for the logging system'
-        ),
-    )
-    
-    def readParameters(self, conffile):
-        result = dict()
-
-        cfile = None
-        try:
-            cfile = open(conffile)
-            for line in cfile:
-                tmps = line.strip()
-                if len(tmps) == 0 or tmps.startswith('#'):
-                    continue
-            
-                tmpl = tmps.split('=')
-                if len(tmpl) == 2:
-                    result[tmpl[0].strip()] = tmpl[1].strip()
-        except:
-            LOG.error("Cannot parse configuration file", exc_info=True)
-        
-        if cfile:
-            cfile.close()
-        
-        return result
+    option_list = build_option_list()
     
     def _get_days_to_exp(self, n_plan):
         result = list()
@@ -88,37 +56,16 @@ class Command(BaseCommand):
     
     def handle(self, *args, **options):
     
-        logconffile = options.get('logconffile', None)
-        if logconffile:
-            logging.config.fileConfig(logconffile)
+        configure_log(options)
         
-        conffile = options.get('conffile', None)
-        if not conffile:
-            cron_user = getattr(settings, 'CRON_USER', 'admin')
-            cron_pwd = getattr(settings, 'CRON_PWD', '')
-            cron_prj = getattr(settings, 'CRON_PROJECT', 'admin')
-            cron_ca = getattr(settings, 'OPENSTACK_SSL_CACERT', '')
-            cron_kurl = getattr(settings, 'OPENSTACK_KEYSTONE_URL', '')
-            cron_plan = getattr(settings, 'NOTIFICATION_PLAN', None)
-        else:
-            params = self.readParameters(conffile)
-            # Empty conf file used in rpm
-            if len(params) == 0:
-                return
-
-            cron_user = params['USERNAME']
-            cron_pwd = params['PASSWD']
-            cron_prj = params['TENANTNAME']
-            cron_ca = params.get('CAFILE','')
-            cron_kurl = params['AUTHURL']
-            cron_plan = params.get('NOTIFICATION_PLAN', None)
-            
+        config = configure_app(options)
+                    
         try:
             
             now = datetime.now()
-            contact_list = getattr(settings, 'MANAGERS', None)      
+            contact_list = build_contact_list()
             
-            for days_to_exp in self._get_days_to_exp(cron_plan):
+            for days_to_exp in self._get_days_to_exp(config.cron_plan):
                 
                 tframe = now + timedelta(days=days_to_exp)
                 
@@ -130,11 +77,11 @@ class Command(BaseCommand):
                 for exp_item in Expiration.objects.filter(**q_args):
                     try:
                         
-                        keystone = client.Client(username=cron_user,
-                                                 password=cron_pwd,
-                                                 project_name=cron_prj,
-                                                 cacert=cron_ca,
-                                                 auth_url=cron_kurl)
+                        keystone = client.Client(username=config.cron_user,
+                                                 password=config.cron_pwd,
+                                                 project_name=config.cron_prj,
+                                                 cacert=config.cron_ca,
+                                                 auth_url=config.cron_kurl)
                         
                         tmpuser = keystone.users.get(exp_item.registration.userid)
                         
