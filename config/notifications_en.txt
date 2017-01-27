@@ -15,7 +15,7 @@ body: The user {{ username }} requires the creation of the project {{ project }}
 subject: Subscription request waiting for approval
 body: User {{ username }} requires access to project {{ project }}
   Please, validate the subscription request
-  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html/ManageProjectMembershipRequests.html
+  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html/Registration.html#ManageProjectMembershipRequests
   
   Please, don't reply to this message
 
