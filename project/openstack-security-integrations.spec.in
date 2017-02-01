@@ -66,6 +66,10 @@ mkdir -p %{buildroot}/etc/openstack-auth-shib/notifications
 cp %{buildroot}/usr/share/openstack-auth-shib/templates/notifications_*.txt \
    %{buildroot}/etc/openstack-auth-shib/notifications
 
+mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d
+mv %{buildroot}/%{python_sitelib}/dashboard_conf/_1000_* \
+    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d
+
 mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/enabled
 mv %{buildroot}/%{python_sitelib}/dashboard_conf/_*.py* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/enabled
@@ -163,37 +167,6 @@ Django plugin for Shibboleth authentication
 %triggerin -n openstack-auth-shib -- openstack-dashboard
 if [ ! $1 == 2 ]; then
     #
-    # Register custom authentication plugin
-    # Register new middleware
-    #
-    printf "
-HORIZON_CONFIG['user_home'] = 'openstack_auth_shib.utils.get_user_home'       #RPM-Trigger: do not edit this line
-AUTHENTICATION_PLUGINS = [                                                    #RPM-Trigger: do not edit this line
-    'openstack_auth_shib.backend.SKeyPluginFactory',                          #RPM-Trigger: do not edit this line
-    'openstack_auth.plugin.password.PasswordPlugin',                          #RPM-Trigger: do not edit this line
-    'openstack_auth.plugin.token.TokenPlugin'                                 #RPM-Trigger: do not edit this line
-]                                                                             #RPM-Trigger: do not edit this line
-AUTHENTICATION_URLS = ['openstack_auth_shib.urls']                            #RPM-Trigger: do not edit this line
-INSTALLED_APPS = [                                                            #RPM-Trigger: do not edit this line
-    'openstack_dashboard',                                                    #RPM-Trigger: do not edit this line
-    'django.contrib.contenttypes',                                            #RPM-Trigger: do not edit this line
-    'django.contrib.auth',                                                    #RPM-Trigger: do not edit this line
-    'django.contrib.sessions',                                                #RPM-Trigger: do not edit this line
-    'django.contrib.messages',                                                #RPM-Trigger: do not edit this line
-    'django.contrib.staticfiles',                                             #RPM-Trigger: do not edit this line
-    'django.contrib.humanize',                                                #RPM-Trigger: do not edit this line
-    'django_pyscss',                                                          #RPM-Trigger: do not edit this line
-    'openstack_dashboard.django_pyscss_fix',                                  #RPM-Trigger: do not edit this line
-    'compressor',                                                             #RPM-Trigger: do not edit this line
-    'horizon',                                                                #RPM-Trigger: do not edit this line
-    'openstack_auth',                                                         #RPM-Trigger: do not edit this line
-    'openstack_auth_shib',                                                    #RPM-Trigger: do not edit this line
-]                                                                             #RPM-Trigger: do not edit this line
-NOTIFICATION_TEMPLATE_DIR = '/etc/openstack-auth-shib/notifications'          #RPM-Trigger: do not edit this line
-
-" >> /etc/openstack-dashboard/local_settings
-    
-    #
     # Replace attribe map file
     #
     if [ ! -e /etc/shibboleth/attribute-map.xml.dist ] ; then
@@ -205,8 +178,6 @@ fi
 
 %triggerun -n openstack-auth-shib -- openstack-dashboard
 if [ $1 == 0 -o $2 == 0 ] ; then
-
-    sed -i -e '/RPM-Trigger/d' /etc/openstack-dashboard/local_settings
 
     if [ -e /etc/shibboleth/attribute-map.xml.dist ] ; then
         cp -f /etc/shibboleth/attribute-map.xml.dist /etc/shibboleth/attribute-map.xml

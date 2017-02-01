@@ -49,6 +49,7 @@ LOG = logging.getLogger(__name__)
 class MainView(tables.DataTableView):
     table_class = OperationTable
     template_name = 'idmanager/registration_manager/reg_manager.html'
+    page_title = _("Registrations")
 
     def get_data(self):
     

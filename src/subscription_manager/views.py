@@ -53,6 +53,7 @@ class PrjReqItem:
 class IndexView(tables.DataTableView):
     table_class = SubscriptionTable
     template_name = 'idmanager/subscription_manager/subscr_manager.html'
+    page_title = _("Subscriptions")
 
     def get_data(self):
     
