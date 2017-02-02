@@ -161,7 +161,9 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/*.pyo
-
+/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/*.pyo
 
 
 %triggerin -n openstack-auth-shib -- openstack-dashboard
