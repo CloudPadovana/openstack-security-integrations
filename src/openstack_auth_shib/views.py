@@ -27,12 +27,15 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_exempt
 
 from openstack_auth.views import login as basic_login
+from openstack_auth.views import websso as basic_websso
 from openstack_auth.views import logout as basic_logout
 from openstack_auth.views import switch as basic_switch
 from openstack_auth.views import switch_region as basic_switch_region
 from openstack_auth.user import set_session_from_user
+from openstack_auth.utils import is_websso_enabled
 from openstack_auth import exceptions as auth_exceptions
 
 try:
@@ -121,6 +124,22 @@ def login(request):
     return basic_login(request)
 
 
+@sensitive_post_parameters()
+@csrf_exempt
+@never_cache
+def websso(request):
+
+    if is_websso_enabled():
+        return basic_websso(request)
+
+    tempDict = {
+        'error_header' : _("Web SSO error"),
+        'error_text' : _("Web SSO is not supported"),
+        'redirect_url' : '/dashboard',
+        'redirect_label' : _("Home")
+    }
+    return shortcuts.render(request, 'aai_error.html', tempDict)
+
 def logout(request):
 
     attributes = get_manager(request)
@@ -154,6 +173,7 @@ def switch(request, tenant_id, redirect_field_name=REDIRECT_FIELD_NAME):
     # workaround for switch redirect: don't use the redirect field name
     return basic_switch(request, tenant_id, '')
 
+@login_required
 def switch_region(request, region_name, redirect_field_name=REDIRECT_FIELD_NAME):
     # workaround for switch redirect: don't use the redirect field name
     return basic_switch_region(request, region_name, '')

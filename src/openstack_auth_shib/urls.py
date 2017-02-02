@@ -35,6 +35,7 @@ patch_middleware_get_user()
 
 urlpatterns = patterns('openstack_auth_shib.views',
     url(r"^login/$", "login", name='login'),
+    url(r"^websso/$", "websso", name='websso'),
     url(r"^logout/$", 'logout', name='logout'),
     url(r'^switch/(?P<tenant_id>[^/]+)/$', 'switch', name='switch_tenants'),
     url(r'^switch_services_region/(?P<region_name>[^/]+)/$', 'switch_region',
