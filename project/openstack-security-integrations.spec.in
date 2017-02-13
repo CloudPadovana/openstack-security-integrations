@@ -68,6 +68,7 @@ cp %{buildroot}/usr/share/openstack-auth-shib/templates/notifications_*.txt \
 
 mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d
 mv %{buildroot}/%{python_sitelib}/dashboard_conf/_1000_* \
+    %{buildroot}/%{python_sitelib}/dashboard_conf/_1001_* \
     %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d
 
 mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/enabled
@@ -161,9 +162,9 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1000_*.py
+/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1000_*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1000_*.pyo
 
 
 %triggerin -n openstack-auth-shib -- openstack-dashboard
@@ -251,6 +252,9 @@ Customization of Openstack Horizon for Cloud Area Padovana
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapdStrip.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.ico
 /usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cap.html
+/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cap_*.py
+/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cap_*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cap_*.pyo
 
 %post -n openstack-auth-cap
 ln -sf /usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cap.html \
@@ -325,6 +329,9 @@ Customization of Openstack Horizon for Cloud Veneto
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVenetoStrip.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.ico
 /usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cedc.html
+/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cedc_*.py
+/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cedc_*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cedc_*.pyo
 
 %post -n openstack-auth-cedc
 ln -sf /usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cedc.html \
