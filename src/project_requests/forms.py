@@ -32,7 +32,9 @@ from openstack_auth_shib.models import OS_SNAME_LEN
 
 from openstack_auth_shib.notifications import notification_render
 from openstack_auth_shib.notifications import notifyManagers
+from openstack_auth_shib.notifications import bookNotification
 from openstack_auth_shib.notifications import NEWPRJ_REQ_TYPE
+from openstack_auth_shib.notifications import MEMBER_REQUEST
 
 from django.utils.translation import ugettext_lazy as _
 
@@ -146,6 +148,7 @@ class ProjectRequestForm(forms.SelfHandlingForm):
 
         
             newprjlist = list()
+            exstprjlist = list()
             for prjitem in prjlist:
         
                 if prjitem[3]:
@@ -168,6 +171,7 @@ class ProjectRequestForm(forms.SelfHandlingForm):
                     continue
                 else:
                     project = Project.objects.get(projectname=prjitem[0])
+                    exstprjlist.append(project.projectid)
                         
                 reqArgs = {
                     'registration' : registration,
@@ -190,8 +194,10 @@ class ProjectRequestForm(forms.SelfHandlingForm):
                 notifyManagers(noti_sbj, noti_body)
 
             #
-            # TODO implement notifications to project managers
+            # Schedule notifications for project managers
             #
+            for prj_id in exstprjlist:
+                bookNotification(request.user.username, prj_id, MEMBER_REQUEST)
         
         return True
 

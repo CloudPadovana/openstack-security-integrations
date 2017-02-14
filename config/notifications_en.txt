@@ -91,6 +91,12 @@ body: You have the following pending subscriptions for project {{ project }}:
   
   Please, don't reply to this message
 
+[member_request]
+subject: User {{ username }} requires access to {{ project }}
+body: The user {{ username }} wants to join the project {{ project }}
+
+  Please, don't reply to this message
+
 [member_removed]
 subject: User removed from {{ project }}
 body: Your account has been removed from the project {{ project }}

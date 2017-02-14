@@ -45,11 +45,14 @@ SUBSCR_NO_TYPE = 'subscription_rejected'
 SUBSCR_FORCED_OK_TYPE = 'subscription_forced_approved'
 SUBSCR_FORCED_NO_TYPE = 'subscription_forced_rejected'
 USER_EXP_TYPE = 'user_expiring'
+MEMBER_REQUEST = 'member_request'
 MEMBER_REMOVED = 'member_removed'
 MEMBER_REMOVED_ADM = 'member_removed_for_admin'
 CHANGED_MEMBER_ROLE = 'changed_member_priv'
 PRJ_CREATE_TYPE = 'project_created'
 PRJ_REJ_TYPE = 'project_rejected'
+
+DEF_MSG_CACHE_DIR = '/var/cache/openstack-auth-shib/msg'
 
 
 class NotificationTemplate():
@@ -135,6 +138,15 @@ def notifyManagers(subject, body):
     except:
         LOG.error("Cannot send notification", exc_info=True)
 
+def bookNotification(username, projectid, code):
 
+    cache_dir = getattr(settings, 'MSG_CACHE_DIR', DEF_MSG_CACHE_DIR)
+    f_name = os.path.join(cache_dir, projectid)
 
+    try:
+        with open(f_name, 'a' if os.path.isfile(f_name) else 'w') as n_file:
+            n_file.write("%s|%s\n" % (username, code))
+
+    except:
+        LOG.error("Cannot book notification", exc_info=True)       
 
