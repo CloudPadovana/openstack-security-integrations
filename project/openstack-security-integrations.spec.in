@@ -97,6 +97,7 @@ Django plugin for Shibboleth authentication
 %files -n openstack-auth-shib
 %defattr(-,root,root)
 %dir /etc/openstack-auth-shib
+%dir /etc/openstack-auth-shib/notifications
 %config(noreplace) /etc/openstack-auth-shib/actions.conf
 %config(noreplace) /etc/openstack-auth-shib/logging.conf
 %config(noreplace) /etc/cron.d/openstack-auth-shib-cron
@@ -344,7 +345,7 @@ cp -f /etc/openstack-auth-shib/cedc-metadata.xml /etc/openstack-auth-shib/idem-t
 
 %preun -n openstack-auth-cedc
 rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
-rm =f /etc/openstack-auth-shib/notifications/notifications_en.txt
+rm -f /etc/openstack-auth-shib/notifications/notifications_en.txt
 rm -f /etc/openstack-auth-shib/idem-template-metadata.xml
 
 %triggerin -n openstack-auth-cedc -- openstack-dashboard
