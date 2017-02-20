@@ -175,6 +175,12 @@ confile_list = [
     'config/actions.conf'
 ]
 
+noti_tpl_list = [
+    'config/notifications_en.txt',
+    'config/cap-notifications_en.txt',
+    'config/cedc-notifications_en.txt'
+]
+
 setup(
       name=pkg_name,
       version=pkg_version,
@@ -202,7 +208,7 @@ setup(
                   ('etc/keystone-skey-auth', ['config/policy.json']),
                   ('etc/cron.d', ['config/openstack-auth-shib-cron']),
                   ('usr/share/openstack-auth-shib', ['config/attribute-map.xml']),
-                  ('usr/share/openstack-auth-shib/templates', ['config/notifications_en.txt'])
+                  ('usr/share/openstack-auth-shib/templates', noti_tpl_list)
                  ],
       cmdclass={'bdist_rpm': bdist_rpm}
      )

@@ -63,8 +63,6 @@ mv %{buildroot}/%{python_sitelib}/commands/* \
    %{buildroot}/%{python_sitelib}/horizon/management/commands/
 
 mkdir -p %{buildroot}/etc/openstack-auth-shib/notifications
-cp %{buildroot}/usr/share/openstack-auth-shib/templates/notifications_*.txt \
-   %{buildroot}/etc/openstack-auth-shib/notifications
 
 mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d
 mv %{buildroot}/%{python_sitelib}/dashboard_conf/_1000_* \
@@ -101,7 +99,6 @@ Django plugin for Shibboleth authentication
 %dir /etc/openstack-auth-shib
 %config(noreplace) /etc/openstack-auth-shib/actions.conf
 %config(noreplace) /etc/openstack-auth-shib/logging.conf
-%config(noreplace) /etc/openstack-auth-shib/notifications/notifications_*.txt
 %config(noreplace) /etc/cron.d/openstack-auth-shib-cron
 %dir /usr/share/openstack-dashboard/openstack_dashboard/templates/aup
 %dir %{python_sitelib}/openstack_auth_shib
@@ -110,7 +107,7 @@ Django plugin for Shibboleth authentication
 %{python_sitelib}/openstack_auth_shib/*.pyo
 %{python_sitelib}/*.egg-info
 /usr/share/openstack-auth-shib/attribute-map.xml
-/usr/share/openstack-auth-shib/templates/notifications_en.txt
+/usr/share/openstack-auth-shib/templates/notifications_*.txt
 /usr/share/openstack-dashboard/openstack_dashboard/templates/*.html
 /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/*.html
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoGoogle.png
@@ -248,6 +245,7 @@ Customization of Openstack Horizon for Cloud Area Padovana
 %files -n openstack-auth-cap
 %defattr(-,root,root)
 %config(noreplace) /etc/openstack-auth-shib/cap-metadata.xml
+/usr/share/openstack-auth-shib/templates/cap-notifications_en.txt
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapdStrip.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.ico
@@ -259,10 +257,13 @@ Customization of Openstack Horizon for Cloud Area Padovana
 %post -n openstack-auth-cap
 ln -sf /usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cap.html \
        /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
+ln -sf /usr/share/openstack-auth-shib/templates/cap-notifications_en.txt \
+       /etc/openstack-auth-shib/notifications/notifications_en.txt
 cp -f /etc/openstack-auth-shib/cap-metadata.xml /etc/openstack-auth-shib/idem-template-metadata.xml
 
 %preun -n openstack-auth-cap
 rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
+rm -f /etc/openstack-auth-shib/notifications/notifications_en.txt
 rm -f /etc/openstack-auth-shib/idem-template-metadata.xml
 
 %triggerin -n openstack-auth-cap -- openstack-dashboard
@@ -325,6 +326,7 @@ Customization of Openstack Horizon for Cloud Veneto
 %files -n openstack-auth-cedc
 %defattr(-,root,root)
 %config(noreplace) /etc/openstack-auth-shib/cedc-metadata.xml
+/usr/share/openstack-auth-shib/templates/cedc-notifications_en.txt
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVenetoStrip.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.ico
@@ -336,10 +338,13 @@ Customization of Openstack Horizon for Cloud Veneto
 %post -n openstack-auth-cedc
 ln -sf /usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cedc.html \
        /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
+ln -sf /usr/share/openstack-auth-shib/templates/cedc-notifications_en.txt \
+       /etc/openstack-auth-shib/notifications/notifications_en.txt
 cp -f /etc/openstack-auth-shib/cedc-metadata.xml /etc/openstack-auth-shib/idem-template-metadata.xml
 
 %preun -n openstack-auth-cedc
 rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
+rm =f /etc/openstack-auth-shib/notifications/notifications_en.txt
 rm -f /etc/openstack-auth-shib/idem-template-metadata.xml
 
 %triggerin -n openstack-auth-cedc -- openstack-dashboard
