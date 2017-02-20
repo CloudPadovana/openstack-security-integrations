@@ -142,10 +142,19 @@ def bookNotification(username, projectid, code):
 
     cache_dir = getattr(settings, 'MSG_CACHE_DIR', DEF_MSG_CACHE_DIR)
     f_name = os.path.join(cache_dir, projectid)
+    t_file = "%s.tmp" % f_name
 
     try:
-        with open(f_name, 'a' if os.path.isfile(f_name) else 'w') as n_file:
+        if os.path.isfile(f_name):
+            os.rename(f_name, t_name)
+            f_mode = 'a'
+        else:
+            f_mode = 'w'
+        
+        with open(t_name, f_mode) as n_file:
             n_file.write("%s|%s\n" % (username, code))
+        
+        os.rename(t_name, f_name)
 
     except:
         LOG.error("Cannot book notification", exc_info=True)       

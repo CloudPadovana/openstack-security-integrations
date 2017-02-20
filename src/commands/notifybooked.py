@@ -48,7 +48,10 @@ class Command(BaseCommand):
         
         config = configure_app(options)
         
-        prj_id_list = os.listdir(CACHE_DIR)
+        prj_id_list = list()
+        for item in os.listdir(CACHE_DIR):
+            if not item.endswith('.tmp'):
+                prj_id_list.append(item)
         if len(prj_id_list) == 0:
             return
         LOG.info("Detected booked notifications")

@@ -33,7 +33,7 @@ from horizon.management.commands.cronscript_utils import configure_app
 
 from keystoneclient.v3 import client
 
-LOG = logging.getLogger("checkexpiration")
+LOG = logging.getLogger("renewalrequest")
 
 class Command(BaseCommand):
 
