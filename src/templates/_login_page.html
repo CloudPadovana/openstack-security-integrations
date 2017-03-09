@@ -83,14 +83,11 @@
       </button>
       {% if HORIZON_CONFIG.identity_providers %}
       {% for idpdata in HORIZON_CONFIG.identity_providers %}
-      {# For definition of idpdata see openstack_auth_shib.idpmanager #}
-        {% if not idpdata.type == 'experimental' or 'INFN-testing' in request.META.HTTP_USER_AGENT %}
         <button type="button" onclick="location.href='{{ idpdata.path }}';">
            <img align="middle" height="80px" width="80px" 
                 alt="Login {{ idpdata.description }}" 
                 src="{{ idpdata.logo }}"/>
         </button>
-        {% endif %}
       {% endfor %}
       {% endif %}
     </div>
