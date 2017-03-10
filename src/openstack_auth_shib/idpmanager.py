@@ -26,14 +26,31 @@ from .models import OS_LNAME_LEN
 
 LOG = logging.getLogger(__name__)
 
+#
+# Provider configuration table
+#
+# { 
+#   'context' : '/dashboard-openidc', 
+#   'path' : '/dashboard-openidc/auth/login', 
+#   'description' : 'INDIGO AAI', 
+#   'logo' : '/dashboard/static/dashboard/img/logoINDIGO.png',
+#   'uid_tag' : 'OIDC-preferred_username',
+#   'org_tag' : 'OIDC-organisation_name' 
+# }
+#
+
 def get_manager(request):
 
-    if 'REMOTE_USER' in request.META and request.META.get('AUTH_TYPE','') == 'shibboleth':
+    if not 'REMOTE_USER' in request.META:
+        return None
+
+    if request.META.get('AUTH_TYPE','') == 'shibboleth':
         return SAML2_IdP(request)
     
-    if 'REMOTE_USER' in request.META and request.path.startswith('/dashboard-google'):
-        return Google_IdP(request)
-        
+    for item in settings.HORIZON_CONFIG['identity_providers']:
+        if request.path.startswith(item['context']):
+            return OIDC_IdP(request, item)
+
     return None
 
 
@@ -79,82 +96,33 @@ class SAML2_IdP:
         return response
 
 
+class OIDC_IdP:
 
-class Google_IdP:
-
-    def __init__(self, request):
+    def __init__(self, request, params):
     
-        self.root_url = '/dashboard-google'
-        self.logout_prefix = ''
-        self.email = request.META.get('HTTP_OIDC_CLAIM_EMAIL', None)
-        if self.email:
-            self.username = self.email
-        else:
-            self.username = request.META['REMOTE_USER']
+        self.root_url = params['context']
+        self.logout_prefix = '%s/redirect-uri?logout=https://%s:%s/dashboard' % \
+            (params['context'], request.META['SERVER_NAME'], request.META['SERVER_PORT'])
+
+        self.username = request.META.get(params.get('uid_tag', 'REMOTE_USER'))
         if len(self.username) > OS_LNAME_LEN:
             self.username = self.username[0:OS_LNAME_LEN]
-        self.givenname = request.META.get('HTTP_OIDC_CLAIM_GIVEN_NAME', None)
-        self.sn = request.META.get('HTTP_OIDC_CLAIM_FAMILY_NAME', None)
-        self.provider = 'Google'
+
+        self.givenname = request.META.get(params.get('g_name_tag', 'OIDC-given_name'), None)
+        self.sn = request.META.get(params.get('s_name_tag', 'OIDC-family_name'), None)
+        self.email = request.META.get(params.get('email_tag', 'OIDC-email'), None)
+        self.provider = request.META.get(params.get('org_tag', 'OIDC-organisation_name'), 'OIDC')
 
     def get_logout_url(self, *args):
-        
-        if len(args):
-            return args[0]
-        return '/dashboard'
+        return self.logout_prefix
     
     def postproc_logout(self, response):
-        #
-        # TODO verify logout
-        #
-        response.delete_cookie('mod_auth_openidc_session')
         return response
 
 
 
-
 def get_idp_list(excl_list=list()):
-    #
-    # TODO check if item is well-formed, see _login.html
-    # Accepted keys:
-    # id: IdP id (infn.it, unipd.it, etc)
-    # path: URL path prefix (/dashboard-shib, /dashboard-google, etc.)
-    # description: IdP short description
-    # logo: URL path for the logo (/static/dashboard/img/logoInfnAAI.png)
-    #
-
-    result = list()
-    
-    providers_dir = settings.HORIZON_CONFIG.get('providers_directory', '/etc/openstack-auth-shib/idp-conf.d')
-    idp_list = settings.HORIZON_CONFIG.get('identity_providers', None)
-
-    if idp_list:
-        # old mechanism: providers in local-settings
-        for idp_data in idp_list:
-            if not idp_data['id'] in excl_list:
-                resume_url = '%s/project/idp_requests/resume/' % idp_data['path']
-                idp_data['resume_query'] = urllib.urlencode({'url' : resume_url})
-                result.append(idp_data)
-
-    elif os.path.isdir(providers_dir):
-        # new mechanism: provider data in json file
-        for jfilename in glob.glob(providers_dir + '/*.json'):
-            jdatafile = None
-            try:
-                jdatafile = open(jfilename)
-                idp_data = json.load(jdatafile)
-                
-                if not idp_data['id'] in excl_list:
-                    resume_url = '%s/project/idp_requests/resume/' % idp_data['path']
-                    idp_data['resume_query'] = urllib.urlencode({'url' : resume_url})
-                    result.append(idp_data)
-                
-            except:
-                if jdatafile:
-                    jdatafile.close()
-
-    return result
-
+    raise Exception("Unsupported")
 
 
 
