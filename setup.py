@@ -64,6 +64,7 @@ prj_panel_dir = os_dash_dir + 'idmanager/project_manager/templates/project_manag
 pwd_panel_dir = os_dash_dir + 'settings/password_manager/templates/password_manager'
 preq_panel_dir = os_dash_dir + 'idmanager/project_requests/templates/project_requests'
 idpreq_panel_dir = os_dash_dir + 'idmanager/idp_requests/templates/idp_requests'
+themes_dir = os_main_dir = 'themes'
 
 template_list = [
     'src/templates/_register_form.html',
@@ -208,7 +209,15 @@ setup(
                   ('etc/keystone-skey-auth', ['config/policy.json']),
                   ('etc/cron.d', ['config/openstack-auth-shib-cron']),
                   ('usr/share/openstack-auth-shib', ['config/attribute-map.xml']),
-                  ('usr/share/openstack-auth-shib/templates', noti_tpl_list)
+                  ('usr/share/openstack-auth-shib/templates', noti_tpl_list),
+                  (themes_dir + '/cap/static', 
+                    [ 'src/themes/cap/static/_styles.scss', 'src/themes/cap/static/_variables.scss']),
+                  (themes_dir + '/cap/templates/auth', ['src/themes/cap/templates/auth/_splash.html']),
+                  (themes_dir + '/cap/templates/header', ['src/themes/cap/templates/header/_brand.html']),
+                  (themes_dir + '/cedc/static', 
+                    [ 'src/themes/cedc/static/_styles.scss', 'src/themes/cedc/static/_variables.scss']),
+                  (themes_dir + '/cedc/templates/auth', ['src/themes/cedc/templates/auth/_splash.html']),
+                  (themes_dir + '/cedc/templates/header', ['src/themes/cedc/templates/header/_brand.html']),
                  ],
       cmdclass={'bdist_rpm': bdist_rpm}
      )
