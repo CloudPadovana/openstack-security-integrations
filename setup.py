@@ -64,7 +64,7 @@ prj_panel_dir = os_dash_dir + 'idmanager/project_manager/templates/project_manag
 pwd_panel_dir = os_dash_dir + 'settings/password_manager/templates/password_manager'
 preq_panel_dir = os_dash_dir + 'idmanager/project_requests/templates/project_requests'
 idpreq_panel_dir = os_dash_dir + 'idmanager/idp_requests/templates/idp_requests'
-themes_dir = os_main_dir = 'themes'
+themes_dir = os_main_dir + 'themes'
 
 template_list = [
     'src/templates/_register_form.html',
