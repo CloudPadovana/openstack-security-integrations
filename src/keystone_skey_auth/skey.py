@@ -17,38 +17,21 @@ import base64
 import json
 
 from oslo_log import log
-try:
-    from oslo.config import cfg
-except:
-    from oslo_config import cfg
+from oslo_config import cfg
 
-from keystone.auth import AuthMethodHandler
+from keystone.auth.plugins import base
 from keystone.common import dependency
 from keystone.exception import Unauthorized, UserNotFound, NotFound
 
 from Crypto.Cipher import AES
-from Crypto import __version__ as crypto_version
-if crypto_version.startswith('2.0'):
-    from Crypto.Util import randpool
-else:
-    from Crypto import Random
+from Crypto import Random
 
 METHOD_NAME = 'sKey'
 
 LOG = log.getLogger(__name__)
 
-#
-# TODO
-# investigate OTP libraries
-# https://github.com/nathforge/pyotp
-# investigate schema based on timestamp and originatorID
-# originatorID is the uniqueID of the thread sending the request.
-#
-# move token in the body
-#
-
 @dependency.requires('identity_api')
-class SecretKeyAuth(AuthMethodHandler):
+class SecretKeyAuth(base.AuthMethodHandler):
 
     method = METHOD_NAME
     
@@ -70,21 +53,18 @@ class SecretKeyAuth(AuthMethodHandler):
         if self.aes_key == None:
             raise Exception("Wrong secret key")
 
-        if crypto_version.startswith('2.0'):
-            cipher = AES.new(self.aes_key, AES.MODE_CFB)
-            b64msg = base64.b64decode(data)
-            return cipher.decrypt(b64msg)[256:]
-        
         prng = Random.new()
         iv = prng.read(16)
         cipher = AES.new(self.aes_key, AES.MODE_CFB, iv)
         b64msg = base64.b64decode(data)
         return cipher.decrypt(b64msg)[16:]
     
-    def authenticate(self, context, auth_info, auth_context):
+    def authenticate(self, context, auth_info):
         
-        if 'token' in auth_info and 'user_id' not in auth_context:
+        if 'token' in auth_info:
             try:
+                
+                response_data = {}
                 
                 userdata = json.loads(self._parse_cryptoken(auth_info['token']))
                 if not 'username' in userdata or not 'domain' in userdata:
@@ -97,8 +77,9 @@ class SecretKeyAuth(AuthMethodHandler):
                 if not uDict['enabled']:
                     raise Unauthorized("User %s is disabled" % uDict['name'])
                 
-                auth_context['user_id'] = uDict['id']
-                return None
+                response_data['user_id'] = uDict['id']
+                return base.AuthHandlerResponse(status=True, response_body=None,
+                                                response_data=response_data)
                 
             except UserNotFound:
                 raise NotFound("Missing user")
@@ -110,10 +91,5 @@ class SecretKeyAuth(AuthMethodHandler):
         
         raise Unauthorized('Cannot authenticate using sKey')
 
-'''
-## Example of payload"
-
-{"auth" : {"identity" : {"methods" : ["sKey"], "sKey" : { "token" : "DAnjHuV16dh4hXGCm/uk9A=="}}}}
-'''
 
 
