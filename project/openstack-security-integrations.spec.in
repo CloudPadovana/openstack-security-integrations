@@ -69,9 +69,9 @@ mv %{buildroot}/%{python_sitelib}/dashboard_conf/_1000_* \
     %{buildroot}/%{python_sitelib}/dashboard_conf/_1001_* \
     %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d
 
-mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/enabled
+mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/enabled
 mv %{buildroot}/%{python_sitelib}/dashboard_conf/_*.py* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/enabled
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/enabled
    
 rm -rf %{buildroot}/%{python_sitelib}/dashboard_conf
 
@@ -157,9 +157,9 @@ Django plugin for Shibboleth authentication
 %{python_sitelib}/horizon/management/commands/*.py
 %{python_sitelib}/horizon/management/commands/*.pyc
 %{python_sitelib}/horizon/management/commands/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/local/enabled/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/local/enabled/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/local/enabled/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/enabled/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/enabled/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/enabled/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1000_*.py
 /usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1000_*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1000_*.pyo
