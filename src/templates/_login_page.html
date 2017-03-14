@@ -77,10 +77,6 @@
         <img align="middle" height="80px" width="80px" alt="Local login" 
              src="/dashboard/static/dashboard/img/logoUsrPwd.png"/>
       </button>
-      <button type="button" onclick="location.href='/dashboard-shib/auth/login/';">
-        <img align="middle" height="80px" width="80px" alt="Login Infn AAI" 
-             src="/dashboard/static/dashboard/img/logoInfnAAI.png">
-      </button>
       {% if HORIZON_CONFIG.identity_providers %}
       {% for idpdata in HORIZON_CONFIG.identity_providers %}
         <button type="button" onclick="location.href='{{ idpdata.path }}';">
