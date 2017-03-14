@@ -165,27 +165,6 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1000_*.pyo
 
 
-%triggerin -n openstack-auth-shib -- openstack-dashboard
-if [ ! $1 == 2 ]; then
-    #
-    # Replace attribe map file
-    #
-    if [ ! -e /etc/shibboleth/attribute-map.xml.dist ] ; then
-        mv -f /etc/shibboleth/attribute-map.xml /etc/shibboleth/attribute-map.xml.dist
-    fi
-    ln -sf /usr/share/openstack-auth-shib/attribute-map.xml /etc/shibboleth/attribute-map.xml
-
-fi
-
-%triggerun -n openstack-auth-shib -- openstack-dashboard
-if [ $1 == 0 -o $2 == 0 ] ; then
-
-    if [ -e /etc/shibboleth/attribute-map.xml.dist ] ; then
-        cp -f /etc/shibboleth/attribute-map.xml.dist /etc/shibboleth/attribute-map.xml
-    fi
-fi
-
-
 
 
 
