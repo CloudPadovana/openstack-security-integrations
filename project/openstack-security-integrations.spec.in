@@ -1,7 +1,7 @@
 Summary: Shibboleth-Openstack integrations
 Name: openstack-security-integrations
 Version: @PKGVERSION@
-Release: @PKGRELEASE@%{?dist}%{!?dist:.el5}
+Release: @PKGRELEASE@%{?dist}
 License: Apache Software License
 Vendor: EMI
 URL: http://glite.cern.ch/
@@ -89,7 +89,7 @@ Requires: python-django-openstack-auth
 Requires: python-crypto
 Requires: python-keystoneclient
 Requires: openstack-dashboard
-Requires: python-lesscpy
+#Requires: python-lesscpy
 
 %description -n openstack-auth-shib
 Django plugin for Shibboleth authentication
@@ -115,6 +115,7 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoIDEM.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoInfnAAI.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoUniPD.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoINDIGO.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoUsrPwd.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/empty.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/help-transparent.png
