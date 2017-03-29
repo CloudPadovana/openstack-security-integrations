@@ -14,6 +14,7 @@
 #  under the License. 
 
 from django.db import models
+from django.utils import timezone
 
 # Used bit mask for project status
 PRJ_PRIVATE = 0
@@ -148,3 +149,67 @@ class PrjRequest(models.Model):
     notes = models.TextField()
 
 
+class NotificationLogManager(models.Manager):
+    use_in_migrations = True
+
+    def log_action(self, action, message,
+                   project_id=None, user_id=None,
+                   dst_project_id=None, dst_user_id=None):
+
+        return self.model.objects.create(
+            action=action,
+            message=message,
+            project_id=project_id,
+            user_id=user_id,
+            dst_project_id=dst_project_id,
+            dst_user_id=dst_user_id,
+        )
+
+
+class NotificationLog(models.Model):
+    objects = NotificationLogManager()
+
+    timestamp = models.DateTimeField(
+        default=timezone.now,
+        db_index=True,
+        editable=False,
+        blank=False,
+    )
+
+    action = models.CharField(
+        max_length=255,
+        db_index=True,
+        blank=False,
+    )
+
+    project_id = models.CharField(
+        max_length=OS_ID_LEN,
+        db_index=True,
+        null=True,
+        blank=True,
+    )
+
+    user_id = models.CharField(
+        max_length=OS_ID_LEN,
+        db_index=True,
+        null=True,
+        blank=True,
+    )
+
+    dst_project_id = models.CharField(
+        max_length=OS_ID_LEN,
+        db_index=True,
+        null=True,
+        blank=True,
+    )
+
+    dst_user_id = models.CharField(
+        max_length=OS_ID_LEN,
+        db_index=True,
+        null=True,
+        blank=True,
+    )
+
+    message = models.TextField(
+        blank=False,
+    )
