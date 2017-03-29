@@ -34,8 +34,8 @@ from django.forms.extras.widgets import SelectDateWidget
 from django.views.decorators.debug import sensitive_variables
 from django.utils.translation import ugettext as _
 
-from openstack_auth_shib.notifications import notification_render
-from openstack_auth_shib.notifications import notify as notifyUsers
+from openstack_auth_shib.notifications import notifyProject
+from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import SUBSCR_WAIT_TYPE
 from openstack_auth_shib.notifications import SUBSCR_ONGOING
 from openstack_auth_shib.notifications import FIRST_REG_OK_TYPE
@@ -221,15 +221,13 @@ class PreCheckForm(forms.SelfHandlingForm):
                         'username' : data['username'],
                         'project' : p_item.project.projectname
                     }
-                    noti_sbj, noti_body = notification_render(SUBSCR_WAIT_TYPE, noti_params)
-                    notifyUsers(m_emails, noti_sbj, noti_body)
+                    notifyProject(request=self.request, rcpt=m_emails, action=SUBSCR_WAIT_TYPE, context=noti_params)
                     
                     n2_params = {
                         'project' : p_item.project.projectname,
                         'prjadmins' : m_emails
                     }
-                    noti_sbj, noti_body = notification_render(SUBSCR_ONGOING, n2_params)
-                    notifyUsers(user_email, noti_sbj, noti_body)
+                    notifyUser(request=self.request, rcpt=user_email, action=SUBSCR_ONGOING, context=n2_params)
 
                 newprj_reqs = prjReqList.filter(flowstatus=PSTATUS_REG)
                 for p_item in newprj_reqs:
@@ -238,8 +236,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                         'project' : p_item.project.projectname,
                         'guestmode' : False
                     }
-                    noti_sbj, noti_body = notification_render(FIRST_REG_OK_TYPE, noti_params)
-                    notifyUsers(user_email, noti_sbj, noti_body)
+                    notifyUser(request=self.request, rcpt=user_email, action=FIRST_REG_OK_TYPE, context=noti_params)
 
                 #
                 # cache cleanup
@@ -320,8 +317,7 @@ class RejectForm(forms.SelfHandlingForm):
                 noti_params = {
                     'notes' : data['reason']
                 }
-                noti_sbj, noti_body = notification_render(FIRST_REG_NO_TYPE, noti_params)
-                notifyUsers(user_email, noti_sbj, noti_body)
+                notifyUser(request=self.request, rcpt=user_email, action=FIRST_REG_NO_TYPE, context=noti_params)
             
 
         except:
@@ -402,11 +398,8 @@ class ForcedCheckForm(forms.SelfHandlingForm):
                 'project' : project_name
             }
 
-            noti_sbj, noti_body = notification_render(SUBSCR_FORCED_OK_TYPE, noti_params)
-            notifyUsers([ pman.email for pman in prjman_list ], noti_sbj, noti_body)
-            
-            noti_sbj, noti_body = notification_render(SUBSCR_OK_TYPE, noti_params)
-            notifyUsers(user_email, noti_sbj, noti_body)
+            notifyProject(request=self.request, rcpt=[ pman.email for pman in prjman_list ], action=SUBSCR_FORCED_OK_TYPE, context=noti_params)
+            notifyUser(request=self.request, rcpt=user_email, action=SUBSCR_OK_TYPE, context=noti_params)
                 
         except:
             LOG.error("Error forced-checking request", exc_info=True)
@@ -466,11 +459,8 @@ class ForcedRejectForm(forms.SelfHandlingForm):
                 'notes' : data['reason']
             }
 
-            noti_sbj, noti_body = notification_render(SUBSCR_FORCED_NO_TYPE, noti_params)
-            notifyUsers([ pman.email for pman in prjman_list ], noti_sbj, noti_body)
-            
-            noti_sbj, noti_body = notification_render(SUBSCR_NO_TYPE, noti_params)
-            notifyUsers(user_email, noti_sbj, noti_body)
+            notifyProject(request=self.request, rcpt=[ pman.email for pman in prjman_list ], action=SUBSCR_FORCED_NO_TYPE, context=noti_params)
+            notifyUser(request=self.request, rcpt=user_email, action=SUBSCR_NO_TYPE, context=noti_params)
                 
         except:
             LOG.error("Error forced-checking request", exc_info=True)
@@ -561,8 +551,7 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 'project' : project_name
             }
 
-            noti_sbj, noti_body = notification_render(PRJ_CREATE_TYPE, noti_params)
-            notifyUsers(user_email, noti_sbj, noti_body)
+            notifyUser(request=self.request, rcpt=user_email, action=PRJ_CREATE_TYPE, context=noti_params)
 
         except:
             LOG.error("Error pre-checking project", exc_info=True)
@@ -622,8 +611,7 @@ class NewProjectRejectForm(forms.SelfHandlingForm):
                 'notes' : data['reason']
             }
 
-            noti_sbj, noti_body = notification_render(PRJ_REJ_TYPE, noti_params)
-            notifyUsers(user_email, noti_sbj, noti_body)
+            notifyUser(request=self.request, rcpt=user_email, action=PRJ_REJ_TYPE, context=noti_params)
 
         except:
             LOG.error("Error pre-checking project", exc_info=True)
@@ -730,8 +718,7 @@ class GuestCheckForm(forms.SelfHandlingForm):
                     'project' : project_name,
                     'guestmode' : True
                 }
-                noti_sbj, noti_body = notification_render(FIRST_REG_OK_TYPE, noti_params)
-                notifyUsers(user_email, noti_sbj, noti_body)
+                notifyUser(request=self.request, rcpt=user_email, action=FIRST_REG_OK_TYPE, context=noti_params)
 
         except:
             LOG.error("Error pre-checking project", exc_info=True)

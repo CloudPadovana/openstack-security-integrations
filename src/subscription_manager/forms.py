@@ -32,8 +32,7 @@ from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 
-from openstack_auth_shib.notifications import notification_render
-from openstack_auth_shib.notifications import notify as notifyUsers
+from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import SUBSCR_OK_TYPE
 from openstack_auth_shib.notifications import SUBSCR_NO_TYPE
 from openstack_auth_shib.notifications import MEMBER_REMOVED
@@ -139,8 +138,7 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 'project' : project_name
             }
 
-            noti_sbj, noti_body = notification_render(SUBSCR_OK_TYPE, noti_params)
-            notifyUsers(member.email, noti_sbj, noti_body)
+            notifyUser(request=self.request, rcpt=member.email, action=SUBSCR_OK_TYPE, context=noti_params)
         
         except:
             exceptions.handle(request)
@@ -197,8 +195,7 @@ class RejectSubscrForm(forms.SelfHandlingForm):
                 'notes' : data['reason']
             }
 
-            noti_sbj, noti_body = notification_render(SUBSCR_NO_TYPE, noti_params)
-            notifyUsers(member.email, noti_sbj, noti_body)
+            notifyUser(request=self.request, rcpt=member.email, action=SUBSCR_NO_TYPE, context=noti_params)
         
         except:
             exceptions.handle(request)
@@ -340,8 +337,7 @@ class DiscSubscrForm(forms.SelfHandlingForm):
                 'project' : request.user.tenant_name,
                 'notes' : data['reason']
             }
-            noti_sbj, noti_body = notification_render(MEMBER_REMOVED, noti_params)
-            notifyUsers(member.email, noti_sbj, noti_body)
+            notifyUser(request=self.request, rcpt=member.email, action=MEMBER_REMOVED, context=noti_params)
                 
         except:
             LOG.error("Cannot renew user", exc_info=True)

@@ -57,6 +57,9 @@ USER_EXP_TYPE = 'user_expiring'
 DEF_MSG_CACHE_DIR = '/var/cache/openstack-auth-shib/msg'
 
 
+MANAGERS_RCPT = '__MANAGERS__'
+
+
 class NotificationTemplate():
 
     def __init__(self, sbj, body):
@@ -66,6 +69,50 @@ class NotificationTemplate():
     def render(self, ctx_dict):
         ctx = DjangoContext(ctx_dict)
         return (self.subject.render(ctx), self.body.render(ctx))
+
+
+def _log_notify(rcpt, action, context, locale='en', request=None, user_id=None, project_id=None, dst_user_id=None, dst_project_id=None):
+    if user_id is None:
+        try:
+            user_id = request.user.id
+        except Exception as ex:
+            LOG.warning("Exception on accessing request.user.user_id: {ex}".format(ex=ex))
+
+    if project_id is None:
+        try:
+            project_id = request.user.project_id
+        except Exception as ex:
+            LOG.warning("Exception on accessing request.user.project_id: {ex}".format(ex=ex))
+
+    LOG.debug("notify user_id={user_id}, project_id={project_id}, rcpt={rcpt}, action={action}, context={context}, dst_user_id={dst_user_id}, dst_project_id={dst_project_id}"
+              .format(user_id=user_id, project_id=project_id, rcpt=rcpt, action=action, context=context, dst_user_id=dst_user_id, dst_project_id=dst_project_id))
+
+    subject, body = notification_render(action, context, locale)
+
+    if rcpt == MANAGERS_RCPT:
+        notifyManagers(subject, body)
+    else:
+        notify(rcpt, subject, body)
+
+
+def notifyUser(rcpt, action, context, locale='en', *args, **kwargs):
+    _log_notify(rcpt, action, context, locale, **kwargs)
+
+
+def notifyProject(rcpt, action, context, locale='en', *args, **kwargs):
+    # ensure dst_user_id is not set
+    kwargs.pop('dst_user_id', None)
+
+    _log_notify(rcpt, action, context, locale, **kwargs)
+
+
+def notifyAdmin(action, context, locale='en', *args, **kwargs):
+    # ensure nor dst_user_id nor dst_project_id are set
+    kwargs.pop('dst_project_id', None)
+    kwargs.pop('dst_user_id', None)
+
+    _log_notify(MANAGERS_RCPT, action, context, locale, **kwargs)
+
 
 def notification_render(msg_type, ctx_dict, locale='en'):
 

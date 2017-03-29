@@ -29,7 +29,7 @@ from .idpmanager import get_manager
 from .models import Registration, Project, RegRequest, PrjRequest
 from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST
 from .models import OS_LNAME_LEN, OS_SNAME_LEN, PWD_LEN, EMAIL_LEN
-from .notifications import notifyManagers, notification_render, REGISTR_AVAIL_TYPE
+from .notifications import notifyAdmin, REGISTR_AVAIL_TYPE
 from .utils import import_guest_project, get_ostack_attributes
 
 LOG = logging.getLogger(__name__)
@@ -321,8 +321,7 @@ class RegistrForm(forms.SelfHandlingForm):
                     reqPrj = PrjRequest(**reqArgs)
                     reqPrj.save()
                 
-            noti_sbj, noti_body = notification_render(REGISTR_AVAIL_TYPE, {'username' : data['username']})
-            notifyManagers(noti_sbj, noti_body)
+            notifyAdmin(request=self.request, action=REGISTR_AVAIL_TYPE, context={'username' : data['username']})
 
             # Don't user reverse_lazy
             # It is necessary to get out of the protected area

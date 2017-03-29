@@ -30,8 +30,7 @@ from openstack_auth_shib.models import PRJ_PUBLIC,PRJ_PRIVATE
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import OS_SNAME_LEN
 
-from openstack_auth_shib.notifications import notification_render
-from openstack_auth_shib.notifications import notifyManagers
+from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import bookNotification
 from openstack_auth_shib.notifications import NEWPRJ_REQ_TYPE
 from openstack_auth_shib.notifications import MEMBER_REQUEST
@@ -190,8 +189,7 @@ class ProjectRequestForm(forms.SelfHandlingForm):
                     'username' : request.user.username,
                     'project' : prj_name
                 }
-                noti_sbj, noti_body = notification_render(NEWPRJ_REQ_TYPE, noti_params)
-                notifyManagers(noti_sbj, noti_body)
+                notifyAdmin(request=self.request, action=NEWPRJ_REQ_TYPE, context=noti_params)
 
             #
             # Schedule notifications for project managers

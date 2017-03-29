@@ -26,9 +26,8 @@ from horizon.utils import functions as utils
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
-from openstack_auth_shib.notifications import notification_render
-from openstack_auth_shib.notifications import notify as notifyUsers
-from openstack_auth_shib.notifications import notifyManagers
+from openstack_auth_shib.notifications import notifyUser
+from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import MEMBER_REMOVED
 from openstack_auth_shib.notifications import MEMBER_REMOVED_ADM
 from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
@@ -66,11 +65,9 @@ class DeleteMemberAction(tables.DeleteAction):
                 'admin_address' : users_obj.get(request.user.id).email,
                 'project' : request.user.tenant_name
             }
-            noti_sbj, noti_body = notification_render(MEMBER_REMOVED, noti_params)
-            notifyUsers(member.email, noti_sbj, noti_body)
-            
-            noti_sbj, noti_body = notification_render(MEMBER_REMOVED_ADM, noti_params)
-            notifyManagers(noti_sbj, noti_body)
+            notifyUser(request=self.request, rcpt=member.email, action=MEMBER_REMOVED, context=noti_params)
+            notifyAdmin(request=self.request, action=MEMBER_REMOVED_ADM, context=noti_params)
+
             
         except:
             LOG.error("Grant revoke error", exc_info=True)
@@ -121,8 +118,7 @@ class ToggleRoleAction(tables.Action):
                     's_role' : _('Project manager'),
                     'd_role' : _('Project user')
                 }
-                noti_sbj, noti_body = notification_render(CHANGED_MEMBER_ROLE, noti_params)
-                notifyUsers(member.email, noti_sbj, noti_body)
+                notifyUser(request=self.request, rcpt=member.email, action=CHANGED_MEMBER_ROLE, context=noti_params)
             
             else:
                 roles_obj.grant(t_role_id, **arg_dict)
@@ -133,8 +129,7 @@ class ToggleRoleAction(tables.Action):
                     's_role' : _('Project user'),
                     'd_role' : _('Project manager')
                 }
-                noti_sbj, noti_body = notification_render(CHANGED_MEMBER_ROLE, noti_params)
-                notifyUsers(member.email, noti_sbj, noti_body)
+                notifyUser(request=self.request, rcpt=member.email, action=CHANGED_MEMBER_ROLE, context=noti_params)
 
         except:
             LOG.error("Toggle role error", exc_info=True)
