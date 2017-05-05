@@ -86,7 +86,7 @@ class SecretKeyAuth(base.AuthMethodHandler):
                                                 response_data=response_data)
                 
             except DomainNotFound:
-                LOG.error('Invalid domain name %s' % domain_name)
+                LOG.error('Invalid domain name %s' % userdata['domain'])
             except UserNotFound:
                 raise NotFound("Missing user")
             except Unauthorized as noAuthEx:
