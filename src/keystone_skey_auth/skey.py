@@ -21,7 +21,10 @@ from oslo_config import cfg
 
 from keystone.auth.plugins import base
 from keystone.common import dependency
-from keystone.exception import Unauthorized, UserNotFound, NotFound
+from keystone.exception import Unauthorized
+from keystone.exception import UserNotFound
+from keystone.exception import NotFound
+from keystone.exception import DomainNotFound
 
 from Crypto.Cipher import AES
 from Crypto import Random
@@ -30,7 +33,7 @@ METHOD_NAME = 'sKey'
 
 LOG = log.getLogger(__name__)
 
-@dependency.requires('identity_api')
+@dependency.requires('identity_api', 'resource_api')
 class SecretKeyAuth(base.AuthMethodHandler):
 
     method = METHOD_NAME
@@ -72,7 +75,8 @@ class SecretKeyAuth(base.AuthMethodHandler):
                 
                 LOG.info("Accepted secret for user %s" % userdata['username'])
                 
-                uDict = self.identity_api.get_user_by_name(userdata['username'], userdata['domain'])
+                domain_ref = self.resource_api.get_domain_by_name(userdata['domain'])
+                uDict = self.identity_api.get_user_by_name(userdata['username'], domain_ref['id'])
                 
                 if not uDict['enabled']:
                     raise Unauthorized("User %s is disabled" % uDict['name'])
@@ -81,6 +85,8 @@ class SecretKeyAuth(base.AuthMethodHandler):
                 return base.AuthHandlerResponse(status=True, response_body=None,
                                                 response_data=response_data)
                 
+            except DomainNotFound:
+                LOG.error('Invalid domain name %s' % domain_name)
             except UserNotFound:
                 raise NotFound("Missing user")
             except Unauthorized as noAuthEx:
