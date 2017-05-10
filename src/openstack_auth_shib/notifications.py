@@ -33,24 +33,25 @@ TEMPLATE_LOCK = threading.Lock()
 TEMPLATE_REGEX = re.compile("notifications_(\w\w).txt")
 
 # List of available notification templates
-REGISTR_AVAIL_TYPE = 'registration_available'
-NEWPRJ_REQ_TYPE = 'project_creation_request'
-SUBSCR_WAIT_TYPE = 'subscription_waiting_approval'
-SUBSCR_ONGOING = 'subscription_ongoing'
-SUBSCR_REMINDER = 'subscription_reminder'
+CHANGED_MEMBER_ROLE = 'changed_member_priv'
 FIRST_REG_OK_TYPE = 'first_registration_ok'
 FIRST_REG_NO_TYPE = 'first_registration_rejected'
-SUBSCR_OK_TYPE = 'subscription_processed'
-SUBSCR_NO_TYPE = 'subscription_rejected'
-SUBSCR_FORCED_OK_TYPE = 'subscription_forced_approved'
-SUBSCR_FORCED_NO_TYPE = 'subscription_forced_rejected'
-USER_EXP_TYPE = 'user_expiring'
-MEMBER_REQUEST = 'member_request'
 MEMBER_REMOVED = 'member_removed'
 MEMBER_REMOVED_ADM = 'member_removed_for_admin'
-CHANGED_MEMBER_ROLE = 'changed_member_priv'
+MEMBER_REQUEST = 'member_request'
 PRJ_CREATE_TYPE = 'project_created'
+NEWPRJ_REQ_TYPE = 'project_creation_request'
 PRJ_REJ_TYPE = 'project_rejected'
+REGISTR_AVAIL_TYPE = 'registration_available'
+SUBSCR_FORCED_OK_TYPE = 'subscription_forced_approved'
+SUBSCR_FORCED_NO_TYPE = 'subscription_forced_rejected'
+SUBSCR_ONGOING = 'subscription_ongoing'
+SUBSCR_OK_TYPE = 'subscription_processed'
+SUBSCR_NO_TYPE = 'subscription_rejected'
+SUBSCR_REMINDER = 'subscription_reminder'
+SUBSCR_WAIT_TYPE = 'subscription_waiting_approval'
+USER_EXP_TYPE = 'user_expiring'
+
 
 DEF_MSG_CACHE_DIR = '/var/cache/openstack-auth-shib/msg'
 
