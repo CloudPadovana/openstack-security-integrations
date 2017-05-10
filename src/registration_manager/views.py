@@ -258,7 +258,7 @@ class RejectProjectView(forms.ModalFormView):
         return self._object
 
     def get_context_data(self, **kwargs):
-        context = super(NewProjectView, self).get_context_data(**kwargs)
+        context = super(RejectProjectView, self).get_context_data(**kwargs)
         context['requestid'] = self.kwargs['requestid']
         context['action'] = 'reject'
         return context
