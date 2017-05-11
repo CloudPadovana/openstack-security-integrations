@@ -16,6 +16,7 @@
 import logging
 import os, os.path
 import re
+import json
 import threading
 from types import ListType, TupleType
 from ConfigParser import ConfigParser
@@ -139,21 +140,22 @@ def notifyManagers(subject, body):
     except:
         LOG.error("Cannot send notification", exc_info=True)
 
-def bookNotification(username, projectid, code):
+def bookNotification(code, userid, username, projectid, projectname):
 
     cache_dir = getattr(settings, 'MSG_CACHE_DIR', DEF_MSG_CACHE_DIR)
-    f_name = os.path.join(cache_dir, projectid)
-    t_file = "%s.tmp" % f_name
+    f_name = os.path.join(cache_dir, "%s.%s" % (projectid, userid))
+    t_name = "%s.tmp" % f_name
 
-    try:
-        if os.path.isfile(f_name):
-            os.rename(f_name, t_name)
-            f_mode = 'a'
-        else:
-            f_mode = 'w'
-        
-        with open(t_name, f_mode) as n_file:
-            n_file.write("%s|%s\n" % (username, code))
+    try:        
+        with open(t_name, 'w') as n_file:
+            j_dict = { 
+                'code' : code,
+                'user' : username,
+                'userid' : userid,
+                'project' : projectname,
+                'projectid' : projectid
+            }
+            n_file.write(json.dumps(j_dict) + '\n')
         
         os.rename(t_name, f_name)
 

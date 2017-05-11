@@ -171,7 +171,7 @@ class ProjectRequestForm(forms.SelfHandlingForm):
                     continue
                 else:
                     project = Project.objects.get(projectname=prjitem[0])
-                    exstprjlist.append(project.projectid)
+                    exstprjlist.append(project)
                         
                 reqArgs = {
                     'registration' : registration,
@@ -196,8 +196,9 @@ class ProjectRequestForm(forms.SelfHandlingForm):
             #
             # Schedule notifications for project managers
             #
-            for prj_id in exstprjlist:
-                bookNotification(request.user.username, prj_id, MEMBER_REQUEST)
+            for prj_item in exstprjlist:
+                bookNotification(MEMBER_REQUEST, request.user.id, request.user.username, \
+                                 prj_item.projectid, prj_item.projectname)
         
         return True
 
