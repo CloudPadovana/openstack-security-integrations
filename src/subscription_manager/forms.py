@@ -193,7 +193,8 @@ class RejectSubscrForm(forms.SelfHandlingForm):
             # send notification to the user
             #
             noti_params = {
-                'project' : project_name
+                'project' : project_name,
+                'notes' : data['reason']
             }
 
             noti_sbj, noti_body = notification_render(SUBSCR_NO_TYPE, noti_params)

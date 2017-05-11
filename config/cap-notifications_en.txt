@@ -41,33 +41,33 @@ body: User {{ username }} has been removed from the project {{ project }}
 [member_request]
 subject: New request for membership
 body: The user {{ username }} requires to access the project {{ project }}
-
+  
   Please, don't reply to this message
 
 [project_created]
 subject: Request for a new project has been accepted
 body: The new project {{ project }} has been created and you're its project administrator
-
+  
   Please, don't reply to this message
 
 [project_creation_request]
 subject: Registered user {{ username }} requires a new tenant
 body: The registered user {{ username }} requires the creation of a new project {{ project }}
-
+  
   Please, don't reply to this message
 
 [project_rejected]
 subject: Request for a new project has been rejected
 body: The cloud administrator rejected the creation of project {{ project }}
   {{ notes }}
-
+  
   Please, don't reply to this message
 
 [registration_available]
 subject: New request for registration available ({{ username }})
 body: A new request for registration is available
   {% if username %}The username is {{ username }}{% endif %}
-
+  
   Please, don't reply to this message
 
 [subscription_forced_approved]
@@ -93,22 +93,15 @@ body: Your subscription to {{ project }} is now under evaluation.
   Please, don't reply to this message
 
 [subscription_processed]
-subject: Your project subscriptions have been approved
-body: Your subscriptions have been approved
-  The status of your project subscriptions are the following:
-  {% for prj in projects_info %}
-  Project {{ prj.name }} has been {% if prj.appr %}approved{% else %}{% if prj.rej %}rejected{% else %}created{% endif %}{% endif %}
-  {% endfor %}
+subject: Subscription to {{ project }} approved
+body: Your subscription to the project {{ project }} has been approved
   
   Please, don't reply to this message
 
 [subscription_rejected]
-subject: Your project subscriptions have been rejected
-body: Your subscriptions have been rejected
-  {% if projects_rejected %}You are not allowed to access to the following projects:{% endif %}
-  {% for prj in projects_rejected %}
-  {{ prj }}
-  {% endfor %}
+subject: Subscription to {{ project }} rejected
+body: Your subscription to the project {{ project }} has been rejected
+  {% if notes %}{{ notes }}{% endif %}
   
   Please, don't reply to this message
 
@@ -138,6 +131,7 @@ body: The account for {{ username }} will expire in {{ days }} days.
   Contacts:
   {% for c_admin in contacts %}{{ c_admin.1 }}{% endfor %}
   {% endif %}
+  
   Please, don't reply to this message
 
 
