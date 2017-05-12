@@ -89,7 +89,6 @@ Requires: python-django-openstack-auth
 Requires: python-crypto
 Requires: python-keystoneclient
 Requires: openstack-dashboard
-#Requires: python-lesscpy
 
 %description -n openstack-auth-shib
 Django plugin for Shibboleth authentication
@@ -102,6 +101,8 @@ Django plugin for Shibboleth authentication
 %config(noreplace) /etc/openstack-auth-shib/logging.conf
 %config(noreplace) /etc/cron.d/openstack-auth-shib-cron
 %dir /usr/share/openstack-dashboard/openstack_dashboard/templates/aup
+%attr(0750, apache, apache) %dir /var/cache/openstack-auth-shib
+%attr(0750, apache, apache) %dir /var/cache/openstack-auth-shib/msg
 %dir %{python_sitelib}/openstack_auth_shib
 %{python_sitelib}/openstack_auth_shib/*.py
 %{python_sitelib}/openstack_auth_shib/*.pyc
