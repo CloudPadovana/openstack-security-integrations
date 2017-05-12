@@ -38,13 +38,7 @@ from openstack_auth.user import set_session_from_user
 from openstack_auth.utils import is_websso_enabled
 from openstack_auth import exceptions as auth_exceptions
 
-try:
-    from openstack_auth.views import delete_all_tokens
-    from threading import Thread
-    old_token_mgm = True
-except:
-    from openstack_auth.views import delete_token
-    old_token_mgm = False
+from openstack_auth.views import delete_token
 
 from keystoneclient import exceptions as keystone_exceptions
 
@@ -146,18 +140,12 @@ def logout(request):
     
     if attributes:
         
-        msg = 'Logging out user "%(username)s".' % {'username': request.user.username}
-        LOG.info(msg)
-        if old_token_mgm:
-            if 'token_list' in request.session:
-                t = Thread(target=delete_all_tokens,
-                    args=(list(request.session['token_list']),))
-                t.start()
-        else:
-            endpoint = request.session.get('region_endpoint')
-            token = request.session.get('token')
-            if token and endpoint:
-                delete_token(endpoint=endpoint, token_id=token.id)
+        LOG.info('Logging out user ' + request.user.username)
+
+        endpoint = request.session.get('region_endpoint')
+        token = request.session.get('token')
+        if token and endpoint:
+            delete_token(endpoint=endpoint, token_id=token.id)
 
         # update the session cookies (sessionid and csrftoken)
         auth_logout(request)
