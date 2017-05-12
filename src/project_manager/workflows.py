@@ -15,6 +15,8 @@
 
 import logging
 
+from datetime import datetime, timedelta
+
 from django.db import transaction
 from django.db import IntegrityError
 from django.utils.translation import ugettext_lazy as _
@@ -189,59 +191,52 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
         self.this_project = None
 
     def _update_project_members(self, request, data, project_id):
-        #
-        # Use per-user expiration date as a fall back
-        # for expiration date per tenant
-        #
-        # Remove subscription request for this project
-        #
-        for role in self._get_available_roles(request):
 
+        member_ids = set()
+        for role in self._get_available_roles(request):
             tmp_step = self.get_step(baseWorkflows.PROJECT_USER_MEMBER_SLUG)
             field_name = tmp_step.get_member_field_name(role.id)
+            for tmpid in data[field_name]:
+                member_ids.add(tmpid)
+        
+        with transaction.atomic():
+        
+            ep_qset = Expiration.objects.filter(project=self.this_project)
+        
+            #
+            # Delete expiration for manually removed users
+            #
+            ep_qset.exclude(registration__userid__in=member_ids).delete()
+        
+            for item in ep_qset:
+                if item.registration.userid in member_ids:
+                    member_ids.remove(item.registration.userid)
+        
+            nreg_qset = Registration.objects.filter(userid__in=member_ids)
 
-            with transaction.atomic():
+            #
+            # Use per-user expiration date as a fall back
+            # for expiration date per tenant
+            #
+            for item in nreg_qset:
 
-                ep_qset = Expiration.objects.filter(project=self.this_project)
-                
-                tmp_set = set()
-                for item in ep_qset.filter(registration__userid__in=data[field_name]):
-                    tmp_set.add(item.registration.userid)
-                
-                new_memids = list()
-                for item in data[field_name]:
-                    if not item in tmp_set:
-                        new_memids.append(item)
-                
-                q_args = {
-                    'userid__in' : new_memids,
-                    'expdate__isnull' : False
-                }
-                nreg_qset = Registration.objects.filter(**q_args)
-
-                for item in nreg_qset:
-
-                    c_args = {
-                        'registration' : item,
-                        'project' : self.this_project,
-                        'expdate' : item.expdate
-                    }
-                    Expiration(**c_args).save()
-                
-                #
-                # Remove subscription request for manually added members
-                #    
-                q_args = {
-                    'registration__in' : nreg_qset,
+                def_expdate = item.expdate if item.expdate else datetime.now() + timedelta(365)
+                c_args = {
+                    'registration' : item,
                     'project' : self.this_project,
-                    'flowstatus' : PSTATUS_PENDING
+                    'expdate' : item.expdate
                 }
-                PrjRequest.objects.filter(**q_args).delete()                    
-                    
-                #
-                # Delete expiration for removed users
-                #
-                ep_qset.exclude(registration__userid__in=data[field_name]).delete()
+                Expiration(**c_args).save()
+        
+            #
+            # Remove subscription request for manually added members
+            #    
+            q_args = {
+                'registration__in' : nreg_qset,
+                'project' : self.this_project,
+                'flowstatus' : PSTATUS_PENDING
+            }
+            PrjRequest.objects.filter(**q_args).delete()
 
         return super(ExtUpdateProject, self)._update_project_members(request, data, project_id)
 
