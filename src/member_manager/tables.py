@@ -148,6 +148,15 @@ class ToggleRoleAction(tables.Action):
             
         return shortcuts.redirect(reverse_lazy('horizon:idmanager:member_manager:index'))
 
+class ChangeExpAction(tables.LinkAction):
+    name = "change_expiration"
+    verbose_name = _("Change Expiration")
+    url = "horizon:idmanager:member_manager:modifyexp"
+    classes = ("ajax-modal", "btn-edit")
+
+    def allowed(self, request, datum):
+        return not datum.is_t_admin
+
 def get_role(data):
     if data.is_t_admin:
         return _('Project manager')
@@ -165,7 +174,7 @@ class MemberTable(tables.DataTable):
     class Meta:
         name = "member_table"
         verbose_name = _("Project members")
-        row_actions = (ToggleRoleAction, DeleteMemberAction,)
+        row_actions = (ToggleRoleAction, ChangeExpAction, DeleteMemberAction,)
         table_actions = ()
 
     def get_object_id(self, datum):

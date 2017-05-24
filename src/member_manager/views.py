@@ -14,6 +14,7 @@
 #  under the License. 
 
 import logging
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
@@ -29,6 +30,7 @@ from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import get_admin_roleid
 
 from .tables import MemberTable
+from .forms import ModifyExpForm
 
 LOG = logging.getLogger(__name__)
 
@@ -88,5 +90,28 @@ class IndexView(tables.DataTableView):
             messages.error(self.request, _('Unable to retrieve member list.'))
 
         return list()
+
+class ModifyExpView(forms.ModalFormView):
+    form_class = ModifyExpForm
+    template_name = 'idmanager/member_manager/modifyexp.html'
+    success_url = reverse_lazy('horizon:idmanager:member_manager:index')
+
+    def get_context_data(self, **kwargs):
+        context = super(ModifyExpView, self).get_context_data(**kwargs)
+        context['userid'] = self.get_object()
+        return context
+
+    def get_initial(self):
+        return {
+            'userid' : self.get_object(),
+            'expiration' : datetime.utcnow() + timedelta(365)
+        }
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            self._object = self.kwargs['userid']
+        return self._object
+
+
 
 

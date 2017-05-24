@@ -23,5 +23,6 @@ from openstack_dashboard.dashboards.idmanager.member_manager import views
 prefix = 'openstack_dashboard.dashboards.idmanager.member_manager.views'
 
 urlpatterns = patterns(prefix,
+    url(r'^(?P<userid>[^/]+)/modifyexp/$', views.ModifyExpView.as_view(), name='modifyexp'),
     url(r'^$', views.IndexView.as_view(), name='index'))
 
