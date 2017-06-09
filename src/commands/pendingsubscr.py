@@ -45,30 +45,22 @@ class Command(BaseCommand):
         super(Command, self).__init__()
         self.email_table = dict()
     
-    def get_email(self, keystone, u_id, registr):
+    def get_email(self, keystone, u_id):
     
-        if u_id:
-            if not u_id in self.email_table:
-                try:
-                    tmp_email = keystone.users.get(u_id).email
-                    if tmp_email:
-                        self.email_table[u_id] = tmp_email
-                except:
-                    LOG.error("Keystone call failed", exc_info=True)
-            if u_id in self.email_table:
-                return self.email_table[u_id]
+        if not u_id:
+            return None
 
-        if registr:
-            if not registr.regid in self.email_table:
-                try:
-                    tmpItems = RegRequest.objects.filter(registration=registr)
-                    if len(tmpItems) > 0:
-                        self.email_table[registr.regid] = tmpItems[0].email
-                except:
-                    LOG.error("Query failed", exc_info=True)
-            if registr.regid in self.email_table:
-                return self.email_table[registr.regid]
-        
+        if not u_id in self.email_table:
+            try:
+                tmp_email = keystone.users.get(u_id).email
+                if tmp_email:
+                    self.email_table[u_id] = tmp_email
+            except:
+                LOG.error("Keystone call failed", exc_info=True)
+
+        if u_id in self.email_table:
+            return self.email_table[u_id]
+
         return None
     
     def handle(self, *args, **options):
@@ -88,12 +80,11 @@ class Command(BaseCommand):
             req_table = dict()
             prj_res_table = dict()
             for p_req in PrjRequest.objects.filter(flowstatus=PSTATUS_PENDING):
-                if not p_req.project.projectid in req_table:
-                    req_table[p_req.project.projectid] = list()
-                uname = p_req.registration.username
-                email = self.get_email(None, None, p_req.registration)
-                req_table[p_req.project.projectid].append((uname, email))
-                prj_res_table[p_req.project.projectid] = p_req.project.projectname
+                curr_prjid = p_req.project.projectid
+                if not curr_prjid in req_table:
+                    req_table[curr_prjid] = list()
+                req_table[curr_prjid].append(p_req.registration.username))
+                prj_res_table[curr_prjid] = p_req.project.projectname
             
             admin_table = dict()
             prjman_roleid = get_prjman_roleid(keystone_client)
@@ -105,7 +96,7 @@ class Command(BaseCommand):
                 
                 for assign in super(RoleAssignmentManager, keystone_client.role_assignments).list(**q_args):
                 
-                    email = self.get_email(keystone_client, assign.user['id'], None)
+                    email = self.get_email(keystone_client, assign.user['id'])
                     
                     if not email in admin_table:
                         admin_table[email] = list()

@@ -109,7 +109,7 @@ body: Your subscription to the project {{ project }} has been rejected
 subject: Subscription reminder
 body: You have the following pending subscriptions for project {{ project }}:
   {% for req in pendingreqs %}
-  {{ req.0 }} ({{ req.1 }})
+  * {{ req }}
   {% endfor %} 
   For further details refer to https://cloud.cedc.csia.unipd.it/User_Guide/index.html#ManageProjectMembershipRequests
   
@@ -129,7 +129,9 @@ body: The account for {{ username }} will expire in {{ days }} days.
   Please contact the cloud administrators for a renewal
   {% if contacts %}
   Contacts:
-  {% for c_admin in contacts %}{{ c_admin.1 }}{% endfor %}
+  {% for c_admin in contacts %}
+  * {{ c_admin.1 }}
+  {% endfor %}
   {% endif %}
   
   Please, don't reply to this message
