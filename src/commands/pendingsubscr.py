@@ -75,6 +75,8 @@ class Command(BaseCommand):
                                             password=config.cron_pwd,
                                             project_name=config.cron_prj,
                                             cacert=config.cron_ca,
+                                            user_domain_name=config.cron_domain,
+                                            project_domain_name=config.cron_domain,
                                             auth_url=config.cron_kurl)
             
             req_table = dict()
@@ -83,7 +85,7 @@ class Command(BaseCommand):
                 curr_prjid = p_req.project.projectid
                 if not curr_prjid in req_table:
                     req_table[curr_prjid] = list()
-                req_table[curr_prjid].append(p_req.registration.username))
+                req_table[curr_prjid].append(p_req.registration.username)
                 prj_res_table[curr_prjid] = p_req.project.projectname
             
             admin_table = dict()

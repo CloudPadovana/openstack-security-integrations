@@ -75,6 +75,8 @@ mv %{buildroot}/%{python_sitelib}/dashboard_conf/_*.py* \
    
 rm -rf %{buildroot}/%{python_sitelib}/dashboard_conf
 
+mkdir -p %{buildroot}/var/cache/openstack-auth-shib/msg
+
 %clean
 rm -rf %{buildroot}
 

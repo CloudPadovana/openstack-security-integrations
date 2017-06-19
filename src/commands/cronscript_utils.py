@@ -56,6 +56,7 @@ class ConfigBin:
         self.cron_user = getattr(settings, 'CRON_USER', 'admin')
         self.cron_pwd = getattr(settings, 'CRON_PWD', '')
         self.cron_prj = getattr(settings, 'CRON_PROJECT', 'admin')
+        self.cron_domain = getattr(settings, 'CRON_DOMAIN', 'Default')
         self.cron_ca = getattr(settings, 'OPENSTACK_SSL_CACERT', '')
         self.cron_kurl = getattr(settings, 'OPENSTACK_KEYSTONE_URL', '')
         self.cron_renewd = getattr(settings, 'CRON_RENEW_DAYS', 30)
@@ -98,6 +99,7 @@ def configure_app(options):
         result.cron_pwd = params['PASSWD']
         result.cron_prj = params['TENANTNAME']
         result.cron_ca = params.get('CAFILE','')
+        result.cron_domain = params.get('DOMAIN', 'Default')
         result.cron_kurl = params['AUTHURL']
         result.cron_renewd = int(params.get('RENEW_DAYS', '30'))
         result.cron_defer = int(params.get('DEFER_DAYS', '0'))

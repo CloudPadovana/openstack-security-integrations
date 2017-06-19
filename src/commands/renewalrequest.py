@@ -55,6 +55,8 @@ class Command(BaseCommand):
             keystone_client = client.Client(username=config.cron_user,
                                             password=config.cron_pwd,
                                             project_name=config.cron_prj,
+                                            user_domain_name=config.cron_domain,
+                                            project_domain_name=config.cron_domain,
                                             cacert=config.cron_ca,
                                             auth_url=config.cron_kurl)
                             

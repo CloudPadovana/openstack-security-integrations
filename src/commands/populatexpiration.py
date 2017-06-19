@@ -48,10 +48,15 @@ class Command(BaseCommand):
                 if prj_item.projectid:
                     prj_dict[prj_item.projectid] = prj_item
 
+            #
+            # TODO define the user_domain_name and project_domain_name
+            #
             keystone_client = client.Client(username=config.cron_user,
                                             password=config.cron_pwd,
                                             project_name=config.cron_prj,
                                             cacert=config.cron_ca,
+                                            user_domain_name=config.cron_domain,
+                                            project_domain_name=config.cron_domain,
                                             auth_url=config.cron_kurl)
 
             with transaction.atomic():
