@@ -17,6 +17,7 @@ import logging
 import re
 
 from django import shortcuts
+from django import http as django_http
 from django.conf import settings
 from django.core.urlresolvers import reverse_lazy
 from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate
@@ -123,16 +124,22 @@ def login(request):
 @never_cache
 def websso(request):
 
-    if is_websso_enabled():
-        return basic_websso(request)
+    if not is_websso_enabled():
+        tempDict = {
+            'error_header' : _("Web SSO error"),
+            'error_text' : _("Web SSO is not supported"),
+            'redirect_url' : '/dashboard',
+            'redirect_label' : _("Home")
+        }
+        return shortcuts.render(request, 'aai_error.html', tempDict)
 
-    tempDict = {
-        'error_header' : _("Web SSO error"),
-        'error_text' : _("Web SSO is not supported"),
-        'redirect_url' : '/dashboard',
-        'redirect_label' : _("Home")
-    }
-    return shortcuts.render(request, 'aai_error.html', tempDict)
+    code = request.POST.get('code', '200')
+    if code <> '200':
+        res = django_http.HttpResponseRedirect(settings.LOGIN_URL)
+        res.set_cookie('logout_reason', "SSO unauthorized: %s" % code, max_age=10)
+        return res
+
+    return basic_websso(request)
 
 def logout(request):
 
