@@ -22,7 +22,7 @@ from distutils.command.bdist_rpm import bdist_rpm as _bdist_rpm
 
 pkg_name = 'openstack-security-integrations'
 pkg_version = '1.2.0'
-pkg_release = '3'
+pkg_release = '4'
 
 source_items = "setup.py src config"
 
@@ -172,11 +172,17 @@ module_list = [
     'commands'
 ]
 
-confile_list = [
+hz_confile_list = [
     'config/cap-metadata.xml',
     'config/cedc-metadata.xml',
     'config/logging.conf',
     'config/actions.conf'
+]
+
+ks_confile_list = [
+    'config/policy.json',
+    'config/infn_rules.json',
+    'config/unipd_rules.json'
 ]
 
 noti_tpl_list = [
@@ -208,8 +214,8 @@ setup(
                   (preq_panel_dir, preq_templ_list),
                   (idpreq_panel_dir, idpreq_templ_list),
                   (img_dir, logo_list),
-                  ('etc/openstack-auth-shib', confile_list),
-                  ('etc/keystone-skey-auth', ['config/policy.json']),
+                  ('etc/openstack-auth-shib', hz_confile_list),
+                  ('etc/keystone-skey-auth', ks_confile_list),
                   ('etc/cron.d', ['config/openstack-auth-shib-cron']),
                   ('usr/share/openstack-auth-shib', ['config/attribute-map.xml']),
                   ('usr/share/openstack-auth-shib/templates', noti_tpl_list),

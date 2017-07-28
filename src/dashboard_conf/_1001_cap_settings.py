@@ -6,10 +6,12 @@ DEFAULT_THEME = 'cap'
 
 HORIZON_CONFIG['identity_providers'].append(
     {
-      'context' : '/dashboard-infn',
-      'path' : '/dashboard-infn/auth/login/',
+      'id' :          'infn_sso',
+      'context' :     '/dashboard-infn',
+      'path' :        '/dashboard-infn/auth/register/',
       'description' : 'INFN AAI',
-      'logo' : '/dashboard/static/dashboard/img/logoInfnAAI.png'
+      'logo' :        '/dashboard/static/dashboard/img/logoInfnAAI.png'
     }
 )
 
+WEBSSO_IDP_MAPPING["infn_sso"] = ("infnaai", "mapped")

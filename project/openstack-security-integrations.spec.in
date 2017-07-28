@@ -184,6 +184,8 @@ Keystone authentication plugin for secret token
 %files -n keystone-skey-auth
 %defattr(-,root,root)
 %config(noreplace) /etc/keystone-skey-auth/policy.json
+%config(noreplace) /etc/keystone-skey-auth/infn_rules.json
+%config(noreplace) /etc/keystone-skey-auth/unipd_rules.json
 %dir %{python_sitelib}/keystone_skey_auth
 %{python_sitelib}/keystone_skey_auth/*.py
 %{python_sitelib}/keystone_skey_auth/*.pyc

@@ -6,6 +6,9 @@ INSTALLED_APPS.append('openstack_auth_shib')
 
 NOTIFICATION_TEMPLATE_DIR = '/etc/openstack-auth-shib/notifications'
 
+WEBSSO_ENABLED = True
+WEBSSO_IDP_MAPPING = {}
+
 HORIZON_CONFIG['identity_providers'] = []
 
 #DATABASES = {
