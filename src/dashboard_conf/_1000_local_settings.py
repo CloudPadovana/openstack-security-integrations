@@ -8,6 +8,7 @@ NOTIFICATION_TEMPLATE_DIR = '/etc/openstack-auth-shib/notifications'
 
 WEBSSO_ENABLED = True
 WEBSSO_IDP_MAPPING = {}
+WEBSSO_CHOICES = (("credentials", "Keystone Credentials"),)
 
 HORIZON_CONFIG['identity_providers'] = []
 

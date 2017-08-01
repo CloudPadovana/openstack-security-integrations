@@ -15,4 +15,5 @@ HORIZON_CONFIG['identity_providers'].append(
 )
 
 WEBSSO_IDP_MAPPING["unipd_sso"] = ("unipdaai", "mapped")
+WEBSSO_CHOICES = WEBSSO_CHOICES + (('unipd_sso', 'UniPD IdP'),)
 

@@ -15,3 +15,5 @@ HORIZON_CONFIG['identity_providers'].append(
 )
 
 WEBSSO_IDP_MAPPING["infn_sso"] = ("infnaai", "mapped")
+WEBSSO_CHOICES = WEBSSO_CHOICES + (('infn_sso', 'INFN AAI'),)
+
