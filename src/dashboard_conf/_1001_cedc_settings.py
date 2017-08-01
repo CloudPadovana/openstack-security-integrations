@@ -5,6 +5,16 @@ AVAILABLE_THEMES.append(( 'cedc', pgettext_lazy("Cloud Veneto", "CED-C"), 'theme
 DEFAULT_THEME = 'cedc'
 
 HORIZON_CONFIG['identity_providers'].append(
+    {
+      'id' :          'infn_sso',
+      'context' :     '/dashboard-infn',
+      'path' :        '/dashboard-infn/auth/register/',
+      'description' : 'INFN AAI',
+      'logo' :        '/dashboard/static/dashboard/img/logoInfnAAI.png'
+    }
+)
+
+HORIZON_CONFIG['identity_providers'].append(
     { 
       'id' :          'unipd_sso',
       'context' :     '/dashboard-unipd',
@@ -14,6 +24,8 @@ HORIZON_CONFIG['identity_providers'].append(
     }
 )
 
+WEBSSO_IDP_MAPPING["infn_sso"] = ("infnaai", "mapped")
 WEBSSO_IDP_MAPPING["unipd_sso"] = ("unipdaai", "mapped")
-WEBSSO_CHOICES = WEBSSO_CHOICES + (('unipd_sso', 'UniPD IdP'),)
+
+WEBSSO_CHOICES = WEBSSO_CHOICES + (('infn_sso', 'INFN AAI'), ('unipd_sso', 'UniPD IdP'),)
 
