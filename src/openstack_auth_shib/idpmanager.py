@@ -21,11 +21,16 @@ import os.path
 
 from django.conf import settings
 
+from openstack_dashboard.api import keystone as keystone_api
+
 from .models import OS_LNAME_LEN
 
 
 LOG = logging.getLogger(__name__)
 
+# #############################################################################
+#  Methods for the old implementation
+# #############################################################################
 #
 # Provider configuration table
 #
@@ -124,8 +129,54 @@ class OIDC_IdP:
 def get_idp_list(excl_list=list()):
     raise Exception("Unsupported")
 
+# #############################################################################
+#  Methods for the new implementation
+# #############################################################################
 
+def checkFederationSetup(request):
 
+    mapping_table = getattr(settings, 'WEBSSO_IDP_MAPPING', {})
+    entity_table = getattr(settings, 'WEBSSO_IDP_ENTITIES', {})
+    rule_table = getattr(settings, 'WEBSSO_IDP_RULES', {})
+    
+    try:
+        tmp_table = entity_table.copy()
+        for idp_item in keystone_api.identity_provider_list(request):
+            tmp_table.pop(idp_item.id, None)
+            LOG.debug("Found provider %s" % idp_item.id)
 
+        for idp_id in tmp_table:
+            keystone_api.identity_provider_create(request, idp_id, None, True, 
+                                                  tmp_table.get(idp_id, []))
+            LOG.debug("Created provider %s" % idp_id)
+    except:
+        LOG.error("Cannot setup identity providers", exc_info=True)
+    
 
+    try:
+        for map_item in keystone_api.mapping_list(request):
+            rule_table.pop(map_item.id, None)
+            LOG.debug("Found mapping %s" % map_item.id)
+
+        for map_id in rule_table:
+            keystone_api.mapping_create(request, map_id, rule_table.get(map_id, []))
+            LOG.debug("Created mapping %s" % map_id)
+    except:
+        LOG.error("Cannot setup rules", exc_info=True)
+
+    try:
+        for map_id in mapping_table:
+            idp_id, proto_id = mapping_table[map_id]
+            missing = True
+            for proto_item in keystone_api.protocol_list(request, idp_id):
+                if proto_item.mapping_id == map_id:
+                    LOG.debug("Found protocol %s" % map_id)
+                    missing = False
+                    break
+
+            if missing:
+                keystone_api.protocol_create(request, proto_id, idp_id, map_id)
+                LOG.debug("Found protocol %s %s" % (proto_id, map_id))
+    except:
+        LOG.error("Cannot setup protocols", exc_info=True)
 

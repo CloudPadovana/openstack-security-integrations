@@ -47,7 +47,7 @@ from horizon import forms
 
 from .models import UserMapping
 from .forms import RegistrForm
-from .idpmanager import get_manager
+from .idpmanager import get_manager, checkFederationSetup
 from .utils import get_user_home, get_ostack_attributes
 
 LOG = logging.getLogger(__name__)
@@ -116,8 +116,10 @@ def login(request):
         err_msg = "A failure occurs authenticating user\nPlease, contact the cloud managers"
         return build_err_response(request, _(err_msg), attributes)
         
-    return basic_login(request)
-
+    result = basic_login(request)
+    if request.user.is_authenticated() and request.user.is_superuser:
+        checkFederationSetup(request)
+    return result
 
 @sensitive_post_parameters()
 @csrf_exempt

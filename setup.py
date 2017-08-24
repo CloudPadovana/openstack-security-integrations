@@ -180,9 +180,7 @@ hz_confile_list = [
 ]
 
 ks_confile_list = [
-    'config/policy.json',
-    'config/infn_rules.json',
-    'config/unipd_rules.json'
+    'config/policy.json'
 ]
 
 noti_tpl_list = [
