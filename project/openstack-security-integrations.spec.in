@@ -249,10 +249,18 @@ ln -sf /usr/share/openstack-auth-shib/templates/cap-notifications_en.txt \
        /etc/openstack-auth-shib/notifications/notifications_en.txt
 cp -f /etc/openstack-auth-shib/cap-metadata.xml /etc/openstack-auth-shib/idem-template-metadata.xml
 
+cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico \
+      /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico.orig
+
+cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.ico \
+      /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
+
 %preun -n openstack-auth-cap
 rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
 rm -f /etc/openstack-auth-shib/notifications/notifications_en.txt
 rm -f /etc/openstack-auth-shib/idem-template-metadata.xml
+mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico.orig \
+      /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
 
 
 
@@ -291,10 +299,18 @@ ln -sf /usr/share/openstack-auth-shib/templates/cedc-notifications_en.txt \
        /etc/openstack-auth-shib/notifications/notifications_en.txt
 cp -f /etc/openstack-auth-shib/cedc-metadata.xml /etc/openstack-auth-shib/idem-template-metadata.xml
 
+cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico \
+      /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico.orig
+
+cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.ico \
+      /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
+
 %preun -n openstack-auth-cedc
 rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
 rm -f /etc/openstack-auth-shib/notifications/notifications_en.txt
 rm -f /etc/openstack-auth-shib/idem-template-metadata.xml
+mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico.orig \
+      /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
 
 
 
