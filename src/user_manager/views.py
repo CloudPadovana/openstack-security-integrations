@@ -133,11 +133,14 @@ class CheckOrphansView(tables.DataTableView):
         result = list()
         #
         # TODO improve query
-        #      exclude pre-checked users
         #      use models.Registration.expdate as last expiration date
         #
         active_ids = [ item.registration.regid for item in Expiration.objects.all() ];
         for item in Registration.objects.exclude(regid__in=active_ids):
+
+            if not item.userid:
+                continue
+
             result.append(OrphanData(
                 item.userid,
                 item.username,
