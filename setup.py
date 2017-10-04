@@ -64,6 +64,7 @@ prj_panel_dir = os_dash_dir + 'idmanager/project_manager/templates/project_manag
 pwd_panel_dir = os_dash_dir + 'settings/password_manager/templates/password_manager'
 preq_panel_dir = os_dash_dir + 'idmanager/project_requests/templates/project_requests'
 idpreq_panel_dir = os_dash_dir + 'idmanager/idp_requests/templates/idp_requests'
+log_panel_dir = os_dash_dir + 'idmanager/log_manager/templates/log_manager'
 themes_dir = os_main_dir + 'themes'
 
 template_list = [
@@ -139,6 +140,10 @@ idpreq_templ_list = [
     'src/templates/idp_requests/_idp_request.html'
 ]
 
+log_templ_list = [
+    'src/templates/log_manager/log_manager.html',
+]
+
 logo_list = [
     'src/templates/logoCloudAreapd.png',
     'src/templates/logoCloudAreapdStrip.png',
@@ -165,6 +170,7 @@ module_list = [
     'member_manager',
     'user_manager',
     'password_manager',
+    'log_manager',
     'project_requests',
     'idp_requests',
     'idmanager',
@@ -211,6 +217,7 @@ setup(
                   (member_panel_dir, member_templ_list),
                   (preq_panel_dir, preq_templ_list),
                   (idpreq_panel_dir, idpreq_templ_list),
+                  (log_panel_dir, log_templ_list),
                   (img_dir, logo_list),
                   ('etc/openstack-auth-shib', hz_confile_list),
                   ('etc/keystone-skey-auth', ks_confile_list),
