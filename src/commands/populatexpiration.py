@@ -73,7 +73,7 @@ class Command(BaseCommand):
                             (r_item.scope['project']['id'], reg_user.username))
                         curr_prj = prj_dict[r_item.scope['project']['id']]
                         
-                        if tmpres = Expiration.objects.filter(
+                        if Expiration.objects.filter(
                             registration=reg_user,
                             project=curr_prj
                         ).count() > 0:
