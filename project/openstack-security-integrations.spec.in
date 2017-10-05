@@ -49,6 +49,9 @@ mv %{buildroot}/%{python_sitelib}/project_manager/* \
 mv %{buildroot}/%{python_sitelib}/user_manager/* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager
 
+mv %{buildroot}/%{python_sitelib}/log_manager/* \
+   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager
+
 mv %{buildroot}/%{python_sitelib}/project_requests/* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests
 
@@ -146,6 +149,10 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/templates/member_manager/*.html
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/*.py
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/*.pyc
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/*.pyo
+/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/templates/log_manager/*.html
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/*.pyo
