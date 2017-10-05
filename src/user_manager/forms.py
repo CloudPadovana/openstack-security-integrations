@@ -16,14 +16,20 @@
 import logging
 from datetime import datetime
 
+from django import http
 from django.db import transaction
 from django.forms.widgets import HiddenInput
 from django.forms.extras.widgets import SelectDateWidget
 from django.utils.translation import ugettext as _
 
 from horizon import forms
+from horizon import messages
 
-from openstack_auth_shib.models import Registration, Expiration
+from openstack_auth_shib.models import Registration 
+from openstack_auth_shib.models import Expiration
+from openstack_auth_shib.models import EMail
+
+from openstack_dashboard.dashboards.identity.users import forms as baseForms
 
 LOG = logging.getLogger(__name__)
 
@@ -63,5 +69,38 @@ class RenewExpForm(forms.SelfHandlingForm):
                     exp_dates.update(expdate=data[d_item])
             
         return True
+
+class UpdateUserForm(baseForms.UpdateUserForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(UpdateUserForm, self).__init__(request, *args, **kwargs)
+        #
+        # TODO email field must be disabled for federated accounts
+        #
+
+    def handle(self, request, data):
+
+        user_id = data['id']
+
+        if not "email" in data:
+            messages.error(request, _("Email field cannot be empty"))
+            return False
+
+        result = True
+        try:
+            with transaction.atomic():
+
+                tmpres = EMail.objects.filter(registration__userid=user_id)
+                tmpres.update(email=data['email'])
+
+                result = super(UpdateUserForm, self).handle(request, data)
+                if not result or isinstance(result, http.HttpResponse):
+                    raise Exception()
+
+        except:
+            # Workaround for calling a roll-back
+            LOG.debug("Called roll-back for update user " + user_id, exc_info=True)
+
+        return result
 
 

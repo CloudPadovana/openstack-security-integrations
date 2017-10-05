@@ -30,6 +30,7 @@ from django.views.decorators.debug import sensitive_variables
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import Expiration
+from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 
 from openstack_auth_shib.notifications import notifyUser
@@ -91,7 +92,8 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 }                
                 prj_req = PrjRequest.objects.filter(**q_args)[0]
                 
-                member = client_factory(request).users.get(prj_req.registration.userid)
+                tmpres = EMail.objects.filter(registration__userid=prj_req.registration.userid)
+                member_email = tmpres[0].email if tmpres else None
                 project_name = prj_req.project.projectname
                 
                 LOG.debug("Approving subscription for %s" % prj_req.registration.username)
@@ -138,7 +140,7 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 'project' : project_name
             }
 
-            notifyUser(request=self.request, rcpt=member.email, action=SUBSCR_OK_TYPE, context=noti_params)
+            notifyUser(request=self.request, rcpt=member_email, action=SUBSCR_OK_TYPE, context=noti_params)
         
         except:
             exceptions.handle(request)
@@ -179,7 +181,8 @@ class RejectSubscrForm(forms.SelfHandlingForm):
                 }                
                 prj_req = PrjRequest.objects.filter(**q_args)[0]
                 
-                member = client_factory(request).users.get(prj_req.registration.userid)
+                tmpres = EMail.objects.filter(registration__userid=prj_req.registration.userid)
+                member_email = tmpres[0].email if tmpres else None
                 project_name = prj_req.project.projectname
                 
                 #
@@ -195,7 +198,7 @@ class RejectSubscrForm(forms.SelfHandlingForm):
                 'notes' : data['reason']
             }
 
-            notifyUser(request=self.request, rcpt=member.email, action=SUBSCR_NO_TYPE, context=noti_params)
+            notifyUser(request=self.request, rcpt=member_email, action=SUBSCR_NO_TYPE, context=noti_params)
         
         except:
             exceptions.handle(request)
@@ -308,6 +311,14 @@ class DiscSubscrForm(forms.SelfHandlingForm):
                     return True
 
                 user_id = prj_reqs[0].registration.userid
+
+                tmpres = EMail.objects.filter(registration__userid=user_id)
+                member_email = tmpres[0].email if tmpres else None
+                member_name = prj_reqs[0].registration.username
+
+                tmpres = EMail.objects.filter(registration__userid=request.user.id)
+                admin_email = tmpres[0].email if tmpres else None
+
                 #
                 # Remove member from project
                 #
@@ -329,15 +340,13 @@ class DiscSubscrForm(forms.SelfHandlingForm):
             #
             # Send notification to the user
             #
-            users_obj = client_factory(request).users
-            member = users_obj.get(user_id)
             noti_params = {
-                'username' : member.name,
-                'admin_address' : users_obj.get(request.user.id).email,
+                'username' : member_name,
+                'admin_address' : admin_email,
                 'project' : request.user.tenant_name,
                 'notes' : data['reason']
             }
-            notifyUser(request=self.request, rcpt=member.email, action=MEMBER_REMOVED, context=noti_params)
+            notifyUser(request=self.request, rcpt=member_email, action=MEMBER_REMOVED, context=noti_params)
                 
         except:
             LOG.error("Cannot renew user", exc_info=True)

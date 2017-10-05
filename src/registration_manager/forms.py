@@ -53,6 +53,7 @@ from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import Expiration
+from openstack_auth_shib.models import EMail
 
 from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import PSTATUS_PENDING
@@ -60,7 +61,7 @@ from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PRJ_GUEST
 
 from openstack_auth_shib.models import OS_LNAME_LEN
-from openstack_auth_shib.utils import get_project_managers
+from openstack_auth_shib.utils import get_prjman_ids
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
 from openstack_dashboard.api import keystone as keystone_api
@@ -194,6 +195,11 @@ class PreCheckForm(forms.SelfHandlingForm):
                     registration.save()
                     LOG.info("Created user %s" % registration.username)
 
+                    mail_obj = EMail()
+                    mail_obj.registration = registration
+                    mail_obj.email = user_email
+                    mail_obj.save()
+
                 #
                 # The new user is the project manager of its tenant
                 # register the expiration date per tenant
@@ -214,9 +220,10 @@ class PreCheckForm(forms.SelfHandlingForm):
                 #
                 for p_item in prjReqList.filter(flowstatus=PSTATUS_PENDING):
                 
-                    m_users = get_project_managers(request, p_item.project.projectid)
-                    m_emails = [ usr.email for usr in m_users ]
-                    
+                    m_userids = get_prjman_ids(request, p_item.project.projectid)
+                    tmpres = EMail.objects.filter(registration__userid__in=m_userids)
+                    m_emails = [ x.email for x in tmpres ]                    
+
                     noti_params = {
                         'username' : data['username'],
                         'project' : p_item.project.projectname
@@ -390,15 +397,19 @@ class ForcedCheckForm(forms.SelfHandlingForm):
             #
             # send notification to project managers and users
             #
-            user_email = keystone_api.user_get(request, user_id).email
+            tmpres = EMail.objects.filter(registration__userid=user_id)
+            user_email = tmpres[0].email if tmpres else None
             
-            prjman_list = get_project_managers(request, project_id)
+            m_userids = get_prjman_ids(request, project_id)
+            tmpres = EMail.objects.filter(registration__userid__in=m_userids)
+            m_emails = [ x.email for x in tmpres ]
+
             noti_params = {
                 'username' : user_name,
                 'project' : project_name
             }
 
-            notifyProject(request=self.request, rcpt=[ pman.email for pman in prjman_list ], action=SUBSCR_FORCED_OK_TYPE, context=noti_params)
+            notifyProject(request=self.request, rcpt=m_emails, action=SUBSCR_FORCED_OK_TYPE, context=noti_params)
             notifyUser(request=self.request, rcpt=user_email, action=SUBSCR_OK_TYPE, context=noti_params)
                 
         except:
@@ -450,16 +461,20 @@ class ForcedRejectForm(forms.SelfHandlingForm):
             #
             # send notification to project managers and users
             #
-            user_email = keystone_api.user_get(request, user_id).email
+            tmpres = EMail.objects.filter(registration__userid=user_id)
+            user_email = tmpres[0].email if tmpres else None
             
-            prjman_list = get_project_managers(request, project_id)
+            m_userids = get_prjman_ids(request, project_id)
+            tmpres = EMail.objects.filter(registration__userid__in=m_userids)
+            m_emails = [ x.email for x in tmpres ]
+
             noti_params = {
                 'username' : user_name,
                 'project' : project_name,
                 'notes' : data['reason']
             }
 
-            notifyProject(request=self.request, rcpt=[ pman.email for pman in prjman_list ], action=SUBSCR_FORCED_NO_TYPE, context=noti_params)
+            notifyProject(request=self.request, rcpt=m_emails, action=SUBSCR_FORCED_NO_TYPE, context=noti_params)
             notifyUser(request=self.request, rcpt=user_email, action=SUBSCR_NO_TYPE, context=noti_params)
                 
         except:
@@ -546,7 +561,9 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
             #
             # Send notification to the user
             #
-            user_email = keystone_api.user_get(request, user_id).email
+            tmpres = EMail.objects.filter(registration__userid=user_id)
+            user_email = tmpres[0].email if tmpres else None
+
             noti_params = {
                 'project' : project_name
             }
@@ -605,7 +622,9 @@ class NewProjectRejectForm(forms.SelfHandlingForm):
             #
             # Send notification to the user
             #
-            user_email = keystone_api.user_get(request, user_id).email
+            tmpres = EMail.objects.filter(registration__userid=user_id)
+            user_email = tmpres[0].email if tmpres else None
+
             noti_params = {
                 'project' : project_name,
                 'notes' : data['reason']

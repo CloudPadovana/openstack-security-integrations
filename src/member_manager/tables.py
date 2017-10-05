@@ -26,6 +26,8 @@ from horizon.utils import functions as utils
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
+from openstack_auth_shib.models import EMail
+
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import MEMBER_REMOVED
@@ -50,7 +52,6 @@ class DeleteMemberAction(tables.DeleteAction):
             
             roles_obj = client_factory(request).roles
             role_assign_obj = client_factory(request).role_assignments
-            users_obj = client_factory(request).users
             
             arg_dict = {
                 'project' : request.user.tenant_id,
@@ -59,14 +60,20 @@ class DeleteMemberAction(tables.DeleteAction):
             for r_item in role_assign_obj.list(**arg_dict):
                 roles_obj.revoke(r_item.role['id'], **arg_dict)
             
-            member = users_obj.get(obj_id)
+            tmpres = EMail.objects.filter(registration__userid=obj_id)
+            member_email = tmpres[0].email if tmpres else None
+            member_name = tmpres[0].registration.username if tmpres else None
+            
+            tmpres = EMail.objects.filter(registration__userid=request.user.id)
+            admin_email = tmpres[0].email if tmpres else None
+
             noti_params = {
-                'username' : member.name,
-                'admin_address' : users_obj.get(request.user.id).email,
+                'username' : member_name,
+                'admin_address' : admin_email,
                 'project' : request.user.tenant_name
             }
-            notifyUser(request=self.request, rcpt=member.email, action=MEMBER_REMOVED, context=noti_params)
-            notifyAdmin(request=self.request, action=MEMBER_REMOVED_ADM, context=noti_params)
+            notifyUser(request=request, rcpt=member_email, action=MEMBER_REMOVED, context=noti_params)
+            notifyAdmin(request=request, action=MEMBER_REMOVED_ADM, context=noti_params)
 
             
         except:
@@ -95,9 +102,12 @@ class ToggleRoleAction(tables.Action):
                 'user' : obj_id
             }
             
-            users_obj = client_factory(request).users
-            member = users_obj.get(obj_id)
-                        
+            tmpres = EMail.objects.filter(registration__userid=obj_id)
+            member_email = tmpres[0].email if tmpres else None
+
+            tmpres = EMail.objects.filter(registration__userid=request.user.id)
+            admin_email = tmpres[0].email if tmpres else None
+
             datum = data_table.get_object_by_id(obj_id)
             if datum.is_t_admin:
             
@@ -113,23 +123,23 @@ class ToggleRoleAction(tables.Action):
                 roles_obj.revoke(t_role_id, **arg_dict)
                 
                 noti_params = {
-                    'admin_address' : users_obj.get(request.user.id).email,
+                    'admin_address' : admin_email,
                     'project' : request.user.tenant_name,
                     's_role' : _('Project manager'),
                     'd_role' : _('Project user')
                 }
-                notifyUser(request=self.request, rcpt=member.email, action=CHANGED_MEMBER_ROLE, context=noti_params)
+                notifyUser(request=self.request, rcpt=member_email, action=CHANGED_MEMBER_ROLE, context=noti_params)
             
             else:
                 roles_obj.grant(t_role_id, **arg_dict)
 
                 noti_params = {
-                    'admin_address' : users_obj.get(request.user.id).email,
+                    'admin_address' : admin_email,
                     'project' : request.user.tenant_name,
                     's_role' : _('Project user'),
                     'd_role' : _('Project manager')
                 }
-                notifyUser(request=self.request, rcpt=member.email, action=CHANGED_MEMBER_ROLE, context=noti_params)
+                notifyUser(request=self.request, rcpt=member_email, action=CHANGED_MEMBER_ROLE, context=noti_params)
 
         except:
             LOG.error("Toggle role error", exc_info=True)

@@ -32,6 +32,7 @@ from openstack_dashboard import api
 
 from .tables import UsersTable, OrphanTable
 from .forms import RenewExpForm
+from .forms import UpdateUserForm
 
 LOG = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ class IndexView(baseViews.IndexView):
 
 class UpdateView(baseViews.UpdateView):
     template_name = 'idmanager/user_manager/update.html'
+    form_class = UpdateUserForm
     submit_url = "horizon:idmanager:user_manager:update"
     success_url = reverse_lazy('horizon:idmanager:user_manager:index')
 

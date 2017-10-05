@@ -126,6 +126,10 @@ class Expiration(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     expdate = models.DateTimeField(db_index=True)
 
+class EMail(models.Model):
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
+    email = models.EmailField(max_length=EMAIL_LEN)
+
 #Temporary data
 class RegRequest(models.Model):
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
