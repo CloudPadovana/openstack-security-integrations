@@ -65,8 +65,8 @@ class DeleteMemberAction(tables.DeleteAction):
                 'admin_address' : users_obj.get(request.user.id).email,
                 'project' : request.user.tenant_name
             }
-            notifyUser(request=self.request, rcpt=member.email, action=MEMBER_REMOVED, context=noti_params)
-            notifyAdmin(request=self.request, action=MEMBER_REMOVED_ADM, context=noti_params)
+            notifyUser(request=request, rcpt=member.email, action=MEMBER_REMOVED, context=noti_params)
+            notifyAdmin(request=request, action=MEMBER_REMOVED_ADM, context=noti_params)
 
             
         except:
@@ -118,7 +118,7 @@ class ToggleRoleAction(tables.Action):
                     's_role' : _('Project manager'),
                     'd_role' : _('Project user')
                 }
-                notifyUser(request=self.request, rcpt=member.email, action=CHANGED_MEMBER_ROLE, context=noti_params)
+                notifyUser(request=request, rcpt=member.email, action=CHANGED_MEMBER_ROLE, context=noti_params)
             
             else:
                 roles_obj.grant(t_role_id, **arg_dict)
@@ -129,7 +129,7 @@ class ToggleRoleAction(tables.Action):
                     's_role' : _('Project user'),
                     'd_role' : _('Project manager')
                 }
-                notifyUser(request=self.request, rcpt=member.email, action=CHANGED_MEMBER_ROLE, context=noti_params)
+                notifyUser(request=request, rcpt=member.email, action=CHANGED_MEMBER_ROLE, context=noti_params)
 
         except:
             LOG.error("Toggle role error", exc_info=True)

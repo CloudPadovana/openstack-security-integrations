@@ -26,6 +26,7 @@ from django.core.mail import send_mail, mail_managers
 from django.template import Template as DjangoTemplate
 from django.template import Context as DjangoContext
 from django.utils.translation import ugettext as _
+from horizon import messages as MESSAGES
 
 from .models import NotificationLog
 
@@ -111,6 +112,8 @@ def _log_notify(rcpt, action, context, locale='en', request=None, user_id=None, 
         notifyManagers(subject, body)
     else:
         notify(rcpt, subject, body)
+
+    MESSAGES.info(request, "Notification sent.")
 
 
 def notifyUser(rcpt, action, context, locale='en', *args, **kwargs):
