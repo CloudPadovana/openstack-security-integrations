@@ -21,6 +21,7 @@ from django.core.management.base import BaseCommand, CommandError
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import Expiration
+from openstack_auth_shib.models import EMail
 
 from horizon.management.commands.cronscript_utils import build_option_list
 from horizon.management.commands.cronscript_utils import configure_log
@@ -72,6 +73,12 @@ class Command(BaseCommand):
                             (r_item.scope['project']['id'], reg_user.username))
                         curr_prj = prj_dict[r_item.scope['project']['id']]
                         
+                        if tmpres = Expiration.objects.filter(
+                            registration=reg_user,
+                            project=curr_prj
+                        ).count() > 0:
+                            continue
+
                         prj_exp = Expiration()
                         prj_exp.registration = reg_user
                         prj_exp.project = curr_prj
@@ -81,6 +88,19 @@ class Command(BaseCommand):
                         LOG.info("Imported expiration for %s in %s: %s" % \
                         (reg_user.username, curr_prj.projectname, \
                         reg_user.expdate.strftime("%A, %d. %B %Y %I:%M%p")))
+
+            with transaction.atomic():
+                for reg_user in Registration.objects.all():
+                    tmpres = keystone_client.users.get(reg_user.userid)
+                    if tmpres:
+                        continue
+
+                    mail_obj = EMail()
+                    mail_obj.registration = reg_user
+                    mail_obj.email = tmpres.email
+                    mail_obj.save()
+
+                    LOG.info("Imported email for %s: %s" % (reg_user.username, tmpres.email))
 
         except:
             LOG.error("Import failed", exc_info=True)
