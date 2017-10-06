@@ -26,11 +26,39 @@ from horizon import tables
 LOG = logging.getLogger(__name__)
 
 
+class LogFilterAction(tables.FilterAction):
+    name = "log_filter"
+
+    filter_type = "server"
+
+    filter_choices = (
+        ("project_name", _("Project Name ="), True),
+        ("project_id", _("Project ID ="), True),
+        ("user_name", _("User Name ="), True),
+        ("user_id", _("User ID ="), True),
+    )
+
+
 class MainTable(tables.DataTable):
     timestamp = tables.Column('timestamp', verbose_name=_('Date'))
     action = tables.Column('action', verbose_name=_('Action'))
 
-    user_id = tables.Column('user_id', verbose_name=_('User ID'))
-    project_id = tables.Column('project_id', verbose_name=_('Project ID'))
+    user = tables.Column(
+        transform=lambda row: "{name} ({id})".format(name=row.user_name,
+                                                     id=row.user_id),
+        verbose_name=_('User'),
+    )
+
+    project = tables.Column(
+        transform=lambda row: "{name} ({id})".format(name=row.project_name,
+                                                     id=row.project_id),
+        verbose_name=_('Project'),
+    )
 
     message = tables.Column('message', verbose_name=_('Message'))
+
+    class Meta(object):
+        name = "logs"
+        verbose_name = _("Logs")
+        multi_select = False
+        table_actions = (LogFilterAction, )

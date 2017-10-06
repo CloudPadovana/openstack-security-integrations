@@ -35,5 +35,8 @@ class MainView(tables.DataTableView):
     page_title = _("Logs")
 
     def get_data(self):
-        data = Log.objects.all()
-        return data
+        logs = []
+        filters = self.get_filters()
+
+        logs = Log.objects.filter(**filters)
+        return logs
