@@ -42,7 +42,9 @@ class Command(BaseCommand):
         config = configure_app(options)
 
         try:
-        
+
+            LOG.info("Running importer for expiration table")
+
             prj_dict = dict()
             
             for prj_item in Project.objects.all():
@@ -92,7 +94,10 @@ class Command(BaseCommand):
             with transaction.atomic():
                 for reg_user in Registration.objects.all():
                     tmpres = keystone_client.users.get(reg_user.userid)
-                    if tmpres:
+                    if not tmpres:
+                        continue
+
+                    if EMail.objects.filter(registration=reg_user).count() > 0:
                         continue
 
                     mail_obj = EMail()
