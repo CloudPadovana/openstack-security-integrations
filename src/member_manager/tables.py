@@ -16,6 +16,7 @@
 import logging
 
 from django import shortcuts
+from django.db import transaction
 from django.conf import settings
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
@@ -26,7 +27,10 @@ from horizon.utils import functions as utils
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
+from openstack_auth_shib.models import Registration
+from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import EMail
+from openstack_auth_shib.models import PrjRole
 
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
@@ -110,18 +114,25 @@ class ToggleRoleAction(tables.Action):
 
             datum = data_table.get_object_by_id(obj_id)
             if datum.is_t_admin:
-            
-                if datum.num_of_roles == 1:
-                    missing_default = True
-                    for item in roles_obj.list():
-                        if item.name == DEFAULT_ROLE:
-                            roles_obj.grant(item.id, **arg_dict)
-                            missing_default = False
-                    if missing_default:
-                        raise Exception('Cannot swith to member role')
-                        
-                roles_obj.revoke(t_role_id, **arg_dict)
-                
+
+                with transaction.atomic():
+
+                    PrjRole.objects.filter(
+                        registration__userid=obj_id,
+                        project__projectname=request.user.tenant_name
+                    ).delete()
+
+                    if datum.num_of_roles == 1:
+                        missing_default = True
+                        for item in roles_obj.list():
+                            if item.name == DEFAULT_ROLE:
+                                roles_obj.grant(item.id, **arg_dict)
+                                missing_default = False
+                        if missing_default:
+                            raise Exception('Cannot swith to member role')
+
+                    roles_obj.revoke(t_role_id, **arg_dict)
+
                 noti_params = {
                     'admin_address' : admin_email,
                     'project' : request.user.tenant_name,
@@ -131,7 +142,16 @@ class ToggleRoleAction(tables.Action):
                 notifyUser(request=request, rcpt=member_email, action=CHANGED_MEMBER_ROLE, context=noti_params)
             
             else:
-                roles_obj.grant(t_role_id, **arg_dict)
+
+                with transaction.atomic():
+
+                    prjRole = PrjRole()
+                    prjRole.registration = Registration.objects.filter(userid=obj_id)[0]
+                    prjRole.project = Project.objects.get(projectname=request.user.tenant_name)
+                    prjRole.roleid = t_role_id
+                    prjRole.save()
+
+                    roles_obj.grant(t_role_id, **arg_dict)
 
                 noti_params = {
                     'admin_address' : admin_email,

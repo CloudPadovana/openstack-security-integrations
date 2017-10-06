@@ -54,6 +54,7 @@ from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
+from openstack_auth_shib.models import PrjRole
 
 from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import PSTATUS_PENDING
@@ -211,6 +212,12 @@ class PreCheckForm(forms.SelfHandlingForm):
                     expiration.project = prj_item
                     expiration.expdate = self.expiration
                     expiration.save()
+
+                    prjRole = PrjRole()
+                    prjRole.registration = registration
+                    prjRole.project = prj_item
+                    prjRole.roleid = tenantadmin_roleid
+                    prjRole.save()
 
                     keystone_api.add_tenant_user_role(request, prj_item.projectid,
                                             registration.userid, tenantadmin_roleid)
@@ -532,6 +539,12 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 #
                 # The new user is the project manager of its tenant
                 #
+                prjRole = PrjRole()
+                prjRole.registration = prj_req.registration
+                prjRole.project = prj_req.project
+                prjRole.roleid = tenantadmin_roleid
+                prjRole.save()
+
                 keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
                                                 user_id, tenantadmin_roleid)
 

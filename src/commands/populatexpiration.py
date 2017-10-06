@@ -22,10 +22,12 @@ from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
+from openstack_auth_shib.models import PrjRole
 
 from horizon.management.commands.cronscript_utils import build_option_list
 from horizon.management.commands.cronscript_utils import configure_log
 from horizon.management.commands.cronscript_utils import configure_app
+from horizon.management.commands.cronscript_utils import get_prjman_roleid
 
 from keystoneclient.v3 import client
 
@@ -43,8 +45,6 @@ class Command(BaseCommand):
 
         try:
 
-            LOG.info("Running importer for expiration table")
-
             prj_dict = dict()
             
             for prj_item in Project.objects.all():
@@ -61,6 +61,8 @@ class Command(BaseCommand):
                                             user_domain_name=config.cron_domain,
                                             project_domain_name=config.cron_domain,
                                             auth_url=config.cron_kurl)
+
+            LOG.info("Populating the expiration table")
 
             with transaction.atomic():
                 for reg_user in Registration.objects.all():
@@ -91,6 +93,8 @@ class Command(BaseCommand):
                         (reg_user.username, curr_prj.projectname, \
                         reg_user.expdate.strftime("%A, %d. %B %Y %I:%M%p")))
 
+            LOG.info("Populating the email table")
+
             with transaction.atomic():
                 for reg_user in Registration.objects.all():
                     tmpres = keystone_client.users.get(reg_user.userid)
@@ -106,6 +110,31 @@ class Command(BaseCommand):
                     mail_obj.save()
 
                     LOG.info("Imported email for %s: %s" % (reg_user.username, tmpres.email))
+
+            LOG.info("Populating the project roles table")
+
+            tnt_admin_roleid = get_prjman_roleid(keystone_client)
+
+            with transaction.atomic():
+
+                PrjRole.objects.all().delete()
+
+                prj_dict = dict()
+                for prj_obj in Project.objects.all():
+                    prj_dict[prj_obj.projectid] = prj_obj
+
+                for reg_user in Registration.objects.all():
+                    for role_obj in keystone_client.role_assignments.list(reg_user.userid):
+                        if role_obj.role['id'] == tnt_admin_roleid:
+                            tmpprjid = role_obj.scope['project']['id']
+                            prjRole = PrjRole()
+                            prjRole.registration = reg_user
+                            prjRole.project = prj_dict[tmpprjid]
+                            prjRole.roleid = role_obj.role['id']
+                            prjRole.save()
+
+                            LOG.info("Imported admin %s for %s" % (reg_user.username, 
+                                     prj_dict[tmpprjid].projectname))
 
         except:
             LOG.error("Import failed", exc_info=True)
