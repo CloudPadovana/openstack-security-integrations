@@ -152,11 +152,12 @@ class PrjRequest(models.Model):
 class NotificationLogManager(models.Manager):
     use_in_migrations = True
 
-    def log_action(self, action, message,
+    def log_action(self, log_type, action, message,
                    project_id=None, user_id=None,
                    dst_project_id=None, dst_user_id=None):
 
         return self.model.objects.create(
+            log_type=log_type,
             action=action,
             message=message,
             project_id=project_id,
@@ -173,6 +174,12 @@ class NotificationLog(models.Model):
         default=timezone.now,
         db_index=True,
         editable=False,
+        blank=False,
+    )
+
+    log_type = models.CharField(
+        max_length=255,
+        db_index=True,
         blank=False,
     )
 

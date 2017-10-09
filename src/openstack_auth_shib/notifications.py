@@ -61,6 +61,10 @@ USER_EXP_TYPE = 'user_expiring'
 DEF_MSG_CACHE_DIR = '/var/cache/openstack-auth-shib/msg'
 
 
+# DO NOT CHANGE the LOG_TYPE_* constants
+LOG_TYPE_EMAIL = '__EMAIL__'
+
+
 MANAGERS_RCPT = '__MANAGERS__'
 
 
@@ -100,6 +104,7 @@ def _log_notify(rcpt, action, context, locale='en', request=None, user_id=None, 
     msg = "To: {to}\nSubject: {subject}\n\n{body}".format(to=to, subject=subject, body=body)
 
     NotificationLog.objects.log_action(
+        log_type=LOG_TYPE_EMAIL,
         action=action,
         message=msg,
         project_id=project_id,
