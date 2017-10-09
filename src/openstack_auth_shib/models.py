@@ -154,6 +154,7 @@ class LogManager(models.Manager):
 
     def log_action(self, log_type, action, message,
                    project_id=None, user_id=None,
+                   project_name=None, user_name=None,
                    dst_project_id=None, dst_user_id=None):
 
         return self.model.objects.create(
@@ -162,6 +163,8 @@ class LogManager(models.Manager):
             message=message,
             project_id=project_id,
             user_id=user_id,
+            project_name=project_name,
+            user_name=user_name,
             dst_project_id=dst_project_id,
             dst_user_id=dst_user_id,
         )
@@ -198,6 +201,20 @@ class Log(models.Model):
 
     user_id = models.CharField(
         max_length=OS_ID_LEN,
+        db_index=True,
+        null=True,
+        blank=True,
+    )
+
+    project_name = models.CharField(
+        max_length=OS_SNAME_LEN,
+        db_index=True,
+        null=True,
+        blank=True,
+    )
+
+    user_name = models.CharField(
+        max_length=OS_SNAME_LEN,
         db_index=True,
         null=True,
         blank=True,
