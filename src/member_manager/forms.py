@@ -29,6 +29,10 @@ from horizon import forms
 from horizon import exceptions
 
 from openstack_auth_shib.models import Expiration
+from openstack_auth_shib.models import EMail
+from openstack_auth_shib.notifications import notifyUser
+from openstack_auth_shib.notifications import notifyAdmin
+from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 
 LOG = logging.getLogger(__name__)
 
@@ -81,9 +85,16 @@ class ModifyExpForm(forms.SelfHandlingForm):
                 }
                 Expiration.objects.filter(**q_args).update(expdate=data['expiration'])
                 
-                #
-                # TODO log operation
-                #
+            tmpres = EMail.objects.filter(registration__userid=data['userid'])
+            if len(tmpres):
+                mail_obj = tmpres[0]
+                noti_params = {
+                    'username' : mail_obj.registration.username,
+                    'expiration' : data['expiration'].strftime("%d %B %Y")
+                }
+                notifyUser(request=request, rcpt=mail_obj.email, action=USER_RENEWED_TYPE,
+                           context=noti_params)
+                notifyAdmin(request=request, action=USER_RENEWED_TYPE, context=noti_params)
 
         except:
             exceptions.handle(request)

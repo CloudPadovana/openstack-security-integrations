@@ -56,6 +56,7 @@ SUBSCR_NO_TYPE = 'subscription_rejected'
 SUBSCR_REMINDER = 'subscription_reminder'
 SUBSCR_WAIT_TYPE = 'subscription_waiting_approval'
 USER_EXP_TYPE = 'user_expiring'
+USER_RENEWED_TYPE = 'user_renewed'
 
 
 DEF_MSG_CACHE_DIR = '/var/cache/openstack-auth-shib/msg'

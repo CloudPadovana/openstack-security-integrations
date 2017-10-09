@@ -136,4 +136,10 @@ body: The account for {{ username }} will expire in {{ days }} days.
   
   Please, don't reply to this message
 
+[user_renewed]
+subject: Account for user {{ username }} has been renewed
+body: The account for {{ username }} has been renewed, the new expiration date is {{ expiration }}.
+  
+  Please, don't reply to this message
+
 
