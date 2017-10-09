@@ -149,7 +149,7 @@ class PrjRequest(models.Model):
     notes = models.TextField()
 
 
-class NotificationLogManager(models.Manager):
+class LogManager(models.Manager):
     use_in_migrations = True
 
     def log_action(self, log_type, action, message,
@@ -167,8 +167,8 @@ class NotificationLogManager(models.Manager):
         )
 
 
-class NotificationLog(models.Model):
-    objects = NotificationLogManager()
+class Log(models.Model):
+    objects = LogManager()
 
     timestamp = models.DateTimeField(
         default=timezone.now,

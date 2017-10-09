@@ -22,7 +22,7 @@ import logging
 from django.utils.translation import ugettext_lazy as _
 from horizon import tables
 
-from openstack_auth_shib.models import NotificationLog
+from openstack_auth_shib.models import Log
 from .tables import MainTable
 
 
@@ -35,5 +35,5 @@ class MainView(tables.DataTableView):
     page_title = _("Logs")
 
     def get_data(self):
-        data = NotificationLog.objects.all()
+        data = Log.objects.all()
         return data

@@ -28,7 +28,7 @@ from django.template import Context as DjangoContext
 from django.utils.translation import ugettext as _
 from horizon import messages as MESSAGES
 
-from .models import NotificationLog
+from .models import Log
 
 
 LOG = logging.getLogger(__name__)
@@ -103,7 +103,7 @@ def _log_notify(rcpt, action, context, locale='en', request=None, user_id=None, 
 
     msg = "To: {to}\nSubject: {subject}\n\n{body}".format(to=to, subject=subject, body=body)
 
-    NotificationLog.objects.log_action(
+    Log.objects.log_action(
         log_type=LOG_TYPE_EMAIL,
         action=action,
         message=msg,
