@@ -30,6 +30,7 @@ from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import Expiration
+from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_PUBLIC
 from openstack_auth_shib.models import PRJ_GUEST
 from openstack_auth_shib.models import PSTATUS_PENDING
@@ -193,12 +194,21 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
     def _update_project_members(self, request, data, project_id):
 
         member_ids = set()
+        prjadm_ids = set()
+        prjrole_id = None
+        result = None
+
         for role in self._get_available_roles(request):
             tmp_step = self.get_step(baseWorkflows.PROJECT_USER_MEMBER_SLUG)
             field_name = tmp_step.get_member_field_name(role.id)
             for tmpid in data[field_name]:
                 member_ids.add(tmpid)
-        
+                if role.name == TENANTADMIN_ROLE:
+                    prjadm_ids.add(tmpid)
+
+            if role.name == TENANTADMIN_ROLE:
+                prjrole_id = role.id
+
         with transaction.atomic():
         
             ep_qset = Expiration.objects.filter(project=self.this_project)
@@ -238,7 +248,21 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
             }
             PrjRequest.objects.filter(**q_args).delete()
 
-        return super(ExtUpdateProject, self)._update_project_members(request, data, project_id)
+            #
+            # Delete and re-create the project admin cache
+            #
+            PrjRole.objects.filter(project=self.this_project).delete()
+            for item in Registration.objects.filter(userid__in=prjadm_ids):
+                new_prjrole = PrjRole()
+                new_prjrole.registration = item
+                new_prjrole.project = self.this_project
+                new_prjrole.roleid = prjrole_id
+                new_prjrole.save()
+                LOG.debug("Re-created prj admin: %s" % item.username)
+
+            result = super(ExtUpdateProject, self)._update_project_members(request, data, project_id)
+
+        return result
 
     def handle(self, request, data):
 
