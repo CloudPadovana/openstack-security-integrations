@@ -39,6 +39,22 @@ class LogFilterAction(tables.FilterAction):
     )
 
 
+def format_recipient(row):
+    dst_user_id = row.dst_user_id
+    dst_project_id = row.dst_project_id
+
+    ret = ""
+    if dst_project_id and dst_user_id:
+        ret = "USER %s of PROJECT %s" % (dst_user_id, dst_project_id)
+    elif dst_user_id and not dst_project_id:
+        ret = "USER %s" % dst_user_id
+    elif dst_project_id and not dst_user_id:
+        ret = "PROJECT %s" % dst_project_id
+    else:
+        ret = "ADMIN"
+    return ret
+
+
 class MainTable(tables.DataTable):
     timestamp = tables.Column('timestamp', verbose_name=_('Date'))
     action = tables.Column('action', verbose_name=_('Action'))
@@ -53,6 +69,11 @@ class MainTable(tables.DataTable):
         transform=lambda row: "{name} ({id})".format(name=row.project_name,
                                                      id=row.project_id),
         verbose_name=_('Project'),
+    )
+
+    recipient = tables.Column(
+        transform=format_recipient,
+        verbose_name=_('Recipient'),
     )
 
     message = tables.Column('message', verbose_name=_('Message'))
