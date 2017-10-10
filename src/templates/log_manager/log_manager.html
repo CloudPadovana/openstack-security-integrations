@@ -25,6 +25,26 @@
 {% endblock page_header %}
 
 {% block main %}
+
+  {% comment %}
+    Based on horizon/templates/horizon/common/_usage_summary.html
+  {% endcomment %}
+  <div>
+    <form action="?" method="get" id="date_form" class="form-inline">
+      <h4>{% trans "Select a period of time:" %}</h4>
+      <div class="datepicker form-group">
+        {% blocktrans trimmed with start=form.start %}
+        <label>From:</label> {{ start }}{% endblocktrans %}
+      </div>
+      <div class="datepicker form-group">
+        {% blocktrans trimmed with end=form.end %}
+        <label>To:</label>{{ end }}{% endblocktrans %}
+      </div>
+      <button class="btn btn-primary" type="submit">{% trans "Submit" %}</button>
+      <small>{% trans "The date should be in YYYY-MM-DD format." %}</small>
+    </form>
+  </div>
+
   {{ table.render }}
 {% endblock %}
 

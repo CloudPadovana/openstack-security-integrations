@@ -93,7 +93,7 @@ class ModifyExpForm(forms.SelfHandlingForm):
                     'expiration' : data['expiration'].strftime("%d %B %Y")
                 }
                 notifyUser(request=request, rcpt=mail_obj.email, action=USER_RENEWED_TYPE,
-                           context=noti_params)
+                           context=noti_params, dst_user_id=data['userid'])
                 notifyAdmin(request=request, action=USER_RENEWED_TYPE, context=noti_params)
 
         except:

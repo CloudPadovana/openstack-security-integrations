@@ -28,7 +28,7 @@ from django.template import Context as DjangoContext
 from django.utils.translation import ugettext as _
 from horizon import messages as MESSAGES
 
-from .models import NotificationLog
+from .models import Log
 
 
 LOG = logging.getLogger(__name__)
@@ -62,6 +62,10 @@ USER_RENEWED_TYPE = 'user_renewed'
 DEF_MSG_CACHE_DIR = '/var/cache/openstack-auth-shib/msg'
 
 
+# DO NOT CHANGE the LOG_TYPE_* constants
+LOG_TYPE_EMAIL = '__EMAIL__'
+
+
 MANAGERS_RCPT = '__MANAGERS__'
 
 
@@ -76,21 +80,40 @@ class NotificationTemplate():
         return (self.subject.render(ctx), self.body.render(ctx))
 
 
-def _log_notify(rcpt, action, context, locale='en', request=None, user_id=None, project_id=None, dst_user_id=None, dst_project_id=None):
-    if user_id is None:
+def _log_notify(rcpt, action, context, locale='en', request=None,
+                user_id=None, project_id=None,
+                user_name=None, project_name=None,
+                dst_user_id=None, dst_project_id=None):
+    def _try_get_from_request_user(request, field):
+        value = None
         try:
-            user_id = request.user.id
+            user = request.user
+            value = getattr(user, field)
         except Exception as ex:
-            LOG.warning("Exception on accessing request.user.user_id: {ex}".format(ex=ex))
+            LOG.warning("Exception on accessing request.user.{field}: {ex}".
+                        format(field=field, ex=ex))
+        return value
+
+    if user_id is None:
+        user_id = _try_get_from_request_user(request, 'id')
 
     if project_id is None:
-        try:
-            project_id = request.user.project_id
-        except Exception as ex:
-            LOG.warning("Exception on accessing request.user.project_id: {ex}".format(ex=ex))
+        project_id = _try_get_from_request_user(request, 'project_id')
 
-    LOG.debug("notify user_id={user_id}, project_id={project_id}, rcpt={rcpt}, action={action}, context={context}, dst_user_id={dst_user_id}, dst_project_id={dst_project_id}"
-              .format(user_id=user_id, project_id=project_id, rcpt=rcpt, action=action, context=context, dst_user_id=dst_user_id, dst_project_id=dst_project_id))
+    if user_name is None:
+        user_name = _try_get_from_request_user(request, 'username')
+
+    if project_name is None:
+        project_name = _try_get_from_request_user(request, 'project_name')
+
+    LOG.debug("notify user_id={user_id}, project_id={project_id}, "
+              "user_name={user_name}, project_name={project_name}, "
+              "dst_user_id={dst_user_id}, dst_project_id={dst_project_id}, "
+              "rcpt={rcpt}, action={action}, context={context}"
+              .format(user_id=user_id, project_id=project_id,
+                      user_name=user_name, project_name=project_name,
+                      dst_user_id=dst_user_id, dst_project_id=dst_project_id,
+                      rcpt=rcpt, action=action, context=context))
 
     subject, body = notification_render(action, context, locale)
     to = rcpt
@@ -100,11 +123,14 @@ def _log_notify(rcpt, action, context, locale='en', request=None, user_id=None, 
 
     msg = "To: {to}\nSubject: {subject}\n\n{body}".format(to=to, subject=subject, body=body)
 
-    NotificationLog.objects.log_action(
+    Log.objects.log_action(
+        log_type=LOG_TYPE_EMAIL,
         action=action,
         message=msg,
         project_id=project_id,
         user_id=user_id,
+        project_name=project_name,
+        user_name=user_name,
         dst_project_id=dst_project_id,
         dst_user_id=dst_user_id,
     )
@@ -117,10 +143,23 @@ def _log_notify(rcpt, action, context, locale='en', request=None, user_id=None, 
     MESSAGES.info(request, "Notification sent.")
 
 
+def warn_if_missing(arg_name):
+    def wrapper(func):
+        def wrapped(*args, **kwargs):
+            if arg_name not in kwargs:
+                LOG.warn("{func_name}: `{arg_name}` not given. The log will not be visible by the corresponding entity"
+                         .format(func_name=func.__name__, arg_name=arg_name))
+            return func(*args, **kwargs)
+        return wrapped
+    return wrapper
+
+
+@warn_if_missing('dst_user_id')
 def notifyUser(rcpt, action, context, locale='en', *args, **kwargs):
     _log_notify(rcpt, action, context, locale, **kwargs)
 
 
+@warn_if_missing('dst_project_id')
 def notifyProject(rcpt, action, context, locale='en', *args, **kwargs):
     # ensure dst_user_id is not set
     kwargs.pop('dst_user_id', None)

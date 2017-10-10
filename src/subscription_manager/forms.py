@@ -140,7 +140,8 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 'project' : project_name
             }
 
-            notifyUser(request=self.request, rcpt=member_email, action=SUBSCR_OK_TYPE, context=noti_params)
+            notifyUser(request=self.request, rcpt=member.email, action=SUBSCR_OK_TYPE, context=noti_params,
+                       dst_user_id=member.id)
         
         except:
             exceptions.handle(request)
@@ -198,7 +199,8 @@ class RejectSubscrForm(forms.SelfHandlingForm):
                 'notes' : data['reason']
             }
 
-            notifyUser(request=self.request, rcpt=member_email, action=SUBSCR_NO_TYPE, context=noti_params)
+            notifyUser(request=self.request, rcpt=member.email, action=SUBSCR_NO_TYPE, context=noti_params,
+                       dst_user_id=member.id)
         
         except:
             exceptions.handle(request)
@@ -346,7 +348,8 @@ class DiscSubscrForm(forms.SelfHandlingForm):
                 'project' : request.user.tenant_name,
                 'notes' : data['reason']
             }
-            notifyUser(request=self.request, rcpt=member_email, action=MEMBER_REMOVED, context=noti_params)
+            notifyUser(request=self.request, rcpt=member.email, action=MEMBER_REMOVED, context=noti_params,
+                       dst_user_id=user_id)
                 
         except:
             LOG.error("Cannot renew user", exc_info=True)
