@@ -55,19 +55,44 @@ def format_recipient(row):
     return ret
 
 
+def _format_name_id(name, id):
+    ret = []
+
+    if name is not None:
+        ret.extend(["%s" % name, ])
+    if id is not None:
+        ret.extend(["(%s)" % id, ])
+
+    if not ret:
+        ret = "Undefined"
+    else:
+        ret = " ".join(ret)
+    return ret
+
+
+def format_user(row):
+    user_id = row.user_id
+    user_name = row.user_name
+    return _format_name_id(user_name, user_id)
+
+
+def format_project(row):
+    project_id = row.project_id
+    project_name = row.project_name
+    return _format_name_id(project_name, project_id)
+
+
 class MainTable(tables.DataTable):
     timestamp = tables.Column('timestamp', verbose_name=_('Date'))
     action = tables.Column('action', verbose_name=_('Action'))
 
     user = tables.Column(
-        transform=lambda row: "{name} ({id})".format(name=row.user_name,
-                                                     id=row.user_id),
+        transform=format_user,
         verbose_name=_('User'),
     )
 
     project = tables.Column(
-        transform=lambda row: "{name} ({id})".format(name=row.project_name,
-                                                     id=row.project_id),
+        transform=format_project,
         verbose_name=_('Project'),
     )
 
