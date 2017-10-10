@@ -142,10 +142,23 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
     MESSAGES.info(request, "Notification sent.")
 
 
+def warn_if_missing(arg_name):
+    def wrapper(func):
+        def wrapped(*args, **kwargs):
+            if arg_name not in kwargs:
+                LOG.warn("{func_name}: `{arg_name}` not given. The log will not be visible by the corresponding entity"
+                         .format(func_name=func.__name__, arg_name=arg_name))
+            return func(*args, **kwargs)
+        return wrapped
+    return wrapper
+
+
+@warn_if_missing('dst_user_id')
 def notifyUser(rcpt, action, context, locale='en', *args, **kwargs):
     _log_notify(rcpt, action, context, locale, **kwargs)
 
 
+@warn_if_missing('dst_project_id')
 def notifyProject(rcpt, action, context, locale='en', *args, **kwargs):
     # ensure dst_user_id is not set
     kwargs.pop('dst_user_id', None)
