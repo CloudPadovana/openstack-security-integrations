@@ -54,15 +54,21 @@ class DeleteMemberAction(tables.DeleteAction):
     
         try:
             
-            roles_obj = client_factory(request).roles
-            role_assign_obj = client_factory(request).role_assignments
-            
-            arg_dict = {
-                'project' : request.user.tenant_id,
-                'user' : obj_id
-            }
-            for r_item in role_assign_obj.list(**arg_dict):
-                roles_obj.revoke(r_item.role['id'], **arg_dict)
+            with transaction.atomic():
+                roles_obj = client_factory(request).roles
+                role_assign_obj = client_factory(request).role_assignments
+                
+                arg_dict = {
+                    'project' : request.user.tenant_id,
+                    'user' : obj_id
+                }
+                for r_item in role_assign_obj.list(**arg_dict):
+                    roles_obj.revoke(r_item.role['id'], **arg_dict)
+
+                PrjRole.objects.filter(
+                    registration__userid=obj_id,
+                    project__projectname=request.user.tenant_name
+                ).delete()
             
             tmpres = EMail.objects.filter(registration__userid=obj_id)
             member_email = tmpres[0].email if tmpres else None
@@ -76,8 +82,8 @@ class DeleteMemberAction(tables.DeleteAction):
                 'admin_address' : admin_email,
                 'project' : request.user.tenant_name
             }
-            notifyUser(request=request, rcpt=member.email, action=MEMBER_REMOVED, context=noti_params,
-                       dst_user_id=member.id)
+            notifyUser(request=request, rcpt=member_email, action=MEMBER_REMOVED, context=noti_params,
+                       dst_user_id=obj_id)
             notifyAdmin(request=request, action=MEMBER_REMOVED_ADM, context=noti_params)
 
             
@@ -140,8 +146,8 @@ class ToggleRoleAction(tables.Action):
                     's_role' : _('Project manager'),
                     'd_role' : _('Project user')
                 }
-                notifyUser(request=request, rcpt=member.email, action=CHANGED_MEMBER_ROLE, context=noti_params,
-                           dst_project_id=request.user.project_id, dst_user_id=member.id)
+                notifyUser(request=request, rcpt=member_email, action=CHANGED_MEMBER_ROLE, context=noti_params,
+                           dst_project_id=request.user.project_id, dst_user_id=obj_id)
             
             else:
 
@@ -161,8 +167,8 @@ class ToggleRoleAction(tables.Action):
                     's_role' : _('Project user'),
                     'd_role' : _('Project manager')
                 }
-                notifyUser(request=request, rcpt=member.email, action=CHANGED_MEMBER_ROLE, context=noti_params,
-                           dst_project_id=request.user.project_id, dst_user_id=member.id)
+                notifyUser(request=request, rcpt=member_email, action=CHANGED_MEMBER_ROLE, context=noti_params,
+                           dst_project_id=request.user.project_id, dst_user_id=obj_id)
 
         except:
             LOG.error("Toggle role error", exc_info=True)

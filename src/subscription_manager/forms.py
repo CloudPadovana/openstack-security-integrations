@@ -92,7 +92,8 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 }                
                 prj_req = PrjRequest.objects.filter(**q_args)[0]
                 
-                tmpres = EMail.objects.filter(registration__userid=prj_req.registration.userid)
+                member_id = prj_req.registration.userid
+                tmpres = EMail.objects.filter(registration__userid=member_id)
                 member_email = tmpres[0].email if tmpres else None
                 project_name = prj_req.project.projectname
                 
@@ -140,8 +141,8 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 'project' : project_name
             }
 
-            notifyUser(request=self.request, rcpt=member.email, action=SUBSCR_OK_TYPE, context=noti_params,
-                       dst_user_id=member.id)
+            notifyUser(request=self.request, rcpt=member_email, action=SUBSCR_OK_TYPE, context=noti_params,
+                       dst_user_id=member_id)
         
         except:
             exceptions.handle(request)
