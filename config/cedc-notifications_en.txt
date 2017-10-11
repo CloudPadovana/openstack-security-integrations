@@ -142,4 +142,10 @@ body: The account for {{ username }} has been renewed, the new expiration date i
   
   Please, don't reply to this message
 
+[user_purged]
+subject: Account for user {{ username }} has been removed
+body: The account {{ username }} has been removed from Cloud Veneto.
+  
+  Please, don't reply to this message
+
 
