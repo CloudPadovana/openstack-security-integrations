@@ -155,6 +155,7 @@ logo_list = [
     'src/templates/logoUniPD.png',
     'src/templates/logoGoogle.png',
     'src/templates/logoUsrPwd.png',
+    'src/templates/logoUsrReg.png',
     'src/templates/logoIDEM.png',
     'src/templates/logoINDIGO.png',
     'src/templates/empty.png',

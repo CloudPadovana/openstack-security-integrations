@@ -108,9 +108,13 @@
     <div id="register_div" 
          class="text-center"
          style="display: none;">
-      <p>{% blocktrans %}
-      Please select an external account to bind or continue for a local account.
-      {% endblocktrans %}</p>
+
+      <button type="button"
+              onclick="location.href='/dashboard/auth/register/';">
+        <img align="middle" height="80px" width="80px" alt="Register local account" 
+             src="/dashboard/static/dashboard/img/logoUsrReg.png"/>
+      </button>
+
       {% if HORIZON_CONFIG.identity_providers %}
       {% for idpdata in HORIZON_CONFIG.identity_providers %}
       <button type="button"
@@ -150,9 +154,6 @@
   <div id="regist_sel_div"
        class="clearfix"
        style="display: none;">
-    <button type="button"
-            onclick="location.href='/dashboard/auth/register/';"
-            class="btn btn-primary pull-right">{% trans "Next" %}</button>
     <button type="button" 
             onclick="showIdPs()"
             class="btn btn-primary pull-right">{% trans "Back" %}</button>
