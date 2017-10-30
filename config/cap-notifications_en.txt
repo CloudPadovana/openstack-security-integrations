@@ -41,6 +41,7 @@ body: User {{ username }} has been removed from the project {{ project }}
 [member_request]
 subject: New request for membership
 body: The user {{ username }} requires to access the project {{ project }}
+  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html-desktop/#ManageProjectMembers
   
   Please, don't reply to this message
 
@@ -111,7 +112,7 @@ body: You have the following pending subscriptions for project {{ project }}:
   {% for req in pendingreqs %}
   * {{ req }}
   {% endfor %} 
-  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html/Registration.html#ManageProjectMembershipRequests
+  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html-desktop/#ManageProjectMembers
   
   Please, don't reply to this message
 
@@ -119,7 +120,7 @@ body: You have the following pending subscriptions for project {{ project }}:
 subject: Subscription request waiting for approval
 body: User {{ username }} requires access to project {{ project }}
   Please, validate the subscription request
-  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html/Registration.html#ManageProjectMembershipRequests
+  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html-desktop/#ManageProjectMembers
   
   Please, don't reply to this message
 

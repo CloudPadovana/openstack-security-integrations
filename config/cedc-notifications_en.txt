@@ -41,6 +41,7 @@ body: User {{ username }} has been removed from the project {{ project }}
 [member_request]
 subject: New request for membership
 body: The user {{ username }} requires to access the project {{ project }}
+  For further details refer to https://cloud.cedc.csia.unipd.it/User_Guide/index.html#ManageProjectMembershipRequests
   
   Please, don't reply to this message
 
