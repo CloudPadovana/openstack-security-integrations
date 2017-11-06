@@ -45,7 +45,7 @@ from keystoneclient import exceptions as keystone_exceptions
 
 from horizon import forms
 
-from .models import UserMapping
+from .models import UserMapping, RegRequest
 from .forms import RegistrForm
 from .idpmanager import get_manager, checkFederationSetup
 from .utils import get_user_home, get_ostack_attributes
@@ -210,6 +210,25 @@ class RegistrView(forms.ModalFormView):
         else:
             context['form_action_url'] = '/dashboard/auth/register/'
         return context
+
+    def get(self, request, *args, **kwargs):
+
+        attributes = get_manager(self.request)
+        if attributes:
+
+            if UserMapping.objects.filter(globaluser=attributes.username).count():
+                tempDict = {
+                    'error_header' : _("Registration error"),
+                    'error_text' : _("Your account has already been registered"),
+                    'redirect_url' : '/dashboard',
+                    'redirect_label' : _("Home")
+                }
+                return shortcuts.render(self.request, 'aai_error.html', tempDict)
+
+            if RegRequest.objects.filter(externalid=attributes.username).count():
+                return dup_login(self.request)
+
+        return super(RegistrView, self).get(request, args, kwargs)
 
 def reg_done(request):
     tempDict = {
