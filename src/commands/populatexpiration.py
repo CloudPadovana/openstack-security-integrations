@@ -21,10 +21,13 @@ from django.core.management.base import BaseCommand, CommandError
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import Expiration
+from openstack_auth_shib.models import EMail
+from openstack_auth_shib.models import PrjRole
 
 from horizon.management.commands.cronscript_utils import build_option_list
 from horizon.management.commands.cronscript_utils import configure_log
 from horizon.management.commands.cronscript_utils import configure_app
+from horizon.management.commands.cronscript_utils import get_prjman_roleid
 
 from keystoneclient.v3 import client
 
@@ -41,7 +44,7 @@ class Command(BaseCommand):
         config = configure_app(options)
 
         try:
-        
+
             prj_dict = dict()
             
             for prj_item in Project.objects.all():
@@ -59,6 +62,8 @@ class Command(BaseCommand):
                                             project_domain_name=config.cron_domain,
                                             auth_url=config.cron_kurl)
 
+            LOG.info("Populating the expiration table")
+
             with transaction.atomic():
                 for reg_user in Registration.objects.all():
                 
@@ -72,6 +77,12 @@ class Command(BaseCommand):
                             (r_item.scope['project']['id'], reg_user.username))
                         curr_prj = prj_dict[r_item.scope['project']['id']]
                         
+                        if Expiration.objects.filter(
+                            registration=reg_user,
+                            project=curr_prj
+                        ).count() > 0:
+                            continue
+
                         prj_exp = Expiration()
                         prj_exp.registration = reg_user
                         prj_exp.project = curr_prj
@@ -81,6 +92,49 @@ class Command(BaseCommand):
                         LOG.info("Imported expiration for %s in %s: %s" % \
                         (reg_user.username, curr_prj.projectname, \
                         reg_user.expdate.strftime("%A, %d. %B %Y %I:%M%p")))
+
+            LOG.info("Populating the email table")
+
+            with transaction.atomic():
+                for reg_user in Registration.objects.all():
+                    tmpres = keystone_client.users.get(reg_user.userid)
+                    if not tmpres:
+                        continue
+
+                    if EMail.objects.filter(registration=reg_user).count() > 0:
+                        continue
+
+                    mail_obj = EMail()
+                    mail_obj.registration = reg_user
+                    mail_obj.email = tmpres.email
+                    mail_obj.save()
+
+                    LOG.info("Imported email for %s: %s" % (reg_user.username, tmpres.email))
+
+            LOG.info("Populating the project roles table")
+
+            tnt_admin_roleid = get_prjman_roleid(keystone_client)
+
+            with transaction.atomic():
+
+                PrjRole.objects.all().delete()
+
+                prj_dict = dict()
+                for prj_obj in Project.objects.all():
+                    prj_dict[prj_obj.projectid] = prj_obj
+
+                for reg_user in Registration.objects.all():
+                    for role_obj in keystone_client.role_assignments.list(reg_user.userid):
+                        if role_obj.role['id'] == tnt_admin_roleid:
+                            tmpprjid = role_obj.scope['project']['id']
+                            prjRole = PrjRole()
+                            prjRole.registration = reg_user
+                            prjRole.project = prj_dict[tmpprjid]
+                            prjRole.roleid = role_obj.role['id']
+                            prjRole.save()
+
+                            LOG.info("Imported admin %s for %s" % (reg_user.username, 
+                                     prj_dict[tmpprjid].projectname))
 
         except:
             LOG.error("Import failed", exc_info=True)

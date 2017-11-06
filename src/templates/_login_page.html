@@ -47,6 +47,7 @@
   {%endif%}
   {% include "auth/_description.html" %}
   <fieldset hz-login-finder>
+
     {% if request.user.is_authenticated and 'next' in request.GET %}
       <div class="form-group clearfix error help-block alert alert-danger">
         <p>{% trans "You do not have permission to access the resource:" %}</p>
@@ -59,69 +60,73 @@
         </p>
       </div>
     {% endif  %}
+
     {% if request.COOKIES.logout_reason %}
       <div class="form-group clearfix error help-block alert alert-danger" id="logout_reason">
         <p>{{ request.COOKIES.logout_reason }}</p>
       </div>
     {% endif %}
+
     {% if next %}
       <input type="hidden" name="{{ redirect_field_name }}" value="{{ next }}" />
     {% endif %}
     
-    <div id="login_div"
-      {% if form.warnings or form.non_field_errors %}
-         style="display: block;">
-      {% else %}
-         style="display: none;">
+    <div id="common_div" class="text-center" style="display: block;">
+      {% include 'horizon/common/_form_errors.html' with form=form %}
+      {% if not form.region.is_hidden %}
+        {% include 'horizon/common/_form_field.html' with field=form.region %}
       {% endif %}
-      <div class="text-center">
-        {% include 'horizon/common/_form_errors.html' with form=form %}
-        {% if not form.region.is_hidden %}
-          {% include 'horizon/common/_form_field.html' with field=form.region %}
-        {% endif %}
-      </div>
-      <div class="text-center">
+    </div>
 
-        <input id="auth_type_in" type="hidden" name="auth_type" value="credentials" />
+    <div id="idpbtndiv" class="text-center" style="display: block;">
 
-        <h3 class="text-center alert alert-info">{% trans "Federated Account" %}</h3>
-        {% if HORIZON_CONFIG.identity_providers %}
-        {% for idpdata in HORIZON_CONFIG.identity_providers %}
-        <button type="button"
-                onclick="document.getElementById('auth_type_in').value='{{ idpdata.id }}';document.forms['logf_id'].submit()">
-           <img align="middle" height="80px" width="80px" 
-                alt="Login {{ idpdata.description }}" 
-                src="{{ idpdata.logo }}"/>
-        </button>
-        {% endfor %}
-        {% endif %}
-      </div>
-      <div>
-        <h3 class="text-center alert alert-info">{% trans "Local Account" %}</h3>
-        {% include 'horizon/common/_form_field.html' with field=form.username %}
-        {% include 'horizon/common/_form_field.html' with field=form.password %}
-      </div>
+      <input id="auth_type_in" type="hidden" name="auth_type" value="credentials" />
+
+      <button type="button" onclick="showLoginForm()">
+        <img align="middle" height="80px" width="80px" alt="Local login" 
+             src="/dashboard/static/dashboard/img/logoUsrPwd.png"/>
+      </button>
+
+      {% if HORIZON_CONFIG.identity_providers %}
+      {% for idpdata in HORIZON_CONFIG.identity_providers %}
+      <button type="button"
+              onclick="document.getElementById('auth_type_in').value='{{ idpdata.id }}';document.forms['logf_id'].submit()">
+         <img align="middle" height="80px" width="80px" 
+              alt="Login {{ idpdata.description }}" 
+              src="{{ idpdata.logo }}"/>
+      </button>
+      {% endfor %}
+      {% endif %}
+
+    </div>
+
+    <div id="logformdiv" style="display: none;">
+      {% include 'horizon/common/_form_field.html' with field=form.username %}
+      {% include 'horizon/common/_form_field.html' with field=form.password %}
     </div>
     
     <div id="register_div" 
          class="text-center"
          style="display: none;">
-      <div class="text-center">
-        <h3 class="text-center alert alert-info">{% trans "Register using a federated account" %} </h3>
-        {% if HORIZON_CONFIG.identity_providers %}
-        {% for idpdata in HORIZON_CONFIG.identity_providers %}
-        <button type="button"
-                onclick="location.href='{{ idpdata.path }}';">
-           <img align="middle" height="80px" width="80px" 
-                alt="Login {{ idpdata.description }}" 
-                src="{{ idpdata.logo }}"/>
-        </button>
-        {% endfor %}
-        {% endif %}
-      </div>
-      <div class="text-center">
-        <h3 class="text-center alert alert-info">{% trans "Register using simple credentials" %} </h3>
-      </div>
+
+      <h3 class="text-center alert alert-info">{% trans "Registration" %}</h3>
+      
+      <button type="button"
+              onclick="location.href='/dashboard/auth/register/';">
+        <img align="middle" height="80px" width="80px" alt="Register local account" 
+             src="/dashboard/static/dashboard/img/logoUsrReg.png"/>
+      </button>
+
+      {% if HORIZON_CONFIG.identity_providers %}
+      {% for idpdata in HORIZON_CONFIG.identity_providers %}
+      <button type="button"
+              onclick="location.href='{{ idpdata.path }}';">
+         <img align="middle" height="80px" width="80px" 
+              alt="Login {{ idpdata.description }}" 
+              src="{{ idpdata.logo }}"/>
+      </button>
+      {% endfor %}
+      {% endif %}
     </div>
     
   </fieldset>
@@ -130,46 +135,30 @@
 
 
 {% block login_footer %}
-  <div id="main_sel_div"
-       class="clearfix text-center"
-    {% if form.warnings or form.non_field_errors %}
-       style="display: none;">
-    {% else %}
+  <div id="main_btn_div"
+       class="clearfix"
        style="display: block;">
-    {% endif %}
-    <button id="sel_signin_btn"
-            type="button"
-            onclick="showLogin()"
-            class="btn btn-primary">{% trans "Sign In" %}</button>
-    <button id="sel_signon_btn"
-            type="button"
-            onclick="showRegister()"
-            class="btn btn-primary">{% trans "Register" %}</button>
+    <button type="button"
+            onclick="showRegistr()"
+            class="btn btn-primary pull-right">{% trans "Register" %}</button>
   </div>
   
   <div id="login_sel_div"
-       class="clearfix text-center"
-    {% if form.warnings or form.non_field_errors %}
-       style="display: block;">
-    {% else %}
+       class="clearfix"
        style="display: none;">
-    {% endif %}
     <button type="submit" 
-            class="btn btn-primary">{% trans "Sign In" %}</button>
+            class="btn btn-primary pull-right">{% trans "Sign In" %}</button>
     <button type="button" 
-            onclick="showMain()"
-            class="btn btn-primary">{% trans "Back" %}</button>
+            onclick="showIdPs()"
+            class="btn btn-primary pull-right">{% trans "Back" %}</button>
   </div>
   
   <div id="regist_sel_div"
-       class="clearfix text-center"
+       class="clearfix"
        style="display: none;">
-    <button type="button"
-            onclick="location.href='/dashboard/auth/register/';"
-            class="btn btn-primary">{% trans "Register" %}</button>
     <button type="button" 
-            onclick="showMain()"
-            class="btn btn-primary">{% trans "Back" %}</button>
+            onclick="showIdPs()"
+            class="btn btn-primary pull-right">{% trans "Back" %}</button>
   </div>
 
   <div>
@@ -187,29 +176,33 @@
   </div>
 
   <script id="scriptsforsso" type="text/javascript">
-  function showMain() {
-      document.getElementById('main_sel_div').style.display='block';
-      document.getElementById('login_sel_div').style.display='none';
-      document.getElementById('login_div').style.display='none';
-      document.getElementById('regist_sel_div').style.display='none';
+  function showLoginForm () {
+      document.getElementById('idpbtndiv').style.display='none';
       document.getElementById('register_div').style.display='none';
-  }
-
-  function showLogin() {
-      document.getElementById('main_sel_div').style.display='none';
+      document.getElementById('main_btn_div').style.display='none';
+      document.getElementById('regist_sel_div').style.display='none';
+      document.getElementById('logformdiv').style.display='block';
       document.getElementById('login_sel_div').style.display='block';
-      document.getElementById('login_div').style.display='block';
-      document.getElementById('regist_sel_div').style.display='none';
-      document.getElementById('register_div').style.display='none';
   }
   
-  function showRegister() {
-      document.getElementById('main_sel_div').style.display='none';
+  function showIdPs () {
+      document.getElementById('logformdiv').style.display='none';
       document.getElementById('login_sel_div').style.display='none';
-      document.getElementById('login_div').style.display='none';
-      document.getElementById('regist_sel_div').style.display='block';
-      document.getElementById('register_div').style.display='block';
+      document.getElementById('register_div').style.display='none';
+      document.getElementById('regist_sel_div').style.display='none';
+      document.getElementById('idpbtndiv').style.display='block';
+      document.getElementById('main_btn_div').style.display='block';
   }
+  
+  function showRegistr () {
+      document.getElementById('logformdiv').style.display='none';
+      document.getElementById('login_sel_div').style.display='none';
+      document.getElementById('idpbtndiv').style.display='none';
+      document.getElementById('main_btn_div').style.display='none';
+      document.getElementById('register_div').style.display='block';
+      document.getElementById('regist_sel_div').style.display='block';
+  }
+
   </script>
 {% endblock %}
 

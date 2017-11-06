@@ -16,6 +16,7 @@
 import logging
 
 from django import shortcuts
+from django.db import transaction
 from django.conf import settings
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
@@ -25,6 +26,11 @@ from horizon import messages
 from horizon.utils import functions as utils
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
+
+from openstack_auth_shib.models import Registration
+from openstack_auth_shib.models import Project
+from openstack_auth_shib.models import EMail
+from openstack_auth_shib.models import PrjRole
 
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
@@ -48,25 +54,36 @@ class DeleteMemberAction(tables.DeleteAction):
     
         try:
             
-            roles_obj = client_factory(request).roles
-            role_assign_obj = client_factory(request).role_assignments
-            users_obj = client_factory(request).users
+            with transaction.atomic():
+                roles_obj = client_factory(request).roles
+                role_assign_obj = client_factory(request).role_assignments
+                
+                arg_dict = {
+                    'project' : request.user.tenant_id,
+                    'user' : obj_id
+                }
+                for r_item in role_assign_obj.list(**arg_dict):
+                    roles_obj.revoke(r_item.role['id'], **arg_dict)
+
+                PrjRole.objects.filter(
+                    registration__userid=obj_id,
+                    project__projectname=request.user.tenant_name
+                ).delete()
             
-            arg_dict = {
-                'project' : request.user.tenant_id,
-                'user' : obj_id
-            }
-            for r_item in role_assign_obj.list(**arg_dict):
-                roles_obj.revoke(r_item.role['id'], **arg_dict)
+            tmpres = EMail.objects.filter(registration__userid=obj_id)
+            member_email = tmpres[0].email if tmpres else None
+            member_name = tmpres[0].registration.username if tmpres else None
             
-            member = users_obj.get(obj_id)
+            tmpres = EMail.objects.filter(registration__userid=request.user.id)
+            admin_email = tmpres[0].email if tmpres else None
+
             noti_params = {
-                'username' : member.name,
-                'admin_address' : users_obj.get(request.user.id).email,
+                'username' : member_name,
+                'admin_address' : admin_email,
                 'project' : request.user.tenant_name
             }
-            notifyUser(request=request, rcpt=member.email, action=MEMBER_REMOVED, context=noti_params,
-                       dst_user_id=member.id)
+            notifyUser(request=request, rcpt=member_email, action=MEMBER_REMOVED, context=noti_params,
+                       dst_user_id=obj_id)
             notifyAdmin(request=request, action=MEMBER_REMOVED_ADM, context=noti_params)
 
             
@@ -96,43 +113,62 @@ class ToggleRoleAction(tables.Action):
                 'user' : obj_id
             }
             
-            users_obj = client_factory(request).users
-            member = users_obj.get(obj_id)
-                        
+            tmpres = EMail.objects.filter(registration__userid=obj_id)
+            member_email = tmpres[0].email if tmpres else None
+
+            tmpres = EMail.objects.filter(registration__userid=request.user.id)
+            admin_email = tmpres[0].email if tmpres else None
+
             datum = data_table.get_object_by_id(obj_id)
             if datum.is_t_admin:
-            
-                if datum.num_of_roles == 1:
-                    missing_default = True
-                    for item in roles_obj.list():
-                        if item.name == DEFAULT_ROLE:
-                            roles_obj.grant(item.id, **arg_dict)
-                            missing_default = False
-                    if missing_default:
-                        raise Exception('Cannot swith to member role')
-                        
-                roles_obj.revoke(t_role_id, **arg_dict)
-                
+
+                with transaction.atomic():
+
+                    PrjRole.objects.filter(
+                        registration__userid=obj_id,
+                        project__projectname=request.user.tenant_name
+                    ).delete()
+
+                    if datum.num_of_roles == 1:
+                        missing_default = True
+                        for item in roles_obj.list():
+                            if item.name == DEFAULT_ROLE:
+                                roles_obj.grant(item.id, **arg_dict)
+                                missing_default = False
+                        if missing_default:
+                            raise Exception('Cannot swith to member role')
+
+                    roles_obj.revoke(t_role_id, **arg_dict)
+
                 noti_params = {
-                    'admin_address' : users_obj.get(request.user.id).email,
+                    'admin_address' : admin_email,
                     'project' : request.user.tenant_name,
                     's_role' : _('Project manager'),
                     'd_role' : _('Project user')
                 }
-                notifyUser(request=request, rcpt=member.email, action=CHANGED_MEMBER_ROLE, context=noti_params,
-                           dst_project_id=request.user.project_id, dst_user_id=member.id)
+                notifyUser(request=request, rcpt=member_email, action=CHANGED_MEMBER_ROLE, context=noti_params,
+                           dst_project_id=request.user.project_id, dst_user_id=obj_id)
             
             else:
-                roles_obj.grant(t_role_id, **arg_dict)
+
+                with transaction.atomic():
+
+                    prjRole = PrjRole()
+                    prjRole.registration = Registration.objects.filter(userid=obj_id)[0]
+                    prjRole.project = Project.objects.get(projectname=request.user.tenant_name)
+                    prjRole.roleid = t_role_id
+                    prjRole.save()
+
+                    roles_obj.grant(t_role_id, **arg_dict)
 
                 noti_params = {
-                    'admin_address' : users_obj.get(request.user.id).email,
+                    'admin_address' : admin_email,
                     'project' : request.user.tenant_name,
                     's_role' : _('Project user'),
                     'd_role' : _('Project manager')
                 }
-                notifyUser(request=request, rcpt=member.email, action=CHANGED_MEMBER_ROLE, context=noti_params,
-                           dst_project_id=request.user.project_id, dst_user_id=member.id)
+                notifyUser(request=request, rcpt=member_email, action=CHANGED_MEMBER_ROLE, context=noti_params,
+                           dst_project_id=request.user.project_id, dst_user_id=obj_id)
 
         except:
             LOG.error("Toggle role error", exc_info=True)

@@ -32,6 +32,7 @@ from openstack_dashboard import api
 
 from .tables import UsersTable, OrphanTable
 from .forms import RenewExpForm
+from .forms import UpdateUserForm
 
 LOG = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ class IndexView(baseViews.IndexView):
 
 class UpdateView(baseViews.UpdateView):
     template_name = 'idmanager/user_manager/update.html'
+    form_class = UpdateUserForm
     submit_url = "horizon:idmanager:user_manager:update"
     success_url = reverse_lazy('horizon:idmanager:user_manager:index')
 
@@ -133,11 +135,14 @@ class CheckOrphansView(tables.DataTableView):
         result = list()
         #
         # TODO improve query
-        #      exclude pre-checked users
         #      use models.Registration.expdate as last expiration date
         #
         active_ids = [ item.registration.regid for item in Expiration.objects.all() ];
         for item in Registration.objects.exclude(regid__in=active_ids):
+
+            if not item.userid:
+                continue
+
             result.append(OrphanData(
                 item.userid,
                 item.username,

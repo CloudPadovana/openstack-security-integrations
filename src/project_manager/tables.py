@@ -28,7 +28,7 @@ from horizon import messages
 from openstack_dashboard import policy
 from openstack_dashboard.dashboards.identity.projects import tables as baseTables
 
-from openstack_auth_shib.models import Project
+from openstack_auth_shib.models import Project, PrjRequest
 from openstack_auth_shib.models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST
 
 LOG = logging.getLogger(__name__)
@@ -62,6 +62,13 @@ class DeleteProjectAction(baseTables.DeleteTenantsAction):
     def delete(self, request, obj_id):
     
         with transaction.atomic():
+
+            for prjreq in PrjRequest.objects.filter(project__projectid=obj_id):
+                if not prjreq.registration.userid:
+                    messages.error(request,
+                        _("Cannot delete project: there are pending registrations"))
+                    raise Exception("Pending registrations")
+
             Project.objects.filter(projectid=obj_id).delete()
             super(DeleteProjectAction, self).delete(request, obj_id)
 

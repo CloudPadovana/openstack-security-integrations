@@ -25,13 +25,15 @@ from django.views.decorators.debug import sensitive_variables
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import PrjRole
+from openstack_auth_shib.models import EMail
 
 from openstack_auth_shib.models import PRJ_PUBLIC,PRJ_PRIVATE
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import OS_SNAME_LEN
 
 from openstack_auth_shib.notifications import notifyAdmin
-from openstack_auth_shib.notifications import bookNotification
+from openstack_auth_shib.notifications import notifyProject
 from openstack_auth_shib.notifications import NEWPRJ_REQ_TYPE
 from openstack_auth_shib.notifications import MEMBER_REQUEST
 
@@ -192,12 +194,22 @@ class ProjectRequestForm(forms.SelfHandlingForm):
                 notifyAdmin(request=self.request, action=NEWPRJ_REQ_TYPE, context=noti_params)
 
             #
-            # Schedule notifications for project managers
+            # Send notifications to project managers
             #
             for prj_item in exstprjlist:
-                bookNotification(MEMBER_REQUEST, request.user.id, request.user.username, \
-                                 prj_item.projectid, prj_item.projectname)
-        
+
+                admin_emails = list()
+                for prj_role in PrjRole.objects.filter(project=prj_item):
+                    for email_obj in EMail.objects.filter(registration=prj_role.registration):
+                        admin_emails.append(email_obj.email)
+
+                noti_params = {
+                    'username' : request.user.username,
+                    'project' : prj_item.projectname
+                }
+                notifyProject(request=request, rcpt=admin_emails, action=MEMBER_REQUEST, 
+                              context=noti_params)
+
         return True
 
 

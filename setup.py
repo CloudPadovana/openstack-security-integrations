@@ -22,7 +22,7 @@ from distutils.command.bdist_rpm import bdist_rpm as _bdist_rpm
 
 pkg_name = 'openstack-security-integrations'
 pkg_version = '1.2.0'
-pkg_release = '4'
+pkg_release = '5'
 
 source_items = "setup.py src config"
 
@@ -155,6 +155,7 @@ logo_list = [
     'src/templates/logoUniPD.png',
     'src/templates/logoGoogle.png',
     'src/templates/logoUsrPwd.png',
+    'src/templates/logoUsrReg.png',
     'src/templates/logoIDEM.png',
     'src/templates/logoINDIGO.png',
     'src/templates/empty.png',

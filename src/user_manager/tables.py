@@ -24,6 +24,9 @@ from horizon import tables
 from openstack_dashboard.dashboards.identity.users import tables as baseTables
 
 from openstack_auth_shib.models import Registration
+from openstack_auth_shib.models import EMail
+from openstack_auth_shib.notifications import notifyUser
+from openstack_auth_shib.notifications import USER_PURGED_TYPE
 from openstack_auth_shib.utils import get_project_managers
 
 from openstack_dashboard.api import keystone as keystone_api
@@ -57,11 +60,24 @@ class DeleteUsersAction(baseTables.DeleteUsersAction):
             raise failure
         
         else:
+            tmpres = EMail.objects.filter(registration__userid=obj_id)
+            user_email = tmpres[0].email if tmpres else None
+            user_name = tmpres[0].registration.username if tmpres else None
 
             with transaction.atomic():
                 Registration.objects.filter(userid=obj_id).delete()
                 super(DeleteUsersAction, self).delete(request, obj_id)
-        
+
+            noti_params = {
+                'username' : user_name
+            }
+            notifyUser(request=request, rcpt=user_email, action=USER_PURGED_TYPE,
+                       context=noti_params, dst_user_id=obj_id)
+
+            #
+            # TODO send notification to prj admins (if available)
+            #
+
 class RenewLink(tables.LinkAction):
     name = "renewexp"
     verbose_name = _("Renew Expiration")

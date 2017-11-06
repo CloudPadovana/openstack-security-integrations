@@ -126,6 +126,16 @@ class Expiration(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     expdate = models.DateTimeField(db_index=True)
 
+class EMail(models.Model):
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
+    email = models.EmailField(max_length=EMAIL_LEN)
+
+class PrjRole(models.Model):
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    roleid = models.CharField(max_length=OS_ID_LEN, null=False)
+    status = models.IntegerField(default=0)
+
 #Temporary data
 class RegRequest(models.Model):
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
@@ -139,6 +149,7 @@ class RegRequest(models.Model):
     contactper = models.CharField(max_length=OS_LNAME_LEN, null=True)
     notes = models.TextField()
 
+#Temporary data
 class PrjRequest(models.Model):
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)

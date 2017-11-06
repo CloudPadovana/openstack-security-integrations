@@ -123,6 +123,7 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoUniPD.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoINDIGO.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoUsrPwd.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoUsrReg.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/empty.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/help-transparent.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/scss/*.less

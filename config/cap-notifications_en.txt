@@ -38,9 +38,30 @@ body: User {{ username }} has been removed from the project {{ project }}
   
   Please, don't reply to this message
 
+[member_forced_added]
+subject: User {{ username }} inserted into {{ project }}
+body: User {{ username }} has been inserted into the project {{ project }} by cloud admin
+  {% if isadmin %}
+  You are the administrator of this project
+  {% endif %}
+  Please, don't reply to this message
+
+[member_forced_removed]
+subject: User {{ username }} removed from {{ project }}
+body: User {{ username }} has been removed from the project {{ project }} by cloud admin
+  
+  Please, don't reply to this message
+
+[project_created_by_admin]
+subject: Created new project {{ project }}
+body: The cloud admin has created the project {{ project }}
+  
+  Please, don't reply to this message
+
 [member_request]
 subject: New request for membership
 body: The user {{ username }} requires to access the project {{ project }}
+  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html-desktop/#ManageProjectMembers
   
   Please, don't reply to this message
 
@@ -111,7 +132,7 @@ body: You have the following pending subscriptions for project {{ project }}:
   {% for req in pendingreqs %}
   * {{ req }}
   {% endfor %} 
-  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html/Registration.html#ManageProjectMembershipRequests
+  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html-desktop/#ManageProjectMembers
   
   Please, don't reply to this message
 
@@ -119,7 +140,7 @@ body: You have the following pending subscriptions for project {{ project }}:
 subject: Subscription request waiting for approval
 body: User {{ username }} requires access to project {{ project }}
   Please, validate the subscription request
-  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html/Registration.html#ManageProjectMembershipRequests
+  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html-desktop/#ManageProjectMembers
   
   Please, don't reply to this message
 
@@ -133,6 +154,18 @@ body: The account for {{ username }} will expire in {{ days }} days.
   * {{ c_admin.1 }}
   {% endfor %}
   {% endif %}
+  
+  Please, don't reply to this message
+
+[user_renewed]
+subject: Account for user {{ username }} has been renewed
+body: The account for {{ username }} has been renewed, the new expiration date is {{ expiration }}.
+  
+  Please, don't reply to this message
+
+[user_purged]
+subject: Account for user {{ username }} has been removed
+body: The account {{ username }} has been removed from Cloud Area Padovana.
   
   Please, don't reply to this message
 
