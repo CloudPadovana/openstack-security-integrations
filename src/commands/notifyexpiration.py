@@ -63,8 +63,8 @@ class Command(BaseCommand):
 
             now = datetime.now()
             noti_table = dict()
-            admin_table = dict()
             user_set = set()
+            prj_set = set()
 
             for days_to_exp in self._get_days_to_exp(config.cron_plan):
 
@@ -84,13 +84,16 @@ class Command(BaseCommand):
 
                     noti_table[days_to_exp].append((username, userid, prjname,))
                     user_set.add(userid)
+                    prj_set.add(prjname)
 
-                    if not admin_table.has_key(prjname):
-                        admin_table[prjname] = list()
-                        for p_role in PrjRole.objects.filter(project__projectname=prjname):
-                            admin_table[prjname].append(p_role.registration.userid)
-                            user_set.add(p_role.registration.userid)
-                        
+            admin_table = dict()
+            for p_role in PrjRole.objects.filter(project__projectname__in=prj_set):
+                prjname = p_role.project.projectname
+                if not admin_table.has_key(prjname):
+                    admin_table[prjname] = list()
+                admin_table[prjname].append(p_role.registration.userid)
+                user_set.add(p_role.registration.userid)
+
             mail_table = dict()
             for email_item in EMail.objects.filter(registration__userid__in=user_set):
                 mail_table[email_item.registration.userid] = email_item.email
@@ -111,6 +114,9 @@ class Command(BaseCommand):
                             'days' : days_to_exp,
                             'contacts' : contact_table[prjname]
                         }
+                        #
+                        # TODO missing log of notifications
+                        #
                         noti_sbj, noti_body = notification_render(USER_EXP_TYPE, noti_params)
                         notifyUsers(mail_table[userid], noti_sbj, noti_body)
                         LOG.info("Notified %s for %s" % (username, prjname))
