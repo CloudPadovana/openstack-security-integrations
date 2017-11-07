@@ -26,6 +26,7 @@ from horizon import forms
 
 from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import EMail
 
 from openstack_auth_shib.models import RSTATUS_PENDING
 from openstack_auth_shib.models import PRJ_GUEST
@@ -43,6 +44,7 @@ from .forms import NewProjectCheckForm
 from .forms import NewProjectRejectForm
 from .forms import GuestCheckForm
 from .forms import RenewAdminForm
+from .forms import DetailsForm
 
 LOG = logging.getLogger(__name__)
 
@@ -305,4 +307,80 @@ class RenewAdminView(forms.ModalFormView):
         return { 
             'requestid' : self.kwargs['requestid']
         }
+
+class DetailsView(forms.ModalFormView):
+    form_class = DetailsForm
+    template_name = 'idmanager/registration_manager/details.html'
+    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            try:
+                tmpTuple = self.kwargs['requestid'].split(':')
+                regid = int(tmpTuple[0])
+                prjname = tmpTuple[1] if len(tmpTuple) > 1 else None
+
+                tmpdict = dict()
+                tmpdict['requestid'] = self.kwargs['requestid']
+                tmpdict['regid'] = regid
+                tmpdict['newprojects'] = list()
+                tmpdict['memberof'] = list()
+                reg_item = None
+
+                tmpres = RegRequest.objects.filter(registration__regid=regid)
+                if len(tmpres):
+                    reg_item = tmpres[0].registration
+                    tmpdict['extaccount'] = tmpres[0].externalid
+                    tmpdict['contact'] = tmpres[0].contactper
+                    tmpdict['email'] = tmpres[0].email
+                    tmpdict['notes'] = tmpres[0].notes
+
+                    for prj_req in PrjRequest.objects.filter(registration__regid=regid):
+                        if prj_req.project.projectid:
+                            tmpdict['memberof'].append(prj_req.project.projectname)
+                        else:
+                            tmpdict['newprojects'].append(prj_req.project.projectname)
+
+                elif prjname:
+                    q_args = {
+                        'registration__regid' : regid,
+                        'project__projectname' : prjname
+                    }
+                    prj_req = PrjRequest.objects.filter(**q_args)[0]
+                    reg_item = prj_req.registration
+
+                    tmpdict['notes'] = prj_req.notes
+                    if prj_req.project.projectid:
+                        tmpdict['memberof'].append(prjname)
+                    else:
+                        tmpdict['newprojects'].append(prjname)
+
+                    tmpem = EMail.objects.filter(registration__regid=regid)
+                    tmpdict['email'] = tmpem[0].email if len(tmpem) else "-"
+
+                if reg_item:
+                    tmpdict['username'] = reg_item.username
+                    tmpdict['fullname'] = reg_item.givenname + " " + reg_item.sn
+                    tmpdict['organization'] = reg_item.organization
+                    tmpdict['phone'] = reg_item.phone
+
+                self._object = tmpdict
+
+            except Exception:
+                LOG.error("Registration error", exc_info=True)
+                redirect = reverse_lazy("horizon:idmanager:registration_manager:index")
+                exceptions.handle(self.request, _('Unable to retrieve details.'), redirect=redirect)
+
+        return self._object
+
+    def get_initial(self):
+        return { 'requestid' : self.kwargs['requestid'] }
+
+    def get_context_data(self, **kwargs):
+        context = super(DetailsView, self).get_context_data(**kwargs)
+        context.update(self.get_object())
+        return context
+
+
+
 

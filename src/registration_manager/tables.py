@@ -143,6 +143,12 @@ class RenewAdminLink(tables.LinkAction):
     def allowed(self, request, datum):
         return datum.code == RegistrData.PRJADM_RENEW
 
+class DetailsLink(tables.LinkAction):
+    name = "detailslink"
+    verbose_name = _("Details")
+    url = "horizon:idmanager:registration_manager:details"
+    classes = ("ajax-modal", "btn-edit")
+
 def get_description(data):
     if data.code == RegistrData.NEW_USR_NEW_PRJ:
         return _('New user and new project')
@@ -181,7 +187,8 @@ class OperationTable(tables.DataTable):
                        ForceRejLink,
                        GuestApprLink,
                        GuestRejLink,
-                       RenewAdminLink)
+                       RenewAdminLink,
+                       DetailsLink)
 
     def get_object_id(self, datum):
         return datum.requestid

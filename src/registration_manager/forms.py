@@ -832,3 +832,15 @@ class RenewAdminForm(forms.SelfHandlingForm):
         
         return True
 
+class DetailsForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(DetailsForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['requestid'] = forms.CharField(widget=HiddenInput)
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+        return True
+
+

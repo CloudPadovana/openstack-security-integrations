@@ -75,6 +75,8 @@ template_list = [
 ]
 
 reg_templ_list = [
+    'src/templates/registration_manager/_details.html',
+    'src/templates/registration_manager/details.html',
     'src/templates/registration_manager/_forced.html',
     'src/templates/registration_manager/forced.html',
     'src/templates/registration_manager/_newproject.html',
