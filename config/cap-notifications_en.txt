@@ -145,13 +145,13 @@ body: User {{ username }} requires access to project {{ project }}
   Please, don't reply to this message
 
 [user_expiring]
-subject: Account for user {{ username }} is going to expire
-body: The account for {{ username }} will expire in {{ days }} days.
+subject: Affiliation to {{ project }} is going to expire
+body: The affiliation for {{ username }} to {{ project }} will expire in {{ days }} days.
   Please contact the cloud administrators for a renewal
   {% if contacts %}
   Contacts:
   {% for c_admin in contacts %}
-  * {{ c_admin.1 }}
+  * {{ c_admin }}
   {% endfor %}
   {% endif %}
   
