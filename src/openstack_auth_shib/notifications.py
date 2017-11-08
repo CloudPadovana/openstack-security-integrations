@@ -77,13 +77,14 @@ MANAGERS_RCPT = '__MANAGERS__'
 
 class NotificationTemplate():
 
-    def __init__(self, sbj, body):
+    def __init__(self, sbj, body, log_tpl):
         self.subject = DjangoTemplate(sbj)
         self.body = DjangoTemplate(body)
+        self.log_tpl = DjangoTemplate(log_tpl)
     
     def render(self, ctx_dict):
         ctx = DjangoContext(ctx_dict)
-        return (self.subject.render(ctx), self.body.render(ctx))
+        return (self.subject.render(ctx), self.body.render(ctx), self.log_tpl.render(ctx))
 
 
 def _log_notify(rcpt, action, context, locale='en', request=None,
@@ -121,9 +122,16 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
                       dst_user_id=dst_user_id, dst_project_id=dst_project_id,
                       rcpt=rcpt, action=action, context=context))
 
-    subject, body = notification_render(action, context, locale)
+    context['log'] = {
+        'user_id': user_id,
+        'project_id': project_id,
+        'user_name': user_name,
+        'project_name': project_name,
+        'dst_user_id': dst_user_id,
+        'dst_project_id': dst_project_id,
+    }
 
-    msg = ""
+    subject, body, msg = notification_render(action, context, locale)
 
     if getattr(settings, 'LOG_MANAGER_KEEP_NOTIFICATIONS_EMAIL', True):
         to = rcpt
@@ -194,7 +202,7 @@ def notification_render(msg_type, ctx_dict, locale='en'):
     notify_tpl = TEMPLATE_TABLE[locale].get(msg_type, None)
     if notify_tpl:
         return notify_tpl.render(ctx_dict)
-    return (None, None)
+    return (None, None, None)
 
 def load_templates():
 
@@ -224,7 +232,8 @@ def load_templates():
             
                 sbj = parser.get(sect, 'subject') if parser.has_option(sect, 'subject') else "No subject"
                 body = parser.get(sect, 'body') if parser.has_option(sect, 'body') else "No body"
-                TEMPLATE_TABLE[locale][sect] = NotificationTemplate(sbj, body)
+                log_tpl = parser.get(sect, 'LOG') if parser.has_option(sect, 'LOG') else "No log"
+                TEMPLATE_TABLE[locale][sect] = NotificationTemplate(sbj, body, log_tpl)
         
     except:
         #
