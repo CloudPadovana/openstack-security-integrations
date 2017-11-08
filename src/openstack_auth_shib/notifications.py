@@ -144,7 +144,8 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
     else:
         notify(rcpt, subject, body)
 
-    MESSAGES.info(request, "Notification sent.")
+    if request is not None:
+        MESSAGES.info(request, "Notification sent.")
 
 
 def warn_if_missing(arg_name):
