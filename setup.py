@@ -145,6 +145,7 @@ idpreq_templ_list = [
 
 log_templ_list = [
     'src/templates/log_manager/log_manager.html',
+    'src/templates/log_manager/detail.html',
 ]
 
 logo_list = [

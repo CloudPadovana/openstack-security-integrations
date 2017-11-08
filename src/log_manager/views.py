@@ -20,14 +20,20 @@
 import logging
 import datetime
 
+from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from horizon import exceptions
 from horizon import tables
 from horizon import forms
 from horizon import messages
+from horizon import views
+from horizon.utils import memoized
+from openstack_dashboard import api
 
 from openstack_auth_shib.models import Log
+from openstack_auth_shib.notifications import LOG_TYPE_EMAIL
 from .tables import MainTable
 
 
@@ -170,3 +176,58 @@ class MainView(tables.DataTableView):
         context['form'] = self.date_range.form
 
         return context
+
+
+class DetailView(views.HorizonTemplateView):
+    template_name = 'idmanager/log_manager/detail.html'
+    page_title = _("Log detail")
+
+    def get_context_data(self, **kwargs):
+        context = super(DetailView, self).get_context_data(**kwargs)
+        log = self.get_data()
+
+        context["timestamp"] = getattr(log, "timestamp")
+        context["message"] = self.get_message(log)
+        context["action"] = getattr(log, "action")
+
+        if getattr(log, "log_type") == LOG_TYPE_EMAIL:
+            context["email"] = self.get_email(log)
+
+        context["user_id"] = getattr(log, "user_id", _("None"))
+        context["project_id"] = getattr(log, "project_id", _("None"))
+        context["user_name"] = getattr(log, "user_name", _("None"))
+        context["project_name"] = getattr(log, "project_name", _("None"))
+
+        context["dst_user_id"] = getattr(log, "dst_user_id", _("None"))
+        context["dst_project_id"] = getattr(log, "dst_project_id", _("None"))
+        context["dst_user_name"] = get_user_name(self.request, getattr(log, "dst_user_id"))
+        context["dst_project_name"] = get_project_name(self.request, getattr(log, "dst_project_id"))
+
+        context["url"] = self.get_redirect_url()
+        return context
+
+    @memoized.memoized_method
+    def get_message(self, log):
+        return log.message.splitlines()[0]
+
+    @memoized.memoized_method
+    def get_email(self, log):
+        if getattr(settings, 'LOG_MANAGER_KEEP_NOTIFICATIONS_EMAIL', True):
+            return log.message.splitlines()[2:]
+        else:
+            return None
+
+    @memoized.memoized_method
+    def get_data(self):
+        try:
+            log_id = self.kwargs['log_id']
+            log = Log.objects.get(id=log_id)
+        except Exception:
+            redirect = self.get_redirect_url()
+            exceptions.handle(self.request,
+                              _('Unable to retrieve log details.'),
+                              redirect=redirect)
+        return log
+
+    def get_redirect_url(self):
+        return reverse('horizon:idmanager:log_manager:index')

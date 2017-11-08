@@ -39,6 +39,13 @@ class LogFilterAction(tables.FilterAction):
     )
 
 
+def format_message(row):
+    msg = row.message
+
+    ret = msg.splitlines()[0]
+    return ret
+
+
 def format_recipient(row):
     dst_user_id = row.dst_user_id
     dst_project_id = row.dst_project_id
@@ -94,12 +101,16 @@ class MainTable(tables.DataTable):
         verbose_name=_('Project'),
     )
 
+    message = tables.Column(
+        transform=format_message,
+        verbose_name=_('Message'),
+        link="horizon:idmanager:log_manager:detail",
+    )
+
     recipient = tables.Column(
         transform=format_recipient,
         verbose_name=_('Target'),
     )
-
-    message = tables.Column('message', verbose_name=_('Message'))
 
     class Meta(object):
         name = "logs"
