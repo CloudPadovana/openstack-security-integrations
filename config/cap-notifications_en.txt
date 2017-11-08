@@ -157,6 +157,13 @@ body: The affiliation for {{ username }} to {{ project }} will expire in {{ days
   
   Please, don't reply to this message
 
+[user_need_renew]
+subject: User {{ username }} requires renewal
+body: The affiliation of {{ username }} to {{ project }} is going to expire.
+  Please, renew the affiliation or the user will be removed from the project
+  
+  Please, don't reply to this message
+
 [user_renewed]
 subject: Account for user {{ username }} has been renewed
 body: The account for {{ username }} has been renewed, the new expiration date is {{ expiration }}.
