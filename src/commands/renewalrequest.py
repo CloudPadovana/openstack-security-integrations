@@ -95,13 +95,16 @@ class Command(BaseCommand):
                     mail_table[req_pair[1].projectname] = tmpl
 
             for req_pair, is_admin in new_reqs.items():
-                noti_params = {
-                    'username' : req_pair[0].username,
-                    'project' : req_pair[1].projectname
-                }
-                notifyProject(mail_table[req_pair[1].projectname], USER_NEED_RENEW, noti_params,
-                              dst_user_id=req_pair[0].userid, dst_project_id=req_pair[1].projectid)
-
+                try:
+                    noti_params = {
+                        'username' : req_pair[0].username,
+                        'project' : req_pair[1].projectname
+                    }
+                    notifyProject(mail_table[req_pair[1].projectname], USER_NEED_RENEW, noti_params,
+                                  user_id=req_pair[0].userid, project_id=req_pair[1].projectid,
+                                  dst_project_id=req_pair[1].projectid)
+                except:
+                    LOG.error("Cannot notify %s" % req_pair[0].username, exc_info=True)
         except:
             LOG.error("Renewal request failed", exc_info=True)
             raise CommandError("Renewal request failed")

@@ -23,8 +23,7 @@ from django.core.management.base import BaseCommand, CommandError
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRole
-from openstack_auth_shib.notifications import notification_render
-from openstack_auth_shib.notifications import notify as notifyUsers
+from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import USER_EXP_TYPE
 
 from horizon.management.commands.cronscript_utils import build_option_list
@@ -81,8 +80,9 @@ class Command(BaseCommand):
                     username = exp_item.registration.username
                     userid = exp_item.registration.userid
                     prjname = exp_item.project.projectname
+                    prjid = exp_item.project.projectid
 
-                    noti_table[days_to_exp].append((username, userid, prjname,))
+                    noti_table[days_to_exp].append((username, userid, prjname, prjid))
                     user_set.add(userid)
                     prj_set.add(prjname)
 
@@ -106,7 +106,7 @@ class Command(BaseCommand):
                         contact_table[prjname].append(mail_table[userid])
 
             for days_to_exp, noti_list in noti_table.items():
-                for username, userid, prjname in noti_list:
+                for username, userid, prjname, prjid in noti_list:
                     try:
                         noti_params = {
                             'username' : username,
@@ -114,12 +114,8 @@ class Command(BaseCommand):
                             'days' : days_to_exp,
                             'contacts' : contact_table[prjname]
                         }
-                        #
-                        # TODO missing log of notifications
-                        #
-                        noti_sbj, noti_body = notification_render(USER_EXP_TYPE, noti_params)
-                        notifyUsers(mail_table[userid], noti_sbj, noti_body)
-                        LOG.info("Notified %s for %s" % (username, prjname))
+                        notifyUser(mail_table[userid], USER_EXP_TYPE, noti_params,
+                                   user_id=userid, project_id=prjid, dst_user_id=userid)
                     except:
                         LOG.error("Cannot notify %s" % username, exc_info=True)
                 
