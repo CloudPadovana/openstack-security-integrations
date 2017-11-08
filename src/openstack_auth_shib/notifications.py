@@ -122,12 +122,17 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
                       rcpt=rcpt, action=action, context=context))
 
     subject, body = notification_render(action, context, locale)
-    to = rcpt
-    if not type(to) is ListType:
-        to = [to, ]
-    to = ', '.join(map(str, to))
 
-    msg = "To: {to}\nSubject: {subject}\n\n{body}".format(to=to, subject=subject, body=body)
+    msg = ""
+
+    if getattr(settings, 'LOG_MANAGER_KEEP_NOTIFICATIONS_EMAIL', True):
+        to = rcpt
+        if not type(to) is ListType:
+            to = [to, ]
+        to = ', '.join(map(str, to))
+
+        msg = "{msg}\n\nTo: {to}\nSubject: {subject}\n\n{body}".format(
+            msg=msg, to=to, subject=subject, body=body)
 
     Log.objects.log_action(
         log_type=LOG_TYPE_EMAIL,
