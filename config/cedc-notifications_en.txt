@@ -1,8 +1,8 @@
 [changed_member_priv]
 subject: Your privileges for project {{ project }} have been changed
 body: Your role for project {{ project }} has been changed from {{ s_role }} to {{ d_role }}
-  For further information please contact {{ admin_address }}
-  
+  {% if admin_address %}For further information please contact {{ admin_address }}
+  {% endif %}
   Please, don't reply to this message
 
 [first_registration_ok]
@@ -159,7 +159,7 @@ body: The affiliation for {{ username }} to {{ project }} will expire in {{ days
 
 [user_need_renew]
 subject: User {{ username }} requires renewal
-body: the affiliation of {{ username }} to {{ project }} is going to expire.
+body: The affiliation of {{ username }} to {{ project }} is going to expire.
   Please, renew the affiliation or the user will be removed from the project
   
   Please, don't reply to this message
@@ -167,6 +167,12 @@ body: the affiliation of {{ username }} to {{ project }} is going to expire.
 [user_renewed]
 subject: Account for user {{ username }} has been renewed
 body: The account for {{ username }} has been renewed, the new expiration date is {{ expiration }}.
+  
+  Please, don't reply to this message
+
+[user_expired]
+subject: Affiliation to {{ project }} is expired
+body: The affiliation for {{ username }} to {{ project }} is expired.
   
   Please, don't reply to this message
 

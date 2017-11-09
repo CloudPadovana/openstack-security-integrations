@@ -60,6 +60,7 @@ SUBSCR_WAIT_TYPE = 'subscription_waiting_approval'
 USER_EXP_TYPE = 'user_expiring'
 USER_NEED_RENEW = 'user_need_renew'
 USER_RENEWED_TYPE = 'user_renewed'
+USER_EXPIRED_TYPE = 'user_expired'
 USER_PURGED_TYPE = 'user_purged'
 NEWPRJ_BY_ADM = 'project_created_by_admin'
 
