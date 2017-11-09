@@ -29,6 +29,7 @@ from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 
 from openstack_auth_shib.notifications import notifyProject
+from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import USER_NEED_RENEW
 
 from horizon.management.commands.cronscript_utils import build_option_list
@@ -100,9 +101,15 @@ class Command(BaseCommand):
                         'username' : req_pair[0].username,
                         'project' : req_pair[1].projectname
                     }
-                    notifyProject(mail_table[req_pair[1].projectname], USER_NEED_RENEW, noti_params,
-                                  user_id=req_pair[0].userid, project_id=req_pair[1].projectid,
-                                  dst_project_id=req_pair[1].projectid)
+                    if is_admin:
+                        notifyAdmin(USER_NEED_RENEW, noti_params, user_id=req_pair[0].userid,
+                                    project_id=req_pair[1].projectid,
+                                    dst_project_id=req_pair[1].projectid)
+                    else:
+                        notifyProject(mail_table[req_pair[1].projectname], USER_NEED_RENEW,
+                                      noti_params, user_id=req_pair[0].userid,
+                                      project_id=req_pair[1].projectid,
+                                      dst_project_id=req_pair[1].projectid)
                 except:
                     LOG.error("Cannot notify %s" % req_pair[0].username, exc_info=True)
         except:
