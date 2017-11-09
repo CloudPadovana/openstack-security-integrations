@@ -110,6 +110,32 @@ class DateRange(object):
         return self.form
 
 
+def get_project_name(request, project_id):
+    project_name = None
+    if project_id:
+        try:
+            project = api.keystone.tenant_get(request, project_id)
+            project_name = project.name
+        except Exception as e:
+            msg = ('Failed to get project %(project_id)s: %(reason)s' %
+                   {'project_id': project_id, 'reason': e})
+            LOG.error(msg)
+    return project_name
+
+
+def get_user_name(request, user_id):
+    user_name = None
+    if user_id:
+        try:
+            user = api.keystone.user_get(request, user_id)
+            user_name = user.name
+        except Exception as e:
+            msg = ('Failed to get user %(user_id)s: %(reason)s' %
+                   {'user_id': user_id, 'reason': e})
+            LOG.error(msg)
+    return user_name
+
+
 class MainView(tables.DataTableView):
     table_class = MainTable
     template_name = 'idmanager/log_manager/log_manager.html'
@@ -125,7 +151,18 @@ class MainView(tables.DataTableView):
         filters['timestamp__gte'] = start
         filters['timestamp__lte'] = end
 
-        logs = Log.objects.filter(**filters)
+        values = Log.objects.filter(**filters)
+        for log in values:
+            if not log.user_name:
+                log.user_name = get_user_name(self.request, getattr(log, "user_id"))
+            if not log.project_name:
+                log.project_name = get_project_name(self.request, getattr(log, "project_id"))
+
+            log.dst_user_name = get_user_name(self.request, getattr(log, "dst_user_id"))
+            log.dst_project_name = get_project_name(self.request, getattr(log, "dst_project_id"))
+
+            logs.append(log)
+
         return logs
 
     def get_context_data(self, **kwargs):

@@ -42,31 +42,29 @@ class LogFilterAction(tables.FilterAction):
 def format_recipient(row):
     dst_user_id = row.dst_user_id
     dst_project_id = row.dst_project_id
+    dst_user_name = row.dst_user_name
+    dst_project_name = row.dst_project_name
 
-    ret = ""
-    if dst_project_id and dst_user_id:
-        ret = "USER %s of PROJECT %s" % (dst_user_id, dst_project_id)
-    elif dst_user_id and not dst_project_id:
-        ret = "USER %s" % dst_user_id
-    elif dst_project_id and not dst_user_id:
-        ret = "PROJECT %s" % dst_project_id
-    else:
-        ret = "ADMIN"
-    return ret
+    ret = []
+    if dst_user_id:
+        ret.append("USER {user_name}".format(user_name=dst_user_name))
+    if dst_project_id:
+        ret.append("PROJECT {project_name}".format(project_name=dst_project_name))
+
+    if ret:
+        return ", ".join(ret)
+
+    return "Cloud Admin"
 
 
 def _format_name_id(name, id):
-    ret = []
+    ret = "Undefined"
 
-    if name is not None:
-        ret.extend(["%s" % name, ])
-    if id is not None:
-        ret.extend(["(%s)" % id, ])
+    if name:
+        ret = name
+    elif id:
+        ret = "(%s)" % id
 
-    if not ret:
-        ret = "Undefined"
-    else:
-        ret = " ".join(ret)
     return ret
 
 
@@ -98,7 +96,7 @@ class MainTable(tables.DataTable):
 
     recipient = tables.Column(
         transform=format_recipient,
-        verbose_name=_('Recipient'),
+        verbose_name=_('Target'),
     )
 
     message = tables.Column('message', verbose_name=_('Message'))
