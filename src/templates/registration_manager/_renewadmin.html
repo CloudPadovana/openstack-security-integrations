@@ -23,16 +23,32 @@
 {% block form_id %}renew_project_admin_form{% endblock %}
 {% block form_action %}
     {% if action == 'accept' %}
-        {% url 'horizon:idmanager:registration_manager:renewadmin' requestid %}
+        {% if is_admin %}
+            {% url 'horizon:idmanager:registration_manager:renewadmin' requestid %}
+        {% else %}
+            {% url 'horizon:idmanager:registration_manager:forcedrenew' requestid %}
+        {% endif %}
     {% else %}
-        {% url 'horizon:idmanager:registration_manager:discardadmin' requestid %}
+        {% if is_admin %}
+            {% url 'horizon:idmanager:registration_manager:discardadmin' requestid %}
+        {% else %}
+            {% url 'horizon:idmanager:registration_manager:discardmember' requestid %}
+        {% endif %}
     {% endif %}
 {% endblock %}
 {% block modal-header %}
     {% if action == 'accept' %}
-        {% trans "Renew project admin" %}
+        {% if is_admin %}
+            {% trans "Renew project admin" %}
+        {% else %}
+            {% trans "Forced renew project member" %}
+        {% endif %}
     {% else %}
-        {% trans "Discard project admin" %}
+        {% if is_admin %}
+            {% trans "Discard project admin" %}
+        {% else %}
+            {% trans "Discard project meber" %}
+        {% endif %}
     {% endif %}
 {% endblock %}
 
@@ -45,9 +61,17 @@
 <div class="right">
     <h3>{% trans "Description" %}:</h3>
 {% if action == 'accept' %}
-    <p>{% trans "From here you can renew the project admin." %}</p>
+    {% if is_admin %}
+        <p>{% trans "From here you can renew the project admin." %}</p>
+    {% else %}
+        <p>{% trans "From here you can renew the project member." %}</p>
+    {% endif %}
 {% else %}
-    <p>{% trans "From here you can discard the project admin." %}</p>
+    {% if is_admin %}
+        <p>{% trans "From here you can discard the project admin." %}</p>
+    {% else %}
+        <p>{% trans "From here you can discard the project member." %}</p>
+    {% endif %}
 {% endif %}
 </div>
 {% endblock %}

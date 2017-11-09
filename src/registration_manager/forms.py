@@ -59,6 +59,7 @@ from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
+from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PRJ_GUEST
 
 from openstack_auth_shib.models import OS_LNAME_LEN
@@ -799,7 +800,7 @@ class RenewAdminForm(forms.SelfHandlingForm):
                 prj_reqs = PrjRequest.objects.filter(
                     registration__regid = regid,
                     project__projectname = usr_and_prj[1],
-                    flowstatus = PSTATUS_RENEW_ADMIN
+                    flowstatus__in = [ PSTATUS_RENEW_ADMIN, PSTATUS_RENEW_MEMB ]
                 )
                 
                 if len(prj_reqs) == 0:

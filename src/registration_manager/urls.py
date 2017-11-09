@@ -39,6 +39,8 @@ urlpatterns = patterns(prefix,
     url(r'^(?P<requestid>[^/]+)/guestapprove/$', views.GuestApproveView.as_view(), 
         name='guestapprove'),
     url(r'^(?P<requestid>[^/]+)/renewadmin/$', views.RenewAdminView.as_view(), 
-        name='renewadmin')
+        name='renewadmin'),
+    url(r'^(?P<requestid>[^/]+)/forcedrenew/$', views.ForcedRenewView.as_view(), 
+        name='forcedrenew')
     )
 

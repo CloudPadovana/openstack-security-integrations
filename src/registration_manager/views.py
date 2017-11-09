@@ -81,11 +81,13 @@ class MainView(tables.DataTableView):
                 elif prjReq.flowstatus == PSTATUS_RENEW_MEMB:
 
                     rData.code = RegistrData.USR_RENEW
+                    rData.project = prjReq.project.projectname
                     requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
 
                 elif prjReq.flowstatus == PSTATUS_RENEW_ADMIN:
 
                     rData.code = RegistrData.PRJADM_RENEW
+                    rData.project = prjReq.project.projectname
                     requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
 
                 elif prjReq.project.projectid:
@@ -301,12 +303,24 @@ class RenewAdminView(forms.ModalFormView):
         context = super(RenewAdminView, self).get_context_data(**kwargs)
         context['requestid'] = self.kwargs['requestid']
         context['action'] = 'accept'
+        context['is_admin'] = True
         return context
         
     def get_initial(self):
         return { 
-            'requestid' : self.kwargs['requestid']
+            'requestid' : self.kwargs['requestid'],
+            'expiration' : datetime.now() + timedelta(365)
         }
+
+class ForcedRenewView(RenewAdminView):
+    form_class = RenewAdminForm
+    template_name = 'idmanager/registration_manager/renewadmin.html'
+    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+
+    def get_context_data(self, **kwargs):
+        context = super(ForcedRenewView, self).get_context_data(**kwargs)
+        context['is_admin'] = False
+        return context
 
 class DetailsView(forms.ModalFormView):
     form_class = DetailsForm
