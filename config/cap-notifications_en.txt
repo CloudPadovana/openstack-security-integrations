@@ -165,8 +165,9 @@ body: The affiliation of {{ username }} to {{ project }} is going to expire.
   Please, don't reply to this message
 
 [user_renewed]
-subject: Account for user {{ username }} has been renewed
-body: The account for {{ username }} has been renewed, the new expiration date is {{ expiration }}.
+subject: Affiliation to {{ project }} has been renewed
+body: The affiliation for {{ username }} to {{ project }} has been renewed.
+  The new expiration date is {{ expiration }}.
   
   Please, don't reply to this message
 
