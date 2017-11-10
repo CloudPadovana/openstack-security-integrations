@@ -117,6 +117,10 @@ class PreCheckForm(forms.SelfHandlingForm):
             required=True,
             max_length=OS_LNAME_LEN
         )
+
+        init_values = kwargs['initial'] if 'initial' in kwargs else dict()
+        if 'extaccount' in init_values and init_values['extaccount']:
+            self.fields['username'].widget = forms.TextInput(attrs={'readonly': 'readonly'})
         
         self.expiration = datetime.now() + timedelta(365)
 
@@ -147,11 +151,13 @@ class PreCheckForm(forms.SelfHandlingForm):
 
                 #
                 # Mapping of external accounts
-                #                
+                #
+                is_local = True
                 if reg_request.externalid:
                     mapping = UserMapping(globaluser=reg_request.externalid,
                                     registration=reg_request.registration)
                     mapping.save()
+                    is_local = False
                     LOG.info("Registered external account %s" % reg_request.externalid)
                     
                 #
@@ -191,7 +197,8 @@ class PreCheckForm(forms.SelfHandlingForm):
                                                     email=user_email,
                                                     enabled=True)
                         
-                    registration.username = data['username']
+                    if is_local:
+                        registration.username = data['username']
                     registration.expdate = self.expiration
                     registration.userid = kuser.id
                     registration.save()

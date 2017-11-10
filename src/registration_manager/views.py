@@ -158,7 +158,8 @@ class PreCheckView(AbstractCheckView):
     def get_initial(self):
         return {
             'regid' : self.get_object().registration.regid,
-            'username' : self.get_object().registration.username
+            'username' : self.get_object().registration.username,
+            'extaccount' : self.get_object().externalid
         }
 
 class GrantAllView(AbstractCheckView):
@@ -175,6 +176,7 @@ class GrantAllView(AbstractCheckView):
         return {
             'regid' : self.get_object().registration.regid,
             'username' : self.get_object().registration.username,
+            'extaccount' : self.get_object().externalid,
             'expiration' : datetime.now() + timedelta(365)
         }
 
