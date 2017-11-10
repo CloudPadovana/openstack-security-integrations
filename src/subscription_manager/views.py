@@ -48,7 +48,8 @@ class PrjReqItem:
         self.fullname = prjReq.registration.givenname + " " + prjReq.registration.sn
         self.notes = prjReq.notes
         self.status = prjReq.flowstatus
-    
+        self.organization = prjReq.registration.organization
+        self.phone = prjReq.registration.phone
 
 class IndexView(tables.DataTableView):
     table_class = SubscriptionTable

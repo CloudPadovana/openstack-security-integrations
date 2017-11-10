@@ -59,6 +59,7 @@ from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
+from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PRJ_GUEST
 
 from openstack_auth_shib.models import OS_LNAME_LEN
@@ -116,6 +117,10 @@ class PreCheckForm(forms.SelfHandlingForm):
             required=True,
             max_length=OS_LNAME_LEN
         )
+
+        init_values = kwargs['initial'] if 'initial' in kwargs else dict()
+        if 'extaccount' in init_values and init_values['extaccount']:
+            self.fields['username'].widget = forms.TextInput(attrs={'readonly': 'readonly'})
         
         self.expiration = datetime.now() + timedelta(365)
 
@@ -146,11 +151,13 @@ class PreCheckForm(forms.SelfHandlingForm):
 
                 #
                 # Mapping of external accounts
-                #                
+                #
+                is_local = True
                 if reg_request.externalid:
                     mapping = UserMapping(globaluser=reg_request.externalid,
                                     registration=reg_request.registration)
                     mapping.save()
+                    is_local = False
                     LOG.info("Registered external account %s" % reg_request.externalid)
                     
                 #
@@ -190,7 +197,8 @@ class PreCheckForm(forms.SelfHandlingForm):
                                                     email=user_email,
                                                     enabled=True)
                         
-                    registration.username = data['username']
+                    if is_local:
+                        registration.username = data['username']
                     registration.expdate = self.expiration
                     registration.userid = kuser.id
                     registration.save()
@@ -799,7 +807,7 @@ class RenewAdminForm(forms.SelfHandlingForm):
                 prj_reqs = PrjRequest.objects.filter(
                     registration__regid = regid,
                     project__projectname = usr_and_prj[1],
-                    flowstatus = PSTATUS_RENEW_ADMIN
+                    flowstatus__in = [ PSTATUS_RENEW_ADMIN, PSTATUS_RENEW_MEMB ]
                 )
                 
                 if len(prj_reqs) == 0:
@@ -831,4 +839,16 @@ class RenewAdminForm(forms.SelfHandlingForm):
             return False
         
         return True
+
+class DetailsForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(DetailsForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['requestid'] = forms.CharField(widget=HiddenInput)
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+        return True
+
 

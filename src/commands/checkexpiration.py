@@ -22,6 +22,13 @@ from django.core.management.base import BaseCommand, CommandError
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import EMail
+from openstack_auth_shib.models import PrjRole
+
+from openstack_auth_shib.notifications import notifyUser
+from openstack_auth_shib.notifications import notifyAdmin
+from openstack_auth_shib.notifications import USER_EXPIRED_TYPE
+from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
 
 from horizon.management.commands.cronscript_utils import build_option_list
 from horizon.management.commands.cronscript_utils import get_prjman_roleid
@@ -53,9 +60,6 @@ class Command(BaseCommand):
                                             cacert=config.cron_ca,
                                             auth_url=config.cron_kurl)
 
-            exp_date = datetime.now() - timedelta(config.cron_defer)
-            exp_members = Expiration.objects.filter(expdate__lt=exp_date)
-
             prjman_roleid = get_prjman_roleid(keystone_client)
             cloud_adminid = keystone_client.auth_ref.user_id
 
@@ -65,60 +69,62 @@ class Command(BaseCommand):
 
         updated_prjs = set()
 
-        for mem_item in exp_members:
+        exp_date = datetime.now() - timedelta(config.cron_defer)
 
-            updated_prjs.add(mem_item.project.projectid)
-            
-            LOG.debug("Expired %s for %s" % \
-                    (mem_item.registration.username, mem_item.project.projectname))
-            
+        for mem_item in Expiration.objects.filter(expdate__lt=exp_date):
+
+            username = mem_item.registration.username
+            userid = mem_item.registration.userid
+            prjname = mem_item.project.projectname
+            prjid = mem_item.project.projectid
+
+            updated_prjs.add(prjid)
+
             try:
                 with transaction.atomic():
-                    
+
+                    tmpres = EMail.objects.filter(registration=mem_item.registration)
+                    user_mail = tmpres[0].email if len(tmpres) else None
+
                     q_args = {
                         'registration' : mem_item.registration,
                         'project' : mem_item.project
                     }
                     Expiration.objects.filter(**q_args).delete()
                     PrjRequest.objects.filter(**q_args).delete()
+                    PrjRole.objects.filter(**q_args).delete()
 
-                    arg_dict = {
-                        'project' : mem_item.project.projectid,
-                        'user' : mem_item.registration.userid
-                    }
+                    arg_dict = { 'project' : prjid, 'user' : userid }
                     for r_item in keystone_client.role_assignments.list(**arg_dict):
                         keystone_client.roles.revoke(r_item.role['id'], **arg_dict)
-                    
-                    LOG.info("Removed %s from %s" %
-                        (mem_item.registration.username, mem_item.project.projectid))
 
+                    LOG.info("Removed %s from %s" % (username, prjid))
+
+                noti_params = { 'username' : username, 'project' : prjname }
+                notifyUser(user_mail, USER_EXPIRED_TYPE, noti_params,
+                           project_id=prjid, dst_user_id=userid)
                 #
-                # TODO missing notification
-                #                    
+                # TODO notify project admins
+                #
 
             except:
-                LOG.error("Check expiration failed for %s" % mem_item.registration.username,
-                            exc_info=True)
+                LOG.error("Check expiration failed for %s" % username, exc_info=True)
 
         #
         # Check for tenants without admin (use cloud admin if missing)
         #
-        
         for prj_id in updated_prjs:
-        
-            try:
-                url = '/role_assignments?scope.project.id=%s&role.id=%s'
-                resp, body = keystone_client.get(url % (prj_id, prjman_roleid))
-                
-                if len(body['role_assignments']) == 0:
-                    keystone_client.roles.grant(prjman_roleid,
-                        user = cloud_adminid,
-                        project = prj_id
-                    )
+            if PrjRole.objects.filter(project__projectid=prj_id).count() == 0:
+                try:
+                    keystone_client.roles.grant(prjman_roleid, user=cloud_adminid, project=prj_id)
                     LOG.info("Cloud Administrator as admin for %s" % prj_id)
-            except:
-                #
-                # TODO notify error to cloud admin
-                #
-                LOG.error("No tenant admin for %s" % prj_id, exc_info=True)
+                    noti_params = { 
+                        'project' : prj_id,
+                        's_role' : 'None',
+                        'd_role' : 'project_manager'
+                    }
+                    notifyAdmin(CHANGED_MEMBER_ROLE, noti_params, dst_user_id=prj_id)
+                except:
+                    LOG.error("Cannot set super admin for %s" % username, exc_info=True)
+
 

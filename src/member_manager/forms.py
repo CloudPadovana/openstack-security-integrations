@@ -30,6 +30,9 @@ from horizon import exceptions
 
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
+from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import PrjRole
+from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
@@ -67,34 +70,47 @@ class ModifyExpForm(forms.SelfHandlingForm):
 
         if data['userid'] == self.request.user.id:
             raise ValidationError(_('Invalid operation.'))
-        #
-        # TODO cannot change expdate for tenant admin
-        #
+
+        q_args = {
+            'registration__userid' : data['userid'],
+            'project__projectid' : self.request.user.tenant_id
+        }
+        if PrjRole.objects.filter(**q_args).count() > 0:
+            raise ValidationError(_('Cannot change expiration for a project admin'))
 
         return data
 
     @sensitive_variables('data')
     def handle(self, request, data):
         try:
-            
+
             with transaction.atomic():
-                
+
                 q_args = {
                     'registration__userid' : data['userid'],
                     'project__projectid' : request.user.tenant_id
                 }
                 Expiration.objects.filter(**q_args).update(expdate=data['expiration'])
-                
-            tmpres = EMail.objects.filter(registration__userid=data['userid'])
-            if len(tmpres):
-                mail_obj = tmpres[0]
+                PrjRequest.objects.filter(**q_args).delete()
+
+                tmpres = EMail.objects.filter(registration__userid=data['userid'])
+                if len(tmpres) == 0:
+                    return True
+
+                user_name = tmpres[0].registration.username
+                user_mail = tmpres[0].email
                 noti_params = {
-                    'username' : mail_obj.registration.username,
+                    'username' : user_name,
+                    'project' : request.user.tenant_name,
                     'expiration' : data['expiration'].strftime("%d %B %Y")
                 }
-                notifyUser(request=request, rcpt=mail_obj.email, action=USER_RENEWED_TYPE,
-                           context=noti_params, dst_user_id=data['userid'])
-                notifyAdmin(request=request, action=USER_RENEWED_TYPE, context=noti_params)
+
+                try:
+                    notifyUser(request=request, rcpt=user_mail, action=USER_RENEWED_TYPE,
+                               context=noti_params, dst_user_id=data['userid'])
+                    notifyAdmin(request=request, action=USER_RENEWED_TYPE, context=noti_params)
+                except:
+                    LOG.error("Cannot notify %s" % user_name, exc_info=True)
 
         except:
             exceptions.handle(request)

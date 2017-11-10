@@ -25,9 +25,15 @@ from django.utils.translation import ugettext as _
 from horizon import forms
 from horizon import messages
 
-from openstack_auth_shib.models import Registration 
+from openstack_auth_shib.models import Registration
+from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
+from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
+from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+
+from openstack_auth_shib.notifications import notifyUser
+from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 
 from openstack_dashboard.dashboards.identity.users import forms as baseForms
 
@@ -56,18 +62,54 @@ class RenewExpForm(forms.SelfHandlingForm):
                 )
 
     def handle(self, request, data):
-        
+
+        mail_table = dict()
+        exp_table = dict()
+        for d_item in data:
+            if d_item.startswith('prj_'):
+                exp_table[d_item[4:]] = data[d_item]
+
         with transaction.atomic():
-        
-            for d_item in data:
-                if d_item.startswith('prj_'):
-                    q_args = {
-                        'registration__userid' : data['userid'],
-                        'project__projectname' : d_item[4:]
+
+            q_args = {
+                'registration__userid' : data['userid'],
+                'project__projectname__in' : exp_table.keys()
+            }
+            for exp_item in Expiration.objects.filter(**q_args):
+
+                user_name = exp_item.registration.username
+                prj_name = exp_item.project.projectname
+                c_exp = exp_table.get(prj_name, None)
+
+                if not c_exp or exp_item.expdate == c_exp:
+                    continue
+
+                q_args = {
+                    'registration__userid' : data['userid'],
+                    'project__projectname' : prj_name
+                }
+                exp_dates = Expiration.objects.filter(**q_args)
+                exp_dates.update(expdate=c_exp)
+
+                q_args['flowstatus__in'] = [ PSTATUS_RENEW_ADMIN, PSTATUS_RENEW_MEMB ]
+                PrjRequest.objects.filter(**q_args).delete()
+                
+                if not mail_table.has_key(user_name):
+                    tmpobj = EMail.objects.filter(registration__userid=data['userid'])
+                    mail_table[user_name] = tmpobj[0].email if len(tmpobj) else None
+
+                try:
+                    noti_params = {
+                        'username' : user_name,
+                        'project' : prj_name,
+                        'expiration' : c_exp.strftime("%d %B %Y")
                     }
-                    exp_dates = Expiration.objects.filter(**q_args)
-                    exp_dates.update(expdate=data[d_item])
-            
+                    notifyUser(request=request, rcpt=mail_table[user_name],
+                               action=USER_RENEWED_TYPE,
+                               context=noti_params, dst_user_id=data['userid'])
+                except:
+                    LOG.error("Cannot notify %s" % user_name, exc_info=True)
+
         return True
 
 class UpdateUserForm(baseForms.UpdateUserForm):
