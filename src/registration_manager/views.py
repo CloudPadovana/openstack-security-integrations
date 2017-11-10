@@ -208,7 +208,8 @@ class ForcedApproveView(forms.ModalFormView):
         
     def get_initial(self):
         return { 
-            'requestid' : self.kwargs['requestid']
+            'requestid' : self.kwargs['requestid'],
+            'expiration' : datetime.now() + timedelta(365)
         }
 
 class ForcedRejectView(forms.ModalFormView):
@@ -250,7 +251,8 @@ class NewProjectView(forms.ModalFormView):
         
     def get_initial(self):
         return { 
-            'requestid' : self.kwargs['requestid']
+            'requestid' : self.kwargs['requestid'],
+            'expiration' : datetime.now() + timedelta(365)
         }
 
 class RejectProjectView(forms.ModalFormView):
