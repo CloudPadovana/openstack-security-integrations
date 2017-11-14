@@ -32,10 +32,12 @@ class LogFilterAction(tables.FilterAction):
     filter_type = "server"
 
     filter_choices = (
+        ("action", _("Action"), True),
         ("project_name", _("Project Name ="), True),
         ("project_id", _("Project ID ="), True),
         ("user_name", _("User Name ="), True),
         ("user_id", _("User ID ="), True),
+        ("message__icontains", _("Full text"), True),
     )
 
 
