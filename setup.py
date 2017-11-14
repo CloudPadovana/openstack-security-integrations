@@ -22,7 +22,7 @@ from distutils.command.bdist_rpm import bdist_rpm as _bdist_rpm
 
 pkg_name = 'openstack-security-integrations'
 pkg_version = '1.2.0'
-pkg_release = '5'
+pkg_release = '6'
 
 source_items = "setup.py src config"
 
@@ -70,11 +70,14 @@ themes_dir = os_main_dir + 'themes'
 template_list = [
     'src/templates/_register_form.html',
     'src/templates/registration.html',
+    'src/templates/_aai_status.html',
     'src/templates/aai_error.html',
     'src/templates/aai_registration_ok.html'
 ]
 
 reg_templ_list = [
+    'src/templates/registration_manager/_details.html',
+    'src/templates/registration_manager/details.html',
     'src/templates/registration_manager/_forced.html',
     'src/templates/registration_manager/forced.html',
     'src/templates/registration_manager/_newproject.html',

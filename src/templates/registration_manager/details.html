@@ -1,4 +1,4 @@
-{% extends "_aai_status.html" %}
+{% extends 'base.html' %}
 
 {% comment %}
   Copyright (c) 2014 INFN - "Istituto Nazionale di Fisica Nucleare" - Italy
@@ -18,24 +18,14 @@
 {% endcomment %}
 
 {% load i18n %}
+{% block title %}{% trans "Registration details" %}{% endblock %}
 
-{% block title %}{% trans "Generic Error" %}{% endblock %}
+{% block page_header %}
+  {# to make searchable false, just remove it from the include statement #}
+  {% include "horizon/common/_page_header.html" with title="Registration details" %}
+{% endblock page_header %}
 
-{% block body_id %}error_body_id{% endblock %}
-
-{% block status_frame %}
-<h2>{{ error_header }}</h2>
-<p>{{ error_text }}</p>
-
-{% if contacts %}
-    <p>{% trans "Please, contact the cloud managers:" %}</p>
-    <ul>
-    {% for item in contacts %}
-        <li><a href="mailto:{{ item.1 }}">{{ item.0 }}</a></li>
-    {% endfor%}
-    </ul>
-{% endif%}
-
-<p><a href={{ redirect_url }}>{{ redirect_label }}</a></p>
+{% block main %}
+    {% include 'idmanager/registration_manager/_details.html' %}
 {% endblock %}
 

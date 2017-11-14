@@ -18,103 +18,77 @@ import logging.config
 
 from optparse import make_option
 
+from django.db import transaction
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import RegRequest
+from openstack_auth_shib.models import EMail
+from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PSTATUS_PENDING
-from openstack_auth_shib.notifications import notification_render
-from openstack_auth_shib.notifications import notify as notifyUsers
+from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import SUBSCR_REMINDER
 
 from horizon.management.commands.cronscript_utils import build_option_list
-from horizon.management.commands.cronscript_utils import get_prjman_roleid
 from horizon.management.commands.cronscript_utils import configure_log
 from horizon.management.commands.cronscript_utils import configure_app
-
-from keystoneclient.v3 import client
-from keystoneclient.v3.role_assignments import RoleAssignmentManager
 
 LOG = logging.getLogger("pendingsubscr")
 
 class Command(BaseCommand):
 
     option_list = build_option_list()
-    
-    def __init__(self):
-        super(Command, self).__init__()
-        self.email_table = dict()
-    
-    def get_email(self, keystone, u_id):
-    
-        if not u_id:
-            return None
 
-        if not u_id in self.email_table:
-            try:
-                tmp_email = keystone.users.get(u_id).email
-                if tmp_email:
-                    self.email_table[u_id] = tmp_email
-            except:
-                LOG.error("Keystone call failed", exc_info=True)
-
-        if u_id in self.email_table:
-            return self.email_table[u_id]
-
-        return None
-    
     def handle(self, *args, **options):
-    
+
         configure_log(options)
-        
+
         config = configure_app(options)
-            
+
+        admin_table = dict()
+        mail_table = dict()
+        req_table = dict()
+
         try:
-            
-            keystone_client = client.Client(username=config.cron_user,
-                                            password=config.cron_pwd,
-                                            project_name=config.cron_prj,
-                                            cacert=config.cron_ca,
-                                            user_domain_name=config.cron_domain,
-                                            project_domain_name=config.cron_domain,
-                                            auth_url=config.cron_kurl)
-            
-            req_table = dict()
-            prj_res_table = dict()
-            for p_req in PrjRequest.objects.filter(flowstatus=PSTATUS_PENDING):
-                curr_prjid = p_req.project.projectid
-                if not curr_prjid in req_table:
-                    req_table[curr_prjid] = list()
-                req_table[curr_prjid].append(p_req.registration.username)
-                prj_res_table[curr_prjid] = p_req.project.projectname
-            
-            admin_table = dict()
-            prjman_roleid = get_prjman_roleid(keystone_client)
-            for prj_id in req_table:
-                q_args = {
-                    'scope.project.id' : prj_id,
-                    'role.id' : prjman_roleid
-                }
-                
-                for assign in super(RoleAssignmentManager, keystone_client.role_assignments).list(**q_args):
-                
-                    email = self.get_email(keystone_client, assign.user['id'])
-                    
-                    if not email in admin_table:
-                        admin_table[email] = list()
-                    admin_table[email].append(prj_id)
-                    
-            for email in admin_table:
-                for prj_id in admin_table[email]:
-                    noti_params = {
-                        'pendingreqs' : req_table[prj_id],
-                        'project' : prj_res_table[prj_id]
-                    }
-                    noti_sbj, noti_body = notification_render(SUBSCR_REMINDER, noti_params)
-                    notifyUsers(email, noti_sbj, noti_body)
-                
+            with transaction.atomic():
+
+                for prj_req in PrjRequest.objects.filter(flowstatus=PSTATUS_PENDING):
+                    prjname = prj_req.project.projectname
+                    if not req_table.has_key(prjname):
+                        req_table[prjname] = list()
+                    req_table[prjname].append(prj_req.registration.username)
+
+                for prjname in req_table.keys():
+                    for p_role in PrjRole.objects.filter(project__projectname=prjname):
+
+                        user_name = p_role.registration.username
+                        user_id = p_role.registration.userid
+                        user_tuple = (user_name, user_id)
+
+                        if not admin_table.has_key(user_tuple):
+                            admin_table[user_tuple] = list()
+                        admin_table[user_tuple].append(p_role.project.projectname)
+
+                        if not mail_table.has_key(user_name):
+                            tmpres = EMail.objects.filter(registration__username=user_name)
+                            if len(tmpres):
+                                mail_table[user_name] = tmpres[0].email
+
+            for user_tuple in admin_table:
+                for prj_name in admin_table[user_tuple]:
+                    try:
+                        noti_params = {
+                            'pendingreqs' : req_table[prj_name],
+                            'project' : prj_name
+                        }
+                        notifyUser(mail_table[user_tuple[0]], SUBSCR_REMINDER, noti_params,
+                                   dst_user_id=user_tuple[1])
+                    except:
+                        LOG.error("Cannot notify pending subscription: %s" % user_tuple[0], 
+                                  exc_info=True)
+
         except:
-            LOG.error("Notification failed", exc_info=True)
-            raise CommandError("Notification failed")
+            LOG.error("Cannot notify pending subscritions: system error", exc_info=True)
+            raise CommandError("Cannot notify pending subscritions")
 
 

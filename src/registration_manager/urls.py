@@ -27,6 +27,7 @@ urlpatterns = patterns(prefix,
     url(r'^(?P<requestid>[^/]+)/precheck/$', views.PreCheckView.as_view(), name='precheck'),
     url(r'^(?P<requestid>[^/]+)/grantall/$', views.GrantAllView.as_view(), name='grantall'),
     url(r'^(?P<requestid>[^/]+)/reject/$', views.RejectView.as_view(), name='reject'),
+    url(r'^(?P<requestid>[^/]+)/details/$', views.DetailsView.as_view(), name='details'),
     url(r'^(?P<requestid>[^/]+)/forcedapprove/$', views.ForcedApproveView.as_view(), 
         name='forcedapprove'),
     url(r'^(?P<requestid>[^/]+)/forcedreject/$', views.ForcedRejectView.as_view(), 
@@ -38,6 +39,8 @@ urlpatterns = patterns(prefix,
     url(r'^(?P<requestid>[^/]+)/guestapprove/$', views.GuestApproveView.as_view(), 
         name='guestapprove'),
     url(r'^(?P<requestid>[^/]+)/renewadmin/$', views.RenewAdminView.as_view(), 
-        name='renewadmin')
+        name='renewadmin'),
+    url(r'^(?P<requestid>[^/]+)/forcedrenew/$', views.ForcedRenewView.as_view(), 
+        name='forcedrenew')
     )
 
