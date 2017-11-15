@@ -247,6 +247,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                                   dst_project_id=p_item.project.projectid)
                     
                     n2_params = {
+                        'username' : p_item.registration.username,
                         'project' : p_item.project.projectname,
                         'prjadmins' : m_emails
                     }
@@ -337,10 +338,14 @@ class RejectForm(forms.SelfHandlingForm):
                 #
             
                 user_email = regReqList[0].email
+                user_name = registration.username
                 
                 registration.delete()
             
                 noti_params = {
+                    'username': user_name,
+                    'projects': list(p.project.projectname for p in prjReqList),
+                    'project_creation': (len(newprj_list) != 0),
                     'notes' : data['reason']
                 }
                 notifyUser(request=self.request, rcpt=user_email, action=FIRST_REG_NO_TYPE, context=noti_params)

@@ -7,7 +7,7 @@ body: Your role for project {{ project }} has been changed from {{ s_role }} to 
   Please, don't reply to this message
 
 [first_registration_ok]
-LOG: Registration of {{ username }} approved by {{ log.user_name }}
+LOG: Registration of {{ username }} and creation of project {{ project }} approved by {{ log.user_name }}
 subject: Your registration has been accepted
 body: Your account has been registered
   Your login name is {{ username }}
@@ -20,7 +20,7 @@ body: Your account has been registered
   Please, don't reply to this message
 
 [first_registration_rejected]
-LOG: Registration of {{ username }} rejected by {{ log.user_name }}
+LOG: Registration of {{ username }} and {% if project_creation %}creation of{% else %}affiliation to{% endif %} {{ projects|join:', ' }} rejected by {{ log.user_name }}
 subject: Registration not authorized
 body: Your request to access the cloud infrastructure was rejected
   {% if notes %}{{ notes }}{% endif %}
@@ -97,7 +97,7 @@ body: The cloud administrator rejected the creation of project {{ project }}
   Please, don't reply to this message
 
 [registration_available]
-LOG: Registration request of user {{ username }} available
+LOG: Registration request of user {{ username }} and {% if project_creation %}creation of{% else %}affiliation to{% endif %} {{ projects|join:', ' }} available
 subject: New request for registration available ({{ username }})
 body: A new request for registration is available
   {% if username %}The username is {{ username }}{% endif %}

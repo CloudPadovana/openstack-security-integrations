@@ -96,6 +96,7 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 tmpres = EMail.objects.filter(registration__userid=member_id)
                 member_email = tmpres[0].email if tmpres else None
                 project_name = prj_req.project.projectname
+                user_name = prj_req.registration.username
                 
                 LOG.debug("Approving subscription for %s" % prj_req.registration.username)
             
@@ -138,6 +139,7 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
             # send notification to the user
             #
             noti_params = {
+                'username': user_name,
                 'project' : project_name
             }
 
@@ -187,6 +189,7 @@ class RejectSubscrForm(forms.SelfHandlingForm):
                 tmpres = EMail.objects.filter(registration__userid=member_id)
                 member_email = tmpres[0].email if tmpres else None
                 project_name = prj_req.project.projectname
+                user_name = prj_req.registration.username
                 
                 #
                 # clear request
@@ -197,6 +200,7 @@ class RejectSubscrForm(forms.SelfHandlingForm):
             # send notification to the user
             #
             noti_params = {
+                'username': user_name,
                 'project' : project_name,
                 'notes' : data['reason']
             }

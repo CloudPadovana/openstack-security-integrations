@@ -320,8 +320,13 @@ class RegistrForm(forms.SelfHandlingForm):
                     
                     reqPrj = PrjRequest(**reqArgs)
                     reqPrj.save()
-                
-            notifyAdmin(request=self.request, action=REGISTR_AVAIL_TYPE, context={'username' : data['username']})
+
+            noti_params = {
+                'username': data['username'],
+                'projects': list(p[0] for p in prjlist),
+                'project_creation': (prj_action == 'newprj'),
+            }
+            notifyAdmin(request=self.request, action=REGISTR_AVAIL_TYPE, context=noti_params)
 
             # Don't user reverse_lazy
             # It is necessary to get out of the protected area
