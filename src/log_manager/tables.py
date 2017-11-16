@@ -41,6 +41,11 @@ class LogFilterAction(tables.FilterAction):
     )
 
 
+def format_timestamp(row):
+    ts = row.timestamp
+    return ts.strftime("%Y-%m-%d %H:%M:%S %z")
+
+
 def format_message(row):
     msg = row.message
 
@@ -90,7 +95,11 @@ def format_project(row):
 
 
 class MainTable(tables.DataTable):
-    timestamp = tables.Column('timestamp', verbose_name=_('Date'))
+    timestamp = tables.Column(
+        transform=format_timestamp,
+        verbose_name=_('Date')
+    )
+
     action = tables.Column('action', verbose_name=_('Action'))
 
     user = tables.Column(
