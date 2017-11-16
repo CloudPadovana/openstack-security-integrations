@@ -116,7 +116,7 @@ class DateRange(object):
         return self.form
 
 
-def get_project_name(request, project_id):
+def _get_project_name(request, project_id):
     project_name = None
     if project_id:
         try:
@@ -129,7 +129,7 @@ def get_project_name(request, project_id):
     return project_name
 
 
-def get_user_name(request, user_id):
+def _get_user_name(request, user_id):
     user_name = None
     if user_id:
         try:
@@ -160,12 +160,12 @@ class MainView(tables.DataTableView):
         values = Log.objects.filter(**filters)
         for log in values:
             if not log.user_name:
-                log.user_name = get_user_name(self.request, getattr(log, "user_id"))
+                log.user_name = self.get_user_name(getattr(log, "user_id"))
             if not log.project_name:
-                log.project_name = get_project_name(self.request, getattr(log, "project_id"))
+                log.project_name = self.get_project_name(getattr(log, "project_id"))
 
-            log.dst_user_name = get_user_name(self.request, getattr(log, "dst_user_id"))
-            log.dst_project_name = get_project_name(self.request, getattr(log, "dst_project_id"))
+            log.dst_user_name = self.get_user_name(getattr(log, "dst_user_id"))
+            log.dst_project_name = self.get_project_name(getattr(log, "dst_project_id"))
 
             logs.append(log)
 
@@ -176,6 +176,14 @@ class MainView(tables.DataTableView):
         context['form'] = self.date_range.form
 
         return context
+
+    @memoized.memoized_method
+    def get_project_name(self, project_id):
+        return _get_project_name(self.request, project_id)
+
+    @memoized.memoized_method
+    def get_user_name(self, user_id):
+        return _get_user_name(self.request, user_id)
 
 
 class DetailView(views.HorizonTemplateView):
@@ -200,8 +208,8 @@ class DetailView(views.HorizonTemplateView):
 
         context["dst_user_id"] = getattr(log, "dst_user_id", _("None"))
         context["dst_project_id"] = getattr(log, "dst_project_id", _("None"))
-        context["dst_user_name"] = get_user_name(self.request, getattr(log, "dst_user_id"))
-        context["dst_project_name"] = get_project_name(self.request, getattr(log, "dst_project_id"))
+        context["dst_user_name"] = self.get_user_name(getattr(log, "dst_user_id"))
+        context["dst_project_name"] = self.get_project_name(getattr(log, "dst_project_id"))
 
         context["url"] = self.get_redirect_url()
         return context
@@ -216,6 +224,14 @@ class DetailView(views.HorizonTemplateView):
             return log.message.splitlines()[2:]
         else:
             return None
+
+    @memoized.memoized_method
+    def get_project_name(self, project_id):
+        return _get_project_name(self.request, project_id)
+
+    @memoized.memoized_method
+    def get_user_name(self, user_id):
+        return _get_user_name(self.request, user_id)
 
     @memoized.memoized_method
     def get_data(self):
