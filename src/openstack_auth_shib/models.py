@@ -166,9 +166,10 @@ class LogManager(models.Manager):
     def log_action(self, log_type, action, message,
                    project_id=None, user_id=None,
                    project_name=None, user_name=None,
-                   dst_project_id=None, dst_user_id=None):
+                   dst_project_id=None, dst_user_id=None,
+                   extra={}):
 
-        return self.model.objects.create(
+        log = self.model.objects.create(
             log_type=log_type,
             action=action,
             message=message,
@@ -179,6 +180,11 @@ class LogManager(models.Manager):
             dst_project_id=dst_project_id,
             dst_user_id=dst_user_id,
         )
+
+        for k, v in extra.iteritems():
+            log.logextra_set.create(key=k, value=v)
+
+        return log
 
 
 class Log(models.Model):
@@ -246,5 +252,19 @@ class Log(models.Model):
     )
 
     message = models.TextField(
+        blank=False,
+    )
+
+
+class LogExtra(models.Model):
+    log = models.ForeignKey(Log, on_delete=models.PROTECT)
+
+    key = models.CharField(
+        max_length=255,
+        db_index=True,
+        blank=False,
+    )
+
+    value = models.TextField(
         blank=False,
     )

@@ -133,14 +133,15 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
 
     subject, body, msg = notification_render(action, context, locale)
 
+    extra = {}
     if getattr(settings, 'LOG_MANAGER_KEEP_NOTIFICATIONS_EMAIL', True):
         to = rcpt
         if not type(to) is ListType:
             to = [to, ]
         to = ', '.join(map(str, to))
 
-        msg = "{msg}\n\nTo: {to}\nSubject: {subject}\n\n{body}".format(
-            msg=msg, to=to, subject=subject, body=body)
+        extra['email'] = "To: {to}\nSubject: {subject}\n\n{body}".format(
+            to=to, subject=subject, body=body)
 
     Log.objects.log_action(
         log_type=LOG_TYPE_EMAIL,
@@ -152,6 +153,7 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
         user_name=user_name,
         dst_project_id=dst_project_id,
         dst_user_id=dst_user_id,
+        extra=extra,
     )
 
     if rcpt == MANAGERS_RCPT:

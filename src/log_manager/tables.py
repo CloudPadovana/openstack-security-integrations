@@ -46,13 +46,6 @@ def format_timestamp(row):
     return ts.strftime("%Y-%m-%d %H:%M:%S %z")
 
 
-def format_message(row):
-    msg = row.message
-
-    ret = msg.splitlines()[0]
-    return ret
-
-
 def format_recipient(row):
     dst_user_id = row.dst_user_id
     dst_project_id = row.dst_project_id
@@ -113,7 +106,7 @@ class MainTable(tables.DataTable):
     )
 
     message = tables.Column(
-        transform=format_message,
+        'message',
         verbose_name=_('Message'),
         link="horizon:idmanager:log_manager:detail",
     )

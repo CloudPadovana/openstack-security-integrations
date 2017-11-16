@@ -48,14 +48,15 @@
         <dd>{{ dst_project_name }}</dd>
 
         <dt>Message</dt>
-        <dd>{{ message }}</dd>
+        <dd>{{ message|escape|linebreaks }}</dd>
 
-        {% if email %}
-          <dt>E-Mail</dt>
-          {% for line in email %}
-            <dd>{{ line }}</dd>
+        {% if extra %}
+          {% for key, value in extra.items %}
+            <dt>{{ key }}</dt>
+            <dd>{{ value|escape|linebreaks }}</dd>
           {% endfor %}
         {% endif %}
+
       </dl>
     </div>
   </div>

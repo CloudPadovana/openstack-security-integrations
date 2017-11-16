@@ -195,11 +195,10 @@ class DetailView(views.HorizonTemplateView):
         log = self.get_data()
 
         context["timestamp"] = getattr(log, "timestamp")
-        context["message"] = self.get_message(log)
+        context["message"] = getattr(log, "message")
         context["action"] = getattr(log, "action")
 
-        if getattr(log, "log_type") == LOG_TYPE_EMAIL:
-            context["email"] = self.get_email(log)
+        context["extra"] = dict((item.key, item.value) for item in log.logextra_set.all())
 
         context["user_id"] = getattr(log, "user_id", _("None"))
         context["project_id"] = getattr(log, "project_id", _("None"))
@@ -213,17 +212,6 @@ class DetailView(views.HorizonTemplateView):
 
         context["url"] = self.get_redirect_url()
         return context
-
-    @memoized.memoized_method
-    def get_message(self, log):
-        return log.message.splitlines()[0]
-
-    @memoized.memoized_method
-    def get_email(self, log):
-        if getattr(settings, 'LOG_MANAGER_KEEP_NOTIFICATIONS_EMAIL', True):
-            return log.message.splitlines()[2:]
-        else:
-            return None
 
     @memoized.memoized_method
     def get_project_name(self, project_id):
