@@ -20,14 +20,20 @@
 import logging
 import datetime
 
+from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from horizon import exceptions
 from horizon import tables
 from horizon import forms
 from horizon import messages
+from horizon import views
+from horizon.utils import memoized
+from openstack_dashboard import api
 
 from openstack_auth_shib.models import Log
+from openstack_auth_shib.notifications import LOG_TYPE_EMAIL
 from .tables import MainTable
 
 
@@ -110,6 +116,32 @@ class DateRange(object):
         return self.form
 
 
+def _get_project_name(request, project_id):
+    project_name = None
+    if project_id:
+        try:
+            project = api.keystone.tenant_get(request, project_id)
+            project_name = project.name
+        except Exception as e:
+            msg = ('Failed to get project %(project_id)s: %(reason)s' %
+                   {'project_id': project_id, 'reason': e})
+            LOG.error(msg)
+    return project_name
+
+
+def _get_user_name(request, user_id):
+    user_name = None
+    if user_id:
+        try:
+            user = api.keystone.user_get(request, user_id)
+            user_name = user.name
+        except Exception as e:
+            msg = ('Failed to get user %(user_id)s: %(reason)s' %
+                   {'user_id': user_id, 'reason': e})
+            LOG.error(msg)
+    return user_name
+
+
 class MainView(tables.DataTableView):
     table_class = MainTable
     template_name = 'idmanager/log_manager/log_manager.html'
@@ -125,7 +157,18 @@ class MainView(tables.DataTableView):
         filters['timestamp__gte'] = start
         filters['timestamp__lte'] = end
 
-        logs = Log.objects.filter(**filters)
+        values = Log.objects.filter(**filters)
+        for log in values:
+            if not log.user_name:
+                log.user_name = self.get_user_name(getattr(log, "user_id"))
+            if not log.project_name:
+                log.project_name = self.get_project_name(getattr(log, "project_id"))
+
+            log.dst_user_name = self.get_user_name(getattr(log, "dst_user_id"))
+            log.dst_project_name = self.get_project_name(getattr(log, "dst_project_id"))
+
+            logs.append(log)
+
         return logs
 
     def get_context_data(self, **kwargs):
@@ -133,3 +176,62 @@ class MainView(tables.DataTableView):
         context['form'] = self.date_range.form
 
         return context
+
+    @memoized.memoized_method
+    def get_project_name(self, project_id):
+        return _get_project_name(self.request, project_id)
+
+    @memoized.memoized_method
+    def get_user_name(self, user_id):
+        return _get_user_name(self.request, user_id)
+
+
+class DetailView(views.HorizonTemplateView):
+    template_name = 'idmanager/log_manager/detail.html'
+    page_title = _("Log detail")
+
+    def get_context_data(self, **kwargs):
+        context = super(DetailView, self).get_context_data(**kwargs)
+        log = self.get_data()
+
+        context["timestamp"] = getattr(log, "timestamp")
+        context["message"] = getattr(log, "message")
+        context["action"] = getattr(log, "action")
+
+        context["extra"] = dict((item.key, item.value) for item in log.logextra_set.all())
+
+        context["user_id"] = getattr(log, "user_id", _("None"))
+        context["project_id"] = getattr(log, "project_id", _("None"))
+        context["user_name"] = getattr(log, "user_name", _("None"))
+        context["project_name"] = getattr(log, "project_name", _("None"))
+
+        context["dst_user_id"] = getattr(log, "dst_user_id", _("None"))
+        context["dst_project_id"] = getattr(log, "dst_project_id", _("None"))
+        context["dst_user_name"] = self.get_user_name(getattr(log, "dst_user_id"))
+        context["dst_project_name"] = self.get_project_name(getattr(log, "dst_project_id"))
+
+        context["url"] = self.get_redirect_url()
+        return context
+
+    @memoized.memoized_method
+    def get_project_name(self, project_id):
+        return _get_project_name(self.request, project_id)
+
+    @memoized.memoized_method
+    def get_user_name(self, user_id):
+        return _get_user_name(self.request, user_id)
+
+    @memoized.memoized_method
+    def get_data(self):
+        try:
+            log_id = self.kwargs['log_id']
+            log = Log.objects.get(id=log_id)
+        except Exception:
+            redirect = self.get_redirect_url()
+            exceptions.handle(self.request,
+                              _('Unable to retrieve log details.'),
+                              redirect=redirect)
+        return log
+
+    def get_redirect_url(self):
+        return reverse('horizon:idmanager:log_manager:index')

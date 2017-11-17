@@ -28,4 +28,5 @@ prefix = 'openstack_dashboard.dashboards.idmanager.log_manager.views'
 urlpatterns = patterns(
     prefix,
     url(r'^$', views.MainView.as_view(), name='index'),
+    url(r'^(?P<log_id>[^/]+)/detail/$', views.DetailView.as_view(), name='detail'),
 )

@@ -32,41 +32,46 @@ class LogFilterAction(tables.FilterAction):
     filter_type = "server"
 
     filter_choices = (
+        ("action", _("Action"), True),
         ("project_name", _("Project Name ="), True),
         ("project_id", _("Project ID ="), True),
         ("user_name", _("User Name ="), True),
         ("user_id", _("User ID ="), True),
+        ("message__icontains", _("Full text"), True),
     )
+
+
+def format_timestamp(row):
+    ts = row.timestamp
+    return ts.strftime("%Y-%m-%d %H:%M:%S %z")
 
 
 def format_recipient(row):
     dst_user_id = row.dst_user_id
     dst_project_id = row.dst_project_id
+    dst_user_name = row.dst_user_name
+    dst_project_name = row.dst_project_name
 
-    ret = ""
-    if dst_project_id and dst_user_id:
-        ret = "USER %s of PROJECT %s" % (dst_user_id, dst_project_id)
-    elif dst_user_id and not dst_project_id:
-        ret = "USER %s" % dst_user_id
-    elif dst_project_id and not dst_user_id:
-        ret = "PROJECT %s" % dst_project_id
-    else:
-        ret = "ADMIN"
-    return ret
+    ret = []
+    if dst_user_id:
+        ret.append("USER {user_name}".format(user_name=dst_user_name))
+    if dst_project_id:
+        ret.append("PROJECT {project_name}".format(project_name=dst_project_name))
+
+    if ret:
+        return ", ".join(ret)
+
+    return "Cloud Admin"
 
 
 def _format_name_id(name, id):
-    ret = []
+    ret = "Undefined"
 
-    if name is not None:
-        ret.extend(["%s" % name, ])
-    if id is not None:
-        ret.extend(["(%s)" % id, ])
+    if name:
+        ret = name
+    elif id:
+        ret = "(%s)" % id
 
-    if not ret:
-        ret = "Undefined"
-    else:
-        ret = " ".join(ret)
     return ret
 
 
@@ -83,7 +88,11 @@ def format_project(row):
 
 
 class MainTable(tables.DataTable):
-    timestamp = tables.Column('timestamp', verbose_name=_('Date'))
+    timestamp = tables.Column(
+        transform=format_timestamp,
+        verbose_name=_('Date')
+    )
+
     action = tables.Column('action', verbose_name=_('Action'))
 
     user = tables.Column(
@@ -96,12 +105,16 @@ class MainTable(tables.DataTable):
         verbose_name=_('Project'),
     )
 
-    recipient = tables.Column(
-        transform=format_recipient,
-        verbose_name=_('Recipient'),
+    message = tables.Column(
+        'message',
+        verbose_name=_('Message'),
+        link="horizon:idmanager:log_manager:detail",
     )
 
-    message = tables.Column('message', verbose_name=_('Message'))
+    recipient = tables.Column(
+        transform=format_recipient,
+        verbose_name=_('Target'),
+    )
 
     class Meta(object):
         name = "logs"
