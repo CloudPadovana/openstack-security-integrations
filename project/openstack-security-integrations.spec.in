@@ -333,7 +333,11 @@ fi
 
 
 %changelog
-* Thu Oct 6 2016 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
+* Mon Nov 20 2017 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
+- Porting on Ocata
+- Migration to OS-Federation
+
+* Thu Oct 6 2016 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.1.1-1
 - Porting on Mitaka
 
 * Wed Nov 25 2015 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.1.0-4
