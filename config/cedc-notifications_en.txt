@@ -168,7 +168,7 @@ body: User {{ username }} requires access to project {{ project }}
 LOG: Sent account expiration notice to {{ username }}
 subject: Affiliation to {{ project }} is going to expire
 body: The affiliation for {{ username }} to {{ project }} will expire in {{ days }} days.
-  Please contact the cloud administrators for a renewal
+  Please contact the project administrators for a renewal
   {% if contacts %}
   Contacts:
   {% for c_admin in contacts %}

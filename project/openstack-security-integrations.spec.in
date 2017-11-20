@@ -241,6 +241,9 @@ Customization of Openstack Horizon for Cloud Area Padovana
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapdStrip.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.ico
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVenetoStrip.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.ico
 /usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cap.html
 /usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cap_*.py
 /usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cap_*.pyc
@@ -261,7 +264,7 @@ if [ $1 -eq 1 ] ; then
     cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico \
           /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico.orig
 
-    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.ico \
+    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.ico \
           /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
 fi
 
