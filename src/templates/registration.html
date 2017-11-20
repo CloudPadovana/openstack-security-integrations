@@ -21,14 +21,7 @@
 
 {% block css %}
   {% include "_stylesheets.html" %}
-
-  {% load compress %}
-  {% compress css %}
-  <link href="{{ STATIC_URL }}dashboard/scss/aai_infn_integrations.less" 
-        type='text/scss'
-        media='screen'
-        rel='stylesheet' />
-  {% endcompress %}
+  {% include "_aai_registr_style.html" %}
 {% endblock %}
 
 {% block title %}{% trans "Register" %} - {% site_branding %}{% endblock %}
