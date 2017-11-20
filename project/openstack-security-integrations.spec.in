@@ -126,7 +126,6 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoUsrReg.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/empty.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/help-transparent.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/scss/*.less
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.pyo
@@ -250,6 +249,8 @@ Customization of Openstack Horizon for Cloud Area Padovana
 /usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cap_*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/static/_styles.scss
 /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/static/_variables.scss
+/usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/_aai_status_style.html
+/usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/_aai_registr_style.html
 /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/auth/_splash.html
 /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/header/_brand.html
 
@@ -303,6 +304,8 @@ Customization of Openstack Horizon for Cloud Veneto
 /usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cedc_*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/themes/cedc/static/_styles.scss
 /usr/share/openstack-dashboard/openstack_dashboard/themes/cedc/static/_variables.scss
+/usr/share/openstack-dashboard/openstack_dashboard/themes/cedc/templates/_aai_status_style.html
+/usr/share/openstack-dashboard/openstack_dashboard/themes/cedc/templates/_aai_registr_style.html
 /usr/share/openstack-dashboard/openstack_dashboard/themes/cedc/templates/auth/_splash.html
 /usr/share/openstack-dashboard/openstack_dashboard/themes/cedc/templates/header/_brand.html
 

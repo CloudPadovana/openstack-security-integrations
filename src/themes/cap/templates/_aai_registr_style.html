@@ -1,0 +1,55 @@
+{% load i18n staticfiles %}
+
+{% block aai_registr_style %}
+    <style>
+    a {
+        color: #43a1d6;
+        text-decoration: none;
+    }
+    body {
+      color: rgb(106, 106, 106);
+      text-align: center;
+      font-weight: normal;
+      background: none repeat scroll 0% 0% rgb(250, 250, 250);
+    }
+    .register {
+      background: #fff url({% static "dashboard/img/logoCloudVeneto.png" %}) no-repeat center 35px;
+      position: absolute;
+      top: 80px;
+      left: 30%;
+      margin: 0 0 0 0px;
+      padding-top: 170px;
+      width: 820px;
+      border: 1px solid #e1e1e1;
+      max-height: none;
+      -webkit-border-radius: 6px;
+      -moz-border-radius: 6px;
+      border-radius: 6px;
+      -webkit-box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
+      -moz-box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
+      -webkit-background-clip: padding-box;
+      -moz-background-clip: padding-box;
+      background-clip: padding-box;
+
+      form {
+        .error {
+          width: 100%;
+        }
+        input {
+          width: 360px;
+        }
+        select {
+          width: 360px;
+        }
+      }
+    }
+    h2 {
+      font-weight: normal;
+    }
+    div#container > div {
+      padding: 25px;
+    }
+    </style>
+{% endblock %}
+
