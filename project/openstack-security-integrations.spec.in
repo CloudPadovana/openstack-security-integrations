@@ -105,7 +105,6 @@ Django plugin for Shibboleth authentication
 %config(noreplace) /etc/openstack-auth-shib/actions.conf
 %config(noreplace) /etc/openstack-auth-shib/logging.conf
 %config(noreplace) /etc/cron.d/openstack-auth-shib-cron
-%dir /usr/share/openstack-dashboard/openstack_dashboard/templates/aup
 %attr(0750, apache, apache) %dir /var/cache/openstack-auth-shib
 %attr(0750, apache, apache) %dir /var/cache/openstack-auth-shib/msg
 %dir %{python_sitelib}/openstack_auth_shib
@@ -113,8 +112,8 @@ Django plugin for Shibboleth authentication
 %{python_sitelib}/openstack_auth_shib/*.pyc
 %{python_sitelib}/openstack_auth_shib/*.pyo
 %{python_sitelib}/*.egg-info
+%dir /usr/share/openstack-auth-shib
 /usr/share/openstack-auth-shib/attribute-map.xml
-/usr/share/openstack-auth-shib/templates/notifications_*.txt
 /usr/share/openstack-dashboard/openstack_dashboard/templates/*.html
 /usr/share/openstack-dashboard/openstack_dashboard/templates/auth/*.html
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoGoogle.png
@@ -126,41 +125,69 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoUsrReg.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/empty.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/help-transparent.png
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.pyo
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/templates
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/templates/registration_manager
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/templates/registration_manager/*.html
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/templates
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/templates/project_manager
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/templates/project_manager/*.html
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/templates
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/templates/user_manager
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/templates/user_manager/*.html
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/templates
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/templates/subscription_manager
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/templates/subscription_manager/*.html
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/templates
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/templates/member_manager
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/templates/member_manager/*.html
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/templates
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/templates/log_manager
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/templates/log_manager/*.html
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/templates
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/templates/project_requests
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/templates/project_requests/*.html
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/templates
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/templates/idp_requests
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/templates/idp_requests/*.html
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/templates
+%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/templates/password_manager
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/*.py
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/*.pyo
@@ -235,104 +262,29 @@ Customization of Openstack Horizon for Cloud Area Padovana
 
 %files -n openstack-auth-cap
 %defattr(-,root,root)
-%config(noreplace) /etc/openstack-auth-shib/cap-metadata.xml
-/usr/share/openstack-auth-shib/templates/cap-notifications_en.txt
+%config(noreplace) /etc/openstack-auth-shib/idem-template-metadata.xml
+/etc/openstack-auth-shib/notifications/notifications_en.txt
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapdStrip.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.ico
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVenetoStrip.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.ico
-/usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cap.html
+/usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
 /usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cap_*.py
 /usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cap_*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cap_*.pyo
+%dir /usr/share/openstack-dashboard/openstack_dashboard/themes/cap
+%dir /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/static
+%dir /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates
+%dir /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/auth
+%dir /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/header
 /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/static/_styles.scss
 /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/static/_variables.scss
 /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/_aai_status_style.html
 /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/_aai_registr_style.html
 /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/auth/_splash.html
 /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/header/_brand.html
-
-%post -n openstack-auth-cap
-if [ $1 -eq 1 ] ; then
-    ln -sf /usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cap.html \
-           /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
-    ln -sf /usr/share/openstack-auth-shib/templates/cap-notifications_en.txt \
-           /etc/openstack-auth-shib/notifications/notifications_en.txt
-    cp -f /etc/openstack-auth-shib/cap-metadata.xml /etc/openstack-auth-shib/idem-template-metadata.xml
-
-    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico \
-          /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico.orig
-
-    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.ico \
-          /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
-fi
-
-%preun -n openstack-auth-cap
-if [ $1 -eq 0 ] ; then
-    rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
-    rm -f /etc/openstack-auth-shib/notifications/notifications_en.txt
-    rm -f /etc/openstack-auth-shib/idem-template-metadata.xml
-    mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico.orig \
-          /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
-fi
-
-
-
-
-
-%package -n openstack-auth-cedc
-Summary: Customization of Openstack Horizon for Cloud Veneto
-Group: System Environment/Libraries
-Requires: openstack-auth-shib
-Conflicts: openstack-auth-cap
-
-%description -n openstack-auth-cedc
-Customization of Openstack Horizon for Cloud Veneto
-
-%files -n openstack-auth-cedc
-%defattr(-,root,root)
-%config(noreplace) /etc/openstack-auth-shib/cedc-metadata.xml
-/usr/share/openstack-auth-shib/templates/cedc-notifications_en.txt
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVenetoStrip.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.ico
-/usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cedc.html
-/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cedc_*.py
-/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cedc_*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cedc_*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/themes/cedc/static/_styles.scss
-/usr/share/openstack-dashboard/openstack_dashboard/themes/cedc/static/_variables.scss
-/usr/share/openstack-dashboard/openstack_dashboard/themes/cedc/templates/_aai_status_style.html
-/usr/share/openstack-dashboard/openstack_dashboard/themes/cedc/templates/_aai_registr_style.html
-/usr/share/openstack-dashboard/openstack_dashboard/themes/cedc/templates/auth/_splash.html
-/usr/share/openstack-dashboard/openstack_dashboard/themes/cedc/templates/header/_brand.html
-
-%post -n openstack-auth-cedc
-if [ $1 -eq 1 ] ; then
-    ln -sf /usr/share/openstack-dashboard/openstack_dashboard/templates/aup/aup-cedc.html \
-           /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
-    ln -sf /usr/share/openstack-auth-shib/templates/cedc-notifications_en.txt \
-           /etc/openstack-auth-shib/notifications/notifications_en.txt
-    cp -f /etc/openstack-auth-shib/cedc-metadata.xml /etc/openstack-auth-shib/idem-template-metadata.xml
-
-    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico \
-          /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico.orig
-
-    cp -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.ico \
-          /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
-fi
-
-%preun -n openstack-auth-cedc
-if [ $1 -eq 0 ] ; then
-    rm -f /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
-    rm -f /etc/openstack-auth-shib/notifications/notifications_en.txt
-    rm -f /etc/openstack-auth-shib/idem-template-metadata.xml
-    mv -f /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico.orig \
-          /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/favicon.ico
-fi
-
 
 
 %changelog

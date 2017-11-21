@@ -184,20 +184,13 @@ module_list = [
 ]
 
 hz_confile_list = [
-    'config/cap-metadata.xml',
-    'config/cedc-metadata.xml',
+    'config/idem-template-metadata.xml',
     'config/logging.conf',
     'config/actions.conf'
 ]
 
 ks_confile_list = [
     'config/policy.json'
-]
-
-noti_tpl_list = [
-    'config/notifications_en.txt',
-    'config/cap-notifications_en.txt',
-    'config/cedc-notifications_en.txt'
 ]
 
 setup(
@@ -212,7 +205,7 @@ setup(
       data_files=[
                   (templates_dir, template_list),
                   (templates_dir + '/auth', ['src/templates/_login_page.html']),
-                  (templates_dir + '/aup', ['src/templates/aup-cap.html','src/templates/aup-cedc.html']),
+                  (templates_dir, ['src/templates/aup.html']),
                   (reg_panel_dir, reg_templ_list),
                   (user_panel_dir, usr_templ_list),
                   (prj_panel_dir, prj_templ_list),
@@ -227,19 +220,13 @@ setup(
                   ('etc/keystone-skey-auth', ks_confile_list),
                   ('etc/cron.d', ['config/openstack-auth-shib-cron']),
                   ('usr/share/openstack-auth-shib', ['config/attribute-map.xml']),
-                  ('usr/share/openstack-auth-shib/templates', noti_tpl_list),
+                  ('etc/openstack-auth-shib/notifications', ['config/notifications_en.txt']),
                   (themes_dir + '/cap/static', 
                     [ 'src/themes/cap/static/_styles.scss', 'src/themes/cap/static/_variables.scss']),
                   (themes_dir + '/cap/templates', 
                     ['src/themes/cap/templates/_aai_status_style.html', 'src/themes/cap/templates/_aai_registr_style.html']),
                   (themes_dir + '/cap/templates/auth', ['src/themes/cap/templates/auth/_splash.html']),
                   (themes_dir + '/cap/templates/header', ['src/themes/cap/templates/header/_brand.html']),
-                  (themes_dir + '/cedc/static', 
-                    [ 'src/themes/cedc/static/_styles.scss', 'src/themes/cedc/static/_variables.scss']),
-                  (themes_dir + '/cedc/templates', 
-                    ['src/themes/cedc/templates/_aai_status_style.html', 'src/themes/cedc/templates/_aai_registr_style.html']),
-                  (themes_dir + '/cedc/templates/auth', ['src/themes/cedc/templates/auth/_splash.html']),
-                  (themes_dir + '/cedc/templates/header', ['src/themes/cedc/templates/header/_brand.html']),
                  ],
       cmdclass={'bdist_rpm': bdist_rpm}
      )

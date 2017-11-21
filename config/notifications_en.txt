@@ -1,78 +1,125 @@
-[registration_available]
-subject: New request for registration available ({{ username }})
-body: A new request for registration is available
-  {% if username %}The username is {{ username }}{% endif %}
-
-  Please, don't reply to this message
-
-[project_creation_request]
-subject: Project creation request ({{ username }})
-body: The user {{ username }} requires the creation of the project {{ project }}
-  
-  Please, don't reply to this message
-
-[subscription_waiting_approval]
-subject: Subscription request waiting for approval
-body: User {{ username }} requires access to project {{ project }}
-  Please, validate the subscription request
-  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html/Registration.html#ManageProjectMembershipRequests
-  
+[changed_member_priv]
+LOG: Privileges of user {{ username }} in project {{ project }} changed by {{ log.user_name }}
+subject: Your privileges for project {{ project }} have been changed
+body: Your role for project {{ project }} has been changed from {{ s_role }} to {{ d_role }}
+  {% if admin_address %}For further information please contact {{ admin_address }}
+  {% endif %}
   Please, don't reply to this message
 
 [first_registration_ok]
+LOG: Registration of {{ username }} and creation of project {{ project }} approved by {{ log.user_name }}
 subject: Your registration has been accepted
 body: Your account has been registered
   Your login name is {{ username }}
-  {% if guestmode %}You join the guest project
-  {% else %}You're the project administrator of the project {{ project }}{% endif %}
-  
-  
-  Please, don't reply to this message
-
-[subscription_processed]
-subject: Subscription to project {{ project }} approved
-body: Your request to access the project {{ project }} has been approved
+  {% if guestmode %}
+  You can access the guest project {{ project }}
+  {% else %}
+  The project {{ project }} has been created and you're its project administrator
+  {% endif %}
   
   Please, don't reply to this message
 
 [first_registration_rejected]
+LOG: Registration of {{ username }} and {% if project_creation %}creation of{% else %}affiliation to{% endif %} {{ projects|join:', ' }} rejected by {{ log.user_name }}
 subject: Registration not authorized
 body: Your request to access the cloud infrastructure was rejected
   {% if notes %}{{ notes }}{% endif %}
   
   Please, don't reply to this message
 
-[subscription_rejected]
-subject: Subscription to project {{ project }} rejected
-body: Your request to access the project {{ project }} has been rejected
-  {% if notes %}{{ notes }}{% endif %}
+[member_removed]
+LOG: User {{ username }} removed from {{ project }} by {{ log.user_name }}
+subject: User removed from {{ project }}
+body: Your account has been removed from the project {{ project }}
+  For further information please contact {{ admin_address }}
+  
+  Please, don't reply to this message
+
+[member_removed_for_admin]
+LOG: User {{ username }} removed from {{ project }} by {{ log.user_name }}
+subject: User {{ username }} removed from {{ project }}
+body: User {{ username }} has been removed from the project {{ project }}
+  For further information please contact {{ admin_address }}
+  
+  Please, don't reply to this message
+
+[member_forced_added]
+LOG: User {{ username }} forcedly added to {{ project }} by {{ log.user_name }}
+subject: User {{ username }} inserted into {{ project }}
+body: User {{ username }} has been inserted into the project {{ project }} by cloud admin
+  {% if isadmin %}
+  You are the administrator of this project
+  {% endif %}
+  Please, don't reply to this message
+
+[member_forced_removed]
+LOG: User {{ username }} forcedly removed to {{ project }} by {{ log.user_name }}
+subject: User {{ username }} removed from {{ project }}
+body: User {{ username }} has been removed from the project {{ project }} by cloud admin
+  
+  Please, don't reply to this message
+
+[project_created_by_admin]
+LOG: Project {{ project }} created by {{ log.user_name }}
+subject: Created new project {{ project }}
+body: The cloud admin has created the project {{ project }}
+  
+  Please, don't reply to this message
+
+[member_request]
+LOG: User {{ username }} requests access to project {{ project }}
+subject: New request for membership
+body: The user {{ username }} requires to access the project {{ project }}
+  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html-desktop/#ManageProjectMembers
+  
+  Please, don't reply to this message
+
+[project_created]
+LOG: Project {{ project }} created by {{ log.user_name }}
+subject: Request for a new project has been accepted
+body: The new project {{ project }} has been created and you're its project administrator
+  
+  Please, don't reply to this message
+
+[project_creation_request]
+LOG: User {{ username }} requests creation of project {{ project }}
+subject: Registered user {{ username }} requires a new tenant
+body: The registered user {{ username }} requires the creation of a new project {{ project }}
+  
+  Please, don't reply to this message
+
+[project_rejected]
+LOG: Creation of project {{ project }} rejected by {{ log.user_name }}
+subject: Request for a new project has been rejected
+body: The cloud administrator rejected the creation of project {{ project }}
+  {{ notes }}
+  
+  Please, don't reply to this message
+
+[registration_available]
+LOG: Registration request of user {{ username }} and {% if project_creation %}creation of{% else %}affiliation to{% endif %} {{ projects|join:', ' }} available
+subject: New request for registration available ({{ username }})
+body: A new request for registration is available
+  {% if username %}The username is {{ username }}{% endif %}
   
   Please, don't reply to this message
 
 [subscription_forced_approved]
+LOG: Subscription of {{ username }} to project {{ project }} forcedly approved by {{ log.user_name }}
 subject: Cloud manager forcedly approved subscription
 body: Cloud manager forcedly approved the subscription of {{ username }} to {{ project }}
   
   Please, don't reply to this message
 
 [subscription_forced_rejected]
+LOG: Subscription of {{ username }} to project {{ project }} forcedly rejected by {{ log.user_name }}
 subject: Cloud manager forcedly rejected subscription
 body: Cloud manager forcedly rejected the subscription of {{ username }} to {{ project }}
-  {% if notes %}{{ notes }}{% endif %}
   
   Please, don't reply to this message
 
-[user_expiring]
-subject: Account for user {{ username }} is going to expire
-body: The account for {{ username }} will expire in {{ days }} days.
-  Please contact the cloud administrators for a renewal
-  {% if contacts %}
-  Contacts:
-  {% for c_admin in contacts %}{{ c_admin.1 }}{% endfor %}
-  {% endif %}
-  Please, don't reply to this message
-
 [subscription_ongoing]
+LOG: Subscription of {{ username }} to project {{ project }} prechecked by {{ log.user_name }}
 subject: Subscription under evaluation
 body: Your subscription to {{ project }} is now under evaluation.
   For any information please contact:
@@ -82,58 +129,83 @@ body: Your subscription to {{ project }} is now under evaluation.
   
   Please, don't reply to this message
 
+[subscription_processed]
+LOG: Subscription of {{ username }} to project {{ project }} approved by {{ log.user_name }}
+subject: Subscription to {{ project }} approved
+body: Your subscription to the project {{ project }} has been approved
+  
+  Please, don't reply to this message
+
+[subscription_rejected]
+LOG: Subscription of {{ username }} to project {{ project }} rejected by {{ log.user_name }}
+subject: Subscription to {{ project }} rejected
+body: Your subscription to the project {{ project }} has been rejected
+  {% if notes %}{{ notes }}{% endif %}
+  
+  Please, don't reply to this message
+
 [subscription_reminder]
+LOG: Sent reminder for subscription of {{ username }} to project {{ project }}
 subject: Subscription reminder
 body: You have the following pending subscriptions for project {{ project }}:
   {% for req in pendingreqs %}
-  {{ req.0 }} ({{ req.1 }})
+  * {{ req }}
   {% endfor %} 
+  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html-desktop/#ManageProjectMembers
   
   Please, don't reply to this message
 
-[member_request]
-subject: User {{ username }} requires access to {{ project }}
-body: The user {{ username }} wants to join the project {{ project }}
-
-  Please, don't reply to this message
-
-[member_removed]
-subject: User removed from {{ project }}
-body: Your account has been removed from the project {{ project }}
-  {% if notes %}{{ notes }}{% endif %}
-  For further information please contact {{ admin_address }}
+[subscription_waiting_approval]
+LOG: User {{ username }} requests to join project {{ project }}
+subject: Subscription request waiting for approval
+body: User {{ username }} requires access to project {{ project }}
+  Please, validate the subscription request
+  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html-desktop/#ManageProjectMembers
   
   Please, don't reply to this message
 
-[member_removed_for_admin]
-subject: User {{ username }} removed from {{ project }}
-body: User {{ username }} has been removed from the project {{ project }}
-  {% if notes %}{{ notes }}{% endif %}
-  For further information please contact {{ admin_address }}
+[user_expiring]
+LOG: Sent account expiration notice to {{ username }}
+subject: Affiliation to {{ project }} is going to expire
+body: The affiliation for {{ username }} to {{ project }} will expire in {{ days }} days.
+  Please contact the project administrators for a renewal
+  {% if contacts %}
+  Contacts:
+  {% for c_admin in contacts %}
+  * {{ c_admin }}
+  {% endfor %}
+  {% endif %}
   
   Please, don't reply to this message
 
-
-[changed_member_priv]
-subject: Your privileges for project {{ project }} have been changed
-body: Your role for project {{ project }} has been changed from {{ s_role }} to {{ d_role }}
-  For further information please contact {{ admin_address }}
+[user_need_renew]
+LOG: User {{ username }} requires renewal
+subject: User {{ username }} requires renewal
+body: The affiliation of {{ username }} to {{ project }} is going to expire.
+  Please, renew the affiliation or the user will be removed from the project
   
   Please, don't reply to this message
 
-[project_created]
-subject: Project {{ project }} created
-body: Your request for the creation of project {{ project }} has been accepted
-  You are the project administrator for the project {{ project }}
+[user_renewed]
+LOG: User {{ username }} renewed until {{ expiration}} by {{ log.user_name}}
+subject: Affiliation to {{ project }} has been renewed
+body: The affiliation for {{ username }} to {{ project }} has been renewed.
+  The new expiration date is {{ expiration }}.
   
   Please, don't reply to this message
 
-[project_rejected]
-subject: Project {{ project }} rejected
-body: Your request for the creation of project {{ project }} has been rejected
-  {% if notes %}{{ notes }}{% endif %}
+[user_expired]
+LOG: Affiliation of {{ username }} to {{ project }} is expired
+subject: Affiliation to {{ project }} is expired
+body: The affiliation for {{ username }} to {{ project }} is expired.
   
   Please, don't reply to this message
 
+[user_purged]
+LOG: User {{ username }} removed by {{ log.user_name }}
+subject: Account for user {{ username }} has been removed
+body: The account {{ username }} has been removed from Cloud Area Padovana.
+  
+  Please, don't reply to this message
 
 
