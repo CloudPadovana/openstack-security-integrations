@@ -22,7 +22,7 @@ from distutils.command.bdist_rpm import bdist_rpm as _bdist_rpm
 
 pkg_name = 'openstack-security-integrations'
 pkg_version = '1.2.0'
-pkg_release = '7'
+pkg_release = '8'
 
 source_items = "setup.py src config"
 
