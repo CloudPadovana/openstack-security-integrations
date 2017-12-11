@@ -65,7 +65,7 @@ pwd_panel_dir = os_dash_dir + 'settings/password_manager/templates/password_mana
 preq_panel_dir = os_dash_dir + 'idmanager/project_requests/templates/project_requests'
 idpreq_panel_dir = os_dash_dir + 'idmanager/idp_requests/templates/idp_requests'
 log_panel_dir = os_dash_dir + 'idmanager/log_manager/templates/log_manager'
-themes_dir = os_main_dir + 'themes'
+theme_dir = os_main_dir + 'themes/cap'
 
 template_list = [
     'src/templates/_register_form.html',
@@ -151,8 +151,6 @@ log_templ_list = [
 logo_list = [
     'src/templates/logoCloudAreapd.png',
     'src/templates/logoCloudAreapdStrip.png',
-    'src/templates/logoCloudAreapd.ico',
-    'src/templates/logoCloudVeneto.ico',
     'src/templates/logoCloudVeneto.png',
     'src/templates/logoCloudVenetoStrip.png',
     'src/templates/logoInfnAAI.png',
@@ -216,17 +214,18 @@ setup(
                   (idpreq_panel_dir, idpreq_templ_list),
                   (log_panel_dir, log_templ_list),
                   (img_dir, logo_list),
+                  (theme_dir + '/static/img', ['src/templates/favicon.ico']),
                   ('etc/openstack-auth-shib', hz_confile_list),
                   ('etc/keystone-skey-auth', ks_confile_list),
                   ('etc/cron.d', ['config/openstack-auth-shib-cron']),
                   ('usr/share/openstack-auth-shib', ['config/attribute-map.xml']),
                   ('etc/openstack-auth-shib/notifications', ['config/notifications_en.txt']),
-                  (themes_dir + '/cap/static', 
+                  (theme_dir + '/static', 
                     [ 'src/themes/cap/static/_styles.scss', 'src/themes/cap/static/_variables.scss']),
-                  (themes_dir + '/cap/templates', 
+                  (theme_dir + '/templates', 
                     ['src/themes/cap/templates/_aai_status_style.html', 'src/themes/cap/templates/_aai_registr_style.html']),
-                  (themes_dir + '/cap/templates/auth', ['src/themes/cap/templates/auth/_splash.html']),
-                  (themes_dir + '/cap/templates/header', ['src/themes/cap/templates/header/_brand.html']),
+                  (theme_dir + '/templates/auth', ['src/themes/cap/templates/auth/_splash.html']),
+                  (theme_dir + '/templates/header', ['src/themes/cap/templates/header/_brand.html']),
                  ],
       cmdclass={'bdist_rpm': bdist_rpm}
      )
