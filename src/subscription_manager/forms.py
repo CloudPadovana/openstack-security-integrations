@@ -34,9 +34,11 @@ from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 
 from openstack_auth_shib.notifications import notifyUser
+from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import SUBSCR_OK_TYPE
 from openstack_auth_shib.notifications import SUBSCR_NO_TYPE
 from openstack_auth_shib.notifications import MEMBER_REMOVED
+from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
@@ -273,12 +275,27 @@ class RenewSubscrForm(forms.SelfHandlingForm):
                     user_reg.expdate = data['expiration']
                     user_reg.save()
 
+                tmpres = EMail.objects.filter(registration=user_reg)
+                user_mail = tmpres[0].email if len(tmpres) > 0 else None
+
                 #
                 # Clear requests
                 #
                 prj_reqs.delete()
-                
-                
+
+            #
+            # send notification to the user and cloud admin
+            #
+            noti_params = {
+                'username' : user_reg.username,
+                'project' : request.user.tenant_name,
+                'expiration' : data['expiration'].strftime("%d %B %Y")
+            }
+
+            notifyUser(request=request, rcpt=user_mail, action=USER_RENEWED_TYPE,
+                       context=noti_params, dst_user_id=user_reg.userid)
+            notifyAdmin(request=request, action=USER_RENEWED_TYPE, context=noti_params)
+
         except:
             LOG.error("Cannot renew user", exc_info=True)
             exceptions.handle(request)

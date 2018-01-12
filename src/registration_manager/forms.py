@@ -46,6 +46,7 @@ from openstack_auth_shib.notifications import SUBSCR_FORCED_OK_TYPE
 from openstack_auth_shib.notifications import SUBSCR_FORCED_NO_TYPE
 from openstack_auth_shib.notifications import PRJ_CREATE_TYPE
 from openstack_auth_shib.notifications import PRJ_REJ_TYPE
+from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 
 from openstack_auth_shib.models import UserMapping
 from openstack_auth_shib.models import RegRequest
@@ -832,12 +833,26 @@ class RenewAdminForm(forms.SelfHandlingForm):
                     user_reg.expdate = data['expiration']
                     user_reg.save()
 
+                tmpres = EMail.objects.filter(registration=user_reg)
+                user_mail = tmpres[0].email if len(tmpres) > 0 else None
+
                 #
                 # Clear requests
                 #
                 prj_reqs.delete()
-                
-                
+
+            #
+            # send notification to the project admin
+            #
+            noti_params = {
+                'username' : user_reg.username,
+                'project' : usr_and_prj[1],
+                'expiration' : data['expiration'].strftime("%d %B %Y")
+            }
+
+            notifyUser(request=request, rcpt=user_mail, action=USER_RENEWED_TYPE,
+                       context=noti_params, dst_user_id=user_reg.userid)
+
         except:
             LOG.error("Cannot renew project admin", exc_info=True)
             messages.error(request, _("Cannot renew project admin"))
