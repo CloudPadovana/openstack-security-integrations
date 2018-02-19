@@ -97,6 +97,11 @@ class Command(BaseCommand):
 
             with transaction.atomic():
                 for reg_user in Registration.objects.all():
+
+                    if not reg_user.userid:
+                        LOG.info("Skipped unregistered user %s" % reg_user.username)
+                        continue
+
                     tmpres = keystone_client.users.get(reg_user.userid)
                     if not tmpres:
                         continue
@@ -124,6 +129,11 @@ class Command(BaseCommand):
                     prj_dict[prj_obj.projectid] = prj_obj
 
                 for reg_user in Registration.objects.all():
+
+                    if not reg_user.userid:
+                        LOG.info("Skipped unregistered user %s" % reg_user.username)
+                        continue
+
                     for role_obj in keystone_client.role_assignments.list(reg_user.userid):
                         if role_obj.role['id'] == tnt_admin_roleid:
                             tmpprjid = role_obj.scope['project']['id']
