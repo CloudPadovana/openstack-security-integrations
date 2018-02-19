@@ -4,25 +4,19 @@ AVAILABLE_THEMES.append(( 'cap', pgettext_lazy("Cloud Area Padovana theme", "CAP
 
 DEFAULT_THEME = 'cap'
 
-HORIZON_CONFIG['identity_providers'].append(
-    {
-      'id' :          'infn_sso',
-      'context' :     '/dashboard-infn',
-      'path' :        '/dashboard-infn/auth/register/',
-      'description' : 'INFN AAI',
-      'logo' :        '/dashboard/static/dashboard/img/logoInfnAAI.png'
-    }
-)
+HORIZON_CONFIG['identity_providers']['infn_sso'] = {
+    'context' :     '/dashboard-infn',
+    'path' :        '/dashboard-infn/auth/register/',
+    'description' : 'INFN AAI',
+    'logo' :        '/dashboard/static/dashboard/img/logoInfnAAI.png'
+}
 
-HORIZON_CONFIG['identity_providers'].append(
-    { 
-      'id' :          'unipd_sso',
-      'context' :     '/dashboard-unipd',
-      'path' :        '/dashboard-unipd/auth/register/',
-      'description' : 'UniPD IdP',
-      'logo' :        '/dashboard/static/dashboard/img/logoUniPD.png'
-    }
-)
+HORIZON_CONFIG['identity_providers']['unipd_sso'] = { 
+    'context' :     '/dashboard-unipd',
+    'path' :        '/dashboard-unipd/auth/register/',
+    'description' : 'UniPD IdP',
+    'logo' :        '/dashboard/static/dashboard/img/logoUniPD.png'
+}
 
 WEBSSO_IDP_MAPPING["infn_sso"] = ("infnaai", "mapped")
 WEBSSO_IDP_MAPPING["unipd_sso"] = ("unipdaai", "mapped")

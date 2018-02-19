@@ -87,16 +87,14 @@
              src="/dashboard/static/dashboard/img/logoUsrPwd.png"/>
       </button>
 
-      {% if HORIZON_CONFIG.identity_providers %}
-      {% for idpdata in HORIZON_CONFIG.identity_providers %}
+      {% for idpid, idpdata in HORIZON_CONFIG.identity_providers.iteritems %}
       <button type="button"
-              onclick="document.getElementById('auth_type_in').value='{{ idpdata.id }}';document.forms['logf_id'].submit()">
+              onclick="selectIdP('{{ idpid }}', '{{ idpdata.region }}')">
          <img align="middle" height="80px" width="80px" 
               alt="Login {{ idpdata.description }}" 
               src="{{ idpdata.logo }}"/>
       </button>
       {% endfor %}
-      {% endif %}
 
     </div>
 
@@ -117,8 +115,7 @@
              src="/dashboard/static/dashboard/img/logoUsrReg.png"/>
       </button>
 
-      {% if HORIZON_CONFIG.identity_providers %}
-      {% for idpdata in HORIZON_CONFIG.identity_providers %}
+      {% for idpid, idpdata in HORIZON_CONFIG.identity_providers.iteritems %}
       <button type="button"
               onclick="location.href='{{ idpdata.path }}';">
          <img align="middle" height="80px" width="80px" 
@@ -126,7 +123,6 @@
               src="{{ idpdata.logo }}"/>
       </button>
       {% endfor %}
-      {% endif %}
     </div>
     
   </fieldset>
@@ -201,6 +197,14 @@
       document.getElementById('main_btn_div').style.display='none';
       document.getElementById('register_div').style.display='block';
       document.getElementById('regist_sel_div').style.display='block';
+  }
+  
+  function selectIdP (idpID, region) {
+      document.getElementById('auth_type_in').value=idpID;
+      if (region != "") { 
+          document.getElementById('id_region').value=region;
+      }
+      document.forms['logf_id'].submit();
   }
 
   </script>

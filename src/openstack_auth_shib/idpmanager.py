@@ -52,7 +52,7 @@ def get_manager(request):
     if request.META.get('AUTH_TYPE','') == 'shibboleth':
         return SAML2_IdP(request)
     
-    for item in settings.HORIZON_CONFIG['identity_providers']:
+    for item_id, item in settings.HORIZON_CONFIG['identity_providers'].iteritems():
         if request.path.startswith(item['context']):
             return OIDC_IdP(request, item)
 
