@@ -31,7 +31,7 @@ from openstack_auth_shib.utils import get_project_managers
 
 from openstack_dashboard.api import keystone as keystone_api
 
-from keystoneclient.exceptions import AuthorizationFailure
+from horizon import messages
 
 LOG = logging.getLogger(__name__)
 
@@ -55,9 +55,9 @@ class DeleteUsersAction(baseTables.DeleteUsersAction):
         
         if tenant_ref:
             
-            failure = AuthorizationFailure()
-            failure._safe_message=_("Cannot delete unique admin for %s") % tenant_ref
-            raise failure
+            msg = _("User is the unique admin for %s") % tenant_ref
+            messages.error(request, msg)
+            raise Exception(msg)
         
         else:
             tmpres = EMail.objects.filter(registration__userid=obj_id)
