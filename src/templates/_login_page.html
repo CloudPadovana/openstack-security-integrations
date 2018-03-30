@@ -82,16 +82,19 @@
 
       <input id="auth_type_in" type="hidden" name="auth_type" value="credentials" />
 
-      <button type="button" onclick="showLoginForm()">
-        <img align="middle" height="80px" width="80px" alt="Local login" 
+      <button type="button"
+              title="{% trans 'Sign in with username and password' %}"
+              onclick="showLoginForm()">
+        <img align="middle" height="80px" width="80px" alt="{% trans 'Local account' %}" 
              src="/dashboard/static/dashboard/img/logoUsrPwd.png"/>
       </button>
 
       {% for idpid, idpdata in HORIZON_CONFIG.identity_providers.iteritems %}
       <button type="button"
+              title="{% trans 'Sign in with' %} {{ idpdata.description }}"
               onclick="selectIdP('{{ idpid }}', '{{ idpdata.region }}')">
          <img align="middle" height="80px" width="80px" 
-              alt="Login {{ idpdata.description }}" 
+              alt="{% trans 'Sign in with' %} {{ idpdata.description }}" 
               src="{{ idpdata.logo }}"/>
       </button>
       {% endfor %}
@@ -107,22 +110,30 @@
          class="text-center"
          style="display: none;">
 
-      <h3 class="text-center alert alert-info">{% trans "Registration" %}</h3>
+      <div class="text-center alert alert-info">
+        <p>{% trans "Please select your organization" %}
+        <p>{% trans "or" %}</p>
+        <p>{% trans "register with username and password" %}</p>
+      </div>
       
-      <button type="button"
-              onclick="location.href='/dashboard/auth/register/';">
-        <img align="middle" height="80px" width="80px" alt="Register local account" 
-             src="/dashboard/static/dashboard/img/logoUsrReg.png"/>
-      </button>
-
       {% for idpid, idpdata in HORIZON_CONFIG.identity_providers.iteritems %}
       <button type="button"
+              title="{% trans 'Register using' %} {{ idpdata.description }}"
               onclick="location.href='{{ idpdata.path }}';">
          <img align="middle" height="80px" width="80px" 
-              alt="Login {{ idpdata.description }}" 
+              alt="{% trans 'Register using' %} {{ idpdata.description }}" 
               src="{{ idpdata.logo }}"/>
       </button>
       {% endfor %}
+
+      <button type="button"
+              title="{% trans 'Register a local account' %}"
+              onclick="location.href='/dashboard/auth/register/';">
+        <img align="middle" height="80px" width="80px"
+             alt="{% trans 'Register a local account' %}" 
+             src="/dashboard/static/dashboard/img/logoUsrReg.png"/>
+      </button>
+
     </div>
     
   </fieldset>

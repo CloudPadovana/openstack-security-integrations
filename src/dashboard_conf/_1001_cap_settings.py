@@ -14,7 +14,7 @@ HORIZON_CONFIG['identity_providers']['infn_sso'] = {
 HORIZON_CONFIG['identity_providers']['unipd_sso'] = { 
     'context' :     '/dashboard-unipd',
     'path' :        '/dashboard-unipd/auth/register/',
-    'description' : 'UniPD IdP',
+    'description' : 'UniPD SSO',
     'logo' :        '/dashboard/static/dashboard/img/logoUniPD.png'
 }
 
