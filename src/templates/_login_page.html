@@ -82,13 +82,6 @@
 
       <input id="auth_type_in" type="hidden" name="auth_type" value="credentials" />
 
-      <button type="button"
-              title="{% trans 'Sign in with username and password' %}"
-              onclick="showLoginForm()">
-        <img align="middle" height="80px" width="80px" alt="{% trans 'Local account' %}" 
-             src="/dashboard/static/dashboard/img/logoUsrPwd.png"/>
-      </button>
-
       {% for idpid, idpdata in HORIZON_CONFIG.identity_providers.iteritems %}
       <button type="button"
               title="{% trans 'Sign in with' %} {{ idpdata.description }}"
@@ -98,6 +91,13 @@
               src="{{ idpdata.logo }}"/>
       </button>
       {% endfor %}
+
+      <button type="button"
+              title="{% trans 'Sign in with username and password' %}"
+              onclick="showLoginForm()">
+        <img align="middle" height="80px" width="80px" alt="{% trans 'Local account' %}" 
+             src="/dashboard/static/dashboard/img/logoUsrPwd.png"/>
+      </button>
 
     </div>
 
@@ -111,9 +111,8 @@
          style="display: none;">
 
       <div class="text-center alert alert-info">
-        <p>{% trans "Please select your organization" %}
-        <p>{% trans "or" %}</p>
-        <p>{% trans "register with username and password" %}</p>
+        <p>{% trans "Please select your institution." %}
+        <p>{% trans "Register with username-password (last button) otherwise." %}</p>
       </div>
       
       {% for idpid, idpdata in HORIZON_CONFIG.identity_providers.iteritems %}
@@ -127,7 +126,7 @@
       {% endfor %}
 
       <button type="button"
-              title="{% trans 'Register a local account' %}"
+              title="{% trans 'Register with username and password' %}"
               onclick="location.href='/dashboard/auth/register/';">
         <img align="middle" height="80px" width="80px"
              alt="{% trans 'Register a local account' %}" 
