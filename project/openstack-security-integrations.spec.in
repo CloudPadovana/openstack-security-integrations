@@ -288,7 +288,7 @@ Customization of Openstack Horizon for Cloud Area Padovana
 
 
 %changelog
-* Mon Nov 20 2017 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
+* Mon Apr 09 2018 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
 - Porting on Ocata
 - Migration to OS-Federation
 
