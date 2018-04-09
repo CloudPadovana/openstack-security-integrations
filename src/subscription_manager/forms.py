@@ -147,7 +147,8 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
 
             notifyUser(request=self.request, rcpt=member_email, action=SUBSCR_OK_TYPE, context=noti_params,
                        dst_user_id=member_id)
-        
+            notifyAdmin(request=self.request, action=SUBSCR_OK_TYPE, context=noti_params)
+
         except:
             exceptions.handle(request)
             return False
@@ -209,7 +210,8 @@ class RejectSubscrForm(forms.SelfHandlingForm):
 
             notifyUser(request=self.request, rcpt=member_email, action=SUBSCR_NO_TYPE, context=noti_params,
                        dst_user_id=member_id)
-        
+            notifyAdmin(request=self.request, action=SUBSCR_NO_TYPE, context=noti_params)
+
         except:
             exceptions.handle(request)
             return False

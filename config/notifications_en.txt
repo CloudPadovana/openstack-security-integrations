@@ -132,14 +132,14 @@ body: Your subscription to {{ project }} is now under evaluation.
 [subscription_processed]
 LOG: Subscription of {{ username }} to project {{ project }} approved by {{ log.user_name }}
 subject: Subscription to {{ project }} approved
-body: Your subscription to the project {{ project }} has been approved
+body: The subscription of {{ username }} to the project {{ project }} has been approved
   
   Please, don't reply to this message
 
 [subscription_rejected]
 LOG: Subscription of {{ username }} to project {{ project }} rejected by {{ log.user_name }}
 subject: Subscription to {{ project }} rejected
-body: Your subscription to the project {{ project }} has been rejected
+body: The subscription of {{ username }} to the project {{ project }} has been rejected
   {% if notes %}{{ notes }}{% endif %}
   
   Please, don't reply to this message
