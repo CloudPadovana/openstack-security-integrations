@@ -29,7 +29,7 @@ from .models import OS_LNAME_LEN
 LOG = logging.getLogger(__name__)
 
 # #############################################################################
-#  Methods for the old implementation
+#  Methods for the Registration site
 # #############################################################################
 #
 # Provider configuration table
@@ -125,9 +125,6 @@ class OIDC_IdP:
         return response
 
 
-
-def get_idp_list(excl_list=list()):
-    raise Exception("Unsupported")
 
 # #############################################################################
 #  Methods for the new implementation

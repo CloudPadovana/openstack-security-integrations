@@ -18,18 +18,10 @@ from django.utils.translation import ugettext_lazy as _
 import horizon
 
 from openstack_dashboard.dashboards.settings import dashboard
-from openstack_auth_shib.idpmanager import get_manager
-
-def enableActPwd(obj, context):
-    request = context['request']
-    if get_manager(request):
-        return True
-    return False
     
 class PasswordPanel(horizon.Panel):
     name = _("Manage Password")
     slug = 'password_manager'
-#    nav = enableActPwd
 
 dashboard.Settings.register(PasswordPanel)
 

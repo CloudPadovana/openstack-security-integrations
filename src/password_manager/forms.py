@@ -29,7 +29,6 @@ from horizon.utils import validators
 from openstack_dashboard import api
 
 from openstack_auth_shib.models import PWD_LEN
-from openstack_auth_shib.idpmanager import get_manager
 
 class PasswordForm(forms.SelfHandlingForm):
     new_password = forms.RegexField(
@@ -64,13 +63,10 @@ class PasswordForm(forms.SelfHandlingForm):
             #api.keystone.user_update_own_password(request, None, data['new_password'])
             api.keystone.user_update_password(request, request.user.id, data['new_password'], False)
             
-            if get_manager(request):
-                return http.HttpResponseRedirect(reverse_lazy('login'))
-            else:
-                response = http.HttpResponseRedirect(reverse_lazy('logout'))
-                msg = _("Password changed. Please log in again to continue.")
-                utils.add_logout_reason(request, response, msg)
-                return response
+            response = http.HttpResponseRedirect(reverse_lazy('logout'))
+            msg = _("Password changed. Please log in again to continue.")
+            utils.add_logout_reason(request, response, msg)
+            return response
                 
         except Exception:
             exceptions.handle(request, _('Unable to activate password.'))
