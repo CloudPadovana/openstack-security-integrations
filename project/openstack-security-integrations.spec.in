@@ -55,9 +55,6 @@ mv %{buildroot}/%{python_sitelib}/log_manager/* \
 mv %{buildroot}/%{python_sitelib}/project_requests/* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests
 
-mv %{buildroot}/%{python_sitelib}/idp_requests/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests
-
 mv %{buildroot}/%{python_sitelib}/password_manager/* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager
 
@@ -178,13 +175,6 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/templates/project_requests/*.html
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/templates
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/templates/idp_requests
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/idp_requests/templates/idp_requests/*.html
 %dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager
 %dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/templates
 %dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/templates/password_manager
