@@ -206,51 +206,6 @@ Django plugin for Shibboleth authentication
 
 
 
-%package -n keystone-skey-auth
-Summary: Keystone authentication plugin for secret token
-Group: System Environment/Libraries
-Requires: python-crypto
-Requires: python-keystone
-
-%description -n keystone-skey-auth
-Keystone authentication plugin for secret token
-
-%files -n keystone-skey-auth
-%defattr(-,root,root)
-%config(noreplace) /etc/keystone-skey-auth/policy.json
-%dir %{python_sitelib}/keystone_skey_auth
-%{python_sitelib}/keystone_skey_auth/*.py
-%{python_sitelib}/keystone_skey_auth/*.pyc
-%{python_sitelib}/keystone_skey_auth/*.pyo
-%{python_sitelib}/*.egg-info
-
-%triggerin -n keystone-skey-auth -- openstack-keystone
-if [ ! $1 == 2 ]; then
-    #
-    # Replace policy file
-    #
-    if [ ! -e /etc/keystone/policy-origin.json ] ; then
-        mv -f /etc/keystone/policy.json /etc/keystone/policy-origin.json
-    fi
-    ln -sf /etc/keystone-skey-auth/policy.json /etc/keystone/policy.json
-fi
-
-%triggerun -n keystone-skey-auth -- openstack-keystone
-if [ $1 == 0 -o $2 == 0 ] ; then
-    if [ -e /etc/keystone/policy-origin.json ] ; then
-        mv -f /etc/keystone/policy-origin.json /etc/keystone/policy.json
-    fi
-fi
-
-
-
-
-
-
-
-
-
-
 %package -n openstack-auth-cap
 Summary: Customization of Openstack Horizon for Cloud Area Padovana
 Group: System Environment/Libraries
@@ -288,7 +243,7 @@ Customization of Openstack Horizon for Cloud Area Padovana
 
 
 %changelog
-* Mon Apr 09 2018 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
+* Mon Apr 09 2018 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.2.1-1
 - Porting on Ocata
 - Migration to OS-Federation
 
