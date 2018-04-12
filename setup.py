@@ -63,7 +63,6 @@ user_panel_dir = os_dash_dir + 'idmanager/user_manager/templates/user_manager'
 prj_panel_dir = os_dash_dir + 'idmanager/project_manager/templates/project_manager'
 pwd_panel_dir = os_dash_dir + 'settings/password_manager/templates/password_manager'
 preq_panel_dir = os_dash_dir + 'idmanager/project_requests/templates/project_requests'
-idpreq_panel_dir = os_dash_dir + 'idmanager/idp_requests/templates/idp_requests'
 log_panel_dir = os_dash_dir + 'idmanager/log_manager/templates/log_manager'
 theme_dir = os_main_dir + 'themes/cap'
 
@@ -138,11 +137,6 @@ preq_templ_list = [
     'src/templates/project_requests/_prj_request.html'
 ]
 
-idpreq_templ_list = [
-    'src/templates/idp_requests/idp_request.html',
-    'src/templates/idp_requests/_idp_request.html'
-]
-
 log_templ_list = [
     'src/templates/log_manager/log_manager.html',
     'src/templates/log_manager/detail.html',
@@ -165,7 +159,6 @@ logo_list = [
 ]
 
 module_list = [
-    'keystone_skey_auth',
     'openstack_auth_shib',
     'registration_manager',
     'project_manager',
@@ -175,7 +168,6 @@ module_list = [
     'password_manager',
     'log_manager',
     'project_requests',
-    'idp_requests',
     'idmanager',
     'dashboard_conf',
     'commands'
@@ -207,7 +199,6 @@ setup(
                   (subscr_panel_dir, subscr_templ_list),
                   (member_panel_dir, member_templ_list),
                   (preq_panel_dir, preq_templ_list),
-                  (idpreq_panel_dir, idpreq_templ_list),
                   (log_panel_dir, log_templ_list),
                   (img_dir, logo_list),
                   (theme_dir + '/static/img', ['src/templates/favicon.ico']),
