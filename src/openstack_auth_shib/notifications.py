@@ -35,7 +35,7 @@ LOG = logging.getLogger(__name__)
 
 TEMPLATE_TABLE = dict()
 TEMPLATE_LOCK = threading.Lock()
-TEMPLATE_REGEX = re.compile("notifications_(\w\w).txt")
+TEMPLATE_REGEX = re.compile("notifications_(\w\w).txt$")
 
 # List of available notification templates
 CHANGED_MEMBER_ROLE = 'changed_member_priv'
