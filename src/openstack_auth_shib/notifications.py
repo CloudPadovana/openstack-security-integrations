@@ -65,9 +65,6 @@ USER_PURGED_TYPE = 'user_purged'
 NEWPRJ_BY_ADM = 'project_created_by_admin'
 
 
-DEF_MSG_CACHE_DIR = '/var/cache/openstack-auth-shib/msg'
-
-
 # DO NOT CHANGE the LOG_TYPE_* constants
 LOG_TYPE_EMAIL = '__EMAIL__'
 
@@ -270,26 +267,4 @@ def notifyManagers(subject, body):
         LOG.debug("Sending %s - %s - to managers" % (subject, body))
     except:
         LOG.error("Cannot send notification", exc_info=True)
-
-def bookNotification(code, userid, username, projectid, projectname):
-
-    cache_dir = getattr(settings, 'MSG_CACHE_DIR', DEF_MSG_CACHE_DIR)
-    f_name = os.path.join(cache_dir, "%s.%s" % (projectid, userid))
-    t_name = "%s.tmp" % f_name
-
-    try:        
-        with open(t_name, 'w') as n_file:
-            j_dict = { 
-                'code' : code,
-                'user' : username,
-                'userid' : userid,
-                'project' : projectname,
-                'projectid' : projectid
-            }
-            n_file.write(json.dumps(j_dict) + '\n')
-        
-        os.rename(t_name, f_name)
-
-    except:
-        LOG.error("Cannot book notification", exc_info=True)       
 
