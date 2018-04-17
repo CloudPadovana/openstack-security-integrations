@@ -14,19 +14,39 @@
 #  under the License. 
 
 
-try:
-    from django.conf.urls import patterns, url
-except:
-    from django.conf.urls.defaults import patterns, url
-
+from django import VERSION as django_version
+from django.conf.urls import url
 from openstack_dashboard.dashboards.idmanager.user_manager import views
 
+index_url = url(r'^$', views.IndexView.as_view(), name='index')
+chkorp_url = url(r'^checkorphans/$', views.CheckOrphansView.as_view(), name='checkorphans')
+mod_url = url(r'^(?P<user_id>[^/]+)/update/$', views.UpdateView.as_view(), name='update')
+ren_url = url(r'^(?P<user_id>[^/]+)/renew/$', views.RenewView.as_view(), name='renew')
+modpwd_url = url(r'^(?P<user_id>[^/]+)/change_password/$', views.ChangePasswordView.as_view(),
+                 name='change_password')
+detail_url = url(r'^(?P<user_id>[^/]+)/detail/$', views.DetailView.as_view(), name='detail')
 
-urlpatterns = patterns('openstack_dashboard.dashboards.idmanager.user_manager.views',
-    url(r'^$', views.IndexView.as_view(), name='index'),
-    url(r'^checkorphans/$', views.CheckOrphansView.as_view(), name='checkorphans'),
-    url(r'^(?P<user_id>[^/]+)/update/$', views.UpdateView.as_view(), name='update'),
-    url(r'^(?P<user_id>[^/]+)/renew/$', views.RenewView.as_view(), name='renew'),
-    url(r'^(?P<user_id>[^/]+)/change_password/$', views.ChangePasswordView.as_view(), name='change_password'),
-    url(r'^(?P<user_id>[^/]+)/detail/$', views.DetailView.as_view(), name='detail'))
+if django_version[1] < 11:
+
+    from django.conf.urls import patterns
+
+    urlpatterns = patterns('openstack_dashboard.dashboards.idmanager.user_manager.views',
+                           index_url,
+                           chkorp_url,
+                           mod_url,
+                           ren_url,
+                           modpwd_url,
+                           detail_url
+    )
+
+else:
+
+    urlpatterns = [
+        index_url,
+        chkorp_url,
+        mod_url,
+        ren_url,
+        modpwd_url,
+        detail_url
+    ]
 

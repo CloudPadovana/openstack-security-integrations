@@ -14,22 +14,39 @@
 #  under the License. 
 
 
-try:
-    from django.conf.urls import patterns, url
-except:
-    from django.conf.urls.defaults import patterns, url
-
+from django import VERSION as django_version
+from django.conf.urls import url
 from openstack_dashboard.dashboards.idmanager.project_manager import views
 
+index_url = url(r'^$', views.IndexView.as_view(), name='index')
+create_url = url(r'^create$', views.CreateProjectView.as_view(), name='create')
+mod_url = url(r'^(?P<tenant_id>[^/]+)/update/$',
+        views.UpdateProjectView.as_view(), name='update')
+use_url = url(r'^(?P<tenant_id>[^/]+)/usage/$',
+        views.ProjectUsageView.as_view(), name='usage')
+detail_url = url(r'^(?P<project_id>[^/]+)/detail/$',
+        views.DetailProjectView.as_view(), name='detail')
 
-urlpatterns = patterns('',
-    url(r'^$', views.IndexView.as_view(), name='index'),
-    url(r'^create$', views.CreateProjectView.as_view(), name='create'),
-    url(r'^(?P<tenant_id>[^/]+)/update/$',
-        views.UpdateProjectView.as_view(), name='update'),
-    url(r'^(?P<tenant_id>[^/]+)/usage/$',
-        views.ProjectUsageView.as_view(), name='usage'),
-    url(r'^(?P<project_id>[^/]+)/detail/$',
-        views.DetailProjectView.as_view(), name='detail'),
-)
+if django_version[1] < 11:
+
+    from django.conf.urls import patterns
+
+    urlpatterns = patterns('',
+        index_url,
+        create_url,
+        mod_url,
+        use_url,
+        detail_url,
+    )
+
+else:
+
+    urlpatterns = [
+        index_url,
+        create_url,
+        mod_url,
+        use_url,
+        detail_url
+    ]
+
 

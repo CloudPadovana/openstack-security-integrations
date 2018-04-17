@@ -13,14 +13,22 @@
 #  License for the specific language governing permissions and limitations
 #  under the License. 
 
-try:
-    from django.conf.urls import patterns, url
-except:
-    from django.conf.urls.defaults import patterns, url
-
+from django import VERSION as django_version
+from django.conf.urls import url
 from openstack_dashboard.dashboards.settings.password_manager import views
 
+index_url = url(r'^$', views.PasswordView.as_view(), name='index')
 
-urlpatterns = patterns('openstack_dashboard.dashboards.settings.password_manager.views',
-    url(r'^$', views.PasswordView.as_view(), name='index'))
+if django_version[1] < 11:
 
+    from django.conf.urls import patterns
+
+    urlpatterns = patterns('openstack_dashboard.dashboards.settings.password_manager.views',
+        index_url
+    )
+
+else:
+
+    urlpatterns = [
+        index_url
+    ]

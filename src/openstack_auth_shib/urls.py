@@ -22,28 +22,57 @@
 # url(r'^auth/', include('openstack_auth.urls'))
 #
 
-try:
-    from django.conf.urls import patterns, url
-except:
-    from django.conf.urls.defaults import patterns, url
-
+from django import VERSION as django_version
+from django.conf.urls import url
 from openstack_auth.utils import patch_middleware_get_user
-from openstack_auth_shib.views import RegistrView
+from openstack_auth_shib import views
 
 patch_middleware_get_user()
 
+login_url = url(r"^login/$", views.login, name='login')
+websso_url = url(r"^websso/$", views.websso, name='websso')
+logout_url = url(r"^logout/$", views.logout, name='logout')
+switch_url = url(r'^switch/(?P<tenant_id>[^/]+)/$', views.switch, name='switch_tenants')
+sw_reg_url = url(r'^switch_services_region/(?P<region_name>[^/]+)/$', views.switch_region,
+                 name='switch_services_region')
+regis_url = url(r"^register/$", views.RegistrView.as_view(), name='register')
+reg_ok_url = url(r"^reg_done/$", views.reg_done, name='reg_done')
+namex_url = url(r"^name_exists/$", views.name_exists, name='name_exists')
+fail_url = url(r"^reg_failure/$", views.reg_failure, name='reg_failure')
+dup_url = url(r"^dup_login/$", views.dup_login, name='dup_login')
+err_url = url(r"^auth_error/$", views.auth_error, name='auth_error')
 
-urlpatterns = patterns('openstack_auth_shib.views',
-    url(r"^login/$", "login", name='login'),
-    url(r"^websso/$", "websso", name='websso'),
-    url(r"^logout/$", 'logout', name='logout'),
-    url(r'^switch/(?P<tenant_id>[^/]+)/$', 'switch', name='switch_tenants'),
-    url(r'^switch_services_region/(?P<region_name>[^/]+)/$', 'switch_region',
-        name='switch_services_region'),
-    url(r"^register/$", RegistrView.as_view(), name='register'),
-    url(r"^reg_done/$", "reg_done", name='reg_done'),
-    url(r"^name_exists/$", "name_exists", name='name_exists'),
-    url(r"^reg_failure/$", "reg_failure", name='reg_failure'),
-    url(r"^dup_login/$", "dup_login", name='dup_login'),
-    url(r"^auth_error/$", "auth_error", name='auth_error')
-)
+if django_version[1] < 11:
+
+    from django.conf.urls import patterns
+
+    urlpatterns = patterns('openstack_auth_shib.views',
+                           login_url,
+                           websso_url,
+                           logout_url,
+                           switch_url,
+                           sw_reg_url,
+                           regis_url,
+                           reg_ok_url,
+                           namex_url,
+                           fail_url,
+                           dup_url,
+                           err_url
+    )
+
+else:
+
+    urlpatterns = [
+        login_url,
+        websso_url,
+        logout_url,
+        switch_url,
+        sw_reg_url,
+        regis_url,
+        reg_ok_url,
+        namex_url,
+        fail_url,
+        dup_url,
+        err_url
+    ]
+

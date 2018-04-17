@@ -20,6 +20,7 @@ from django.db import transaction
 from django.conf import settings
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ungettext_lazy
 
 from horizon import tables
 from horizon import messages
@@ -46,6 +47,22 @@ DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', '')
 class DeleteMemberAction(tables.DeleteAction):
     data_type_singular = _("Member")
     data_type_plural = _("Members")
+
+    @staticmethod
+    def action_present(count):
+        return ungettext_lazy(
+            u"Delete Member",
+            u"Delete Members",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return ungettext_lazy(
+            u"Deleted Member",
+            u"Deleted Members",
+            count
+        )
 
     def allowed(self, request, datum):
         return not datum.is_t_admin

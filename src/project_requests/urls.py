@@ -13,15 +13,20 @@
 #  License for the specific language governing permissions and limitations
 #  under the License. 
 
-try:
-    from django.conf.urls import patterns, url
-except:
-    from django.conf.urls.defaults import patterns, url
-
+from django import VERSION as django_version
+from django.conf.urls import url
 from openstack_dashboard.dashboards.idmanager.project_requests import views
 
-prefix = 'openstack_dashboard.dashboards.idmanager.project_requests.views'
+index_url = url(r'^$', views.RequestView.as_view(), name='index')
 
-urlpatterns = patterns(prefix,
-    url(r'^$', views.RequestView.as_view(), name='index'))
+if django_version[1] < 11:
 
+    from django.conf.urls import patterns
+
+    prefix = 'openstack_dashboard.dashboards.idmanager.project_requests.views'
+
+    urlpatterns = patterns(prefix, index_url)
+
+else:
+
+    urlpatterns = [ index_url ]
