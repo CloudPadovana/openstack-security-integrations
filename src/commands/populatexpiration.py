@@ -14,34 +14,27 @@
 #  under the License. 
 
 import logging
-import logging.config
 
 from django.db import transaction
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRole
 
-from horizon.management.commands.cronscript_utils import build_option_list
-from horizon.management.commands.cronscript_utils import configure_log
-from horizon.management.commands.cronscript_utils import configure_app
+from horizon.management.commands.cronscript_utils import CloudVenetoCommand
 from horizon.management.commands.cronscript_utils import get_prjman_roleid
 
 from keystoneclient.v3 import client
 
 LOG = logging.getLogger("populatexpiration")
 
-class Command(BaseCommand):
-
-    option_list = build_option_list()
+class Command(CloudVenetoCommand):
 
     def handle(self, *args, **options):
-    
-        configure_log(options)
-        
-        config = configure_app(options)
+
+        super(Command, self).handle(options)
 
         try:
 
@@ -54,13 +47,13 @@ class Command(BaseCommand):
             #
             # TODO define the user_domain_name and project_domain_name
             #
-            keystone_client = client.Client(username=config.cron_user,
-                                            password=config.cron_pwd,
-                                            project_name=config.cron_prj,
-                                            cacert=config.cron_ca,
-                                            user_domain_name=config.cron_domain,
-                                            project_domain_name=config.cron_domain,
-                                            auth_url=config.cron_kurl)
+            keystone_client = client.Client(username=self.config.cron_user,
+                                            password=self.config.cron_pwd,
+                                            project_name=self.config.cron_prj,
+                                            cacert=self.config.cron_ca,
+                                            user_domain_name=self.config.cron_domain,
+                                            project_domain_name=self.config.cron_domain,
+                                            auth_url=self.config.cron_kurl)
 
             LOG.info("Populating the expiration table")
 

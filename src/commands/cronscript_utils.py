@@ -15,28 +15,67 @@
 
 import logging
 import logging.config
-from optparse import make_option
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 LOG = logging.getLogger("cronscript_utils")
 
-def build_option_list():
-    return BaseCommand.option_list + (
-        make_option('--config',
-            dest='conffile',
-            action='store',
-            default=None,
-            help='The configuration file for this plugin'
-        ),
-        make_option('--logconf',
-            dest='logconffile',
-            action='store',
-            default=None,
-            help='The configuration file for the logging system'
-        ),
-    )
+class CloudVenetoCommand(BaseCommand):
+
+    def add_arguments(self, parser):
+        parser.add_argument('--config',
+                            dest='conffile',
+                            action='store',
+                            default=None,
+                            help='The configuration file for this plugin')
+        parser.add_argument('--logconf',
+                            dest='logconffile',
+                            action='store',
+                            default=None,
+                            help='The configuration file for the logging system')
+
+    def handle(self, options):
+
+        logconffile = options.get('logconffile', None)
+        if logconffile:
+            logging.config.fileConfig(logconffile)
+
+        self.config = ConfigBin()
+
+        conffile = options.get('conffile', None)
+        if conffile:
+            params = self._readParameters(conffile)
+
+            if len(params) > 0:
+                self.config.cron_user = params['USERNAME']
+                self.config.cron_pwd = params['PASSWD']
+                self.config.cron_prj = params['TENANTNAME']
+                self.config.cron_ca = params.get('CAFILE','')
+                self.config.cron_domain = params.get('DOMAIN', 'Default')
+                self.config.cron_kurl = params['AUTHURL']
+                self.config.cron_renewd = int(params.get('RENEW_DAYS', '30'))
+                self.config.cron_defer = int(params.get('DEFER_DAYS', '0'))
+                self.config.cron_plan = params.get('NOTIFICATION_PLAN', None)
+
+    def _readParameters(self, conffile):
+        result = dict()
+
+        try:
+            with open(conffile) as cfile:
+                for line in cfile:
+                    tmps = line.strip()
+                    if len(tmps) == 0 or tmps.startswith('#'):
+                        continue
+
+                    tmpl = tmps.split('=')
+                    if len(tmpl) == 2:
+                        result[tmpl[0].strip()] = tmpl[1].strip()
+        except:
+            LOG.error("Cannot parse configuration file", exc_info=True)
+
+        return result
+
 
 def get_prjman_roleid(keystone):
     role_name = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
@@ -45,11 +84,6 @@ def get_prjman_roleid(keystone):
         if tmp_role.name == role_name:
             return tmp_role.id
     raise CommandError("Cannot retrieve project manager role id")
-
-def configure_log(options):
-    logconffile = options.get('logconffile', None)
-    if logconffile:
-        logging.config.fileConfig(logconffile)
 
 class ConfigBin:
     def __init__(self):
@@ -62,50 +96,6 @@ class ConfigBin:
         self.cron_renewd = getattr(settings, 'CRON_RENEW_DAYS', 30)
         self.cron_defer = getattr(settings, 'CRON_DEFER_DAYS', 0)
         self.cron_plan = getattr(settings, 'NOTIFICATION_PLAN', None)
-
-def readParameters(conffile):
-    result = dict()
-
-    cfile = None
-    try:
-        cfile = open(conffile)
-        for line in cfile:
-            tmps = line.strip()
-            if len(tmps) == 0 or tmps.startswith('#'):
-                continue
-        
-            tmpl = tmps.split('=')
-            if len(tmpl) == 2:
-                result[tmpl[0].strip()] = tmpl[1].strip()
-    except:
-        LOG.error("Cannot parse configuration file", exc_info=True)
-    
-    if cfile:
-        cfile.close()
-    
-    return result
-
-def configure_app(options):
-    result = ConfigBin()
-
-    conffile = options.get('conffile', None)
-    if conffile:
-        params = readParameters(conffile)
-
-        if len(params) == 0:
-            return result
-
-        result.cron_user = params['USERNAME']
-        result.cron_pwd = params['PASSWD']
-        result.cron_prj = params['TENANTNAME']
-        result.cron_ca = params.get('CAFILE','')
-        result.cron_domain = params.get('DOMAIN', 'Default')
-        result.cron_kurl = params['AUTHURL']
-        result.cron_renewd = int(params.get('RENEW_DAYS', '30'))
-        result.cron_defer = int(params.get('DEFER_DAYS', '0'))
-        result.cron_plan = params.get('NOTIFICATION_PLAN', None)
-
-    return result
 
 def build_contact_list():
     return getattr(settings, 'MANAGERS', None)

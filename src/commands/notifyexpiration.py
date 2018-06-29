@@ -14,28 +14,23 @@
 #  under the License. 
 
 import logging
-import logging.config
 
 from datetime import datetime
 from datetime import timedelta
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import USER_EXP_TYPE
 
-from horizon.management.commands.cronscript_utils import build_option_list
-from horizon.management.commands.cronscript_utils import configure_log
-from horizon.management.commands.cronscript_utils import configure_app
+from horizon.management.commands.cronscript_utils import CloudVenetoCommand
 
 LOG = logging.getLogger("notifyexpiration")
 
-class Command(BaseCommand):
+class Command(CloudVenetoCommand):
 
-    option_list = build_option_list()
-    
     def _get_days_to_exp(self, n_plan):
         result = list()
         
@@ -53,11 +48,9 @@ class Command(BaseCommand):
         return result
     
     def handle(self, *args, **options):
-    
-        configure_log(options)
-        
-        config = configure_app(options)
-                    
+
+        super(Command, self).handle(options)
+
         try:
 
             now = datetime.now()
@@ -65,7 +58,7 @@ class Command(BaseCommand):
             user_set = set()
             prj_set = set()
 
-            for days_to_exp in self._get_days_to_exp(config.cron_plan):
+            for days_to_exp in self._get_days_to_exp(self.config.cron_plan):
 
                 tframe = now + timedelta(days=days_to_exp)
                 noti_table[days_to_exp] = list()

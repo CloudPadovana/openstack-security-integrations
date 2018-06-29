@@ -14,13 +14,10 @@
 #  under the License. 
 
 import logging
-import logging.config
-
-from optparse import make_option
 
 from django.db import transaction
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import EMail
@@ -29,21 +26,15 @@ from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import SUBSCR_REMINDER
 
-from horizon.management.commands.cronscript_utils import build_option_list
-from horizon.management.commands.cronscript_utils import configure_log
-from horizon.management.commands.cronscript_utils import configure_app
+from horizon.management.commands.cronscript_utils import CloudVenetoCommand
 
 LOG = logging.getLogger("pendingsubscr")
 
-class Command(BaseCommand):
-
-    option_list = build_option_list()
+class Command(CloudVenetoCommand):
 
     def handle(self, *args, **options):
 
-        configure_log(options)
-
-        config = configure_app(options)
+        super(Command, self).handle(options)
 
         admin_table = dict()
         mail_table = dict()

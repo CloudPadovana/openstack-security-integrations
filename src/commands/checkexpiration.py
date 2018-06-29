@@ -18,7 +18,7 @@ import logging
 from datetime import datetime, timedelta
 
 from django.db import transaction
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import PrjRequest
@@ -30,35 +30,29 @@ from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import USER_EXPIRED_TYPE
 from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
 
-from horizon.management.commands.cronscript_utils import build_option_list
+from horizon.management.commands.cronscript_utils import CloudVenetoCommand
 from horizon.management.commands.cronscript_utils import get_prjman_roleid
-from horizon.management.commands.cronscript_utils import configure_log
-from horizon.management.commands.cronscript_utils import configure_app
 
 from keystoneclient.v3 import client
 
 LOG = logging.getLogger("checkexpiration")
 
-class Command(BaseCommand):
+class Command(CloudVenetoCommand):
 
-    option_list = build_option_list()
-    
     def handle(self, *args, **options):
     
-        configure_log(options)
-        
-        config = configure_app(options)
+        super(Command, self).handle(options)
         
         LOG.info("Checking expired users")
         try:
 
-            keystone_client = client.Client(username=config.cron_user,
-                                            password=config.cron_pwd,
-                                            project_name=config.cron_prj,
-                                            user_domain_name=config.cron_domain,
-                                            project_domain_name=config.cron_domain,
-                                            cacert=config.cron_ca,
-                                            auth_url=config.cron_kurl)
+            keystone_client = client.Client(username=self.config.cron_user,
+                                            password=self.config.cron_pwd,
+                                            project_name=self.config.cron_prj,
+                                            user_domain_name=self.config.cron_domain,
+                                            project_domain_name=self.config.cron_domain,
+                                            cacert=self.config.cron_ca,
+                                            auth_url=self.config.cron_kurl)
 
             prjman_roleid = get_prjman_roleid(keystone_client)
             cloud_adminid = keystone_client.auth_ref.user_id
@@ -69,7 +63,7 @@ class Command(BaseCommand):
 
         updated_prjs = set()
 
-        exp_date = datetime.now() - timedelta(config.cron_defer)
+        exp_date = datetime.now() - timedelta(self.config.cron_defer)
 
         for mem_item in Expiration.objects.filter(expdate__lt=exp_date):
 

@@ -18,7 +18,7 @@ import logging
 from datetime import datetime, timedelta
 
 from django.db import transaction
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import Project
@@ -32,24 +32,18 @@ from openstack_auth_shib.notifications import notifyProject
 from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import USER_NEED_RENEW
 
-from horizon.management.commands.cronscript_utils import build_option_list
-from horizon.management.commands.cronscript_utils import configure_log
-from horizon.management.commands.cronscript_utils import configure_app
+from horizon.management.commands.cronscript_utils import CloudVenetoCommand
 
 LOG = logging.getLogger("renewalrequest")
 
-class Command(BaseCommand):
-
-    option_list = build_option_list()
+class Command(CloudVenetoCommand):
 
     def handle(self, *args, **options):
 
-        configure_log(options)
-
-        config = configure_app(options)
+        super(Command, self).handle(options)
 
         now = datetime.now()
-        exp_date = now + timedelta(config.cron_renewd)
+        exp_date = now + timedelta(self.config.cron_renewd)
 
         LOG.info("Checking for renewal after %s" % str(exp_date))
 
