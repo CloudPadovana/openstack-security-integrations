@@ -27,6 +27,7 @@ from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import PRJ_GUEST
 
 from openstack_auth_shib.notifications import notifyProject
 from openstack_auth_shib.notifications import notifyAdmin
@@ -73,13 +74,14 @@ class Command(BaseCommand):
                             'project' : e_item.project
                         }
                         is_admin = (PrjRole.objects.filter(**q_args).count() > 0)
-                        new_reqs[(e_item.registration, e_item.project)] = is_admin
+                        is_guest = e_item.project.status == PRJ_GUEST
+                        new_reqs[(e_item.registration, e_item.project)] = (is_admin, is_guest)
 
-                for req_pair, is_admin in new_reqs.items():
+                for req_pair, req_data in new_reqs.items():
                     reqArgs = {
                         'registration' : req_pair[0],
                         'project' : req_pair[1],
-                        'flowstatus' : PSTATUS_RENEW_ADMIN if is_admin else PSTATUS_RENEW_MEMB
+                        'flowstatus' : PSTATUS_RENEW_ADMIN if req_data[0] else PSTATUS_RENEW_MEMB
                     }
                     PrjRequest(**reqArgs).save()
 
@@ -95,13 +97,13 @@ class Command(BaseCommand):
                             tmpl.append(tmpobj[0].email)
                     mail_table[req_pair[1].projectname] = tmpl
 
-            for req_pair, is_admin in new_reqs.items():
+            for req_pair, req_data in new_reqs.items():
                 try:
                     noti_params = {
                         'username' : req_pair[0].username,
                         'project' : req_pair[1].projectname
                     }
-                    if is_admin:
+                    if req_data[0] or req_data[1]:
                         notifyAdmin(USER_NEED_RENEW, noti_params, user_id=req_pair[0].userid,
                                     project_id=req_pair[1].projectid,
                                     dst_project_id=req_pair[1].projectid)
