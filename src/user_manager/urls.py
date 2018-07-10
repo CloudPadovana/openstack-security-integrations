@@ -22,6 +22,8 @@ index_url = url(r'^$', views.IndexView.as_view(), name='index')
 chkorp_url = url(r'^checkorphans/$', views.CheckOrphansView.as_view(), name='checkorphans')
 mod_url = url(r'^(?P<user_id>[^/]+)/update/$', views.UpdateView.as_view(), name='update')
 ren_url = url(r'^(?P<user_id>[^/]+)/renew/$', views.RenewView.as_view(), name='renew')
+react_url = url(r'^(?P<user_id>[^/]+)/reactivate/$', views.ReactivateView.as_view(),
+                name='reactivate'),
 modpwd_url = url(r'^(?P<user_id>[^/]+)/change_password/$', views.ChangePasswordView.as_view(),
                  name='change_password')
 detail_url = url(r'^(?P<user_id>[^/]+)/detail/$', views.DetailView.as_view(), name='detail')
@@ -35,6 +37,7 @@ if django_version[1] < 11:
                            chkorp_url,
                            mod_url,
                            ren_url,
+                           react_url,
                            modpwd_url,
                            detail_url
     )
@@ -46,6 +49,7 @@ else:
         chkorp_url,
         mod_url,
         ren_url,
+        react_url,
         modpwd_url,
         detail_url
     ]

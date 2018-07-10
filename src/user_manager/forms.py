@@ -18,6 +18,7 @@ from datetime import datetime
 
 from django import http
 from django.db import transaction
+from django.conf import settings
 from django.forms.widgets import HiddenInput
 from django.forms.extras.widgets import SelectDateWidget
 from django.utils.translation import ugettext as _
@@ -26,18 +27,35 @@ from horizon import forms
 from horizon import messages
 
 from openstack_auth_shib.models import Registration
+from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 
+from openstack_auth_shib.notifications import notifyProject
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
+from openstack_auth_shib.notifications import SUBSCR_OK_TYPE
+from openstack_auth_shib.notifications import SUBSCR_FORCED_OK_TYPE
 
+from openstack_auth_shib.utils import get_prjman_ids
+
+from openstack_dashboard.api import keystone as keystone_api
 from openstack_dashboard.dashboards.identity.users import forms as baseForms
 
 LOG = logging.getLogger(__name__)
+
+def get_year_list():
+    curr_year = datetime.now().year
+    return range(curr_year, curr_year+25)
+
+def get_default_role(request):
+    DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
+    for role in keystone_api.role_list(request):
+        if role.name == DEFAULT_ROLE:
+            return role.id
 
 class RenewExpForm(forms.SelfHandlingForm):
 
@@ -51,14 +69,11 @@ class RenewExpForm(forms.SelfHandlingForm):
             widget=HiddenInput
         )
         
-        curr_year = datetime.now().year
-        years_list = range(curr_year, curr_year+25)
-
         for item in kwargs['initial']:
             if item.startswith('prj_'):
                 self.fields[item] = forms.DateTimeField(
                     label="%s %s" % (_("Project"), item[4:]),
-                    widget=SelectDateWidget(None, years_list)
+                    widget=SelectDateWidget(None, get_year_list())
                 )
 
     def handle(self, request, data):
@@ -88,8 +103,7 @@ class RenewExpForm(forms.SelfHandlingForm):
                     'registration__userid' : data['userid'],
                     'project__projectname' : prj_name
                 }
-                exp_dates = Expiration.objects.filter(**q_args)
-                exp_dates.update(expdate=c_exp)
+                Expiration.objects.filter(**q_args).update(expdate=c_exp)
 
                 q_args['flowstatus__in'] = [ PSTATUS_RENEW_ADMIN, PSTATUS_RENEW_MEMB ]
                 PrjRequest.objects.filter(**q_args).delete()
@@ -109,6 +123,12 @@ class RenewExpForm(forms.SelfHandlingForm):
                                context=noti_params, dst_user_id=data['userid'])
                 except:
                     LOG.error("Cannot notify %s" % user_name, exc_info=True)
+
+            all_exp = Expiration.objects.filter(registration__userid=data['userid'])
+            if len(all_exp):
+                new_exp = max([ x.expdate for x in all_exp ])
+                all_exp[0].registration.expdate = new_exp
+                all_exp[0].registration.save()
 
         return True
 
@@ -144,5 +164,91 @@ class UpdateUserForm(baseForms.UpdateUserForm):
             LOG.debug("Called roll-back for update user " + user_id, exc_info=True)
 
         return result
+
+
+class ReactivateForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(ReactivateForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['userid'] = forms.CharField(
+            label=_("User ID"),
+            widget=HiddenInput
+        )
+
+        self.fields['expdate'] = forms.DateTimeField(
+            label="Expiration date",
+            widget=SelectDateWidget(None, get_year_list())
+        )
+
+        self.fields['projects'] = forms.MultipleChoiceField(
+            label=_('Available projects'),
+            required=True,
+            widget=forms.SelectMultiple(attrs={'class': 'switched'})
+        )
+
+        avail_prjs = list()
+        for prj_entry in Project.objects.all():
+            avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
+        self.fields['projects'].choices = avail_prjs
+
+    def handle(self, request, data):
+        try:
+
+            with transaction.atomic():
+                reg_user = Registration.objects.filter(userid=data['userid'])[0]
+                prj_list = Project.objects.filter(projectname__in=data['projects'])
+
+                reg_user.expdate = data['expdate']
+                reg_user.save()
+
+                k_user = keystone_api.user_get(request, data['userid'])
+                if not k_user.enabled:
+                    keystone_api.user_update(request, data['userid'], enabled=True)
+
+        except:
+            LOG.error("Generic failure", exc_info=True)
+            return False
+
+        for prj_item in prj_list:
+
+            try:
+                with transaction.atomic():
+                    Expiration(
+                        registration=reg_user,
+                        project=prj_item,
+                        expdate=data['expdate']
+                    ).save()
+
+                    keystone_api.add_tenant_user_role(
+                        request, prj_item.projectid,
+                        data['userid'], get_default_role(request))
+
+                #
+                # send notification to project managers and users
+                #
+                tmpres = EMail.objects.filter(registration__userid=data['userid'])
+                user_email = tmpres[0].email if tmpres else None
+
+                m_userids = get_prjman_ids(request, prj_item.projectid)
+                tmpres = EMail.objects.filter(registration__userid__in=m_userids)
+                m_emails = [ x.email for x in tmpres ]
+
+                noti_params = {
+                    'username' : reg_user.username,
+                    'project' : prj_item.projectname
+                }
+
+                notifyProject(request=self.request, rcpt=m_emails,
+                              action=SUBSCR_FORCED_OK_TYPE, context=noti_params,
+                              dst_project_id=prj_item.projectid)
+                notifyUser(request=self.request, rcpt=user_email,
+                           action=SUBSCR_OK_TYPE, context=noti_params,
+                           dst_project_id=prj_item.projectid,
+                           dst_user_id=reg_user.userid)
+
+            except:
+                LOG.error("Generic failure", exc_info=True)
+        return True
 
 

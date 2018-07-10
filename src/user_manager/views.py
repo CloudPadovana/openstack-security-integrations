@@ -14,7 +14,7 @@
 #  under the License. 
 
 import logging
-import datetime
+from datetime import datetime, timedelta
 
 from django.utils.translation import ugettext_lazy as _
 from django.core.urlresolvers import reverse_lazy
@@ -33,6 +33,7 @@ from openstack_dashboard import api
 from .tables import UsersTable, OrphanTable
 from .forms import RenewExpForm
 from .forms import UpdateUserForm
+from .forms import ReactivateForm
 
 LOG = logging.getLogger(__name__)
 
@@ -151,4 +152,32 @@ class CheckOrphansView(tables.DataTableView):
             ))
         return result
 
+class ReactivateView(forms.ModalFormView):
+    form_class = ReactivateForm
+    template_name = 'idmanager/user_manager/reactivate.html'
+    success_url = reverse_lazy('horizon:idmanager:user_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            try:
+
+                self._object = Registration.objects.filter(userid=self.kwargs['user_id'])[0]
+
+            except Exception:
+                LOG.error("Reactivate error", exc_info=True)
+                exceptions.handle(self.request, _('Unable to reactivate user.'),
+                                  redirect=success_url)
+
+        return self._object
+
+    def get_context_data(self, **kwargs):
+        context = super(ReactivateView, self).get_context_data(**kwargs)
+        context['userid'] = self.kwargs['user_id']
+        return context
+
+    def get_initial(self):
+        return {
+            'userid' : self.kwargs['user_id'],
+            'expdate' : datetime.utcnow() + timedelta(365)
+        }
 

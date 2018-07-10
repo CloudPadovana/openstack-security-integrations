@@ -73,14 +73,12 @@ class MainView(tables.DataTableView):
                 rData.organization = prjReq.registration.organization
                 rData.phone = prjReq.registration.phone
                 
-                if prjReq.project.status == PRJ_GUEST:
+                if prjReq.flowstatus == PSTATUS_RENEW_MEMB:
 
-                    rData.code = RegistrData.NEW_USR_GUEST_PRJ
-                    requestid = "%d:" % prjReq.registration.regid
-
-                elif prjReq.flowstatus == PSTATUS_RENEW_MEMB:
-
-                    rData.code = RegistrData.USR_RENEW
+                    if prjReq.project.status == PRJ_GUEST:
+                        rData.code = RegistrData.GUEST_RENEW
+                    else:
+                        rData.code = RegistrData.USR_RENEW
                     rData.project = prjReq.project.projectname
                     requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
 
@@ -89,6 +87,11 @@ class MainView(tables.DataTableView):
                     rData.code = RegistrData.PRJADM_RENEW
                     rData.project = prjReq.project.projectname
                     requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
+
+                elif prjReq.project.status == PRJ_GUEST:
+
+                    rData.code = RegistrData.NEW_USR_GUEST_PRJ
+                    requestid = "%d:" % prjReq.registration.regid
 
                 elif prjReq.project.projectid:
 
