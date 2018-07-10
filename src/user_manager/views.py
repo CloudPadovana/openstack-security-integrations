@@ -14,7 +14,7 @@
 #  under the License. 
 
 import logging
-import datetime
+from datetime import datetime, timedelta
 
 from django.utils.translation import ugettext_lazy as _
 from django.core.urlresolvers import reverse_lazy
@@ -176,9 +176,8 @@ class ReactivateView(forms.ModalFormView):
         return context
 
     def get_initial(self):
-    
-        result = dict()
-        result['userid'] = self.kwargs['user_id']
-        
-        return result
+        return {
+            'userid' : self.kwargs['user_id'],
+            'expdate' : datetime.utcnow() + timedelta(365)
+        }
 
