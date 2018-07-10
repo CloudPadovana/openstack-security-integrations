@@ -86,7 +86,6 @@ class RenewExpForm(forms.SelfHandlingForm):
 
         with transaction.atomic():
 
-            r_date = None
             q_args = {
                 'registration__userid' : data['userid'],
                 'project__projectname__in' : exp_table.keys()
@@ -97,14 +96,7 @@ class RenewExpForm(forms.SelfHandlingForm):
                 prj_name = exp_item.project.projectname
                 c_exp = exp_table.get(prj_name, None)
 
-                if not c_exp:
-                    continue
-
-                if c_exp > exp_item.registration.expdate and \
-                    (r_date == None or c_exp > r_date):
-                    r_date = c_exp
-
-                if exp_item.expdate == c_exp:
+                if not c_exp or exp_item.expdate == c_exp:
                     continue
 
                 q_args = {
@@ -132,9 +124,11 @@ class RenewExpForm(forms.SelfHandlingForm):
                 except:
                     LOG.error("Cannot notify %s" % user_name, exc_info=True)
 
-            if r_date:
-                tmp_user = Registration.objects.filter(userid=data['userid'])
-                tmp_user.update(expdate=r_date)
+            all_exp = Expiration.objects.filter(registration__userid=data['userid'])
+            if len(all_exp):
+                new_exp = max([ x.expdate for x in all_exp ])
+                all_exp[0].registration.expdate = new_exp
+                all_exp[0].registration.save()
 
         return True
 
