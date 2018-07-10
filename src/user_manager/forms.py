@@ -207,11 +207,18 @@ class ReactivateForm(forms.SelfHandlingForm):
 
                 reg_user.expdate = data['expdate']
                 reg_user.save()
-                
-                # TODO check enabled
 
-            for prj_item in prj_list:
+                k_user = keystone_api.user_get(request, data['userid'])
+                if not k_user.enabled:
+                    keystone_api.user_update(request, data['userid'], enabled=True)
 
+        except:
+            LOG.error("Generic failure", exc_info=True)
+            return False
+
+        for prj_item in prj_list:
+
+            try:
                 with transaction.atomic():
                     Expiration(
                         registration=reg_user,
@@ -246,8 +253,8 @@ class ReactivateForm(forms.SelfHandlingForm):
                            dst_project_id=prj_item.projectid,
                            dst_user_id=reg_user.userid)
 
-        except:
-            LOG.error("Generic failure", exc_info=True)
+            except:
+                LOG.error("Generic failure", exc_info=True)
         return True
 
 
