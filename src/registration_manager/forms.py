@@ -68,6 +68,7 @@ from openstack_auth_shib.utils import get_prjman_ids
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
 from openstack_dashboard.api import keystone as keystone_api
+from openstack_dashboard.api import cinder as cinder_api
 
 LOG = logging.getLogger(__name__)
 
@@ -291,6 +292,14 @@ class GrantAllForm(PreCheckForm):
             required=True,
             widget=SelectDateWidget(None, range(curr_year, curr_year + 25))
         )
+
+        unit_table = get_unit_table()
+        if len(unit_table) > 0:
+            self.fields['unit'] = forms.ChoiceField(
+                label=_('Available units'),
+                required=True,
+                choices=[ (k,v['name']) for k, v in unit_table.items() ]
+            )
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -525,10 +534,17 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
         years_list = range(curr_year, curr_year+25)
 
         self.fields['expiration'] = forms.DateTimeField(
-            label=_("Expiration date"),
+            label=_("Administrator expiration date"),
             widget=SelectDateWidget(None, years_list)
         )
 
+        unit_table = get_unit_table()
+        if len(unit_table) > 0:
+            self.fields['unit'] = forms.ChoiceField(
+                label=_('Available units'),
+                required=True,
+                choices=[ (k,v['name']) for k, v in unit_table.items() ]
+            )
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -593,6 +609,8 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 #
                 prj_req.delete()
                 
+                setup_new_project(request, kprj.id, data['unit'])
+
             #
             # Send notification to the user
             #
@@ -870,5 +888,46 @@ class DetailsForm(forms.SelfHandlingForm):
     @sensitive_variables('data')
     def handle(self, request, data):
         return True
+
+
+#
+# New features: actions for project creation
+#
+
+#
+# {
+#   <unit_id> : {
+#     "name" : <human readable unit name>,
+#     "quota_total" :  <total>,
+#     "quota_per_volume" : <per-volume>,
+#     "quota_<type>: <quota_type>,
+#
+# }
+#
+
+def get_unit_table():
+    return getattr(settings, 'UNIT_TABLE', {})
+
+def setup_new_project(request, project_id, unit_id):
+    cloud_table = get_unit_table()
+    if not unit_id in cloud_table:
+        continue
+
+    try:
+
+        cinder_params = dict()
+        for pkey, pvalue in cloud_table[unit_id].items():
+            if pkey == 'quota_total':
+                cinder_params['gigabytes'] = int(pvalue)
+            elif pkey == 'quota_per_volume':
+                cinder_params['per_volume_gigabytes'] = int(pvalue)
+            elif pkey.startswith('quota_'):
+                cinder_params['gigabytes_' + pkey[6:]] = int(pvalue)
+
+        cinder_api.tenant_quota_update(request, project_id, **cinder_params)
+
+    except:
+            LOG.error("Cannot setup project quota", exc_info=True)
+            messages.error(request, _("Cannot setup project quota"))
 
 
