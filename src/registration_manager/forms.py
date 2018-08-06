@@ -14,6 +14,7 @@
 #  under the License. 
 
 import sys
+import re
 import logging
 import base64
 from datetime import datetime, timedelta
@@ -69,6 +70,8 @@ from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
 from openstack_dashboard.api import keystone as keystone_api
 from openstack_dashboard.api import cinder as cinder_api
+from openstack_dashboard.api import nova as nova_api
+from openstack_dashboard.api import neutron as neutron_api
 
 LOG = logging.getLogger(__name__)
 
@@ -186,6 +189,10 @@ class PreCheckForm(forms.SelfHandlingForm):
                     p_reqs.project.projectid = kprj.id
                     p_reqs.project.save()
                     new_prj_list.append(p_reqs.project)
+
+                    setup_new_project(request, kprj.id, p_reqs.project.projectname,
+                                      data.get('unit', None), data.get('subnet', None))
+
                     LOG.info("Created tenant %s" % p_reqs.project.projectname)
                 
                 #
@@ -293,13 +300,7 @@ class GrantAllForm(PreCheckForm):
             widget=SelectDateWidget(None, range(curr_year, curr_year + 25))
         )
 
-        unit_table = get_unit_table()
-        if len(unit_table) > 0:
-            self.fields['unit'] = forms.ChoiceField(
-                label=_('Available units'),
-                required=True,
-                choices=[ (k,v['name']) for k, v in unit_table.items() ]
-            )
+        insert_unit_combos(self)
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -538,13 +539,7 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
             widget=SelectDateWidget(None, years_list)
         )
 
-        unit_table = get_unit_table()
-        if len(unit_table) > 0:
-            self.fields['unit'] = forms.ChoiceField(
-                label=_('Available units'),
-                required=True,
-                choices=[ (k,v['name']) for k, v in unit_table.items() ]
-            )
+        insert_unit_combos(self)
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -609,7 +604,8 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 #
                 prj_req.delete()
                 
-                setup_new_project(request, kprj.id, data['unit'])
+                setup_new_project(request, kprj.id, project_name,
+                                  data.get('unit', None), data.get('subnet', None))
 
             #
             # Send notification to the user
@@ -900,34 +896,136 @@ class DetailsForm(forms.SelfHandlingForm):
 #     "name" : <human readable unit name>,
 #     "quota_total" :  <total>,
 #     "quota_per_volume" : <per-volume>,
-#     "quota_<type>: <quota_type>,
+#     "quota_<type>" : <quota_type>,
 #
+#     "availability_zone" : <availability zone, default: nova>
+#     "prefix" : <project_prefix>,
+#     "hypervisors" : <list_of_hypervisors>,
+#     "metadata" : <hash of metadata>,
+#
+#     "lan_net_pool" : <2-octets network ip prefix>,
+#     "lan_router" : <router name>,
+#     "nameservers" : <list of dns ip>,
+#     "" : <>,
+#     "" : <>,
+#     "" : <>,
+#     "" : <>,
 # }
 #
 
-def get_unit_table():
-    return getattr(settings, 'UNIT_TABLE', {})
+def insert_unit_combos(newprjform):
+    unit_table = getattr(settings, 'UNIT_TABLE', {})
+    if len(unit_table) > 0:
+        newprjform.fields['unit'] = forms.ChoiceField(
+            label=_('Available units'),
+            required=True,
+            choices=[ (k,v['name']) for k, v in unit_table.items() ]
+        )
 
-def setup_new_project(request, project_id, unit_id):
-    cloud_table = get_unit_table()
-    if not unit_id in cloud_table:
-        continue
+        avail_subnets = get_avail_subnets(newprjform.request)
+
+        for unit_id in unit_table:
+            newprjform.fields["%s-net" % unit_id] = forms.ChoiceField(
+                label=_('Available networks'),
+                required=False,
+                choices=[ (k,k) for k in avail_subnets[unit_id] ]
+            )
+
+CIDR_PATTERN = re.compile("(\d+\.\d+)\.(\d+).0/\d+")
+MAX_AVAIL = getattr(settings, 'MAX_PROPOSED_NETWORKS', 10)
+
+def get_avail_subnets(request):
+
+    unit_table = getattr(settings, 'UNIT_TABLE', {})
+
+    used_nets = dict()
+    for subdict in neutron_api.subnet_list(request):
+        cidr_match = CIDR_PATTERN.search(subdict['cidr'])
+        if not cidr_match:
+            continue
+        if not cidr_match.group(1) in used_nets:
+            used_nets[cidr_match.group(1)] = list()
+        used_nets[cidr_match.group(1)].append(int(cidr_match.group(2)))
+
+    avail_nets = dict()
+    for subprx, subnums in used_nets.items():
+
+        unit_id = None
+        for key, value in unit_table.items():
+            if value['lan_net_pool'] == subprx:
+                unit_id = key
+        if not unit_id:
+            continue
+
+        avail_nets[unit_id] = list()
+        if len(subnums) > 255:
+            continue
+
+        subnums.sort()
+        subnums.append(256)  # sentry
+        collected = 0
+
+        try:
+            begin = 0
+            for idx in subnums:
+                for k in range(begin, idx):
+                    avail_nets[unit_id].append("%s.%d.0/24" % (subprx, k))
+                    collected += 1
+                    if collected == MAX_AVAIL:
+                        raise Exception()
+                begin = idx + 1
+        except:
+            pass
+
+    return avail_nets
+
+def setup_new_project(request, project_id, project_name, unit_id, subnet):
+    cloud_table = getattr(settings, 'UNIT_TABLE', {})
+    if not unit_id or not unit_id in cloud_table:
+        return
+
+    unit_data = cloud_table[unit_id]
+    prj_cname = "%s-%s" % (unit_data.get('prefix', unit_id),
+        re.sub(r'\s+', "-", project_name))
 
     try:
 
         cinder_params = dict()
-        for pkey, pvalue in cloud_table[unit_id].items():
+        for pkey, pvalue in unit_data.items():
             if pkey == 'quota_total':
-                cinder_params['gigabytes'] = int(pvalue)
+                cinder_params['gigabytes'] = pvalue
             elif pkey == 'quota_per_volume':
-                cinder_params['per_volume_gigabytes'] = int(pvalue)
+                cinder_params['per_volume_gigabytes'] = pvalue
             elif pkey.startswith('quota_'):
-                cinder_params['gigabytes_' + pkey[6:]] = int(pvalue)
+                cinder_params['gigabytes_' + pkey[6:]] = pvalue
 
         cinder_api.tenant_quota_update(request, project_id, **cinder_params)
 
     except:
             LOG.error("Cannot setup project quota", exc_info=True)
             messages.error(request, _("Cannot setup project quota"))
+
+    try:
+
+        nova_api.aggregate_create(request, prj_cname, unit_data.get('availability_zone', 'nova'))
+
+        for h_item in unit_data.get('hypervisors', []):
+            nova_api.add_host_to_aggregate(request, prj_cname, h_item)
+
+        nova_api.aggregate_set_metadata(request, prj_cname, "filter_tenant_id=%s" % project_id)
+        for md_tuple in unit_data.get('metadata', {}).items():
+            nova_api.aggregate_set_metadata(request, prj_cname, "%s=%s" % md_tuple)
+
+    except:
+            LOG.error("Cannot setup host aggregate", exc_info=True)
+            messages.error(request, _("Cannot setup host aggregate"))
+
+    try:
+        pass
+    except:
+            LOG.error("Cannot setup networks", exc_info=True)
+            messages.error(request, _("Cannot setup networks"))
+
+
 
 
