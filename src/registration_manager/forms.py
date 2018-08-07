@@ -987,7 +987,8 @@ def setup_new_project(request, project_id, project_name, data):
             elif pkey.startswith('quota_'):
                 cinder_params['gigabytes_' + pkey[6:]] = pvalue
 
-        cinder_api.tenant_quota_update(request, project_id, **cinder_params)
+        if len(cinder_params):
+            cinder_api.tenant_quota_update(request, project_id, **cinder_params)
 
     except:
             LOG.error("Cannot setup project quota", exc_info=True)
@@ -995,14 +996,18 @@ def setup_new_project(request, project_id, project_name, data):
 
     try:
 
-        nova_api.aggregate_create(request, prj_cname, unit_data.get('availability_zone', 'nova'))
+        hyper_list = unit_data.get('hypervisors', [])
+        if len(hyper_list):
+            nova_api.aggregate_create(request, prj_cname,
+                                    unit_data.get('availability_zone', 'nova'))
 
-        for h_item in unit_data.get('hypervisors', []):
-            nova_api.add_host_to_aggregate(request, prj_cname, h_item)
+            for h_item in hyper_list:
+                nova_api.add_host_to_aggregate(request, prj_cname, h_item)
 
-        nova_api.aggregate_set_metadata(request, prj_cname, "filter_tenant_id=%s" % project_id)
-        for md_tuple in unit_data.get('metadata', {}).items():
-            nova_api.aggregate_set_metadata(request, prj_cname, "%s=%s" % md_tuple)
+            nova_api.aggregate_set_metadata(request, prj_cname, 
+                                        "filter_tenant_id=%s" % project_id)
+            for md_tuple in unit_data.get('metadata', {}).items():
+                nova_api.aggregate_set_metadata(request, prj_cname, "%s=%s" % md_tuple)
 
     except:
             LOG.error("Cannot setup host aggregate", exc_info=True)
@@ -1024,7 +1029,8 @@ def setup_new_project(request, project_id, project_name, data):
         }
         prj_sub = neutron_api.subnet_create(request, prj_net['id'], **net_args)
         if 'lan_router' in unit_data:
-            router_add_interface(request, unit_data['lan_router'], subnet_id=prj_sub['id'])
+            neutron_api.router_add_interface(request, unit_data['lan_router'], 
+                                            subnet_id=prj_sub['id'])
 
     except:
             LOG.error("Cannot setup networks", exc_info=True)
