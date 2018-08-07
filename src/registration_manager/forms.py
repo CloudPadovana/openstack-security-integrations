@@ -945,32 +945,22 @@ def get_avail_subnets(request):
     avail_nets = dict()
     for subprx, subnums in used_nets.items():
 
-        unit_id = None
-        for key, value in unit_table.items():
-            if value['lan_net_pool'] == subprx:
-                unit_id = key
-        if not unit_id:
+        tmpa = [ k for k, v in unit_table.items() if v['lan_net_pool'] == subprx ]
+        if len(tmpa) == 0:
             continue
+        unit_id = tmpa[0]
 
         avail_nets[unit_id] = list()
-        if len(subnums) > 255:
+
+        max_avail = max(subnums)
+        if max_avail == 255:
             continue
 
-        subnums.sort()
-        subnums.append(256)  # sentry
-        collected = 0
+        tmpl = list(set(range(max_avail + 2)) - set(subnums))
+        tmpl.sort(lambda x,y: y-x)
 
-        try:
-            begin = 0
-            for idx in subnums:
-                for k in range(begin, idx):
-                    avail_nets[unit_id].append("%s.%d.0/24" % (subprx, k))
-                    collected += 1
-                    if collected == MAX_AVAIL:
-                        raise Exception()
-                begin = idx + 1
-        except:
-            pass
+        for idx in tmpl:
+            avail_nets[unit_id].append("%s.%d.0/24" % (subprx, idx))
 
     return avail_nets
 
