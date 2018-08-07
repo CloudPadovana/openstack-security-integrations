@@ -190,8 +190,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                     p_reqs.project.save()
                     new_prj_list.append(p_reqs.project)
 
-                    setup_new_project(request, kprj.id, p_reqs.project.projectname,
-                                      data.get('unit', None), data.get('subnet', None))
+                    setup_new_project(request, kprj.id, p_reqs.project.projectname, data)
 
                     LOG.info("Created tenant %s" % p_reqs.project.projectname)
                 
@@ -604,8 +603,7 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 #
                 prj_req.delete()
                 
-                setup_new_project(request, kprj.id, project_name,
-                                  data.get('unit', None), data.get('subnet', None))
+                setup_new_project(request, kprj.id, project_name, data)
 
             #
             # Send notification to the user
@@ -906,10 +904,7 @@ class DetailsForm(forms.SelfHandlingForm):
 #     "lan_net_pool" : <2-octets network ip prefix>,
 #     "lan_router" : <router name>,
 #     "nameservers" : <list of dns ip>,
-#     "" : <>,
-#     "" : <>,
-#     "" : <>,
-#     "" : <>,
+#     "sec_group_id" : <default security group id>
 # }
 #
 
@@ -979,7 +974,10 @@ def get_avail_subnets(request):
 
     return avail_nets
 
-def setup_new_project(request, project_id, project_name, unit_id, subnet):
+def setup_new_project(request, project_id, project_name, data):
+
+    unit_id = data.get('unit', None)
+
     cloud_table = getattr(settings, 'UNIT_TABLE', {})
     if not unit_id or not unit_id in cloud_table:
         return
@@ -1021,11 +1019,37 @@ def setup_new_project(request, project_id, project_name, unit_id, subnet):
             messages.error(request, _("Cannot setup host aggregate"))
 
     try:
-        pass
+
+        subnet_cidr = data['%s-net' % unit_id]
+        prj_lan_name = "%s-lan" % prj_cname
+
+        prj_net = neutron_api.network_create(request, tenant_id=project_id, name=prj_lan_name)
+        net_args = {
+            'cidr' : subnet_cidr,
+            'ip_version' : 4,
+            'dns_nameservers' : unit_data.get('nameservers', []),
+            'enable_dhcp' : True,
+            'tenant_id' : project_id,
+            'name' : "sub-%s-lan" % prj_cname
+        }
+        prj_sub = neutron_api.subnet_create(request, prj_net['id'], **net_args)
+        if 'lan_router' in unit_data:
+            router_add_interface(request, unit_data['lan_router'], subnet_id=prj_sub['id'])
+
     except:
             LOG.error("Cannot setup networks", exc_info=True)
             messages.error(request, _("Cannot setup networks"))
 
+    try:
+        sec_grp_id = unit_data.get('sec_group_id', None)
+        subnet_cidr = data['%s-net' % unit_id]
 
+        #if sec_grp_id:
+        #    neutron_api.security_group_rule_create(request, None, 'ingress', 'IPv4',
+        #                       ip_protocol, from_port, to_port,
+        #                       subnet_cidr, sec_grp_id)
+    except:
+            LOG.error("Cannot update security groups", exc_info=True)
+            messages.error(request, _("Cannot update security groups"))
 
 
