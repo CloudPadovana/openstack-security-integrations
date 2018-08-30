@@ -30,6 +30,7 @@ from horizon import messages
 
 from django.db import transaction
 from django.conf import settings
+from django.forms import ValidationError
 from django.forms.widgets import HiddenInput
 from django.forms.extras.widgets import SelectDateWidget
 from django.views.decorators.debug import sensitive_variables
@@ -68,6 +69,7 @@ from openstack_auth_shib.models import OS_LNAME_LEN
 from openstack_auth_shib.models import OS_SNAME_LEN
 from openstack_auth_shib.utils import get_prjman_ids
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
+from openstack_auth_shib.utils import PRJ_REGEX
 
 from openstack_dashboard.api import keystone as keystone_api
 from openstack_dashboard.api import cinder as cinder_api
@@ -132,6 +134,9 @@ class PreCheckForm(forms.SelfHandlingForm):
 
     def preprocess_prj(self, registr, data):
         pass
+
+    def clean(self):
+        return super(PreCheckForm, self).clean()
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -324,6 +329,15 @@ class GrantAllForm(PreCheckForm):
         if len(p_reqs):
             chk_repl_project(registration.regid, p_reqs[0].project.projectname,
                              data['rename'])
+
+    def clean(self):
+        data = super(GrantAllForm, self).clean()
+
+        tmpm = PRJ_REGEX.search(data['rename'])
+        if tmpm:
+            raise ValidationError(_('Bad character "%s" for project name.') % tmpm.group(0))
+
+        return data
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -568,6 +582,15 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
         )
 
         insert_unit_combos(self)
+
+    def clean(self):
+        data = super(NewProjectCheckForm, self).clean()
+
+        tmpm = PRJ_REGEX.search(data['newname'])
+        if tmpm:
+            raise ValidationError(_('Bad character %s for project name.') % tmpm.group(0))
+
+        return data
 
     @sensitive_variables('data')
     def handle(self, request, data):
