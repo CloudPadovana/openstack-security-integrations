@@ -176,11 +176,15 @@ class GrantAllView(AbstractCheckView):
         return context
 
     def get_initial(self):
+
+        tmpt = self.kwargs.get('requestid', '').split(':')
+
         return {
             'regid' : self.get_object().registration.regid,
             'username' : self.get_object().registration.username,
             'extaccount' : self.get_object().externalid,
-            'expiration' : datetime.now() + timedelta(365)
+            'expiration' : datetime.now() + timedelta(365),
+            'rename' : tmpt[1] if len(tmpt) == 2 else ''
         }
 
 class RejectView(AbstractCheckView):
@@ -253,8 +257,11 @@ class NewProjectView(forms.ModalFormView):
         return context
         
     def get_initial(self):
+        tmpt = self.kwargs['requestid'].split(':')
+        new_name = tmpt[1] if len(tmpt) == 2 else ""
         return { 
             'requestid' : self.kwargs['requestid'],
+            'newname' : new_name,
             'expiration' : datetime.now() + timedelta(365)
         }
 

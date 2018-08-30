@@ -65,6 +65,7 @@ from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PRJ_GUEST
 
 from openstack_auth_shib.models import OS_LNAME_LEN
+from openstack_auth_shib.models import OS_SNAME_LEN
 from openstack_auth_shib.utils import get_prjman_ids
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
@@ -129,6 +130,9 @@ class PreCheckForm(forms.SelfHandlingForm):
         
         self.expiration = datetime.now() + timedelta(365)
 
+    def preprocess_prj(self, registr, data):
+        pass
+
     @sensitive_variables('data')
     def handle(self, request, data):
 
@@ -177,22 +181,26 @@ class PreCheckForm(forms.SelfHandlingForm):
                 #
                 # Creation of new tenants
                 #
+
+                self.preprocess_prj(registration, data)
+
                 new_prj_list = list()
-                q_args = {
-                    'project__projectid__isnull' : True,
-                    'flowstatus' : PSTATUS_REG
-                }
-                
-                for p_reqs in prjReqList.filter(**q_args):
-                    kprj = keystone_api.tenant_create(request, p_reqs.project.projectname,
-                                                        p_reqs.project.description, True)
-                    p_reqs.project.projectid = kprj.id
-                    p_reqs.project.save()
-                    new_prj_list.append(p_reqs.project)
 
-                    setup_new_project(request, kprj.id, p_reqs.project.projectname, data)
+                p_reqs = prjReqList.filter(
+                    project__projectid__isnull = True,
+                    flowstatus = PSTATUS_REG
+                )
+                if len(p_reqs):
+                    newreq_prj = p_reqs[0].project
+                    kprj = keystone_api.tenant_create(request, newreq_prj.projectname,
+                                                        newreq_prj.description, True)
+                    newreq_prj.projectid = kprj.id
+                    newreq_prj.save()
+                    new_prj_list.append(newreq_prj)
 
-                    LOG.info("Created tenant %s" % p_reqs.project.projectname)
+                    setup_new_project(request, kprj.id, newreq_prj.projectname, data)
+
+                    LOG.info("Created tenant %s" % newreq_prj.projectname)
                 
                 #
                 # User creation
@@ -299,7 +307,23 @@ class GrantAllForm(PreCheckForm):
             widget=SelectDateWidget(None, range(curr_year, curr_year + 25))
         )
 
+        self.fields['rename'] = forms.CharField(
+            label=_('Project name'),
+            max_length=OS_SNAME_LEN
+        )
+
         insert_unit_combos(self)
+
+    def preprocess_prj(self, registration, data):
+
+        p_reqs = PrjRequest.objects.filter(
+            registration=registration,
+            project__projectid__isnull = True,
+            flowstatus = PSTATUS_REG
+        )
+        if len(p_reqs):
+            chk_repl_project(registration.regid, p_reqs[0].project.projectname,
+                             data['rename'])
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -528,6 +552,11 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
     def __init__(self, request, *args, **kwargs):
         super(NewProjectCheckForm, self).__init__(request, *args, **kwargs)
 
+        self.fields['newname'] = forms.CharField(
+            label=_('Project name'),
+            max_length=OS_SNAME_LEN
+        )
+
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
 
         curr_year = datetime.now().year
@@ -550,14 +579,15 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
 
             with transaction.atomic():
 
+                regid, prjname = chk_repl_project(int(usr_and_prj[0]), usr_and_prj[1], data['newname'])
+
                 #
                 # Creation of new tenant
                 #
-                q_args = {
-                    'registration__regid' : int(usr_and_prj[0]),
-                    'project__projectname' : usr_and_prj[1]
-                }
-                prj_req = PrjRequest.objects.filter(**q_args)[0]
+                prj_req = PrjRequest.objects.filter(
+                    registration__regid = regid,
+                    project__projectname = prjname
+                )[0]
                 
                 project_name = prj_req.project.projectname
                 user_id = prj_req.registration.userid
@@ -883,6 +913,35 @@ class DetailsForm(forms.SelfHandlingForm):
     def handle(self, request, data):
         return True
 
+#
+# Fix for https://issues.infn.it/jira/browse/PDCL-690
+#
+def chk_repl_project(regid, old_prjname, new_prjname):
+    if not new_prjname or len(new_prjname.strip()) == 0 or old_prjname == new_prjname:
+        return (regid, old_prjname)
+
+    LOG.info("Change %s into %s" % (old_prjname, new_prjname))
+    old_prjreq = PrjRequest.objects.filter(
+        registration__regid = regid,
+        project__projectname = old_prjname
+    )[0]
+    old_prj = old_prjreq.project
+
+    new_prj = Project.objects.create(
+        projectname = new_prjname,
+        description = old_prj.description,
+        status = old_prj.status
+    )
+
+    new_prjreq = PrjRequest.objects.create(
+        registration = old_prjreq.registration,
+        project = new_prj,
+        notes = old_prjreq.notes
+    )
+
+    old_prj.delete()
+
+    return (regid, new_prjname)
 
 #
 # New features: actions for project creation
