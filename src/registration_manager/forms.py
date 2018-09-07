@@ -317,6 +317,12 @@ class GrantAllForm(PreCheckForm):
             max_length=OS_SNAME_LEN
         )
 
+        self.fields['newdescr'] = forms.CharField(
+            label=_("Project description"),
+            required=False,
+            widget=forms.widgets.Textarea()
+        )
+
         insert_unit_combos(self)
 
     def preprocess_prj(self, registration, data):
@@ -327,8 +333,10 @@ class GrantAllForm(PreCheckForm):
             flowstatus = PSTATUS_REG
         )
         if len(p_reqs):
-            chk_repl_project(registration.regid, p_reqs[0].project.projectname,
-                             data['rename'])
+            # Assume there's only one request pending
+            chk_repl_project(registration.regid,
+                             p_reqs[0].project.projectname, data['rename'],
+                             p_reqs[0].project.description, data['newdescr'])
 
     def clean(self):
         data = super(GrantAllForm, self).clean()
@@ -571,6 +579,12 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
             max_length=OS_SNAME_LEN
         )
 
+        self.fields['newdescr'] = forms.CharField(
+            label=_("Project description"),
+            required=False,
+            widget=forms.widgets.Textarea()
+        )
+
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
 
         curr_year = datetime.now().year
@@ -602,7 +616,9 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
 
             with transaction.atomic():
 
-                regid, prjname = chk_repl_project(int(usr_and_prj[0]), usr_and_prj[1], data['newname'])
+                regid, prjname = chk_repl_project(int(usr_and_prj[0]),
+                                                  usr_and_prj[1], data['newname'],
+                                                  None, data['newdescr'])
 
                 #
                 # Creation of new tenant
@@ -938,31 +954,46 @@ class DetailsForm(forms.SelfHandlingForm):
 
 #
 # Fix for https://issues.infn.it/jira/browse/PDCL-690
+#         https://issues.infn.it/jira/browse/PDCL-1035
 #
-def chk_repl_project(regid, old_prjname, new_prjname):
-    if not new_prjname or len(new_prjname.strip()) == 0 or old_prjname == new_prjname:
+def chk_repl_project(regid, old_prjname, new_prjname, old_descr, new_descr):
+
+    old_prjreq = None
+    q_args = {'registration__regid' : regid, 'project__projectname' : old_prjname}
+    if not old_descr:
+        old_prjreq = PrjRequest.objects.filter(**q_args)[0]
+        old_descr = old_prjreq.project.description
+
+    same_name = not new_prjname or len(new_prjname.strip()) == 0 or old_prjname == new_prjname
+    same_descr = not new_descr or len(new_descr.strip()) == 0 or old_descr == new_descr
+    if same_name and same_descr:
         return (regid, old_prjname)
 
-    LOG.info("Change %s into %s" % (old_prjname, new_prjname))
-    old_prjreq = PrjRequest.objects.filter(
-        registration__regid = regid,
-        project__projectname = old_prjname
-    )[0]
+    if not old_prjreq:
+        old_prjreq = PrjRequest.objects.filter(**q_args)[0]
     old_prj = old_prjreq.project
 
-    new_prj = Project.objects.create(
-        projectname = new_prjname,
-        description = old_prj.description,
-        status = old_prj.status
-    )
+    if not same_name:
+        LOG.info("Change project name %s into %s" % (old_prjname, new_prjname))
+        new_prj = Project.objects.create(
+            projectname = new_prjname,
+            description = old_descr if same_descr else new_descr,
+            status = old_prj.status
+        )
 
-    new_prjreq = PrjRequest.objects.create(
-        registration = old_prjreq.registration,
-        project = new_prj,
-        notes = old_prjreq.notes
-    )
+        new_prjreq = PrjRequest.objects.create(
+            registration = old_prjreq.registration,
+            project = new_prj,
+            notes = old_prjreq.notes
+        )
 
-    old_prj.delete()
+        old_prj.delete()
+        return (regid, new_prjname)
+
+    if not same_descr:
+        LOG.info("Change description %s into %s for %s" % (old_descr, new_descr, new_prjname))
+        old_prj.description = new_descr
+        old_prj.save()
 
     return (regid, new_prjname)
 

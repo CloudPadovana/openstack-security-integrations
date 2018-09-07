@@ -177,14 +177,15 @@ class GrantAllView(AbstractCheckView):
 
     def get_initial(self):
 
-        tmpt = self.kwargs.get('requestid', '').split(':')
+        oldpname, oldpdescr = get_project_details(self.kwargs.get('requestid', ''))
 
         return {
             'regid' : self.get_object().registration.regid,
             'username' : self.get_object().registration.username,
             'extaccount' : self.get_object().externalid,
             'expiration' : datetime.now() + timedelta(365),
-            'rename' : tmpt[1] if len(tmpt) == 2 else ''
+            'rename' : oldpname if oldpname else '' ,
+            'newdescr' : oldpdescr if oldpdescr else ''
         }
 
 class RejectView(AbstractCheckView):
@@ -257,11 +258,13 @@ class NewProjectView(forms.ModalFormView):
         return context
         
     def get_initial(self):
-        tmpt = self.kwargs['requestid'].split(':')
-        new_name = tmpt[1] if len(tmpt) == 2 else ""
+
+        oldpname, oldpdescr = get_project_details(self.kwargs['requestid'])
+
         return { 
             'requestid' : self.kwargs['requestid'],
-            'newname' : new_name,
+            'newname' : oldpname if oldpname else '',
+            'newdescr' : oldpdescr if oldpdescr else '',
             'expiration' : datetime.now() + timedelta(365)
         }
 
@@ -409,6 +412,21 @@ class DetailsView(forms.ModalFormView):
         context.update(self.get_object())
         return context
 
+def get_project_details(requestid):
+
+    tmpt = requestid.split(':')
+
+    if len(tmpt) == 2:
+        try:
+            prj_req = PrjRequest.objects.filter(
+                registration__regid = int(tmpt[0]),
+                project__projectname = tmpt[1]
+            )[0]
+            return (prj_req.project.projectname, prj_req.project.description)
+        except Exception:
+            LOG.error("Registration error", exc_info=True)
+
+    return (None, None)
 
 
 
