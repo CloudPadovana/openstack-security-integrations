@@ -91,6 +91,13 @@ class ModifyExpForm(forms.SelfHandlingForm):
                     'project__projectid' : request.user.tenant_id
                 }
                 Expiration.objects.filter(**q_args).update(expdate=data['expiration'])
+
+                all_exp = Expiration.objects.filter(registration__userid=data['userid'])
+                if len(all_exp):
+                    new_exp = max([ x.expdate for x in all_exp ])
+                    all_exp[0].registration.expdate = new_exp
+                    all_exp[0].registration.save()
+
                 PrjRequest.objects.filter(**q_args).delete()
 
                 tmpres = EMail.objects.filter(registration__userid=data['userid'])

@@ -73,14 +73,12 @@ class MainView(tables.DataTableView):
                 rData.organization = prjReq.registration.organization
                 rData.phone = prjReq.registration.phone
                 
-                if prjReq.project.status == PRJ_GUEST:
+                if prjReq.flowstatus == PSTATUS_RENEW_MEMB:
 
-                    rData.code = RegistrData.NEW_USR_GUEST_PRJ
-                    requestid = "%d:" % prjReq.registration.regid
-
-                elif prjReq.flowstatus == PSTATUS_RENEW_MEMB:
-
-                    rData.code = RegistrData.USR_RENEW
+                    if prjReq.project.status == PRJ_GUEST:
+                        rData.code = RegistrData.GUEST_RENEW
+                    else:
+                        rData.code = RegistrData.USR_RENEW
                     rData.project = prjReq.project.projectname
                     requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
 
@@ -89,6 +87,11 @@ class MainView(tables.DataTableView):
                     rData.code = RegistrData.PRJADM_RENEW
                     rData.project = prjReq.project.projectname
                     requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
+
+                elif prjReq.project.status == PRJ_GUEST:
+
+                    rData.code = RegistrData.NEW_USR_GUEST_PRJ
+                    requestid = "%d:" % prjReq.registration.regid
 
                 elif prjReq.project.projectid:
 
@@ -173,11 +176,15 @@ class GrantAllView(AbstractCheckView):
         return context
 
     def get_initial(self):
+
+        tmpt = self.kwargs.get('requestid', '').split(':')
+
         return {
             'regid' : self.get_object().registration.regid,
             'username' : self.get_object().registration.username,
             'extaccount' : self.get_object().externalid,
-            'expiration' : datetime.now() + timedelta(365)
+            'expiration' : datetime.now() + timedelta(365),
+            'rename' : tmpt[1] if len(tmpt) == 2 else ''
         }
 
 class RejectView(AbstractCheckView):
@@ -250,8 +257,11 @@ class NewProjectView(forms.ModalFormView):
         return context
         
     def get_initial(self):
+        tmpt = self.kwargs['requestid'].split(':')
+        new_name = tmpt[1] if len(tmpt) == 2 else ""
         return { 
             'requestid' : self.kwargs['requestid'],
+            'newname' : new_name,
             'expiration' : datetime.now() + timedelta(365)
         }
 

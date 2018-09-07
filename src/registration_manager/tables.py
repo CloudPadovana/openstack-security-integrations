@@ -30,6 +30,7 @@ class RegistrData:
     NEW_USR_GUEST_PRJ = 5
     USR_RENEW = 6
     PRJADM_RENEW = 7
+    GUEST_RENEW = 8
 
     def __init__(self):
         self.requestid = None
@@ -152,6 +153,15 @@ class ForcedRenewLink(tables.LinkAction):
     def allowed(self, request, datum):
         return datum.code == RegistrData.USR_RENEW
 
+class GuestRenewLink(tables.LinkAction):
+    name = "guestrenewlink"
+    verbose_name = _("Guest renew")
+    url = "horizon:idmanager:registration_manager:forcedrenew"
+    classes = ("ajax-modal", "btn-edit")
+    
+    def allowed(self, request, datum):
+        return datum.code == RegistrData.GUEST_RENEW
+
 class DetailsLink(tables.LinkAction):
     name = "detailslink"
     verbose_name = _("Details")
@@ -171,6 +181,8 @@ def get_description(data):
         return _('New user requires access as guest')
     elif data.code == RegistrData.USR_RENEW:
         return _('User requires renewal')
+    elif data.code == RegistrData.GUEST_RENEW:
+        return _('Guest requires renewal')
     elif data.code == RegistrData.PRJADM_RENEW:
         return _('Project administrator requires renewal')
     
@@ -197,6 +209,7 @@ class OperationTable(tables.DataTable):
                        GuestApprLink,
                        GuestRejLink,
                        RenewAdminLink,
+                       GuestRenewLink,
                        ForcedRenewLink,
                        DetailsLink)
 

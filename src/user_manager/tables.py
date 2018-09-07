@@ -128,6 +128,13 @@ class CloseOrphanLink(tables.LinkAction):
     verbose_name = _("Active users")
     url = "horizon:idmanager:user_manager:index"
 
+
+class ReactivateLink(tables.LinkAction):
+    name = "reactivate"
+    verbose_name = _("Reactivate user")
+    url = "horizon:idmanager:user_manager:reactivate"
+    classes = ("ajax-modal", "btn-edit")
+
 class OrphanTable(tables.DataTable):
     name = tables.Column('name', verbose_name=_('User name'))
     fullname = tables.Column('fullname', verbose_name=_('Full name'))
@@ -136,7 +143,10 @@ class OrphanTable(tables.DataTable):
     class Meta:
         name = "orphan_table"
         verbose_name = _("Orphans")
-        row_actions = (DeleteUsersAction,)
+        row_actions = (
+            DeleteUsersAction,
+            ReactivateLink,
+        )
         table_actions = (CloseOrphanLink,)
 
     def get_object_id(self, datum):
