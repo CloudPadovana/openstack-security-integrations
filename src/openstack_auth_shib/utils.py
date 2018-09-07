@@ -14,6 +14,7 @@
 #  under the License. 
 
 import logging
+import re
 
 from django.conf import settings
 from django.db import transaction
@@ -30,6 +31,8 @@ LOG = logging.getLogger(__name__)
 
 TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 TENANTADMIN_ROLEID = getattr(settings, 'TENANTADMIN_ROLE_ID', None)
+
+PRJ_REGEX = re.compile(r'[^a-zA-Z0-9-_ ]')
 
 def get_admin_roleid(request):
     global TENANTADMIN_ROLEID

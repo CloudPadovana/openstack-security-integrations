@@ -20,6 +20,7 @@ from horizon import messages
 
 from django.db import transaction
 from django.db import IntegrityError
+from django.forms import ValidationError
 from django.views.decorators.debug import sensitive_variables
 
 from openstack_auth_shib.models import Registration
@@ -36,6 +37,8 @@ from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import notifyProject
 from openstack_auth_shib.notifications import NEWPRJ_REQ_TYPE
 from openstack_auth_shib.notifications import MEMBER_REQUEST
+
+from openstack_auth_shib.utils import PRJ_REGEX
 
 from django.utils.translation import ugettext_lazy as _
 
@@ -125,6 +128,21 @@ class ProjectRequestForm(forms.SelfHandlingForm):
                 ('selprj', _('Select existing projects'))
             ]
         
+
+    def clean(self):
+        data = super(ProjectRequestForm, self).clean()
+
+        if data['prjaction'] == 'newprj':
+            if not data['newprj']:
+                raise ValidationError(_('Project name is required.'))
+            tmpm = PRJ_REGEX.search(data['newprj'])
+            if tmpm:
+                raise ValidationError(_('Bad character "%s" for project name.') % tmpm.group(0))
+        elif data['prjaction'] == 'selprj':
+            if not data['selprj']:
+                raise ValidationError(_('Missing selected project.'))
+
+        return data
 
     @sensitive_variables('data')
     def handle(self, request, data):

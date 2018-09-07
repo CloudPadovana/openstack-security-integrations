@@ -105,6 +105,8 @@ member_templ_list = [
 ]
 
 usr_templ_list = [
+    'src/templates/user_manager/_reactivate.html',
+    'src/templates/user_manager/reactivate.html',
     'src/templates/user_manager/_check_orphans.html',
     'src/templates/user_manager/check_orphans.html',
     'src/templates/user_manager/_change_password.html',

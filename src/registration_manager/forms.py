@@ -14,6 +14,7 @@
 #  under the License. 
 
 import sys
+import re
 import logging
 import base64
 from datetime import datetime, timedelta
@@ -29,6 +30,7 @@ from horizon import messages
 
 from django.db import transaction
 from django.conf import settings
+from django.forms import ValidationError
 from django.forms.widgets import HiddenInput
 from django.forms.extras.widgets import SelectDateWidget
 from django.views.decorators.debug import sensitive_variables
@@ -64,10 +66,15 @@ from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PRJ_GUEST
 
 from openstack_auth_shib.models import OS_LNAME_LEN
+from openstack_auth_shib.models import OS_SNAME_LEN
 from openstack_auth_shib.utils import get_prjman_ids
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
+from openstack_auth_shib.utils import PRJ_REGEX
 
 from openstack_dashboard.api import keystone as keystone_api
+from openstack_dashboard.api import cinder as cinder_api
+from openstack_dashboard.api import nova as nova_api
+from openstack_dashboard.api import neutron as neutron_api
 
 LOG = logging.getLogger(__name__)
 
@@ -125,6 +132,12 @@ class PreCheckForm(forms.SelfHandlingForm):
         
         self.expiration = datetime.now() + timedelta(365)
 
+    def preprocess_prj(self, registr, data):
+        pass
+
+    def clean(self):
+        return super(PreCheckForm, self).clean()
+
     @sensitive_variables('data')
     def handle(self, request, data):
 
@@ -173,19 +186,26 @@ class PreCheckForm(forms.SelfHandlingForm):
                 #
                 # Creation of new tenants
                 #
+
+                self.preprocess_prj(registration, data)
+
                 new_prj_list = list()
-                q_args = {
-                    'project__projectid__isnull' : True,
-                    'flowstatus' : PSTATUS_REG
-                }
-                
-                for p_reqs in prjReqList.filter(**q_args):
-                    kprj = keystone_api.tenant_create(request, p_reqs.project.projectname,
-                                                        p_reqs.project.description, True)
-                    p_reqs.project.projectid = kprj.id
-                    p_reqs.project.save()
-                    new_prj_list.append(p_reqs.project)
-                    LOG.info("Created tenant %s" % p_reqs.project.projectname)
+
+                p_reqs = prjReqList.filter(
+                    project__projectid__isnull = True,
+                    flowstatus = PSTATUS_REG
+                )
+                if len(p_reqs):
+                    newreq_prj = p_reqs[0].project
+                    kprj = keystone_api.tenant_create(request, newreq_prj.projectname,
+                                                        newreq_prj.description, True)
+                    newreq_prj.projectid = kprj.id
+                    newreq_prj.save()
+                    new_prj_list.append(newreq_prj)
+
+                    setup_new_project(request, kprj.id, newreq_prj.projectname, data)
+
+                    LOG.info("Created tenant %s" % newreq_prj.projectname)
                 
                 #
                 # User creation
@@ -291,6 +311,41 @@ class GrantAllForm(PreCheckForm):
             required=True,
             widget=SelectDateWidget(None, range(curr_year, curr_year + 25))
         )
+
+        self.fields['rename'] = forms.CharField(
+            label=_('Project name'),
+            max_length=OS_SNAME_LEN
+        )
+
+        self.fields['newdescr'] = forms.CharField(
+            label=_("Project description"),
+            required=False,
+            widget=forms.widgets.Textarea()
+        )
+
+        insert_unit_combos(self)
+
+    def preprocess_prj(self, registration, data):
+
+        p_reqs = PrjRequest.objects.filter(
+            registration=registration,
+            project__projectid__isnull = True,
+            flowstatus = PSTATUS_REG
+        )
+        if len(p_reqs):
+            # Assume there's only one request pending
+            chk_repl_project(registration.regid,
+                             p_reqs[0].project.projectname, data['rename'],
+                             p_reqs[0].project.description, data['newdescr'])
+
+    def clean(self):
+        data = super(GrantAllForm, self).clean()
+
+        tmpm = PRJ_REGEX.search(data['rename'])
+        if tmpm:
+            raise ValidationError(_('Bad character "%s" for project name.') % tmpm.group(0))
+
+        return data
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -519,16 +574,37 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
     def __init__(self, request, *args, **kwargs):
         super(NewProjectCheckForm, self).__init__(request, *args, **kwargs)
 
+        self.fields['newname'] = forms.CharField(
+            label=_('Project name'),
+            max_length=OS_SNAME_LEN
+        )
+
+        self.fields['newdescr'] = forms.CharField(
+            label=_("Project description"),
+            required=False,
+            widget=forms.widgets.Textarea()
+        )
+
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
 
         curr_year = datetime.now().year
         years_list = range(curr_year, curr_year+25)
 
         self.fields['expiration'] = forms.DateTimeField(
-            label=_("Expiration date"),
+            label=_("Administrator expiration date"),
             widget=SelectDateWidget(None, years_list)
         )
 
+        insert_unit_combos(self)
+
+    def clean(self):
+        data = super(NewProjectCheckForm, self).clean()
+
+        tmpm = PRJ_REGEX.search(data['newname'])
+        if tmpm:
+            raise ValidationError(_('Bad character %s for project name.') % tmpm.group(0))
+
+        return data
 
     @sensitive_variables('data')
     def handle(self, request, data):
@@ -540,14 +616,17 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
 
             with transaction.atomic():
 
+                regid, prjname = chk_repl_project(int(usr_and_prj[0]),
+                                                  usr_and_prj[1], data['newname'],
+                                                  None, data['newdescr'])
+
                 #
                 # Creation of new tenant
                 #
-                q_args = {
-                    'registration__regid' : int(usr_and_prj[0]),
-                    'project__projectname' : usr_and_prj[1]
-                }
-                prj_req = PrjRequest.objects.filter(**q_args)[0]
+                prj_req = PrjRequest.objects.filter(
+                    registration__regid = regid,
+                    project__projectname = prjname
+                )[0]
                 
                 project_name = prj_req.project.projectname
                 user_id = prj_req.registration.userid
@@ -593,6 +672,8 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 #
                 prj_req.delete()
                 
+                setup_new_project(request, kprj.id, project_name, data)
+
             #
             # Send notification to the user
             #
@@ -870,5 +951,214 @@ class DetailsForm(forms.SelfHandlingForm):
     @sensitive_variables('data')
     def handle(self, request, data):
         return True
+
+#
+# Fix for https://issues.infn.it/jira/browse/PDCL-690
+#         https://issues.infn.it/jira/browse/PDCL-1035
+#
+def chk_repl_project(regid, old_prjname, new_prjname, old_descr, new_descr):
+
+    old_prjreq = None
+    q_args = {'registration__regid' : regid, 'project__projectname' : old_prjname}
+    if not old_descr:
+        old_prjreq = PrjRequest.objects.filter(**q_args)[0]
+        old_descr = old_prjreq.project.description
+
+    same_name = not new_prjname or len(new_prjname.strip()) == 0 or old_prjname == new_prjname
+    same_descr = not new_descr or len(new_descr.strip()) == 0 or old_descr == new_descr
+    if same_name and same_descr:
+        return (regid, old_prjname)
+
+    if not old_prjreq:
+        old_prjreq = PrjRequest.objects.filter(**q_args)[0]
+    old_prj = old_prjreq.project
+
+    if not same_name:
+        LOG.info("Change project name %s into %s" % (old_prjname, new_prjname))
+        new_prj = Project.objects.create(
+            projectname = new_prjname,
+            description = old_descr if same_descr else new_descr,
+            status = old_prj.status
+        )
+
+        new_prjreq = PrjRequest.objects.create(
+            registration = old_prjreq.registration,
+            project = new_prj,
+            notes = old_prjreq.notes
+        )
+
+        old_prj.delete()
+        return (regid, new_prjname)
+
+    if not same_descr:
+        LOG.info("Change description %s into %s for %s" % (old_descr, new_descr, new_prjname))
+        old_prj.description = new_descr
+        old_prj.save()
+
+    return (regid, new_prjname)
+
+#
+# New features: actions for project creation
+#
+
+#
+# {
+#   <unit_id> : {
+#     "name" : <human readable unit name>,
+#     "quota_total" :  <total>,
+#     "quota_per_volume" : <per-volume>,
+#     "quota_<type>" : <quota_type>,
+#
+#     "availability_zone" : <availability zone, default: nova>
+#     "prefix" : <project_prefix>,
+#     "hypervisors" : <list_of_hypervisors>,
+#     "metadata" : <hash of metadata>,
+#
+#     "lan_net_pool" : <2-octets network ip prefix>,
+#     "lan_router" : <router name>,
+#     "nameservers" : <list of dns ip>,
+#     "sec_group_id" : <default security group id>
+# }
+#
+
+def insert_unit_combos(newprjform):
+    unit_table = getattr(settings, 'UNIT_TABLE', {})
+    if len(unit_table) > 0:
+        newprjform.fields['unit'] = forms.ChoiceField(
+            label=_('Available units'),
+            required=True,
+            choices=[ (k,v['name']) for k, v in unit_table.items() ]
+        )
+
+        avail_subnets = get_avail_subnets(newprjform.request)
+
+        for unit_id in unit_table:
+            newprjform.fields["%s-net" % unit_id] = forms.ChoiceField(
+                label=_('Available networks'),
+                required=False,
+                choices=[ (k,k) for k in avail_subnets[unit_id] ]
+            )
+
+CIDR_PATTERN = re.compile("(\d+\.\d+)\.(\d+).0/\d+")
+MAX_AVAIL = getattr(settings, 'MAX_PROPOSED_NETWORKS', 10)
+
+def get_avail_subnets(request):
+
+    unit_table = getattr(settings, 'UNIT_TABLE', {})
+
+    used_nets = dict()
+    for subdict in neutron_api.subnet_list(request):
+        cidr_match = CIDR_PATTERN.search(subdict['cidr'])
+        if not cidr_match:
+            continue
+        if not cidr_match.group(1) in used_nets:
+            used_nets[cidr_match.group(1)] = list()
+        used_nets[cidr_match.group(1)].append(int(cidr_match.group(2)))
+
+    avail_nets = dict()
+    for subprx, subnums in used_nets.items():
+
+        tmpa = [ k for k, v in unit_table.items() if v['lan_net_pool'] == subprx ]
+        if len(tmpa) == 0:
+            continue
+        unit_id = tmpa[0]
+
+        avail_nets[unit_id] = list()
+
+        max_avail = max(subnums)
+        if max_avail == 255:
+            continue
+
+        tmpl = list(set(range(max_avail + 2)) - set(subnums))
+        tmpl.sort(lambda x,y: y-x)
+
+        for idx in tmpl:
+            avail_nets[unit_id].append("%s.%d.0/24" % (subprx, idx))
+
+    return avail_nets
+
+def setup_new_project(request, project_id, project_name, data):
+
+    unit_id = data.get('unit', None)
+
+    cloud_table = getattr(settings, 'UNIT_TABLE', {})
+    if not unit_id or not unit_id in cloud_table:
+        return
+
+    unit_data = cloud_table[unit_id]
+    prj_cname = "%s-%s" % (unit_data.get('prefix', unit_id),
+        re.sub(r'\s+', "-", project_name))
+
+    try:
+
+        cinder_params = dict()
+        for pkey, pvalue in unit_data.items():
+            if pkey == 'quota_total':
+                cinder_params['gigabytes'] = pvalue
+            elif pkey == 'quota_per_volume':
+                cinder_params['per_volume_gigabytes'] = pvalue
+            elif pkey.startswith('quota_'):
+                cinder_params['gigabytes_' + pkey[6:]] = pvalue
+
+        if len(cinder_params):
+            cinder_api.tenant_quota_update(request, project_id, **cinder_params)
+
+    except:
+            LOG.error("Cannot setup project quota", exc_info=True)
+            messages.error(request, _("Cannot setup project quota"))
+
+    try:
+
+        hyper_list = unit_data.get('hypervisors', [])
+        if len(hyper_list):
+            nova_api.aggregate_create(request, prj_cname,
+                                    unit_data.get('availability_zone', 'nova'))
+
+            for h_item in hyper_list:
+                nova_api.add_host_to_aggregate(request, prj_cname, h_item)
+
+            nova_api.aggregate_set_metadata(request, prj_cname, 
+                                        "filter_tenant_id=%s" % project_id)
+            for md_tuple in unit_data.get('metadata', {}).items():
+                nova_api.aggregate_set_metadata(request, prj_cname, "%s=%s" % md_tuple)
+
+    except:
+            LOG.error("Cannot setup host aggregate", exc_info=True)
+            messages.error(request, _("Cannot setup host aggregate"))
+
+    try:
+
+        subnet_cidr = data['%s-net' % unit_id]
+        prj_lan_name = "%s-lan" % prj_cname
+
+        prj_net = neutron_api.network_create(request, tenant_id=project_id, name=prj_lan_name)
+        net_args = {
+            'cidr' : subnet_cidr,
+            'ip_version' : 4,
+            'dns_nameservers' : unit_data.get('nameservers', []),
+            'enable_dhcp' : True,
+            'tenant_id' : project_id,
+            'name' : "sub-%s-lan" % prj_cname
+        }
+        prj_sub = neutron_api.subnet_create(request, prj_net['id'], **net_args)
+        if 'lan_router' in unit_data:
+            neutron_api.router_add_interface(request, unit_data['lan_router'], 
+                                            subnet_id=prj_sub['id'])
+
+    except:
+            LOG.error("Cannot setup networks", exc_info=True)
+            messages.error(request, _("Cannot setup networks"))
+
+    try:
+        sec_grp_id = unit_data.get('sec_group_id', None)
+        subnet_cidr = data['%s-net' % unit_id]
+
+        #if sec_grp_id:
+        #    neutron_api.security_group_rule_create(request, None, 'ingress', 'IPv4',
+        #                       ip_protocol, from_port, to_port,
+        #                       subnet_cidr, sec_grp_id)
+    except:
+            LOG.error("Cannot update security groups", exc_info=True)
+            messages.error(request, _("Cannot update security groups"))
 
 

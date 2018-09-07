@@ -30,7 +30,7 @@ from .models import Registration, Project, RegRequest, PrjRequest
 from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST
 from .models import OS_LNAME_LEN, OS_SNAME_LEN, PWD_LEN, EMAIL_LEN
 from .notifications import notifyAdmin, REGISTR_AVAIL_TYPE
-from .utils import import_guest_project, get_ostack_attributes
+from .utils import import_guest_project, get_ostack_attributes, PRJ_REGEX
 
 LOG = logging.getLogger(__name__)
 
@@ -202,6 +202,9 @@ class RegistrForm(forms.SelfHandlingForm):
         if data['prjaction'] == 'newprj':
             if not data['newprj']:
                 raise ValidationError(_('Project name is required.'))
+            tmpm = PRJ_REGEX.search(data['newprj'])
+            if tmpm:
+                raise ValidationError(_('Bad character "%s" for project name.') % tmpm.group(0))
         elif data['prjaction'] == 'selprj':
             if not data['selprj']:
                 raise ValidationError(_('Missing selected project.'))
