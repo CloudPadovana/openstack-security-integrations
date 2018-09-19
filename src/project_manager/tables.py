@@ -52,7 +52,7 @@ class UsageLink(baseTables.UsageLink):
     url = "horizon:idmanager:project_manager:usage"
     
 class ModifyQuotas(baseTables.ModifyQuotas):
-    url = "horizon:idmanager:project_manager:update"
+    url = "horizon:idmanager:project_manager:update_quotas"
 
 class CreateProject(baseTables.CreateProject):
     url = "horizon:idmanager:project_manager:create"

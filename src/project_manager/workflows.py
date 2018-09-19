@@ -79,9 +79,6 @@ class ExtCreateProjectInfo(baseWorkflows.CreateProjectInfo):
                    "enabled",
                    "guest")
 
-class ExtCreateProjectQuota(baseWorkflows.CreateProjectQuota):
-    template_name = "idmanager/project_manager/_common_horizontal_form.html"
-
 class ExtCreateProject(baseWorkflows.CreateProject):
     success_url = "horizon:idmanager:project_manager:index"
     
@@ -89,8 +86,7 @@ class ExtCreateProject(baseWorkflows.CreateProject):
 
         self.default_steps = (ExtCreateProjectInfo,
                               baseWorkflows.UpdateProjectMembers,
-                              baseWorkflows.UpdateProjectGroups,
-                              ExtCreateProjectQuota)
+                              baseWorkflows.UpdateProjectGroups)
 
         workflows.Workflow.__init__(self, request=request,
                                             context_seed=context_seed,
@@ -194,9 +190,6 @@ class ExtCreateProject(baseWorkflows.CreateProject):
 class ExtUpdateProjectInfo(baseWorkflows.UpdateProjectInfo):
     template_name = "idmanager/project_manager/_common_horizontal_form.html"
 
-class ExtUpdateProjectQuota(baseWorkflows.UpdateProjectQuota):
-    template_name = "idmanager/project_manager/_common_horizontal_form.html"
-
 class ExtUpdateProject(baseWorkflows.UpdateProject):
     success_url = "horizon:idmanager:project_manager:index"
     
@@ -204,8 +197,7 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
 
         self.default_steps = (ExtUpdateProjectInfo,
                               baseWorkflows.UpdateProjectMembers,
-                              baseWorkflows.UpdateProjectGroups,
-                              ExtUpdateProjectQuota)
+                              baseWorkflows.UpdateProjectGroups)
 
         workflows.Workflow.__init__(self,request=request,
                                             context_seed=context_seed,

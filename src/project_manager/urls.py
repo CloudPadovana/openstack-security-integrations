@@ -17,6 +17,7 @@
 from django import VERSION as django_version
 from django.conf.urls import url
 from openstack_dashboard.dashboards.idmanager.project_manager import views
+from openstack_dashboard.dashboards.identity.projects import views as baseViews
 
 index_url = url(r'^$', views.IndexView.as_view(), name='index')
 create_url = url(r'^create$', views.CreateProjectView.as_view(), name='create')
@@ -26,6 +27,8 @@ use_url = url(r'^(?P<tenant_id>[^/]+)/usage/$',
         views.ProjectUsageView.as_view(), name='usage')
 detail_url = url(r'^(?P<project_id>[^/]+)/detail/$',
         views.DetailProjectView.as_view(), name='detail')
+quota_url = url(r'^(?P<tenant_id>[^/]+)/update_quotas/$',
+        baseViews.UpdateQuotasView.as_view(), name='update_quotas')
 
 if django_version[1] < 11:
 
@@ -37,6 +40,7 @@ if django_version[1] < 11:
         mod_url,
         use_url,
         detail_url,
+        quota_url,
     )
 
 else:
@@ -46,7 +50,8 @@ else:
         create_url,
         mod_url,
         use_url,
-        detail_url
+        detail_url,
+        quota_url
     ]
 
 
