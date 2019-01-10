@@ -139,10 +139,32 @@ class RegistrForm(forms.SelfHandlingForm):
             }),
         )
 
-        self.fields['organization'] = forms.CharField(
-            label=_('Organization'),
-            required=True,
-            widget=forms.HiddenInput if 'organization' in initial else forms.TextInput
+        org_table = settings.HORIZON_CONFIG.get('organization', {})
+        org_list = org_table.get(initial.get('organization', ""), None)
+        if not org_list:
+
+            self.fields['organization'] = forms.CharField(
+                label=_('Organization'),
+                required=True,
+                widget=forms.TextInput if org_list == None else forms.HiddenInput
+            )
+
+        else:
+
+            self.fields['organization'] = forms.ChoiceField(
+                label=_('Organization'),
+                required=True,
+                choices=org_list
+            )
+
+        self.fields['contactper'] = forms.CharField(
+            label=_('Contact person'),
+            required=False,
+            widget=forms.HiddenInput if not org_list else forms.TextInput(attrs={
+                'class': 'switched',
+                'data-switch-on': 'actsource',
+                'data-actsource-newprj': _('Contact person')
+            })
         )
     
         phone_regex = settings.HORIZON_CONFIG.get('phone_regex', '^\s*\+*[0-9]+[0-9\s.]+\s*$')
@@ -151,11 +173,6 @@ class RegistrForm(forms.SelfHandlingForm):
             required=True,
             regex=phone_regex,
             error_messages={'invalid': _("Wrong phone format")}
-        )
-    
-        self.fields['contactper'] = forms.CharField(
-            label=_('Contact person'),
-            required=False
         )
     
         self.fields['notes'] = forms.CharField(
