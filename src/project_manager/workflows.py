@@ -35,6 +35,8 @@ from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_PUBLIC
 from openstack_auth_shib.models import PRJ_GUEST
 from openstack_auth_shib.models import PSTATUS_PENDING
+from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
+from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
 from openstack_auth_shib.notifications import notifyUser
@@ -265,7 +267,7 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
             q_args = {
                 'registration__in' : nreg_qset,
                 'project' : self.this_project,
-                'flowstatus' : PSTATUS_PENDING
+                'flowstatus__in' : [ PSTATUS_PENDING, PSTATUS_RENEW_ADMIN, PSTATUS_RENEW_MEMB ]
             }
             PrjRequest.objects.filter(**q_args).delete()
 
