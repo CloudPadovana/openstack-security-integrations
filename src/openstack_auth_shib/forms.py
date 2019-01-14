@@ -146,7 +146,7 @@ class RegistrForm(forms.SelfHandlingForm):
             self.fields['organization'] = forms.CharField(
                 label=_('Organization'),
                 required=True,
-                widget=forms.TextInput if org_list == None else forms.HiddenInput
+                widget=forms.HiddenInput if 'organization' in initial else forms.TextInput
             )
 
         else:
@@ -160,7 +160,7 @@ class RegistrForm(forms.SelfHandlingForm):
         self.fields['contactper'] = forms.CharField(
             label=_('Contact person'),
             required=False,
-            widget=forms.HiddenInput if not org_list else forms.TextInput(attrs={
+            widget=forms.HiddenInput if org_list else forms.TextInput(attrs={
                 'class': 'switched',
                 'data-switch-on': 'actsource',
                 'data-actsource-newprj': _('Contact person')
