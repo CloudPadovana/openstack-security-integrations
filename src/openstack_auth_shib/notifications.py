@@ -110,10 +110,10 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
     if project_name is None:
         project_name = _try_get_from_request_user(request, 'project_name')
 
-    LOG.debug("notify user_id={user_id}, project_id={project_id}, "
-              "user_name={user_name}, project_name={project_name}, "
-              "dst_user_id={dst_user_id}, dst_project_id={dst_project_id}, "
-              "rcpt={rcpt}, action={action}, context={context}"
+    LOG.debug(u'notify user_id={user_id}, project_id={project_id}, '
+              u'user_name={user_name}, project_name={project_name}, '
+              u'dst_user_id={dst_user_id}, dst_project_id={dst_project_id}, '
+              u'rcpt={rcpt}, action={action}, context={context}'
               .format(user_id=user_id, project_id=project_id,
                       user_name=user_name, project_name=project_name,
                       dst_user_id=dst_user_id, dst_project_id=dst_project_id,
@@ -137,7 +137,7 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
             to = [to, ]
         to = ', '.join(map(str, to))
 
-        extra['email'] = "To: {to}\nSubject: {subject}\n\n{body}".format(
+        extra['email'] = u'To: {to}\nSubject: {subject}\n\n{body}'.format(
             to=to, subject=subject, body=body)
 
     Log.objects.log_action(
@@ -166,7 +166,7 @@ def warn_if_missing(arg_name):
     def wrapper(func):
         def wrapped(*args, **kwargs):
             if arg_name not in kwargs:
-                LOG.warn("{func_name}: `{arg_name}` not given. The log will not be visible by the corresponding entity"
+                LOG.warn(u'{func_name}: `{arg_name}` not given. The log will not be visible by the corresponding entity'
                          .format(func_name=func.__name__, arg_name=arg_name))
             return func(*args, **kwargs)
         return wrapped
