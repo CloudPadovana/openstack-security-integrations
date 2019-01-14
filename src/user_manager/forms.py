@@ -136,24 +136,24 @@ class UpdateUserForm(baseForms.UpdateUserForm):
 
     def __init__(self, request, *args, **kwargs):
         super(UpdateUserForm, self).__init__(request, *args, **kwargs)
-        #
-        # TODO email field must be disabled for federated accounts
-        #
 
     def handle(self, request, data):
 
         user_id = data['id']
 
-        if not "email" in data:
-            messages.error(request, _("Email field cannot be empty"))
-            return False
-
         result = True
         try:
             with transaction.atomic():
 
-                tmpres = EMail.objects.filter(registration__userid=user_id)
-                tmpres.update(email=data['email'])
+                reg_usr = Registration.objects.filter(userid=user_id)[0]
+
+                if "email" in data:
+                    tmpres = EMail.objects.filter(registration=reg_usr)
+                    tmpres.update(email=data['email'])
+
+                if "name" in data and data['name'] <> reg_usr.username:
+                    reg_usr.username=data['name']
+                    reg_usr.save()
 
                 result = super(UpdateUserForm, self).handle(request, data)
                 if not result or isinstance(result, http.HttpResponse):
