@@ -61,32 +61,22 @@ WEBSSO_IDP_RULES["unipd_sso"] = [
 
 WEBSSO_CHOICES = WEBSSO_CHOICES + (('infn_sso', 'INFN AAI'), ('unipd_sso', 'UniPD IdP'),)
 
-HORIZON_CONFIG['organization'] = {
-    "infn.it" : [],
-    "unipd.it" : [
-        ("unipd-DFA", "Physics and Astronomy Dept."),
-        ("unipd-DB", "Biology Dept."),
-        ("unipd-GEO", "Geoscience Dept."),
-        ("unipd-DEI", "Information Engineering Dept."),
-        ("unipd-ICEA", "Civil and Environmental Engineering Dept."),
-        ("unipd-MATH", "Mathematics Dept."),
-        ("unipd-DMM", "Molecular Medicine Dept."),
-        ("unipd-BIO", "Biomedical Sciences Dept."),
-        ("unipd-DISC", "Chemical Sciences Dept."),
-        ("unipd-DSF", "Pharmaceutical Sciences Dept.")
-    ],
-        "studenti.unipd.it" : [
-        ("unipd-DFA", "Physics and Astronomy Dept."),
-        ("unipd-DB", "Biology Dept."),
-        ("unipd-GEO", "Geoscience Dept."),
-        ("unipd-DEI", "Information Engineering Dept."),
-        ("unipd-ICEA", "Civil and Environmental Engineering Dept."),
-        ("unipd-MATH", "Mathematics Dept."),
-        ("unipd-DMM", "Molecular Medicine Dept."),
-        ("unipd-BIO", "Biomedical Sciences Dept."),
-        ("unipd-DISC", "Chemical Sciences Dept."),
-        ("unipd-DSF", "Pharmaceutical Sciences Dept.")
-    ]
+#unipd_dpt_list = [
+#    ("unipd-DFA", "Physics and Astronomy Dept."),
+#    ("unipd-DB", "Biology Dept."),
+#    ("unipd-GEO", "Geoscience Dept."),
+#    ("unipd-DEI", "Information Engineering Dept."),
+#    ("unipd-ICEA", "Civil and Environmental Engineering Dept."),
+#    ("unipd-MATH", "Mathematics Dept."),
+#    ("unipd-DMM", "Molecular Medicine Dept."),
+#    ("unipd-BIO", "Biomedical Sciences Dept."),
+#    ("unipd-DISC", "Chemical Sciences Dept."),
+#    ("unipd-DSF", "Pharmaceutical Sciences Dept."),
+#    ("unipd-OTH", "Other departments")
+#]
 
-}
+#HORIZON_CONFIG['organization'] = {
+#    "unipd.it" : unipd_dpt_list,
+#    "studenti.unipd.it" : unipd_dpt_list
+#}
 

@@ -43,6 +43,8 @@ class RegistrForm(forms.SelfHandlingForm):
         self.registr_err = None
 
         initial = kwargs['initial'] if 'initial' in kwargs else dict()
+        org_table = settings.HORIZON_CONFIG.get('organization', {})
+        org_list = org_table.get(initial.get('organization', ""), None)
 
         self.fields['username'] = forms.CharField(
             label=_('User name'),
@@ -129,6 +131,16 @@ class RegistrForm(forms.SelfHandlingForm):
             })
         )
     
+        self.fields['contactper'] = forms.CharField(
+            label=_('Contact person'),
+            required=False,
+            widget=forms.HiddenInput if org_list else forms.TextInput(attrs={
+                'class': 'switched',
+                'data-switch-on': 'actsource',
+                'data-actsource-newprj': _('Contact person')
+            })
+        )
+    
         self.fields['selprj'] = forms.MultipleChoiceField(
             label=_('Available projects'),
             required=False,
@@ -139,8 +151,6 @@ class RegistrForm(forms.SelfHandlingForm):
             }),
         )
 
-        org_table = settings.HORIZON_CONFIG.get('organization', {})
-        org_list = org_table.get(initial.get('organization', ""), None)
         if not org_list:
 
             self.fields['organization'] = forms.CharField(
@@ -157,16 +167,6 @@ class RegistrForm(forms.SelfHandlingForm):
                 choices=org_list
             )
 
-        self.fields['contactper'] = forms.CharField(
-            label=_('Contact person'),
-            required=False,
-            widget=forms.HiddenInput if org_list else forms.TextInput(attrs={
-                'class': 'switched',
-                'data-switch-on': 'actsource',
-                'data-actsource-newprj': _('Contact person')
-            })
-        )
-    
         phone_regex = settings.HORIZON_CONFIG.get('phone_regex', '^\s*\+*[0-9]+[0-9\s.]+\s*$')
         self.fields['phone'] = forms.RegexField(
             label=_('Phone number'),
