@@ -61,7 +61,7 @@ def build_err_response(request, err_msg, attributes):
 def login(request):
 
     result = basic_login(request)
-    if request.user.is_authenticated() and request.user.is_superuser:
+    if request.user.is_authenticated and request.user.is_superuser:
         checkFederationSetup(request)
     return result
 
