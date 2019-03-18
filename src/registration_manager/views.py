@@ -113,7 +113,7 @@ class MainView(tables.DataTableView):
                     rData.project = prjReq.project.projectname
                     requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
                     if prjReq.project.status == PRJ_PRIVATE:
-                        prjReq.project.projectname += " (%s)" % _("Private")
+                        rData.project += " (%s)" % _("Private")
 
 
                 rData.requestid = requestid
