@@ -29,6 +29,7 @@ from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import EMail
 
 from openstack_auth_shib.models import RSTATUS_PENDING
+from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.models import PRJ_GUEST
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
@@ -107,12 +108,13 @@ class MainView(tables.DataTableView):
 
                     if prjReq.registration.regid in regid_list:
                         rData.code = RegistrData.NEW_USR_NEW_PRJ
-                        rData.project = prjReq.project.projectname
-                        requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
                     else:
                         rData.code = RegistrData.EX_USR_NEW_PRJ
-                        rData.project = prjReq.project.projectname
-                        requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
+                    rData.project = prjReq.project.projectname
+                    requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
+                    if prjReq.project.status == PRJ_PRIVATE:
+                        prjReq.project.projectname += " (%s)" % _("Private")
+
 
                 rData.requestid = requestid
                 
@@ -370,7 +372,8 @@ class DetailsView(forms.ModalFormView):
                         if prj_req.project.projectid:
                             tmpdict['memberof'].append(prj_req.project.projectname)
                         else:
-                            tmpdict['newprojects'].append(prj_req.project.projectname)
+                            is_priv = prj_req.project.status == PRJ_PRIVATE
+                            tmpdict['newprojects'].append((prj_req.project.projectname, is_priv))
 
                 elif prjname:
                     q_args = {
@@ -384,7 +387,8 @@ class DetailsView(forms.ModalFormView):
                     if prj_req.project.projectid:
                         tmpdict['memberof'].append(prjname)
                     else:
-                        tmpdict['newprojects'].append(prjname)
+                        is_priv = prj_req.project.status == PRJ_PRIVATE
+                        tmpdict['newprojects'].append((prjname, is_priv))
 
                     tmpem = EMail.objects.filter(registration__regid=regid)
                     tmpdict['email'] = tmpem[0].email if len(tmpem) else "-"
