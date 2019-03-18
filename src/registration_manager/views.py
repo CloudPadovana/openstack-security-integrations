@@ -81,12 +81,14 @@ class MainView(tables.DataTableView):
                     else:
                         rData.code = RegistrData.USR_RENEW
                     rData.project = prjReq.project.projectname
+                    rData.notes = prjReq.notes
                     requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
 
                 elif prjReq.flowstatus == PSTATUS_RENEW_ADMIN:
 
                     rData.code = RegistrData.PRJADM_RENEW
                     rData.project = prjReq.project.projectname
+                    rData.notes = prjReq.notes
                     requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
 
                 elif prjReq.project.status == PRJ_GUEST:

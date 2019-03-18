@@ -40,6 +40,7 @@ class RegistrData:
         self.phone = None
         self.project = "-"
         self.code = 0
+        self.notes = None
     
     def __cmp__(self, other):
         if self.username < other.username:
@@ -169,24 +170,27 @@ class DetailsLink(tables.LinkAction):
     classes = ("ajax-modal", "btn-edit")
 
 def get_description(data):
+    result = "-"
     if data.code == RegistrData.NEW_USR_NEW_PRJ:
-        return _('New user and new project')
+        result = _('New user and new project')
     elif data.code == RegistrData.NEW_USR_EX_PRJ:
-        return _('New user to be pre-checked')
+        result = _('New user to be pre-checked')
     elif data.code == RegistrData.EX_USR_NEW_PRJ:
-        return _('User requires a new project')
+        result = _('User requires a new project')
     elif data.code == RegistrData.EX_USR_EX_PRJ:
-        return _('User requires membership')
+        result = _('User requires membership')
     elif data.code == RegistrData.NEW_USR_GUEST_PRJ:
-        return _('New user requires access as guest')
+        result = _('New user requires access as guest')
     elif data.code == RegistrData.USR_RENEW:
-        return _('User requires renewal')
+        result = _('User requires renewal before ')
     elif data.code == RegistrData.GUEST_RENEW:
-        return _('Guest requires renewal')
+        result = _('Guest requires renewal before')
     elif data.code == RegistrData.PRJADM_RENEW:
-        return _('Project administrator requires renewal')
-    
-    return '-'  
+        result = _('Project administrator requires renewal before')
+
+    if data.notes:
+        result += " %s" % str(data.notes)    
+    return result  
 
 class OperationTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))

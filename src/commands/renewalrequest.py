@@ -69,12 +69,14 @@ class Command(CloudVenetoCommand):
                         }
                         is_admin = (PrjRole.objects.filter(**q_args).count() > 0)
                         is_guest = e_item.project.status == PRJ_GUEST
-                        new_reqs[(e_item.registration, e_item.project)] = (is_admin, is_guest)
+                        f_exp = e_item.expdate.date().isoformat()
+                        new_reqs[(e_item.registration, e_item.project)] = (is_admin, is_guest, f_exp)
 
                 for req_pair, req_data in new_reqs.items():
                     reqArgs = {
                         'registration' : req_pair[0],
                         'project' : req_pair[1],
+                        'notes' : req_data[2],
                         'flowstatus' : PSTATUS_RENEW_ADMIN if req_data[0] else PSTATUS_RENEW_MEMB
                     }
                     PrjRequest(**reqArgs).save()
