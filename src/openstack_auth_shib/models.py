@@ -40,9 +40,13 @@ PSTATUS_RENEW_MEMB = 11
 
 
 #
-# Dummy value for RegRequest.flowstatus
+# Registration request is waiting for pre-check
 #
 RSTATUS_PENDING = 0
+#
+# Reminder for cloud admin
+#
+RSTATUS_REMINDER = 1
 
 OS_ID_LEN = 64
 OS_LNAME_LEN = 255
@@ -142,9 +146,6 @@ class RegRequest(models.Model):
     password = models.CharField(max_length=PWD_LEN, null=True)
     externalid = models.CharField(max_length=EXT_ACCT_LEN, null=True)
     email = models.EmailField(max_length=EMAIL_LEN)
-    #
-    # not used, kept for back compatibility or for future features
-    #
     flowstatus = models.IntegerField(default=RSTATUS_PENDING)
     contactper = models.CharField(max_length=OS_LNAME_LEN, null=True)
     notes = models.TextField()

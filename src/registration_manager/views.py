@@ -27,8 +27,10 @@ from horizon import forms
 from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import EMail
+from openstack_auth_shib.models import PrjRole
 
 from openstack_auth_shib.models import RSTATUS_PENDING
+from openstack_auth_shib.models import RSTATUS_REMINDER
 from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.models import PRJ_GUEST
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
@@ -54,25 +56,35 @@ class MainView(tables.DataTableView):
     template_name = 'idmanager/registration_manager/reg_manager.html'
     page_title = _("Registrations")
 
+    def _initRegistrData(self, registration):
+        rData = RegistrData()
+        rData.username = registration.username
+        rData.fullname = registration.givenname + " " + registration.sn
+        rData.organization = registration.organization
+        rData.phone = registration.phone
+        return rData
+
     def get_data(self):
     
         reqTable = dict()
+        remTable = dict()
         
         with transaction.atomic():
         
-            allPrjReqs = PrjRequest.objects.all()
-            
-            allRegReqs = RegRequest.objects.filter(flowstatus=RSTATUS_PENDING)
-            
-            regid_list = [ tmpRegReq.registration.regid for tmpRegReq in allRegReqs ]
-            
-            for prjReq in allPrjReqs:
+            regid_pending = set()
+            for tmpRegReq in RegRequest.objects.filter(flowstatus=RSTATUS_PENDING):
+                regid_pending.add(tmpRegReq.registration.regid)
+
+            for tmpRegReq in RegRequest.objects.filter(flowstatus=RSTATUS_REMINDER):
+                rData = self._initRegistrData(tmpRegReq.registration)
+                rData.requestid = "%d:" % tmpRegReq.registration.regid
+                rData.code = RegistrData.REMINDER
+                remTable[tmpRegReq.registration.regid] = rData
+
+            for prjReq in PrjRequest.objects.all():
                 
-                rData = RegistrData()
-                rData.username = prjReq.registration.username
-                rData.fullname = prjReq.registration.givenname + " " + prjReq.registration.sn
-                rData.organization = prjReq.registration.organization
-                rData.phone = prjReq.registration.phone
+                rData = self._initRegistrData(prjReq.registration)
+                curr_regid = prjReq.registration.regid
                 
                 if prjReq.flowstatus == PSTATUS_RENEW_MEMB:
 
@@ -82,48 +94,55 @@ class MainView(tables.DataTableView):
                         rData.code = RegistrData.USR_RENEW
                     rData.project = prjReq.project.projectname
                     rData.notes = prjReq.notes
-                    requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
+                    requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
 
                 elif prjReq.flowstatus == PSTATUS_RENEW_ADMIN:
 
                     rData.code = RegistrData.PRJADM_RENEW
                     rData.project = prjReq.project.projectname
                     rData.notes = prjReq.notes
-                    requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
+                    requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
 
                 elif prjReq.project.status == PRJ_GUEST:
 
                     rData.code = RegistrData.NEW_USR_GUEST_PRJ
-                    requestid = "%d:" % prjReq.registration.regid
+                    requestid = "%d:" % curr_regid
+                    if curr_regid in remTable:
+                        del remTable[curr_regid]
 
                 elif prjReq.project.projectid:
 
-                    if prjReq.registration.regid in regid_list:
+                    if curr_regid in regid_pending:
                         rData.code = RegistrData.NEW_USR_EX_PRJ
-                        requestid = "%d:" % prjReq.registration.regid
+                        requestid = "%d:" % curr_regid
                     else:
                         rData.code = RegistrData.EX_USR_EX_PRJ
                         rData.project = prjReq.project.projectname
-                        requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
+                        requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
+
+                    if curr_regid in remTable:
+                        del remTable[curr_regid]
 
                 else:
 
-                    if prjReq.registration.regid in regid_list:
+                    if curr_regid in regid_pending:
                         rData.code = RegistrData.NEW_USR_NEW_PRJ
                     else:
                         rData.code = RegistrData.EX_USR_NEW_PRJ
                     rData.project = prjReq.project.projectname
-                    requestid = "%d:%s" % (prjReq.registration.regid, prjReq.project.projectname)
+                    requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
                     if prjReq.project.status == PRJ_PRIVATE:
                         rData.project += " (%s)" % _("Private")
 
+                    if curr_regid in remTable:
+                        del remTable[curr_regid]
 
                 rData.requestid = requestid
                 
                 if not requestid in reqTable:
                     reqTable[requestid] = rData
 
-        result = reqTable.values()
+        result = reqTable.values() + remTable.values()
         result.sort()
         return result
 
@@ -135,7 +154,7 @@ class AbstractCheckView(forms.ModalFormView):
                 tmpTuple = self.kwargs['requestid'].split(':')
                 regid = int(tmpTuple[0])
                 
-                tmplist = RegRequest.objects.filter(registration__regid=regid)
+                tmplist = RegRequest.objects.filter(registration__regid=regid, flowstatus=RSTATUS_PENDING)
                 if len(tmplist):
                     self._object = tmplist[0]
                 else:
@@ -361,6 +380,7 @@ class DetailsView(forms.ModalFormView):
                 tmpdict['newprojects'] = list()
                 tmpdict['memberof'] = list()
                 reg_item = None
+                prj_list = list()
 
                 tmpres = RegRequest.objects.filter(registration__regid=regid)
                 if len(tmpres):
@@ -370,12 +390,12 @@ class DetailsView(forms.ModalFormView):
                     tmpdict['email'] = tmpres[0].email
                     tmpdict['notes'] = tmpres[0].notes
 
-                    for prj_req in PrjRequest.objects.filter(registration__regid=regid):
-                        if prj_req.project.projectid:
-                            tmpdict['memberof'].append(prj_req.project.projectname)
-                        else:
-                            is_priv = prj_req.project.status == PRJ_PRIVATE
-                            tmpdict['newprojects'].append((prj_req.project.projectname, is_priv))
+                    if tmpres[0].flowstatus == RSTATUS_PENDING:
+                        for x in PrjRequest.objects.filter(registration__regid=regid):
+                            prj_list.append(x.project)
+                    else:
+                        for x in PrjRole.objects.filter(registration__regid=regid):
+                            prj_list.append(x.project)
 
                 elif prjname:
                     q_args = {
@@ -384,22 +404,24 @@ class DetailsView(forms.ModalFormView):
                     }
                     prj_req = PrjRequest.objects.filter(**q_args)[0]
                     reg_item = prj_req.registration
-
-                    tmpdict['notes'] = prj_req.notes
-                    if prj_req.project.projectid:
-                        tmpdict['memberof'].append(prjname)
-                    else:
-                        is_priv = prj_req.project.status == PRJ_PRIVATE
-                        tmpdict['newprojects'].append((prjname, is_priv))
+                    prj_list.append(prj_req.project)
 
                     tmpem = EMail.objects.filter(registration__regid=regid)
                     tmpdict['email'] = tmpem[0].email if len(tmpem) else "-"
+                    tmpdict['notes'] = prj_req.notes
 
                 if reg_item:
                     tmpdict['username'] = reg_item.username
                     tmpdict['fullname'] = reg_item.givenname + " " + reg_item.sn
                     tmpdict['organization'] = reg_item.organization
                     tmpdict['phone'] = reg_item.phone
+
+                for prj_item in prj_list:
+                    if prj_item.projectid:
+                        tmpdict['memberof'].append(prj_item.projectname)
+                    else:
+                        is_priv = prj_item.status == PRJ_PRIVATE
+                        tmpdict['newprojects'].append((prj_item.projectname, is_priv))
 
                 self._object = tmpdict
 

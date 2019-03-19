@@ -64,6 +64,8 @@ from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PRJ_GUEST
+from openstack_auth_shib.models import RSTATUS_PENDING
+from openstack_auth_shib.models import RSTATUS_REMINDER
 
 from openstack_auth_shib.models import OS_LNAME_LEN
 from openstack_auth_shib.models import OS_SNAME_LEN
@@ -135,6 +137,15 @@ class PreCheckForm(forms.SelfHandlingForm):
     def preprocess_prj(self, registr, data):
         pass
 
+    def post_reminder(self, registration, email):
+        regReq = RegRequest(
+            registration = registration,
+            email = email,
+            flowstatus = RSTATUS_REMINDER,
+            notes = "-"
+        )
+        regReq.save()
+
     def clean(self):
         return super(PreCheckForm, self).clean()
 
@@ -153,7 +164,10 @@ class PreCheckForm(forms.SelfHandlingForm):
 
                 registration = Registration.objects.get(regid=int(data['regid']))
 
-                reg_request = RegRequest.objects.filter(registration=registration)[0]
+                reg_request = RegRequest.objects.filter(
+                    registration=registration,
+                    flowstatus=RSTATUS_PENDING
+                )[0]
                     
                 prjReqList = PrjRequest.objects.filter(registration=registration)
 
@@ -292,6 +306,8 @@ class PreCheckForm(forms.SelfHandlingForm):
                 newprj_reqs.delete()
                 reg_request.delete()
 
+                self.post_reminder(registration, user_email)
+
         except:
             LOG.error("Error pre-checking request", exc_info=True)
             messages.error(request, _("Cannot pre-check request"))
@@ -338,6 +354,9 @@ class GrantAllForm(PreCheckForm):
                              p_reqs[0].project.projectname, data['rename'],
                              p_reqs[0].project.description, data['newdescr'])
 
+    def post_reminder(self, registration, email):
+        pass
+
     def clean(self):
         data = super(GrantAllForm, self).clean()
 
@@ -376,8 +395,11 @@ class RejectForm(forms.SelfHandlingForm):
                 
                 registration = Registration.objects.get(regid=int(data['regid']))
                 prjReqList = PrjRequest.objects.filter(registration=registration)
-                regReqList = RegRequest.objects.filter(registration=registration)
-                    
+                regReqList = RegRequest.objects.filter(
+                    registration=registration,
+                    flowstatus=RSTATUS_PENDING
+                )
+
                 #
                 # Delete request for projects to be created
                 #
@@ -789,7 +811,10 @@ class GuestCheckForm(forms.SelfHandlingForm):
             
                 registration = Registration.objects.get(regid=int(data['regid']))
 
-                reg_request = RegRequest.objects.filter(registration=registration)[0]
+                reg_request = RegRequest.objects.filter(
+                    registration=registration,
+                    flowstatus=RSTATUS_PENDING
+                )[0]
                 
                 q_args = {
                     'registration' : registration,

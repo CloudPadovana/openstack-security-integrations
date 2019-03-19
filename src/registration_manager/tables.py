@@ -15,9 +15,15 @@
 
 import logging
 
+from django import shortcuts
+from django.db import transaction
+from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import tables
+
+from openstack_auth_shib.models import RegRequest
+from openstack_auth_shib.models import RSTATUS_REMINDER
 
 LOG = logging.getLogger(__name__)
 
@@ -31,6 +37,7 @@ class RegistrData:
     USR_RENEW = 6
     PRJADM_RENEW = 7
     GUEST_RENEW = 8
+    REMINDER = 9
 
     def __init__(self):
         self.requestid = None
@@ -169,6 +176,24 @@ class DetailsLink(tables.LinkAction):
     url = "horizon:idmanager:registration_manager:details"
     classes = ("ajax-modal", "btn-edit")
 
+class ReminderAck(tables.Action):
+    name = "reminder_ack"
+    verbose_name = _("Done")
+    
+    def allowed(self, request, datum):
+        return datum.code == RegistrData.REMINDER
+
+    def single(self, data_table, request, object_id):
+
+        with transaction.atomic():
+            req_data = object_id.split(':')
+            RegRequest.objects.filter(
+                registration__regid = int(req_data[0]),
+                flowstatus = RSTATUS_REMINDER
+            ).delete()
+
+        return shortcuts.redirect(reverse('horizon:idmanager:registration_manager:index'))
+
 def get_description(data):
     result = "-"
     if data.code == RegistrData.NEW_USR_NEW_PRJ:
@@ -187,6 +212,8 @@ def get_description(data):
         result = _('Guest requires renewal before')
     elif data.code == RegistrData.PRJADM_RENEW:
         result = _('Project administrator requires renewal before')
+    elif data.code == RegistrData.REMINDER:
+        result = _('User requires post registration actions')
 
     if data.notes:
         result += " %s" % str(data.notes)    
@@ -215,6 +242,7 @@ class OperationTable(tables.DataTable):
                        RenewAdminLink,
                        GuestRenewLink,
                        ForcedRenewLink,
+                       ReminderAck,
                        DetailsLink)
 
     def get_object_id(self, datum):
