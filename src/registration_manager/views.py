@@ -27,7 +27,7 @@ from horizon import forms
 from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import EMail
-from openstack_auth_shib.models import PrjRole
+from openstack_auth_shib.models import Expiration
 
 from openstack_auth_shib.models import RSTATUS_PENDING
 from openstack_auth_shib.models import RSTATUS_REMINDER
@@ -78,7 +78,6 @@ class MainView(tables.DataTableView):
             for tmpRegReq in RegRequest.objects.filter(flowstatus=RSTATUS_REMINDER):
                 rData = self._initRegistrData(tmpRegReq.registration)
                 rData.requestid = "%d:" % tmpRegReq.registration.regid
-                rData.code = RegistrData.REMINDER
                 remTable[tmpRegReq.registration.regid] = rData
 
             for prjReq in PrjRequest.objects.all():
@@ -141,6 +140,13 @@ class MainView(tables.DataTableView):
                 
                 if not requestid in reqTable:
                     reqTable[requestid] = rData
+
+            for regid, rData in remTable.items():
+                nMem = Expiration.objects.filter(registration__regid=regid).count()
+                if nMem > 0:
+                    rData.code = RegistrData.REMINDER
+                else:
+                    rData.code = RegistrData.ORPHAN
 
         result = reqTable.values() + remTable.values()
         result.sort()
@@ -394,7 +400,7 @@ class DetailsView(forms.ModalFormView):
                         for x in PrjRequest.objects.filter(registration__regid=regid):
                             prj_list.append(x.project)
                     else:
-                        for x in PrjRole.objects.filter(registration__regid=regid):
+                        for x in Expiration.objects.filter(registration__regid=regid):
                             prj_list.append(x.project)
 
                 elif prjname:

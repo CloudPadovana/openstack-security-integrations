@@ -38,6 +38,7 @@ class RegistrData:
     PRJADM_RENEW = 7
     GUEST_RENEW = 8
     REMINDER = 9
+    ORPHAN = 10
 
     def __init__(self):
         self.requestid = None
@@ -181,7 +182,7 @@ class ReminderAck(tables.Action):
     verbose_name = _("Done")
     
     def allowed(self, request, datum):
-        return datum.code == RegistrData.REMINDER
+        return datum.code == RegistrData.REMINDER or datum.code == RegistrData.ORPHAN
 
     def single(self, data_table, request, object_id):
 
@@ -214,6 +215,8 @@ def get_description(data):
         result = _('Project administrator requires renewal before')
     elif data.code == RegistrData.REMINDER:
         result = _('User requires post registration actions')
+    elif data.code == RegistrData.ORPHAN:
+        result = _('Registered user is orphan')
 
     if data.notes:
         result += " %s" % str(data.notes)    
