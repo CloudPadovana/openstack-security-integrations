@@ -18,7 +18,7 @@ import logging
 from django import shortcuts
 from django.db import transaction
 from django.core.urlresolvers import reverse
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _
 
 from horizon import tables
 
@@ -40,6 +40,20 @@ class RegistrData:
     REMINDER = 9
     ORPHAN = 10
 
+    DESCRARRAY = [
+        _('Unknown operation'),
+        _('New user and new project'),
+        _('New user to be pre-checked'),
+        _('User requires a new project'),
+        _('User requires membership'),
+        _('New user requires access as guest'),
+        _('User requires renewal before '),
+        _('Project administrator requires renewal before'),
+        _('Guest requires renewal before'),
+        _('User requires post registration actions'),
+        _('Registered user is orphan')
+    ]
+
     def __init__(self):
         self.requestid = None
         self.username = None
@@ -60,6 +74,15 @@ class RegistrData:
         if self.project > other.project:
             return 1
         return 0
+
+    def __repr__(self):
+        if self.code >= len(RegistrData.DESCRARRAY):
+            self.code = 0
+
+        result = RegistrData.DESCRARRAY[self.code]
+        if self.notes:
+            result += " %s" % str(self.notes)    
+        return result  
 
 class PreCheckLink(tables.LinkAction):
     name = "prechklink"
@@ -195,40 +218,13 @@ class ReminderAck(tables.Action):
 
         return shortcuts.redirect(reverse('horizon:idmanager:registration_manager:index'))
 
-def get_description(data):
-    result = "-"
-    if data.code == RegistrData.NEW_USR_NEW_PRJ:
-        result = _('New user and new project')
-    elif data.code == RegistrData.NEW_USR_EX_PRJ:
-        result = _('New user to be pre-checked')
-    elif data.code == RegistrData.EX_USR_NEW_PRJ:
-        result = _('User requires a new project')
-    elif data.code == RegistrData.EX_USR_EX_PRJ:
-        result = _('User requires membership')
-    elif data.code == RegistrData.NEW_USR_GUEST_PRJ:
-        result = _('New user requires access as guest')
-    elif data.code == RegistrData.USR_RENEW:
-        result = _('User requires renewal before ')
-    elif data.code == RegistrData.GUEST_RENEW:
-        result = _('Guest requires renewal before')
-    elif data.code == RegistrData.PRJADM_RENEW:
-        result = _('Project administrator requires renewal before')
-    elif data.code == RegistrData.REMINDER:
-        result = _('User requires post registration actions')
-    elif data.code == RegistrData.ORPHAN:
-        result = _('Registered user is orphan')
-
-    if data.notes:
-        result += " %s" % str(data.notes)    
-    return result  
-
 class OperationTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))
     fullname = tables.Column('fullname', verbose_name=_('Full name'))
     organization = tables.Column('organization', verbose_name=_('Organization'))
     phone = tables.Column('phone', verbose_name=_('Phone number'))
     project = tables.Column('project', verbose_name=_('Project'))
-    description = tables.Column(get_description, verbose_name=_('Description'))
+    description = tables.Column(repr, verbose_name=_('Description'))
 
     class Meta:
         name = "operation_table"
