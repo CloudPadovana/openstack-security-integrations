@@ -31,6 +31,7 @@ from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
+from openstack_auth_shib.models import UserMapping
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 
@@ -154,6 +155,11 @@ class UpdateUserForm(baseForms.UpdateUserForm):
                 if "name" in data and data['name'] <> reg_usr.username:
                     reg_usr.username=data['name']
                     reg_usr.save()
+
+                    umaps = UserMapping.objects.filter(registration=reg_usr)
+                    if umaps:
+                        umaps[0].globaluser = data['name']
+                        umaps[0].save()
 
                 result = super(UpdateUserForm, self).handle(request, data)
                 if not result or isinstance(result, http.HttpResponse):
