@@ -31,6 +31,7 @@ from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
+from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 
 from openstack_auth_shib.notifications import notifyUser
@@ -339,12 +340,16 @@ class DiscSubscrForm(forms.SelfHandlingForm):
 
                 user_id = prj_reqs[0].registration.userid
 
-                tmpres = EMail.objects.filter(registration__userid=user_id)
-                member_email = tmpres[0].email if tmpres else None
-                member_name = prj_reqs[0].registration.username
-
-                tmpres = EMail.objects.filter(registration__userid=request.user.id)
-                admin_email = tmpres[0].email if tmpres else None
+                #
+                # Clear requests
+                #
+                prj_reqs.delete()
+                q_args = {
+                    'registration__regid' : int(data['regid']),
+                    'project__projectname' : curr_prjname
+                }                
+                Expiration.objects.filter(**q_args).delete()
+                PrjRole.objects.filter(**q_args).delete()
 
                 #
                 # Remove member from project
@@ -359,21 +364,24 @@ class DiscSubscrForm(forms.SelfHandlingForm):
                 for r_item in role_assign_obj.list(**arg_dict):
                     roles_obj.revoke(r_item.role['id'], **arg_dict)
         
-                #
-                # Clear requests
-                #
-                prj_reqs.delete()
 
             #
             # Send notification to the user
             #
+            tmpres = EMail.objects.filter(registration__regid=int(data['regid']))
+            member_email = tmpres[0].email if tmpres else None
+            member_name = tmpres[0].registration.username if member_email else 'unknown'
+
+            tmpres = EMail.objects.filter(registration__userid=request.user.id)
+            admin_email = tmpres[0].email if tmpres else None
+
             noti_params = {
                 'username' : member_name,
                 'admin_address' : admin_email,
                 'project' : request.user.tenant_name,
                 'notes' : data['reason']
             }
-            notifyUser(request=self.request, rcpt=member.email, action=MEMBER_REMOVED, context=noti_params,
+            notifyUser(request=self.request, rcpt=member_email, action=MEMBER_REMOVED, context=noti_params,
                        dst_user_id=user_id)
                 
         except:

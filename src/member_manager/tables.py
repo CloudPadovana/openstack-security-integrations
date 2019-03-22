@@ -32,6 +32,8 @@ from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRole
+from openstack_auth_shib.models import Expiration
+from openstack_auth_shib.models import PrjRequest
 
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
@@ -72,6 +74,15 @@ class DeleteMemberAction(tables.DeleteAction):
         try:
             
             with transaction.atomic():
+
+                q_args = {
+                    'registration__userid' : obj_id,
+                    'project__projectname' : request.user.tenant_name
+                }
+                Expiration.objects.filter(**q_args).delete()
+                PrjRequest.objects.filter(**q_args).delete()
+                PrjRole.objects.filter(**q_args).delete()
+
                 roles_obj = client_factory(request).roles
                 role_assign_obj = client_factory(request).role_assignments
                 
@@ -82,11 +93,6 @@ class DeleteMemberAction(tables.DeleteAction):
                 for r_item in role_assign_obj.list(**arg_dict):
                     roles_obj.revoke(r_item.role['id'], **arg_dict)
 
-                PrjRole.objects.filter(
-                    registration__userid=obj_id,
-                    project__projectname=request.user.tenant_name
-                ).delete()
-            
             tmpres = EMail.objects.filter(registration__userid=obj_id)
             member_email = tmpres[0].email if tmpres else None
             member_name = tmpres[0].registration.username if tmpres else None
