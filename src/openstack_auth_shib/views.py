@@ -40,6 +40,8 @@ from horizon import forms
 
 from .models import UserMapping
 from .models import RegRequest
+from .models import Project
+from .models import PRJ_COURSE
 from .forms import RegistrForm
 from .idpmanager import get_manager
 from .idpmanager import checkFederationSetup
@@ -211,10 +213,28 @@ def auth_error(request):
     }
     return shortcuts.render(request, 'aai_error.html', tempDict)
 
+#
+# Splash page for courses
+#
+def course(request, project_name):
 
+    project = Project.objects.filter(projectname=project_name)
 
+    if len(project) == 0 or project[0].status <> PRJ_COURSE:
+        tempDict = {
+            'error_header' : _("Course not found"),
+            'error_text' : "%s: %s" % (_("Course not found"), project_name),
+            'redirect_url' : '/dashboard',
+            'redirect_label' : _("Home")
+        }
+        return shortcuts.render(request, 'aai_error.html', tempDict)
 
-
+    tempDict = {
+        'project' : project_name,
+        'redirect_url' : '/dashboard',
+        'redirect_label' : _("Register")
+    }
+    return shortcuts.render(request, 'course.html', tempDict)
 
 
 

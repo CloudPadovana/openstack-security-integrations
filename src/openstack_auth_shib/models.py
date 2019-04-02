@@ -19,6 +19,7 @@ from django.utils import timezone
 # Used bit mask for project status
 PRJ_PRIVATE = 0
 PRJ_PUBLIC = 1
+PRJ_COURSE = 2
 PRJ_GUEST = 3
 
 #

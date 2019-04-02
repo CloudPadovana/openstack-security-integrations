@@ -41,6 +41,7 @@ namex_url = url(r"^name_exists/$", views.name_exists, name='name_exists')
 fail_url = url(r"^reg_failure/$", views.reg_failure, name='reg_failure')
 dup_url = url(r"^dup_login/$", views.dup_login, name='dup_login')
 err_url = url(r"^auth_error/$", views.auth_error, name='auth_error')
+course_url = url(r"^course_(?P<project_name>[^/$]+)/$", views.course, name='course')
 
 if django_version[1] < 11:
 
@@ -48,6 +49,7 @@ if django_version[1] < 11:
 
     urlpatterns = patterns('openstack_auth_shib.views',
                            login_url,
+                           course_url,
                            websso_url,
                            logout_url,
                            switch_url,
@@ -64,6 +66,7 @@ else:
 
     urlpatterns = [
         login_url,
+        course_url,
         websso_url,
         logout_url,
         switch_url,
