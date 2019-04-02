@@ -39,9 +39,9 @@ class ExtPrjItem:
         self.name = prj_data.name
         self.description = prj_data.description if prj_data.description else ""
         self.enabled = prj_data.enabled
-        self.domain_name = getattr(prj_data, 'domain_name', None)
+        self.tags = "-"
         self.status = PRJ_PRIVATE
-        self.checked = False
+        self.managed = False
 
 class IndexView(baseViews.IndexView):
     table_class = ProjectsTable
@@ -62,19 +62,7 @@ class IndexView(baseViews.IndexView):
             prj_list = Project.objects.filter(projectname__in=prj_table.keys())
             for prj_item in prj_list:
                 prj_table[prj_item.projectname].status = prj_item.status
-                prj_table[prj_item.projectname].checked = True
-            
-            # Auto-import of external projects
-            for item in prj_table:
-                if not prj_table[item].checked:
-                    p_query = {
-                        'projectname' : prj_table[item].name,
-                        'projectid' : prj_table[item].id,
-                        'description' : prj_table[item].description,
-                        'status' : PRJ_PRIVATE
-                    }
-                    imprj = Project(**p_query)
-                    imprj.save()
+                prj_table[prj_item.projectname].managed = True
             
             tmplist = prj_table.keys()
             tmplist.sort()

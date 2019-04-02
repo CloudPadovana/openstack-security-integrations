@@ -917,6 +917,7 @@ def chk_repl_project(regid, old_prjname, new_prjname, old_descr, new_descr):
 # {
 #   <unit_id> : {
 #     "name" : <human readable unit name>,
+#     "organization" : <organization tag>,
 #     "quota_total" :  <total>,
 #     "quota_per_volume" : <per-volume>,
 #     "quota_<type>" : <quota_type>,
@@ -1073,4 +1074,12 @@ def setup_new_project(request, project_id, project_name, data):
             LOG.error("Cannot update security groups", exc_info=True)
             messages.error(request, _("Cannot update security groups"))
 
+    try:
+
+        kclient = keystone_api.keystoneclient(request)
+        kclient.projects.add_tag(self, project_id, unit_data.get('tag', 'other'))
+
+    except:
+            LOG.error("Cannot add organization tag", exc_info=True)
+            messages.error(request, _("Cannot add organization tag"))
 

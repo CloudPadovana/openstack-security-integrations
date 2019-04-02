@@ -38,6 +38,9 @@ LOG = logging.getLogger(__name__)
 class UpdateMembersLink(baseTables.UpdateMembersLink):
     url = "horizon:idmanager:project_manager:update"
 
+    def allowed(self, request, datum):
+        return datum.managed
+
     def get_link_url(self, project):
         step = 'update_members'
         base_url = reverse(self.url, args=[project.id])
@@ -46,15 +49,27 @@ class UpdateMembersLink(baseTables.UpdateMembersLink):
 
 class UpdateGroupsLink(baseTables.UpdateGroupsLink):
     url = "horizon:idmanager:project_manager:update"
-    
+
+    def allowed(self, request, datum):
+        return datum.managed
+
 class UpdateProject(baseTables.UpdateProject):
     url = "horizon:idmanager:project_manager:update"
 
+    def allowed(self, request, datum):
+        return datum.managed
+
 class UsageLink(baseTables.UsageLink):
     url = "horizon:idmanager:project_manager:usage"
-    
+
+    def allowed(self, request, datum):
+        return datum.managed
+
 class ModifyQuotas(baseTables.ModifyQuotas):
     url = "horizon:idmanager:project_manager:update_quotas"
+
+    def allowed(self, request, datum):
+        return datum.managed
 
 class CreateProject(baseTables.CreateProject):
     url = "horizon:idmanager:project_manager:create"
@@ -76,6 +91,9 @@ class DeleteProjectAction(baseTables.DeleteTenantsAction):
 
 class RescopeTokenToProject(baseTables.RescopeTokenToProject):
 
+    def allowed(self, request, datum):
+        return datum.managed
+
     def get_link_url(self, project):
         # redirects to the switch_tenants url which then will redirect
         # back to this page
@@ -90,7 +108,7 @@ class ToggleVisibility(tables.Action):
     policy_rules = (('identity', 'identity:update_project'),)
 
     def allowed(self, request, datum):
-        return datum.status == PRJ_PRIVATE or datum.status == PRJ_PUBLIC
+        return datum.managed and (datum.status == PRJ_PRIVATE or datum.status == PRJ_PUBLIC)
 
     def single(self, data_table, request, object_id):
     
@@ -125,17 +143,22 @@ def get_prj_status(data):
     return _("Private")
 
 class ProjectsTable(baseTables.TenantsTable):
+    tags = tables.Column('tags', verbose_name=_('Tags'), status=True)
     status = tables.Column(get_prj_status, verbose_name=_('Status'), status=True)
 
-    # patch for ajax update disabled
     def __init__(self, request, data=None, needs_form_wrapper=None, **kwargs):
         super(ProjectsTable, self).__init__(request, data=data,
                                             needs_form_wrapper=needs_form_wrapper, **kwargs)
+        # patch for ajax update disabled
         self.columns['name'].update_action = None
         if 'description' in self.columns:
             self.columns['description'].update_action = None
         self.columns['enabled'].update_action = None
-    # end of patch
+        # end of patch
+
+        # patch for domain removal
+        del(self.columns['domain_name'])
+        # end of patch
 
     def get_project_detail_link(self, project):
         if policy.check((("identity", "identity:get_project"),),
