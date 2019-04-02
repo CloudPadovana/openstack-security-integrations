@@ -11,11 +11,7 @@ LOG: Registration of {{ username }} and creation of project {{ project }} approv
 subject: Your registration has been accepted
 body: Your account has been registered
   Your login name is {{ username }}
-  {% if guestmode %}
-  You can access the guest project {{ project }}
-  {% else %}
   The project {{ project }} has been created and you're its project administrator
-  {% endif %}
   
   Please, don't reply to this message
 

@@ -27,10 +27,10 @@ from django.db import transaction, IntegrityError
 
 from .idpmanager import get_manager
 from .models import Registration, Project, RegRequest, PrjRequest
-from .models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST
+from .models import PRJ_PRIVATE, PRJ_PUBLIC
 from .models import OS_LNAME_LEN, OS_SNAME_LEN, PWD_LEN, EMAIL_LEN
 from .notifications import notifyAdmin, REGISTR_AVAIL_TYPE
-from .utils import import_guest_project, get_ostack_attributes, PRJ_REGEX
+from .utils import get_ostack_attributes, PRJ_REGEX
 
 LOG = logging.getLogger(__name__)
 
@@ -186,12 +186,11 @@ class RegistrForm(forms.SelfHandlingForm):
             initial='reject'
         )
 
-        import_guest_project()
-        
         missing_guest = True
+        prjguest_name = settings.HORIZON_CONFIG.get('guest_project', "")
         avail_prjs = list()
         for prj_entry in Project.objects.exclude(status=PRJ_PRIVATE):
-            if prj_entry.status == PRJ_GUEST:
+            if prj_entry.projectname == prjguest_name:
                 missing_guest = False
             elif prj_entry.projectid:
                 avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
@@ -314,9 +313,10 @@ class RegistrForm(forms.SelfHandlingForm):
                 #
                 # empty list for guest prj
                 #
-                if len(prjlist) == 0:
-                    for item in Project.objects.filter(status=PRJ_GUEST):
-                        prjlist.append((item.projectname, None, 0, False))
+                prjguest_name = settings.HORIZON_CONFIG.get('guest_project', None)
+                if len(prjlist) == 0 and prjguest_name \
+                    and Project.objects.filter(projectname=prjguest_name).count() > 0:
+                    prjlist.append((prjguest_name, "", PRJ_PUBLIC, False))
 
                 for prjitem in prjlist:
             

@@ -30,8 +30,6 @@ newprj_url = url(r'^(?P<requestid>[^/]+)/newproject/$', views.NewProjectView.as_
         name='newproject')
 rejprj_url = url(r'^(?P<requestid>[^/]+)/rejectproject/$', views.RejectProjectView.as_view(), 
         name='rejectproject')
-guest_url = url(r'^(?P<requestid>[^/]+)/guestapprove/$', views.GuestApproveView.as_view(), 
-        name='guestapprove')
 renadm_url = url(r'^(?P<requestid>[^/]+)/renewadmin/$', views.RenewAdminView.as_view(), 
         name='renewadmin')
 f_renew_url = url(r'^(?P<requestid>[^/]+)/forcedrenew/$', views.ForcedRenewView.as_view(), 
@@ -53,7 +51,6 @@ if django_version[1] < 11:
                            f_rej_url,
                            newprj_url,
                            rejprj_url,
-                           guest_url,
                            renadm_url,
                            f_renew_url
         )
@@ -70,7 +67,6 @@ else:
         f_rej_url,
         newprj_url,
         rejprj_url,
-        guest_url,
         renadm_url,
         f_renew_url
     ]

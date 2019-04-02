@@ -27,7 +27,6 @@ from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
-from openstack_auth_shib.models import PRJ_GUEST
 
 from openstack_auth_shib.notifications import notifyProject
 from openstack_auth_shib.notifications import notifyAdmin
@@ -68,15 +67,14 @@ class Command(CloudVenetoCommand):
                             'project' : e_item.project
                         }
                         is_admin = (PrjRole.objects.filter(**q_args).count() > 0)
-                        is_guest = e_item.project.status == PRJ_GUEST
                         f_exp = e_item.expdate.date().isoformat()
-                        new_reqs[(e_item.registration, e_item.project)] = (is_admin, is_guest, f_exp)
+                        new_reqs[(e_item.registration, e_item.project)] = (is_admin, f_exp)
 
                 for req_pair, req_data in new_reqs.items():
                     reqArgs = {
                         'registration' : req_pair[0],
                         'project' : req_pair[1],
-                        'notes' : req_data[2],
+                        'notes' : req_data[1],
                         'flowstatus' : PSTATUS_RENEW_ADMIN if req_data[0] else PSTATUS_RENEW_MEMB
                     }
                     PrjRequest(**reqArgs).save()
@@ -99,7 +97,7 @@ class Command(CloudVenetoCommand):
                         'username' : req_pair[0].username,
                         'project' : req_pair[1].projectname
                     }
-                    if req_data[0] or req_data[1]:
+                    if req_data[0]:
                         notifyAdmin(USER_NEED_RENEW, noti_params, user_id=req_pair[0].userid,
                                     project_id=req_pair[1].projectid,
                                     dst_project_id=req_pair[1].projectid)

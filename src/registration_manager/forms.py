@@ -63,7 +63,6 @@ from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
-from openstack_auth_shib.models import PRJ_GUEST
 from openstack_auth_shib.models import RSTATUS_PENDING
 from openstack_auth_shib.models import RSTATUS_REMINDER
 
@@ -294,8 +293,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                 for p_item in newprj_reqs:
                     noti_params = {
                         'username' : p_item.registration.username,
-                        'project' : p_item.project.projectname,
-                        'guestmode' : False
+                        'project' : p_item.project.projectname
                     }
                     notifyUser(request=self.request, rcpt=user_email, action=FIRST_REG_OK_TYPE, context=noti_params,
                                dst_project_id=p_item.project.projectid, dst_user_id=p_item.registration.userid)
@@ -771,117 +769,6 @@ class NewProjectRejectForm(forms.SelfHandlingForm):
 
             notifyUser(request=self.request, rcpt=user_email, action=PRJ_REJ_TYPE, context=noti_params,
                        dst_user_id=user_id)
-
-        except:
-            LOG.error("Error pre-checking project", exc_info=True)
-            messages.error(request, _("Cannot pre-check project"))
-            return False
-
-        return True
-
-
-class GuestCheckForm(forms.SelfHandlingForm):
-
-    def __init__(self, request, *args, **kwargs):
-        super(GuestCheckForm, self).__init__(request, *args, **kwargs)
-
-        self.fields['regid'] = forms.IntegerField(widget=HiddenInput)
-
-        self.fields['username'] = forms.CharField(
-            label=_("User name"),
-            required=False,
-            max_length=OS_LNAME_LEN
-        )
-
-        curr_year = datetime.now().year            
-        self.fields['expiration'] = forms.DateTimeField(
-            label=_("Expiration date"),
-            required=False,
-            widget=SelectDateWidget(None, range(curr_year, curr_year + 25))
-        )
-
-    @sensitive_variables('data')
-    def handle(self, request, data):
-    
-        try:
-
-            tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
-
-            with transaction.atomic():
-            
-                registration = Registration.objects.get(regid=int(data['regid']))
-
-                reg_request = RegRequest.objects.filter(
-                    registration=registration,
-                    flowstatus=RSTATUS_PENDING
-                )[0]
-                
-                q_args = {
-                    'registration' : registration,
-                    'project__status' : PRJ_GUEST
-                }
-                prj_reqs = PrjRequest.objects.filter(**q_args)
-                project_id = prj_reqs[0].project.projectid
-                project_name = prj_reqs[0].project.projectname
-
-                password = reg_request.password
-                if not password:
-                    password = generate_pwd()
-                
-                user_email = reg_request.email
-
-                #
-                # Mapping of external accounts
-                #                
-                if reg_request.externalid:
-                    mapping = UserMapping(globaluser=reg_request.externalid,
-                                    registration=reg_request.registration)
-                    mapping.save()
-                    LOG.info("Registered external account %s" % reg_request.externalid)
-
-                #
-                # Insert expiration date per tenant
-                #
-                expiration = Expiration()
-                expiration.registration = prj_reqs[0].registration
-                expiration.project = prj_reqs[0].project
-                expiration.expdate = data['expiration']
-                expiration.save()
-
-                #
-                # clear requests
-                #
-                prj_reqs.delete()
-                reg_request.delete()
-
-                #
-                # User creation
-                # 
-                kuser = keystone_api.user_create(request, 
-                                                name=registration.username,
-                                                password=password,
-                                                email=user_email,
-                                                enabled=True)
-                    
-                registration.username = data['username']
-                registration.expdate = data['expiration']
-                registration.userid = kuser.id
-                registration.save()
-                LOG.info("Created guest user %s" % registration.username)
-
-                keystone_api.add_tenant_user_role(request, project_id,
-                                            registration.userid, default_roleid)
-
-                #
-                # Send notification to the user
-                #
-                noti_params = {
-                    'username' : registration.username,
-                    'project' : project_name,
-                    'guestmode' : True
-                }
-                notifyUser(request=self.request, rcpt=user_email, action=FIRST_REG_OK_TYPE, context=noti_params,
-                           dst_project_id=project_id, dst_user_id=registration.userid)
 
         except:
             LOG.error("Error pre-checking project", exc_info=True)

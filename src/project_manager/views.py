@@ -29,7 +29,6 @@ from .workflows import ExtCreateProject
 
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PRJ_PRIVATE
-from openstack_auth_shib.utils import import_guest_project
 
 LOG = logging.getLogger(__name__)
 baseViews.INDEX_URL = "horizon:idmanager:project_manager:index"
@@ -50,8 +49,6 @@ class IndexView(baseViews.IndexView):
 
     def get_data(self):
     
-        import_guest_project()
-        
         result = list()
         try:
             tenants = super(IndexView, self).get_data()

@@ -29,7 +29,9 @@ from openstack_dashboard import policy
 from openstack_dashboard.dashboards.identity.projects import tables as baseTables
 
 from openstack_auth_shib.models import Project, PrjRequest
-from openstack_auth_shib.models import PRJ_PRIVATE, PRJ_PUBLIC, PRJ_GUEST
+from openstack_auth_shib.models import PRJ_PRIVATE
+from openstack_auth_shib.models import PRJ_PUBLIC
+from openstack_auth_shib.models import PRJ_COURSE
 
 LOG = logging.getLogger(__name__)
 
@@ -86,7 +88,10 @@ class ToggleVisibility(tables.Action):
     name = "toggle_visible"
     verbose_name = _("Toggle Visibility")
     policy_rules = (('identity', 'identity:update_project'),)
-    
+
+    def allowed(self, request, datum):
+        return datum.status == PRJ_PRIVATE or datum.status == PRJ_PUBLIC
+
     def single(self, data_table, request, object_id):
     
         with transaction.atomic():
@@ -100,8 +105,6 @@ class ToggleVisibility(tables.Action):
                 elif prj_status is PRJ_PUBLIC:
                     prj_list[0].status = PRJ_PRIVATE
                     prj_list[0].save()
-                elif prj_status is PRJ_GUEST:
-                    messages.error(request, _("Cannot toggle guest project"))
             
         return shortcuts.redirect(reverse('horizon:idmanager:project_manager:index'))
 
@@ -115,10 +118,10 @@ class ReqProjectLink(tables.LinkAction):
         return not request.user.is_superuser
 
 def get_prj_status(data):
-    if data.status == PRJ_GUEST:
-        return _("Guest")
     elif data.status == PRJ_PUBLIC:
         return _("Public")
+    elif data.status == PRJ_COURSE:
+        return _("Course")
     return _("Private")
 
 class ProjectsTable(baseTables.TenantsTable):

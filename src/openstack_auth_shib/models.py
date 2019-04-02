@@ -20,7 +20,6 @@ from django.utils import timezone
 PRJ_PRIVATE = 0
 PRJ_PUBLIC = 1
 PRJ_COURSE = 2
-PRJ_GUEST = 3
 
 #
 # Project request must be handled by cloud admin first
@@ -109,7 +108,7 @@ class Project(models.Model):
     )
     description = models.TextField()
     #
-    # Type of project (public, private, guest)
+    # Type of project (private, public, course)
     #
     status = models.IntegerField()
 

@@ -23,7 +23,6 @@ from openstack_dashboard.api import keystone as keystone_api
 
 from .models import Project
 from .models import PrjRequest
-from .models import PRJ_GUEST
 from .models import PSTATUS_PENDING
 from .models import PSTATUS_RENEW_MEMB
 
@@ -65,41 +64,6 @@ def get_project_managers(request, project_id):
         result.append(tntadmin)
 
     return result
-
-GUEST_IMPORTED = False
-def import_guest_project():
-    global GUEST_IMPORTED
-
-    if GUEST_IMPORTED:
-        return
-
-    guest_data = getattr(settings, 'GUEST_PROJECT', None)
-    if not guest_data:
-        return
-    
-    try:
-        prjname = guest_data['name'].strip()
-        prjid = guest_data['id'].strip()
-        prjdescr = guest_data.get('description', 'Guest project')
-        
-        with transaction.atomic():
-            try:
-                guestprj = Project.objects.get(projectname=prjname)
-            except Project.DoesNotExist:
-                p_query = {
-                    'projectname' : prjname,
-                    'projectid' : prjid,
-                    'description' : prjdescr,
-                    'status' : PRJ_GUEST
-                }
-                imprj = Project(**p_query)
-                imprj.save()
-                LOG.info("Imported guest project %s" % prjname)
-                
-        GUEST_IMPORTED = True
-    except:
-        LOG.error("Failed guest auto-import", exc_info=True)
-
 
 def get_user_home(user):
 

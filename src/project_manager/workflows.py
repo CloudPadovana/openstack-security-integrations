@@ -33,7 +33,6 @@ from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_PUBLIC
-from openstack_auth_shib.models import PRJ_GUEST
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
@@ -52,34 +51,15 @@ LOG = logging.getLogger(__name__)
 baseWorkflows.INDEX_URL = "horizon:idmanager:project_manager:index"
 baseWorkflows.ADD_USER_URL = "horizon:idmanager:project_manager:create_user"
 
-class ExtCreateProjectInfoAction(baseWorkflows.CreateProjectInfoAction):
-
-    def __init__(self, request, *args, **kwargs):
-        super(ExtCreateProjectInfoAction, self).__init__(request, *args, **kwargs)
-        
-        if Project.objects.filter(status=PRJ_GUEST).count() == 0:
-            self.fields['guest'] = forms.BooleanField(
-                label=_("Guest Project"),
-                required=False,
-                initial=False
-            )
-
-    class Meta:
-        name = _("Project Info")
-        help_text = _("From here you can create a new "
-                      "project to organize users.")
-
-
 class ExtCreateProjectInfo(baseWorkflows.CreateProjectInfo):
-    action_class = ExtCreateProjectInfoAction
+    action_class = baseWorkflows.CreateProjectInfoAction
     template_name = "idmanager/project_manager/_common_horizontal_form.html"
     contributes = ("domain_id",
                    "domain_name",
                    "project_id",
                    "name",
                    "description",
-                   "enabled",
-                   "guest")
+                   "enabled")
 
 class ExtCreateProject(baseWorkflows.CreateProject):
     success_url = "horizon:idmanager:project_manager:index"
@@ -116,7 +96,7 @@ class ExtCreateProject(baseWorkflows.CreateProject):
                 'projectname' : data['name'],
                 'projectid' : newprj_id,
                 'description' : data['description'],
-                'status' : PRJ_GUEST if data.get('guest', False) else PRJ_PUBLIC
+                'status' : PRJ_PUBLIC
             }
             newprj = Project(**qargs)
             newprj.save()
@@ -161,9 +141,8 @@ class ExtCreateProject(baseWorkflows.CreateProject):
 
             #
             # Insert cloud admin as project_manager if missing
-            # No tenant admin for guest
             #
-            if len(prjadm_ids) == 0 and not data.get('guest', False):
+            if len(prjadm_ids) == 0:
                 baseWorkflows.api.keystone.add_tenant_user_role(request, project_id,
                                                     request.user.id, admin_role_id)
 

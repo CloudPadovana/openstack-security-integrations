@@ -33,12 +33,10 @@ class RegistrData:
     NEW_USR_EX_PRJ = 2
     EX_USR_NEW_PRJ = 3
     EX_USR_EX_PRJ = 4
-    NEW_USR_GUEST_PRJ = 5
-    USR_RENEW = 6
-    PRJADM_RENEW = 7
-    GUEST_RENEW = 8
-    REMINDER = 9
-    ORPHAN = 10
+    USR_RENEW = 5
+    PRJADM_RENEW = 6
+    REMINDER = 7
+    ORPHAN = 8
 
     DESCRARRAY = [
         _('Unknown operation'),
@@ -46,10 +44,8 @@ class RegistrData:
         _('New user to be pre-checked'),
         _('User requires a new project'),
         _('User requires membership'),
-        _('New user requires access as guest'),
         _('User requires renewal before '),
         _('Project administrator requires renewal before'),
-        _('Guest requires renewal before'),
         _('User requires post registration actions'),
         _('Registered user is orphan')
     ]
@@ -149,24 +145,6 @@ class ForceRejLink(tables.LinkAction):
     def allowed(self, request, datum):
         return datum.code == RegistrData.EX_USR_EX_PRJ
 
-class GuestApprLink(tables.LinkAction):
-    name = "guestapprlink"
-    verbose_name = _("Guest Approve")
-    url = "horizon:idmanager:registration_manager:guestapprove"
-    classes = ("ajax-modal", "btn-edit")
-    
-    def allowed(self, request, datum):
-        return datum.code == RegistrData.NEW_USR_GUEST_PRJ
-
-class GuestRejLink(tables.LinkAction):
-    name = "guestrejlink"
-    verbose_name = _("Guest Reject")
-    url = "horizon:idmanager:registration_manager:reject"
-    classes = ("ajax-modal", "btn-edit")
-    
-    def allowed(self, request, datum):
-        return datum.code == RegistrData.NEW_USR_GUEST_PRJ
-
 class RenewAdminLink(tables.LinkAction):
     name = "renewadminlink"
     verbose_name = _("Renew admin")
@@ -184,15 +162,6 @@ class ForcedRenewLink(tables.LinkAction):
     
     def allowed(self, request, datum):
         return datum.code == RegistrData.USR_RENEW
-
-class GuestRenewLink(tables.LinkAction):
-    name = "guestrenewlink"
-    verbose_name = _("Guest renew")
-    url = "horizon:idmanager:registration_manager:forcedrenew"
-    classes = ("ajax-modal", "btn-edit")
-    
-    def allowed(self, request, datum):
-        return datum.code == RegistrData.GUEST_RENEW
 
 class DetailsLink(tables.LinkAction):
     name = "detailslink"
@@ -236,10 +205,7 @@ class OperationTable(tables.DataTable):
                        RejectPrjLink,
                        ForceApprLink,
                        ForceRejLink,
-                       GuestApprLink,
-                       GuestRejLink,
                        RenewAdminLink,
-                       GuestRenewLink,
                        ForcedRenewLink,
                        ReminderAck,
                        DetailsLink)

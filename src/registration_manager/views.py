@@ -32,7 +32,6 @@ from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import RSTATUS_PENDING
 from openstack_auth_shib.models import RSTATUS_REMINDER
 from openstack_auth_shib.models import PRJ_PRIVATE
-from openstack_auth_shib.models import PRJ_GUEST
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 
@@ -45,7 +44,6 @@ from .forms import ForcedCheckForm
 from .forms import ForcedRejectForm
 from .forms import NewProjectCheckForm
 from .forms import NewProjectRejectForm
-from .forms import GuestCheckForm
 from .forms import RenewAdminForm
 from .forms import DetailsForm
 
@@ -87,10 +85,7 @@ class MainView(tables.DataTableView):
                 
                 if prjReq.flowstatus == PSTATUS_RENEW_MEMB:
 
-                    if prjReq.project.status == PRJ_GUEST:
-                        rData.code = RegistrData.GUEST_RENEW
-                    else:
-                        rData.code = RegistrData.USR_RENEW
+                    rData.code = RegistrData.USR_RENEW
                     rData.project = prjReq.project.projectname
                     rData.notes = prjReq.notes
                     requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
@@ -101,13 +96,6 @@ class MainView(tables.DataTableView):
                     rData.project = prjReq.project.projectname
                     rData.notes = prjReq.notes
                     requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
-
-                elif prjReq.project.status == PRJ_GUEST:
-
-                    rData.code = RegistrData.NEW_USR_GUEST_PRJ
-                    requestid = "%d:" % curr_regid
-                    if curr_regid in remTable:
-                        del remTable[curr_regid]
 
                 elif prjReq.project.projectid:
 
@@ -316,23 +304,6 @@ class RejectProjectView(forms.ModalFormView):
     def get_initial(self):
         return { 
             'requestid' : self.kwargs['requestid']
-        }
-
-class GuestApproveView(AbstractCheckView):
-    form_class = GuestCheckForm
-    template_name = 'idmanager/registration_manager/precheck.html'
-    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
-    
-    def get_context_data(self, **kwargs):
-        context = super(GuestApproveView, self).get_context_data(**kwargs)
-        context['guestmode'] = True
-        return context
-
-    def get_initial(self):
-        return {
-            'regid' : self.get_object().registration.regid,
-            'username' : self.get_object().registration.username,
-            'expiration' : datetime.now() + timedelta(365)
         }
 
 class RenewAdminView(forms.ModalFormView):
