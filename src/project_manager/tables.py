@@ -39,7 +39,7 @@ class UpdateMembersLink(baseTables.UpdateMembersLink):
     url = "horizon:idmanager:project_manager:update"
 
     def allowed(self, request, datum):
-        return datum.managed
+        return datum.managed and super(UpdateMembersLink, self).allowed(request, datum)
 
     def get_link_url(self, project):
         step = 'update_members'
@@ -51,25 +51,25 @@ class UpdateGroupsLink(baseTables.UpdateGroupsLink):
     url = "horizon:idmanager:project_manager:update"
 
     def allowed(self, request, datum):
-        return datum.managed
+        return datum.managed and super(UpdateGroupsLink, self).allowed(request, datum)
 
 class UpdateProject(baseTables.UpdateProject):
     url = "horizon:idmanager:project_manager:update"
 
     def allowed(self, request, datum):
-        return datum.managed
+        return datum.managed and super(UpdateProject, self).allowed(request, datum)
 
 class UsageLink(baseTables.UsageLink):
     url = "horizon:idmanager:project_manager:usage"
 
     def allowed(self, request, datum):
-        return datum.managed
+        return datum.managed and super(UsageLink, self).allowed(request, datum)
 
 class ModifyQuotas(baseTables.ModifyQuotas):
     url = "horizon:idmanager:project_manager:update_quotas"
 
     def allowed(self, request, datum):
-        return datum.managed
+        return datum.managed and super(ModifyQuotas, self).allowed(request, datum)
 
 class CreateProject(baseTables.CreateProject):
     url = "horizon:idmanager:project_manager:create"
@@ -92,7 +92,7 @@ class DeleteProjectAction(baseTables.DeleteTenantsAction):
 class RescopeTokenToProject(baseTables.RescopeTokenToProject):
 
     def allowed(self, request, datum):
-        return datum.managed
+        return datum.managed and super(RescopeTokenToProject, self).allowed(request, datum)
 
     def get_link_url(self, project):
         # redirects to the switch_tenants url which then will redirect
@@ -136,15 +136,25 @@ class ReqProjectLink(tables.LinkAction):
         return not request.user.is_superuser
 
 def get_prj_status(data):
-    elif data.status == PRJ_PUBLIC:
+    if not data.managed:
+        return _("Un-managed")
+    if data.status == PRJ_PUBLIC:
         return _("Public")
-    elif data.status == PRJ_COURSE:
+    if data.status == PRJ_COURSE:
         return _("Course")
     return _("Private")
 
+def get_prj_tags(data):
+    if not data.tags:
+        return '-'
+    tmps = data.tags.pop()
+    for ptag in data.tags:
+        tmps += ptag
+    return tmps
+    
 class ProjectsTable(baseTables.TenantsTable):
-    tags = tables.Column('tags', verbose_name=_('Tags'), status=True)
-    status = tables.Column(get_prj_status, verbose_name=_('Status'), status=True)
+    tags = tables.Column(get_prj_tags, verbose_name=_('Tags'))
+    status = tables.Column(get_prj_status, verbose_name=_('Status'))
 
     def __init__(self, request, data=None, needs_form_wrapper=None, **kwargs):
         super(ProjectsTable, self).__init__(request, data=data,
@@ -156,8 +166,10 @@ class ProjectsTable(baseTables.TenantsTable):
         self.columns['enabled'].update_action = None
         # end of patch
 
-        # patch for domain removal
+        # patch for columns removal
         del(self.columns['domain_name'])
+        if not request.user.is_superuser:
+            del(self.columns['tags'])
         # end of patch
 
     def get_project_detail_link(self, project):

@@ -1077,7 +1077,7 @@ def setup_new_project(request, project_id, project_name, data):
     try:
 
         kclient = keystone_api.keystoneclient(request)
-        kclient.projects.add_tag(self, project_id, unit_data.get('tag', 'other'))
+        kclient.projects.add_tag(project_id, unit_data.get('tag', 'other'))
 
     except:
             LOG.error("Cannot add organization tag", exc_info=True)

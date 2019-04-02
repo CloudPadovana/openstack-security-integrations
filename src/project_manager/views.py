@@ -30,6 +30,8 @@ from .workflows import ExtCreateProject
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PRJ_PRIVATE
 
+from openstack_dashboard.api import keystone as keystone_api
+
 LOG = logging.getLogger(__name__)
 baseViews.INDEX_URL = "horizon:idmanager:project_manager:index"
 
@@ -39,7 +41,7 @@ class ExtPrjItem:
         self.name = prj_data.name
         self.description = prj_data.description if prj_data.description else ""
         self.enabled = prj_data.enabled
-        self.tags = "-"
+        self.tags = None
         self.status = PRJ_PRIVATE
         self.managed = False
 
@@ -58,11 +60,18 @@ class IndexView(baseViews.IndexView):
             prj_table = dict()
             for item in tenants:
                 prj_table[item.name] = ExtPrjItem(item)
-            
+
+            kprj_man = keystone_api.keystoneclient(self.request).projects
+
             prj_list = Project.objects.filter(projectname__in=prj_table.keys())
             for prj_item in prj_list:
                 prj_table[prj_item.projectname].status = prj_item.status
                 prj_table[prj_item.projectname].managed = True
+
+                if prj_item.projectid and self.request.user.is_superuser:
+                    prj_table[prj_item.projectname].tags = kprj_man.list_tags(prj_item.projectid)
+                else:
+                    prj_table[prj_item.projectname].tags = list()
             
             tmplist = prj_table.keys()
             tmplist.sort()
