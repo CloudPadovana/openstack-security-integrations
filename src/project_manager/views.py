@@ -16,13 +16,16 @@
 import logging
 
 from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
 
+from horizon import forms
 from horizon import exceptions
 
 from openstack_dashboard.dashboards.identity.projects import views as baseViews
 from openstack_dashboard import api
 
+from .forms import CourseForm
 from .tables import ProjectsTable
 from .workflows import ExtUpdateProject
 from .workflows import ExtCreateProject
@@ -103,4 +106,28 @@ class DetailProjectView(baseViews.DetailProjectView):
         context["url"] = reverse("horizon:idmanager:project_manager:index")
         context["actions"] = table.render_row_actions(project)
         return context
+
+class CourseView(forms.ModalFormView):
+    form_class = CourseForm
+    template_name = 'idmanager/project_manager/course.html'
+    success_url = reverse_lazy('horizon:idmanager:project_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            self._object = Project.objects.filter(projectid=self.kwargs['project_id'])[0]
+        return self._object
+
+    def get_context_data(self, **kwargs):
+        context = super(CourseView, self).get_context_data(**kwargs)
+        context['projectid'] = self.get_object().projectid
+        return context
+
+    def get_initial(self):
+        course_info = self.get_object().description.split('|')
+        return {
+            'projectid' : self.get_object().projectid,
+            'description' : course_info[0] if len(course_info) else _('Undefined'),
+            'name' : course_info[1] if len(course_info) > 1 else self.get_object().projectname,
+            'notes' : course_info[2] if len(course_info) > 2 else ""
+        }
 

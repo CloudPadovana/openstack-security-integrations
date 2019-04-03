@@ -71,7 +71,8 @@ template_list = [
     'src/templates/registration.html',
     'src/templates/_aai_status.html',
     'src/templates/aai_error.html',
-    'src/templates/aai_registration_ok.html'
+    'src/templates/aai_registration_ok.html',
+    'src/templates/course.html'
 ]
 
 reg_templ_list = [
@@ -124,6 +125,8 @@ usr_templ_list = [
 prj_templ_list = [
     'src/templates/project_manager/index.html',
     'src/templates/project_manager/usage.html',
+    'src/templates/project_manager/_course.html',
+    'src/templates/project_manager/course.html',
     'src/templates/project_manager/_detail_overview.html',
     'src/templates/project_manager/detail.html',
     'src/templates/project_manager/_common_horizontal_form.html'

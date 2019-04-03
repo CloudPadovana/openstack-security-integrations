@@ -220,7 +220,7 @@ def course(request, project_name):
 
     project = Project.objects.filter(projectname=project_name)
 
-    if len(project) == 0 or project[0].status <> PRJ_COURSE:
+    if len(project) == 0:
         tempDict = {
             'error_header' : _("Course not found"),
             'error_text' : "%s: %s" % (_("Course not found"), project_name),
@@ -229,8 +229,22 @@ def course(request, project_name):
         }
         return shortcuts.render(request, 'aai_error.html', tempDict)
 
+    if project[0].status <> PRJ_COURSE:
+        tempDict = {
+            'error_header' : _("Course not yet available"),
+            'error_text' : "%s: %s" % (_("Course not found"), project_name),
+            'redirect_url' : '/dashboard',
+            'redirect_label' : _("Home")
+        }
+        return shortcuts.render(request, 'aai_error.html', tempDict)
+
+    course_info = project[0].description.split('|')
+
     tempDict = {
         'project' : project_name,
+        'description' : course_info[0] if len(course_info) else None,
+        'name' : course_info[1] if len(course_info) > 1 else project_name,
+        'notes' : course_info[2] if len(course_info) > 2 else None,
         'redirect_url' : '/dashboard',
         'redirect_label' : _("Register")
     }

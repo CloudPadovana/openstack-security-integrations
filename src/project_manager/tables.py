@@ -135,6 +135,35 @@ class ReqProjectLink(tables.LinkAction):
     def allowed(self, request, datum):
         return not request.user.is_superuser
 
+class CourseOnLink(tables.LinkAction):
+    name = "courseon"
+    verbose_name = _("Enable course")
+    url = "horizon:idmanager:project_manager:course"
+    classes = ("ajax-modal", "btn-edit")
+    
+    def allowed(self, request, datum):
+        # TODO check for project_manager role
+        return datum.managed and datum.status <> PRJ_COURSE
+
+class CourseOffLink(tables.Action):
+    name = "courseoff"
+    verbose_name = _("Disable course")
+
+    def allowed(self, request, datum):
+        # TODO check for project_manager role
+        return datum.managed and datum.status == PRJ_COURSE
+
+    def single(self, data_table, request, object_id):
+    
+        with transaction.atomic():
+        
+            prj_list = Project.objects.filter(projectid=object_id)
+            if len(prj_list):
+                prj_list[0].status = PRJ_PUBLIC
+                prj_list[0].save()
+            
+        return shortcuts.redirect(reverse('horizon:idmanager:project_manager:index'))
+
 def get_prj_status(data):
     if not data.managed:
         return _("Un-managed")
@@ -188,6 +217,8 @@ class ProjectsTable(baseTables.TenantsTable):
                        UsageLink,
                        ModifyQuotas,
                        ToggleVisibility,
+                       CourseOnLink,
+                       CourseOffLink,
                        DeleteProjectAction,
                        RescopeTokenToProject)
         table_actions = (baseTables.TenantFilterAction, 
