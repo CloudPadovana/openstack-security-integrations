@@ -15,6 +15,8 @@
 
 import logging
 
+from django.db import transaction
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
@@ -31,12 +33,14 @@ from .workflows import ExtUpdateProject
 from .workflows import ExtCreateProject
 
 from openstack_auth_shib.models import Project
+from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_PRIVATE
 
 from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
 baseViews.INDEX_URL = "horizon:idmanager:project_manager:index"
+COURSE_FOR = set(settings.HORIZON_CONFIG['course_for'])
 
 class ExtPrjItem:
     def __init__(self, prj_data):
@@ -47,6 +51,8 @@ class ExtPrjItem:
         self.tags = None
         self.status = PRJ_PRIVATE
         self.managed = False
+        self.isadmin = False
+        self.handle_course = False
 
 class IndexView(baseViews.IndexView):
     table_class = ProjectsTable
@@ -66,16 +72,37 @@ class IndexView(baseViews.IndexView):
 
             kprj_man = keystone_api.keystoneclient(self.request).projects
 
-            prj_list = Project.objects.filter(projectname__in=prj_table.keys())
-            for prj_item in prj_list:
-                prj_table[prj_item.projectname].status = prj_item.status
-                prj_table[prj_item.projectname].managed = True
+            with transaction.atomic():
 
-                if prj_item.projectid and self.request.user.is_superuser:
-                    prj_table[prj_item.projectname].tags = kprj_man.list_tags(prj_item.projectid)
-                else:
-                    prj_table[prj_item.projectname].tags = list()
-            
+                prj_list = Project.objects.filter(projectname__in=prj_table.keys())
+
+                role_list = PrjRole.objects.filter(
+                    registration__userid = self.request.user.id,
+                    project__in = prj_list
+                )
+                for r_item in role_list:
+                    prj_table[r_item.project.projectname].isadmin = True
+
+                for prj_item in prj_list:
+                    prjname = prj_item.projectname
+                    prj_table[prjname].status = prj_item.status
+                    prj_table[prjname].managed = True
+
+                    is_curr_admin = self.request.user.tenant_name == prjname
+                    is_curr_admin = is_curr_admin and prj_table[prjname].isadmin
+
+                    can_list_tags = self.request.user.is_superuser or is_curr_admin
+
+                    if prj_item.projectid and can_list_tags:
+                        prj_table[prjname].tags = set(kprj_man.list_tags(prj_item.projectid))
+                    else:
+                        prj_table[prjname].tags = set()
+
+
+                    if is_curr_admin:
+                        sdiff = prj_table[prjname].tags.intersection(COURSE_FOR)
+                        prj_table[prjname].handle_course = len(sdiff) > 0
+
             tmplist = prj_table.keys()
             tmplist.sort()
             for item in tmplist:

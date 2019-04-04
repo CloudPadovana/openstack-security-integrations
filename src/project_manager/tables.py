@@ -142,16 +142,23 @@ class CourseOnLink(tables.LinkAction):
     classes = ("ajax-modal", "btn-edit")
     
     def allowed(self, request, datum):
-        # TODO check for project_manager role
-        return datum.managed and datum.status <> PRJ_COURSE
+        return datum.handle_course and datum.status <> PRJ_COURSE
+
+class EditCourseLink(tables.LinkAction):
+    name = "editcourse"
+    verbose_name = _("Edit course")
+    url = "horizon:idmanager:project_manager:course"
+    classes = ("ajax-modal", "btn-edit")
+
+    def allowed(self, request, datum):
+        return datum.handle_course and datum.status == PRJ_COURSE
 
 class CourseOffLink(tables.Action):
     name = "courseoff"
     verbose_name = _("Disable course")
 
     def allowed(self, request, datum):
-        # TODO check for project_manager role
-        return datum.managed and datum.status == PRJ_COURSE
+        return datum.handle_course and datum.status == PRJ_COURSE
 
     def single(self, data_table, request, object_id):
     
@@ -218,6 +225,7 @@ class ProjectsTable(baseTables.TenantsTable):
                        ModifyQuotas,
                        ToggleVisibility,
                        CourseOnLink,
+                       EditCourseLink,
                        CourseOffLink,
                        DeleteProjectAction,
                        RescopeTokenToProject)
