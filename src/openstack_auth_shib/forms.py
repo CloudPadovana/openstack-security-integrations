@@ -26,9 +26,20 @@ from django.views.decorators.debug import sensitive_variables
 from django.db import transaction, IntegrityError
 
 from .idpmanager import get_manager
-from .models import Registration, Project, RegRequest, PrjRequest
-from .models import PRJ_PRIVATE, PRJ_PUBLIC
-from .models import OS_LNAME_LEN, OS_SNAME_LEN, PWD_LEN, EMAIL_LEN
+from .models import Registration
+from .models import Project
+from .models import RegRequest
+from .models import PrjRequest
+from .models import UserMapping
+from .models import Expiration
+from .models import PRJ_PRIVATE
+from .models import PRJ_PUBLIC
+from .models import OS_LNAME_LEN
+from .models import OS_SNAME_LEN
+from .models import PWD_LEN
+from .models import EMAIL_LEN
+from .models import PSTATUS_REG
+from .models import PSTATUS_PENDING
 from .notifications import notifyAdmin, REGISTR_AVAIL_TYPE
 from .utils import get_ostack_attributes, PRJ_REGEX
 
@@ -43,8 +54,13 @@ class RegistrForm(forms.SelfHandlingForm):
         self.registr_err = None
 
         initial = kwargs['initial'] if 'initial' in kwargs else dict()
+
         org_table = settings.HORIZON_CONFIG.get('organization', {})
         org_list = org_table.get(initial.get('organization', ""), None)
+
+        #################################################################################
+        # Account section
+        #################################################################################
 
         self.fields['username'] = forms.CharField(
             label=_('User name'),
@@ -90,66 +106,113 @@ class RegistrForm(forms.SelfHandlingForm):
             widget=forms.HiddenInput if 'email' in initial else forms.TextInput
         )
 
-        self.fields['prjaction'] = forms.ChoiceField(
-            label=_('Project action'),
-            #choices = <see later>
-            widget=forms.Select(attrs={
-                'class': 'switchable',
-                'data-slug': 'actsource'
-            })
-        )
-    
-        self.fields['newprj'] = forms.CharField(
-            label=_('Personal project'),
-            max_length=OS_SNAME_LEN,
-            required=False,
-            widget=forms.TextInput(attrs={
-                'class': 'switched',
-                'data-switch-on': 'actsource',
-                'data-actsource-newprj': _('Project name')
-            })
-        )
-        
-        self.fields['prjdescr'] = forms.CharField(
-            label=_("Project description"),
-            required=False,
-            widget=forms.widgets.Textarea(attrs={
-                'class': 'switched',
-                'data-switch-on': 'actsource',
-                'data-actsource-newprj': _('Project description')
-            })
-        )
-        
-        self.fields['prjpriv'] = forms.BooleanField(
-            label=_("Private project"),
-            required=False,
-            initial=False,
-            widget=forms.widgets.CheckboxInput(attrs={
-                'class': 'switched',
-                'data-switch-on': 'actsource',
-                'data-actsource-newprj': _('Private project')
-            })
-        )
-    
-        self.fields['contactper'] = forms.CharField(
-            label=_('Contact person'),
-            required=False,
-            widget=forms.HiddenInput if org_list else forms.TextInput(attrs={
-                'class': 'switched',
-                'data-switch-on': 'actsource',
-                'data-actsource-newprj': _('Contact person')
-            })
-        )
-    
-        self.fields['selprj'] = forms.MultipleChoiceField(
-            label=_('Available projects'),
-            required=False,
-            widget=forms.SelectMultiple(attrs={
-                'class': 'switched',
-                'data-switch-on': 'actsource',
-                'data-actsource-selprj': _('Select existing project')
-            }),
-        )
+        #################################################################################
+        # Projects section
+        #################################################################################
+
+        if 'selprj' in initial:
+
+            self.fields['prjaction'] = forms.CharField(
+                label=_('Project action'),
+                widget=forms.HiddenInput
+            )
+
+            self.fields['selprj'] = forms.CharField(
+                label=_('Available projects'),
+                widget=forms.HiddenInput
+            )
+
+        else:
+
+            self.fields['prjaction'] = forms.ChoiceField(
+                label=_('Project action'),
+                #choices = <see later>
+                widget=forms.Select(attrs={
+                    'class': 'switchable',
+                    'data-slug': 'actsource'
+                })
+            )
+
+            self.fields['newprj'] = forms.CharField(
+                label=_('Personal project'),
+                max_length=OS_SNAME_LEN,
+                required=False,
+                widget=forms.TextInput(attrs={
+                    'class': 'switched',
+                    'data-switch-on': 'actsource',
+                    'data-actsource-newprj': _('Project name')
+                })
+            )
+
+            self.fields['prjdescr'] = forms.CharField(
+                label=_("Project description"),
+                required=False,
+                widget=forms.widgets.Textarea(attrs={
+                    'class': 'switched',
+                    'data-switch-on': 'actsource',
+                    'data-actsource-newprj': _('Project description')
+                })
+            )
+
+            self.fields['prjpriv'] = forms.BooleanField(
+                label=_("Private project"),
+                required=False,
+                initial=False,
+                widget=forms.widgets.CheckboxInput(attrs={
+                    'class': 'switched',
+                    'data-switch-on': 'actsource',
+                    'data-actsource-newprj': _('Private project')
+                })
+            )
+
+            self.fields['contactper'] = forms.CharField(
+                label=_('Contact person'),
+                required=False,
+                widget=forms.HiddenInput if org_list else forms.TextInput(attrs={
+                    'class': 'switched',
+                    'data-switch-on': 'actsource',
+                    'data-actsource-newprj': _('Contact person')
+                })
+            )
+
+            self.fields['selprj'] = forms.MultipleChoiceField(
+                label=_('Available projects'),
+                required=False,
+                widget=forms.SelectMultiple(attrs={
+                    'class': 'switched',
+                    'data-switch-on': 'actsource',
+                    'data-actsource-selprj': _('Select existing project')
+                }),
+            )
+
+            missing_guest = True
+            prjguest_name = settings.HORIZON_CONFIG.get('guest_project', "")
+            avail_prjs = list()
+            for prj_entry in Project.objects.exclude(status=PRJ_PRIVATE):
+                if prj_entry.projectname == prjguest_name:
+                    missing_guest = False
+                elif prj_entry.projectid:
+                    avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
+
+            self.fields['selprj'].choices = avail_prjs
+
+            if missing_guest:
+                p_choices = [
+                    ('selprj', _('Select existing projects')),
+                    ('newprj', _('Create new project'))
+                ]
+            else:
+                p_choices = [
+                    ('selprj', _('Select existing projects')),
+                    ('newprj', _('Create new project')),
+                    ('guestprj', _('Use guest project'))
+                ]
+
+            self.fields['prjaction'].choices = p_choices
+
+        #################################################################################
+        # Other Fields
+        #################################################################################
 
         if not org_list:
 
@@ -166,6 +229,7 @@ class RegistrForm(forms.SelfHandlingForm):
                 required=True,
                 choices=org_list
             )
+
 
         phone_regex = settings.HORIZON_CONFIG.get('phone_regex', '^\s*\+*[0-9]+[0-9\s.]+\s*$')
         self.fields['phone'] = forms.RegexField(
@@ -185,31 +249,6 @@ class RegistrForm(forms.SelfHandlingForm):
             widget=forms.HiddenInput,
             initial='reject'
         )
-
-        missing_guest = True
-        prjguest_name = settings.HORIZON_CONFIG.get('guest_project', "")
-        avail_prjs = list()
-        for prj_entry in Project.objects.exclude(status=PRJ_PRIVATE):
-            if prj_entry.projectname == prjguest_name:
-                missing_guest = False
-            elif prj_entry.projectid:
-                avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
-                
-        self.fields['selprj'].choices = avail_prjs
-        
-        if missing_guest:
-            p_choices = [
-                ('selprj', _('Select existing projects')),
-                ('newprj', _('Create new project'))
-            ]
-        else:
-            p_choices = [
-                ('selprj', _('Select existing projects')),
-                ('newprj', _('Create new project')),
-                ('guestprj', _('Use guest project'))
-            ]
-            
-        self.fields['prjaction'].choices = p_choices
 
 
     def clean(self):
@@ -281,34 +320,61 @@ class RegistrForm(forms.SelfHandlingForm):
             LOG.debug("Saving %s" % data['username'])
                     
             with transaction.atomic():
+
+                is_fed_account = data.get('federated', 'false') == 'true'
+                prj_flowstatus = PSTATUS_REG
+
+                # test for course account
+                registration = None
+                if is_fed_account:
+                    tmpm = UserMapping.objects.filter(globaluser=data['username'])
+                    registration = tmpm[0].registration if len(tmpm) > 0 else None
             
-                if RegRequest.objects.filter(externalid=data['username']).count():
-                    raise ValidationError("Request already sent")
-        
-                queryArgs = {
-                    'username' : data['username'],
-                    'givenname' : data['givenname'],
-                    'sn' : data['sn'],
-                    'organization' : data['organization'],
-                    'phone' : data['phone'],
-                    'domain' : domain
-                }
-                registration = Registration(**queryArgs)
-                registration.save()
-        
-                regArgs = {
-                    'registration' : registration,
-                    'password' : pwd,
-                    'email' : data['email'],
-                    'contactper' : data['contactper'],
-                    'notes' : data['notes']
-                }
-                if data.get('federated', 'false') == 'true':
-                    regArgs['externalid'] = data['username']
-                regReq = RegRequest(**regArgs)
-                regReq.save()
+                if registration:
+
+                    q_args = {
+                        'registration' : registration,
+                        'project__projectname__in' : [ x[0] for x in prjlist ]
+                    }
+                    if Expiration.objects.filter(**q_args).count() > 0:
+                        return self._build_safe_redirect(request, 
+                                                '/dashboard/auth/already_subscribed/')
+
+                    if PrjRequest.objects.filter(**q_args).count() > 0:
+                        return self._build_safe_redirect(request, 
+                                                '/dashboard/auth/dup_login/')
+
+                    prj_flowstatus = PSTATUS_PENDING
+
+                else:
+
+                    if RegRequest.objects.filter(externalid=data['username']).count():
+                        raise ValidationError("Request already sent")
+
+                    queryArgs = {
+                        'username' : data['username'],
+                        'givenname' : data['givenname'],
+                        'sn' : data['sn'],
+                        'organization' : data['organization'],
+                        'phone' : data['phone'],
+                        'domain' : domain
+                    }
+                    registration = Registration(**queryArgs)
+                    registration.save()
+
+                    regArgs = {
+                        'registration' : registration,
+                        'password' : pwd,
+                        'email' : data['email'],
+                        'contactper' : data['contactper'],
+                        'notes' : data['notes']
+                    }
+                    if is_fed_account:
+                        regArgs['externalid'] = data['username']
+                    regReq = RegRequest(**regArgs)
+                    regReq.save()
                 
-                LOG.debug("Saved %s" % data['username'])
+                    LOG.debug("Saved %s" % data['username'])
 
                 #
                 # empty list for guest prj
@@ -335,6 +401,7 @@ class RegistrForm(forms.SelfHandlingForm):
                     reqArgs = {
                         'registration' : registration,
                         'project' : project,
+                        'flowstatus': prj_flowstatus,
                         'notes' : data['notes']
                     }
                     
@@ -365,6 +432,5 @@ class RegistrForm(forms.SelfHandlingForm):
             LOG.error("Generic failure", exc_info=True)
 
         return self._build_safe_redirect(request, '/dashboard/auth/reg_failure/')
-
 
 

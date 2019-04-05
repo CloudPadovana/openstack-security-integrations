@@ -40,6 +40,7 @@ reg_ok_url = url(r"^reg_done/$", views.reg_done, name='reg_done')
 namex_url = url(r"^name_exists/$", views.name_exists, name='name_exists')
 fail_url = url(r"^reg_failure/$", views.reg_failure, name='reg_failure')
 dup_url = url(r"^dup_login/$", views.dup_login, name='dup_login')
+sub_dup_url = url(r"^already_subscribed/$", views.alreay_subscribed, name='dup_subscr')
 err_url = url(r"^auth_error/$", views.auth_error, name='auth_error')
 course_url = url(r"^course_(?P<project_name>[^/$]+)/$", views.course, name='course')
 
@@ -59,6 +60,7 @@ if django_version[1] < 11:
                            namex_url,
                            fail_url,
                            dup_url,
+                           sub_dup_url,
                            err_url
     )
 
@@ -76,6 +78,7 @@ else:
         namex_url,
         fail_url,
         dup_url,
+        sub_dup_url,
         err_url
     ]
 

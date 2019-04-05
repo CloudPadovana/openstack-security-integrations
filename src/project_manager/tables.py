@@ -171,6 +171,15 @@ class CourseOffLink(tables.Action):
             
         return shortcuts.redirect(reverse('horizon:idmanager:project_manager:index'))
 
+class EditTagsLink(tables.LinkAction):
+    name = "edittags"
+    verbose_name = _("Edit tags")
+    url = "horizon:idmanager:project_manager:edittags"
+    classes = ("ajax-modal", "btn-edit")
+
+    def allowed(self, request, datum):
+        return datum.managed and request.user.is_superuser
+
 def get_prj_status(data):
     if not data.managed:
         return _("Un-managed")
@@ -227,6 +236,7 @@ class ProjectsTable(baseTables.TenantsTable):
                        CourseOnLink,
                        EditCourseLink,
                        CourseOffLink,
+                       EditTagsLink,
                        DeleteProjectAction,
                        RescopeTokenToProject)
         table_actions = (baseTables.TenantFilterAction, 

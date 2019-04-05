@@ -28,6 +28,7 @@ from openstack_dashboard.dashboards.identity.projects import views as baseViews
 from openstack_dashboard import api
 
 from .forms import CourseForm
+from .forms import EditTagsForm
 from .tables import ProjectsTable
 from .workflows import ExtUpdateProject
 from .workflows import ExtCreateProject
@@ -40,7 +41,7 @@ from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
 baseViews.INDEX_URL = "horizon:idmanager:project_manager:index"
-COURSE_FOR = set(settings.HORIZON_CONFIG['course_for'])
+COURSE_FOR = set(settings.HORIZON_CONFIG.get('course_for', {}).keys())
 
 class ExtPrjItem:
     def __init__(self, prj_data):
@@ -157,4 +158,27 @@ class CourseView(forms.ModalFormView):
             'name' : course_info[1] if len(course_info) > 1 else self.get_object().projectname,
             'notes' : course_info[2] if len(course_info) > 2 else ""
         }
+
+class EditTagsView(forms.ModalFormView):
+    form_class = EditTagsForm
+    template_name = 'idmanager/project_manager/edittags.html'
+    success_url = reverse_lazy('horizon:idmanager:project_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            self._object = Project.objects.filter(projectid=self.kwargs['project_id'])[0]
+        return self._object
+
+    def get_context_data(self, **kwargs):
+        context = super(EditTagsView, self).get_context_data(**kwargs)
+        context['projectname'] = self.get_object().projectname
+        context['projectid'] = self.get_object().projectid
+        return context
+
+    def get_initial(self):
+        return {
+            'projectid' : self.get_object().projectid,
+        }
+
+
 

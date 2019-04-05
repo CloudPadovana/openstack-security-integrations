@@ -1,4 +1,4 @@
-{% extends "_aai_status.html" %}
+{% extends 'base.html' %}
 
 {% comment %}
   Copyright (c) 2014 INFN - "Istituto Nazionale di Fisica Nucleare" - Italy
@@ -18,30 +18,14 @@
 {% endcomment %}
 
 {% load i18n %}
+{% block title %}{% trans "Edit project tags" %}{% endblock %}
 
-{% block title %}{% trans "Registration to course" %} {{ name }}{% endblock %}
+{% block page_header %}
+  {# to make searchable false, just remove it from the include statement #}
+  {% include "horizon/common/_page_header.html" with title="Edit project tags" %}
+{% endblock page_header %}
 
-{% block body_id %}course_registr_id{% endblock %}
-
-{% block status_frame %}
-<h2>{% trans "Registration to course" %} {{ name }}</h2>
-
-{% if description %}
-<p>{{ description }}</p>
-{% endif%}
-
-{% if notes %}
-<p>{{ notes }}</p>
-{% endif%}
-
-  <!-- idp and idpdata are contained into HORIZON_CONFIG['identity_providers'] -->
-
-  <button type="button"
-          title="{% trans 'Register' %}"
-          class="btn btn-primary pull-right"
-          onclick="location.href='{{ registration_url }}?projectname={{ project }}';">
-    {% trans "Register" %}
-  </button>
-
+{% block main %}
+    {% include 'idmanager/project_manager/_edittags.html' %}
 {% endblock %}
 

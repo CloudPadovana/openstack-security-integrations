@@ -24,8 +24,11 @@ from django.utils.translation import ugettext as _
 from horizon import forms
 from horizon import messages
 
+from openstack_dashboard.api import keystone as keystone_api
+
 from openstack_auth_shib.models import OS_SNAME_LEN
 from openstack_auth_shib.models import Project
+from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_COURSE
 
 LOG = logging.getLogger(__name__)
@@ -68,19 +71,75 @@ class CourseForm(forms.SelfHandlingForm):
     @sensitive_variables('data')
     def handle(self, request, data):
         try:
-            # TODO check for project_manager
+
             with transaction.atomic():
                 c_prj = Project.objects.filter(projectid=data['projectid'])[0]
+
+                if PrjRole.objects.filter(registration__userid = request.user.id,
+                                          project = c_prj).count() == 0:
+                    messages.error(request, _("Operation not allowed"))
+                    return False
+
                 new_descr = '%s|%s|%s' % (data['description'],
                                           data['name'],
                                           data['notes'])
                 c_prj.description = new_descr
                 c_prj.status = PRJ_COURSE
                 c_prj.save()
+
         except:
             LOG.error("Cannot edit course parameters", exc_info=True)
             messages.error(request, _("Cannot edit course parameters"))
             return False
 
         return True
+
+class EditTagsForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(EditTagsForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['projectid'] = forms.CharField(widget=HiddenInput)
+
+        self.fields['taglist'] = forms.CharField(
+            label=_('Tag list (comma separated)'),
+            required=True,
+            widget=forms.widgets.Textarea()
+        )
+
+    def clean(self):
+        data = super(EditTagsForm, self).clean()
+
+        if '/' in data['taglist']:
+            raise ValidationError(_('Bad character "/" in the tag list.'))
+
+        new_list = list()
+        for item in data['taglist'].split(','):
+            tmps = item.strip()
+            if len(tmps) > 255:
+                raise ValidationError(_('Tag too long.'))
+            new_list.append(tmps)
+        data['ptags'] = new_list
+
+        return data
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+        try:
+
+            kclient = keystone_api.keystoneclient(request)
+            
+            for newtag in data['ptags']:
+                kclient.projects.add_tag(data['projectid'], newtag)
+
+        except:
+            LOG.error("Cannot edit tags", exc_info=True)
+            messages.error(request, _("Cannot edit tags"))
+            return False
+
+        return True
+
+
+
+
 

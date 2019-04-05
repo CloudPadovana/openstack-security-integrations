@@ -128,6 +128,11 @@ class RegistrView(forms.ModalFormView):
             result['needpwd'] = True
             result['federated'] = "false"
 
+        prjname_param = self.request.GET.get('projectname', None)
+        if prjname_param:
+            result['prjaction'] = 'selprj'
+            result['selprj'] = prjname_param
+
         return result
 
     def get_context_data(self, **kwargs):
@@ -145,14 +150,9 @@ class RegistrView(forms.ModalFormView):
         attributes = get_manager(self.request)
         if attributes:
 
-            if UserMapping.objects.filter(globaluser=attributes.username).count():
-                tempDict = {
-                    'error_header' : _("Registration error"),
-                    'error_text' : _("Your account has already been registered"),
-                    'redirect_url' : '/dashboard',
-                    'redirect_label' : _("Home")
-                }
-                return shortcuts.render(self.request, 'aai_error.html', tempDict)
+            if UserMapping.objects.filter(globaluser=attributes.username).count() \
+                and not 'projectname' in request.GET:
+                return alreay_registered(self.request)
 
             if RegRequest.objects.filter(externalid=attributes.username).count():
                 return dup_login(self.request)
@@ -165,6 +165,24 @@ def reg_done(request):
         'redirect_label' : _("Home")
     }
     return shortcuts.render(request, 'aai_registration_ok.html', tempDict)
+
+def alreay_registered(request):
+    tempDict = {
+        'error_header' : _("Registration error"),
+        'error_text' : _("Your account has already been registered"),
+        'redirect_url' : '/dashboard',
+        'redirect_label' : _("Home")
+    }
+    return shortcuts.render(request, 'aai_error.html', tempDict)
+
+def alreay_subscribed(request):
+    tempDict = {
+        'error_header' : _("Registration error"),
+        'error_text' : _("Your are already member of the project"),
+        'redirect_url' : '/dashboard',
+        'redirect_label' : _("Home")
+    }
+    return shortcuts.render(request, 'aai_error.html', tempDict)
 
 def reg_failure(request):
     tempDict = {
@@ -218,6 +236,16 @@ def auth_error(request):
 #
 def course(request, project_name):
 
+    course_table = settings.HORIZON_CONFIG.get('course_for', {})
+    if len(course_table) == 0:
+        tempDict = {
+            'error_header' : _("Course management is not supported"),
+            'error_text' : _("Course management is not supported"),
+            'redirect_url' : '/dashboard',
+            'redirect_label' : _("Home")
+        }
+        return shortcuts.render(request, 'aai_error.html', tempDict)
+
     project = Project.objects.filter(projectname=project_name)
 
     if len(project) == 0:
@@ -238,6 +266,10 @@ def course(request, project_name):
         }
         return shortcuts.render(request, 'aai_error.html', tempDict)
 
+    org, idpref = course_table.items()[0]
+    reg_path = settings.HORIZON_CONFIG['identity_providers'][idpref]['path']
+
+
     course_info = project[0].description.split('|')
 
     tempDict = {
@@ -245,8 +277,7 @@ def course(request, project_name):
         'description' : course_info[0] if len(course_info) else None,
         'name' : course_info[1] if len(course_info) > 1 else project_name,
         'notes' : course_info[2] if len(course_info) > 2 else None,
-        'redirect_url' : '/dashboard',
-        'redirect_label' : _("Register")
+        'registration_url' : reg_path
     }
     return shortcuts.render(request, 'course.html', tempDict)
 
