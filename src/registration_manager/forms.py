@@ -923,7 +923,7 @@ def chk_repl_project(regid, old_prjname, new_prjname, old_descr, new_descr):
 #     "quota_<type>" : <quota_type>,
 #
 #     "availability_zone" : <availability zone, default: nova>
-#     "prefix" : <project_prefix>,
+#     "aggregate_prefix" : <project_prefix>,
 #     "hypervisors" : <list_of_hypervisors>,
 #     "metadata" : <hash of metadata>,
 #
@@ -999,8 +999,7 @@ def setup_new_project(request, project_id, project_name, data):
         return
 
     unit_data = cloud_table[unit_id]
-    prj_cname = "%s-%s" % (unit_data.get('prefix', unit_id),
-        re.sub(r'\s+', "-", project_name))
+    prj_cname = re.sub(r'\s+', "-", project_name)
 
     try:
 
@@ -1023,17 +1022,18 @@ def setup_new_project(request, project_id, project_name, data):
     try:
 
         hyper_list = unit_data.get('hypervisors', [])
+        agg_prj_cname = "%s-%s" % (unit_data.get('aggregate_prefix', unit_id), prj_cname)
         if len(hyper_list):
-            nova_api.aggregate_create(request, prj_cname,
+            nova_api.aggregate_create(request, agg_prj_cname,
                                     unit_data.get('availability_zone', 'nova'))
 
             for h_item in hyper_list:
-                nova_api.add_host_to_aggregate(request, prj_cname, h_item)
+                nova_api.add_host_to_aggregate(request, agg_prj_cname, h_item)
 
-            nova_api.aggregate_set_metadata(request, prj_cname, 
+            nova_api.aggregate_set_metadata(request, agg_prj_cname, 
                                         "filter_tenant_id=%s" % project_id)
             for md_tuple in unit_data.get('metadata', {}).items():
-                nova_api.aggregate_set_metadata(request, prj_cname, "%s=%s" % md_tuple)
+                nova_api.aggregate_set_metadata(request, agg_prj_cname, "%s=%s" % md_tuple)
 
     except:
             LOG.error("Cannot setup host aggregate", exc_info=True)
