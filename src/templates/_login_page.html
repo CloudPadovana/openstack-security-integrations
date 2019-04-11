@@ -85,7 +85,7 @@
       {% for idpid, idpdata in HORIZON_CONFIG.identity_providers.iteritems %}
       <button type="button"
               title="{% trans 'Sign in with' %} {{ idpdata.description }}"
-              onclick="selectIdP('{{ idpid }}', '{{ idpdata.region }}')">
+              onclick="selectIdP('{{ idpid }}')">
          <img align="middle" height="80px" width="80px" 
               alt="{% trans 'Sign in with' %} {{ idpdata.description }}" 
               src="{{ idpdata.logo }}"/>
@@ -209,11 +209,15 @@
       document.getElementById('regist_sel_div').style.display='block';
   }
   
-  function selectIdP (idpID, region) {
+  function selectIdP (idpID) {
       document.getElementById('auth_type_in').value=idpID;
-      if (region != "") { 
-          document.getElementById('id_region').value=region;
-      }
+
+      {% for kbind, vbind in HORIZON_CONFIG.srv_bind_table.iteritems %}
+      {% if kbind == request.META.SERVER_NAME %}
+      document.getElementById('id_region').value="https://{{ vbind }}/v3"; 
+      {% endif %}
+      {% endfor %}
+
       document.forms['logf_id'].submit();
   }
 
