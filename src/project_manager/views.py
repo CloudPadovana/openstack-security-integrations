@@ -156,7 +156,8 @@ class CourseView(forms.ModalFormView):
             'projectid' : self.get_object().projectid,
             'description' : course_info[0] if len(course_info) else _('Undefined'),
             'name' : course_info[1] if len(course_info) > 1 else self.get_object().projectname,
-            'notes' : course_info[2] if len(course_info) > 2 else ""
+            'notes' : course_info[2] if len(course_info) > 2 else "",
+            'ou' : course_info[3] if len(course_info) > 3 else 'other'
         }
 
 class EditTagsView(forms.ModalFormView):

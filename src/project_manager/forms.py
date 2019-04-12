@@ -15,6 +15,7 @@
 
 import logging
 
+from django.conf import settings
 from django.db import transaction
 from django.forms import ValidationError
 from django.forms.widgets import HiddenInput
@@ -58,6 +59,27 @@ class CourseForm(forms.SelfHandlingForm):
             widget=forms.widgets.Textarea()
         )
 
+        ou_choices = self._get_OU_list()
+        if len(ou_choices) > 0:
+            self.fields['ou'] = forms.ChoiceField(
+                label=_('Department'),
+                required=True,
+                choices=ou_choices
+            )
+        else:
+            self.fields['ou'] = forms.CharField(
+                required=True,
+                initial="other",
+                widget=forms.HiddenInput
+            )
+
+    def _get_OU_list(self):
+        result = list()
+        org_table = settings.HORIZON_CONFIG.get('organization', {})
+        for korg in settings.HORIZON_CONFIG.get('course_for', {}).keys():
+            result += org_table[korg]
+        return result
+
     def clean(self):
         data = super(CourseForm, self).clean()
         if '|' in data['name']:
@@ -66,6 +88,8 @@ class CourseForm(forms.SelfHandlingForm):
             raise ValidationError(_('Bad character "|" in the course description.'))
         if '|' in data['notes']:
             raise ValidationError(_('Bad character "|" in the course notes.'))        
+        if '|' in data['ou']:
+            raise ValidationError(_('Bad character "|" in the course department.'))
         return data
 
     @sensitive_variables('data')
@@ -80,9 +104,8 @@ class CourseForm(forms.SelfHandlingForm):
                     messages.error(request, _("Operation not allowed"))
                     return False
 
-                new_descr = '%s|%s|%s' % (data['description'],
-                                          data['name'],
-                                          data['notes'])
+                new_descr = '%s|%s|%s|%s' % (data['description'], data['name'],
+                                             data['notes'], data['ou'])
                 c_prj.description = new_descr
                 c_prj.status = PRJ_COURSE
                 c_prj.save()

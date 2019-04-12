@@ -134,6 +134,10 @@ class RegistrView(forms.ModalFormView):
             result['prjaction'] = 'selprj'
             result['selprj'] = prjname_param
 
+        org_unit = self.request.GET.get('ou', None)
+        if org_unit:
+            result['organization'] = org_unit
+
         result['custom_org'] = ""
 
         return result
@@ -280,6 +284,7 @@ def course(request, project_name):
         'description' : course_info[0] if len(course_info) else None,
         'name' : course_info[1] if len(course_info) > 1 else project_name,
         'notes' : course_info[2] if len(course_info) > 2 else None,
+        'ou' : course_info[3] if len(course_info) > 3 else 'other',
         'registration_url' : reg_path
     }
     return shortcuts.render(request, 'course.html', tempDict)
