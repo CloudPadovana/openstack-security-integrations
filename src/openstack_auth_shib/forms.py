@@ -14,6 +14,7 @@
 #  under the License. 
 
 import logging
+import re
 
 from horizon import forms
 from horizon.utils import validators
@@ -45,6 +46,8 @@ from .utils import get_ostack_attributes, PRJ_REGEX
 
 LOG = logging.getLogger(__name__)
 
+ORG_REGEX = re.compile(r'[^a-zA-Z0-9-_\.]')
+
 class RegistrForm(forms.SelfHandlingForm):
 
     def __init__(self, request, *args, **kwargs):
@@ -54,9 +57,6 @@ class RegistrForm(forms.SelfHandlingForm):
         self.registr_err = None
 
         initial = kwargs['initial'] if 'initial' in kwargs else dict()
-
-        org_table = settings.HORIZON_CONFIG.get('organization', {})
-        org_list = org_table.get(initial.get('organization', ""), None)
 
         #################################################################################
         # Account section
@@ -168,7 +168,8 @@ class RegistrForm(forms.SelfHandlingForm):
             self.fields['contactper'] = forms.CharField(
                 label=_('Contact person'),
                 required=False,
-                widget=forms.HiddenInput if org_list else forms.TextInput(attrs={
+                widget=forms.HiddenInput if 'contactper' in initial \
+                                         else forms.TextInput(attrs={
                     'class': 'switched',
                     'data-switch-on': 'actsource',
                     'data-actsource-newprj': _('Contact person')
@@ -214,20 +215,54 @@ class RegistrForm(forms.SelfHandlingForm):
         # Other Fields
         #################################################################################
 
-        if not org_list:
+        org_table = settings.HORIZON_CONFIG.get('organization', {})
+        org_list = org_table.get(initial.get('organization', ""), None)
 
-            self.fields['organization'] = forms.CharField(
-                label=_('Organization'),
-                required=True,
-                widget=forms.HiddenInput if 'organization' in initial else forms.TextInput
-            )
-
-        else:
+        if org_list:
 
             self.fields['organization'] = forms.ChoiceField(
                 label=_('Organization'),
                 required=True,
                 choices=org_list
+            )
+
+            self.fields['custom_org'] = forms.CharField(required=False, widget=forms.HiddenInput)
+
+        elif 'organization' in initial:
+
+            self.fields['organization'] = forms.CharField(required=True,  widget=forms.HiddenInput)
+            self.fields['custom_org'] = forms.CharField(required=False, widget=forms.HiddenInput)
+
+        else:
+
+            all_orgs = list()
+            for korg, kval in org_table.items():
+                if kval:
+                    all_orgs += kval
+                else:
+                    all_orgs.append(korg, korg)
+            all_orgs.append(('other', _('Other')))
+
+            self.fields['organization'] = forms.ChoiceField(
+                label=_('Organization'),
+                required=True,
+                choices=all_orgs,
+                widget=forms.Select(attrs={
+                    'class': 'switchable',
+                    'data-slug': 'orgwidget'
+                })
+
+            )
+
+            self.fields['custom_org'] = forms.CharField(
+                label=_('External organization'),
+                required=False,
+                widget=forms.widgets.TextInput(attrs={
+                    'class': 'switched',
+                    'data-switch-on': 'orgwidget',
+                    'data-orgwidget-other': _('Enter organization')
+                })
+
             )
 
 
@@ -275,7 +310,19 @@ class RegistrForm(forms.SelfHandlingForm):
         if '@' in data['username'] or ':' in data['username']:
             if data.get('federated', 'false') == 'false':
                 raise ValidationError(_("Invalid characters in user name (@:)"))
-        
+
+        custom_org = data.get('custom_org', '').strip()
+        if custom_org:
+            tmpm = ORG_REGEX.search(custom_org)
+            if tmpm:
+                raise ValidationError(_('Bad character "%s" for organization.') % tmpm.group(0))
+            data['organization'] = custom_org
+        else:
+            org_ctctable = settings.HORIZON_CONFIG.get('org_contacts', {})
+            ocontact = org_ctctable.get(data['organization'], None)
+            if ocontact:
+                data['contactper'] = "%s <%s> (tel: %s)" % ocontact
+
         return data
 
     def _build_safe_redirect(self, request, location):
