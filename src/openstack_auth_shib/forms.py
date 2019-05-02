@@ -42,7 +42,8 @@ from .models import EMAIL_LEN
 from .models import PSTATUS_REG
 from .models import PSTATUS_PENDING
 from .notifications import notifyAdmin, REGISTR_AVAIL_TYPE
-from .utils import get_ostack_attributes, PRJ_REGEX
+from .utils import get_ostack_attributes
+from .utils import check_projectname
 
 LOG = logging.getLogger(__name__)
 
@@ -290,11 +291,7 @@ class RegistrForm(forms.SelfHandlingForm):
         data = super(RegistrForm, self).clean()
         
         if data['prjaction'] == 'newprj':
-            if not data['newprj']:
-                raise ValidationError(_('Project name is required.'))
-            tmpm = PRJ_REGEX.search(data['newprj'])
-            if tmpm:
-                raise ValidationError(_('Bad character "%s" for project name.') % tmpm.group(0))
+            data['newprj'] = check_projectname(data['newprj'], ValidationError)
         elif data['prjaction'] == 'selprj':
             if not data['selprj']:
                 raise ValidationError(_('Missing selected project.'))

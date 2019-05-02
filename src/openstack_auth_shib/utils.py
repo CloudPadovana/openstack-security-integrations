@@ -18,6 +18,7 @@ import re
 
 from django.conf import settings
 from django.db import transaction
+from django.utils.translation import ugettext as _
 import horizon
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -91,4 +92,14 @@ def get_ostack_attributes(request):
     region = getattr(settings, 'OPENSTACK_KEYSTONE_URL').replace('v2.0','v3')
     domain = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN', 'Default')
     return (domain, region)
+
+def check_projectname(prjname, error_class):
+    tmps = prjname.strip()
+    if not tmps:
+        raise error_class(_('Project name is required.'))
+    tmpm = PRJ_REGEX.search(tmps)
+    if tmpm:
+        raise error_class(_('Bad character "%s" for project name.') % tmpm.group(0))
+    return tmps
+
 

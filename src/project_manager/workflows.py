@@ -19,6 +19,7 @@ from datetime import datetime, timedelta
 
 from django.db import transaction
 from django.db import IntegrityError
+from django.forms import ValidationError
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import forms
@@ -36,6 +37,7 @@ from openstack_auth_shib.models import PRJ_PUBLIC
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.utils import check_projectname
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
 from openstack_auth_shib.notifications import notifyUser
@@ -51,8 +53,20 @@ LOG = logging.getLogger(__name__)
 baseWorkflows.INDEX_URL = "horizon:idmanager:project_manager:index"
 baseWorkflows.ADD_USER_URL = "horizon:idmanager:project_manager:create_user"
 
+class ExtCreateProjectInfoAction(baseWorkflows.CreateProjectInfoAction):
+
+    def clean(self):
+        cleaned_data = super(ExtCreateProjectInfoAction, self).clean()
+        cleaned_data['name'] = check_projectname(cleaned_data['name'], ValidationError)
+        return cleaned_data
+
+    class Meta(object):
+        name = _("Project Information")
+        slug = 'ext_create_info'
+        help_text = _("Create a project to organize users.")
+
 class ExtCreateProjectInfo(baseWorkflows.CreateProjectInfo):
-    action_class = baseWorkflows.CreateProjectInfoAction
+    action_class = ExtCreateProjectInfoAction
     template_name = "idmanager/project_manager/_common_horizontal_form.html"
     contributes = ("domain_id",
                    "domain_name",
@@ -168,7 +182,20 @@ class ExtCreateProject(baseWorkflows.CreateProject):
 
         return result
 
+class ExtUpdateProjectInfoAction(baseWorkflows.UpdateProjectInfoAction):
+
+    def clean(self):
+        cleaned_data = super(ExtUpdateProjectInfoAction, self).clean()
+        cleaned_data['name'] = check_projectname(cleaned_data['name'], ValidationError)
+        return cleaned_data
+
+    class Meta(object):
+        name = _("Project Information")
+        slug = 'ext_update_info'
+        help_text = _("Edit the project details.")
+
 class ExtUpdateProjectInfo(baseWorkflows.UpdateProjectInfo):
+    action_class = ExtUpdateProjectInfoAction
     template_name = "idmanager/project_manager/_common_horizontal_form.html"
 
 class ExtUpdateProject(baseWorkflows.UpdateProject):
