@@ -71,11 +71,10 @@ from openstack_auth_shib.models import OS_SNAME_LEN
 from openstack_auth_shib.utils import get_prjman_ids
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import PRJ_REGEX
+from openstack_auth_shib.utils import get_avail_subnets
+from openstack_auth_shib.utils import setup_new_project
 
 from openstack_dashboard.api import keystone as keystone_api
-from openstack_dashboard.api import cinder as cinder_api
-from openstack_dashboard.api import nova as nova_api
-from openstack_dashboard.api import neutron as neutron_api
 
 LOG = logging.getLogger(__name__)
 
@@ -909,31 +908,6 @@ def chk_repl_project(regid, old_prjname, new_prjname, old_descr, new_descr):
 
     return (regid, new_prjname)
 
-#
-# New features: actions for project creation
-#
-
-#
-# {
-#   <unit_id> : {
-#     "name" : <human readable unit name>,
-#     "organization" : <organization tag>,
-#     "quota_total" :  <total>,
-#     "quota_per_volume" : <per-volume>,
-#     "quota_<type>" : <quota_type>,
-#
-#     "availability_zone" : <availability zone, default: nova>
-#     "aggregate_prefix" : <project_prefix>,
-#     "hypervisors" : <list_of_hypervisors>,
-#     "metadata" : <hash of metadata>,
-#
-#     "lan_net_pool" : <2-octets network ip prefix>,
-#     "lan_router" : <router name>,
-#     "nameservers" : <list of dns ip>,
-#     "sec_group_id" : <default security group id>
-# }
-#
-
 def insert_unit_combos(newprjform):
     unit_table = getattr(settings, 'UNIT_TABLE', {})
     if len(unit_table) > 0:
@@ -952,134 +926,4 @@ def insert_unit_combos(newprjform):
                 choices=[ (k,k) for k in avail_subnets[unit_id] ]
             )
 
-CIDR_PATTERN = re.compile("(\d+\.\d+)\.(\d+).0/\d+")
-MAX_AVAIL = getattr(settings, 'MAX_PROPOSED_NETWORKS', 10)
-
-def get_avail_subnets(request):
-
-    unit_table = getattr(settings, 'UNIT_TABLE', {})
-
-    used_nets = dict()
-    for subdict in neutron_api.subnet_list(request):
-        cidr_match = CIDR_PATTERN.search(subdict['cidr'])
-        if not cidr_match:
-            continue
-        if not cidr_match.group(1) in used_nets:
-            used_nets[cidr_match.group(1)] = list()
-        used_nets[cidr_match.group(1)].append(int(cidr_match.group(2)))
-
-    avail_nets = dict()
-    for subprx, subnums in used_nets.items():
-
-        tmpa = [ k for k, v in unit_table.items() if v['lan_net_pool'] == subprx ]
-        if len(tmpa) == 0:
-            continue
-        unit_id = tmpa[0]
-
-        avail_nets[unit_id] = list()
-
-        max_avail = max(subnums)
-        if max_avail == 255:
-            continue
-
-        tmpl = list(set(range(max_avail + 2)) - set(subnums))
-        tmpl.sort(lambda x,y: y-x)
-
-        for idx in tmpl:
-            avail_nets[unit_id].append("%s.%d.0/24" % (subprx, idx))
-
-    return avail_nets
-
-def setup_new_project(request, project_id, project_name, data):
-
-    unit_id = data.get('unit', None)
-
-    cloud_table = getattr(settings, 'UNIT_TABLE', {})
-    if not unit_id or not unit_id in cloud_table:
-        return
-
-    unit_data = cloud_table[unit_id]
-    prj_cname = re.sub(r'\s+', "-", project_name)
-
-    try:
-
-        cinder_params = dict()
-        for pkey, pvalue in unit_data.items():
-            if pkey == 'quota_total':
-                cinder_params['gigabytes'] = pvalue
-            elif pkey == 'quota_per_volume':
-                cinder_params['per_volume_gigabytes'] = pvalue
-            elif pkey.startswith('quota_'):
-                cinder_params['gigabytes_' + pkey[6:]] = pvalue
-
-        if len(cinder_params):
-            cinder_api.tenant_quota_update(request, project_id, **cinder_params)
-
-    except:
-            LOG.error("Cannot setup project quota", exc_info=True)
-            messages.error(request, _("Cannot setup project quota"))
-
-    try:
-
-        hyper_list = unit_data.get('hypervisors', [])
-        agg_prj_cname = "%s-%s" % (unit_data.get('aggregate_prefix', unit_id), prj_cname)
-        if len(hyper_list):
-            nova_api.aggregate_create(request, agg_prj_cname,
-                                    unit_data.get('availability_zone', 'nova'))
-
-            for h_item in hyper_list:
-                nova_api.add_host_to_aggregate(request, agg_prj_cname, h_item)
-
-            nova_api.aggregate_set_metadata(request, agg_prj_cname, 
-                                        "filter_tenant_id=%s" % project_id)
-            for md_tuple in unit_data.get('metadata', {}).items():
-                nova_api.aggregate_set_metadata(request, agg_prj_cname, "%s=%s" % md_tuple)
-
-    except:
-            LOG.error("Cannot setup host aggregate", exc_info=True)
-            messages.error(request, _("Cannot setup host aggregate"))
-
-    try:
-
-        subnet_cidr = data['%s-net' % unit_id]
-        prj_lan_name = "%s-lan" % prj_cname
-
-        prj_net = neutron_api.network_create(request, tenant_id=project_id, name=prj_lan_name)
-        net_args = {
-            'cidr' : subnet_cidr,
-            'ip_version' : 4,
-            'dns_nameservers' : unit_data.get('nameservers', []),
-            'enable_dhcp' : True,
-            'tenant_id' : project_id,
-            'name' : "sub-%s-lan" % prj_cname
-        }
-        prj_sub = neutron_api.subnet_create(request, prj_net['id'], **net_args)
-        if 'lan_router' in unit_data:
-            neutron_api.router_add_interface(request, unit_data['lan_router'], 
-                                            subnet_id=prj_sub['id'])
-
-    except:
-            LOG.error("Cannot setup networks", exc_info=True)
-            messages.error(request, _("Cannot setup networks"))
-
-    try:
-        sec_grp_id = unit_data.get('sec_group_id', None)
-        subnet_cidr = data['%s-net' % unit_id]
-
-        #if sec_grp_id:
-        #    neutron_api.security_group_rule_create(request, None, 'ingress', 'IPv4',
-        #                       ip_protocol, from_port, to_port,
-        #                       subnet_cidr, sec_grp_id)
-    except:
-            LOG.error("Cannot update security groups", exc_info=True)
-            messages.error(request, _("Cannot update security groups"))
-
-    try:
-
-        kclient = keystone_api.keystoneclient(request)
-        kclient.projects.add_tag(project_id, unit_data.get('tag', 'other'))
-
-    except:
-            LOG.error("Cannot add organization tag", exc_info=True)
-            messages.error(request, _("Cannot add organization tag"))
 
