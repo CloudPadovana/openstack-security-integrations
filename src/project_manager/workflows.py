@@ -19,10 +19,12 @@ from datetime import datetime, timedelta
 
 from django.db import transaction
 from django.db import IntegrityError
+from django.conf import settings
 from django.forms import ValidationError
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import forms
+from horizon import messages
 from horizon import workflows
 
 from openstack_dashboard.dashboards.identity.projects import workflows as baseWorkflows
@@ -34,11 +36,11 @@ from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_PUBLIC
-from openstack_auth_shib.models import PSTATUS_PENDING
-from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
-from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.utils import check_projectname
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
+from openstack_auth_shib.utils import setup_new_project
+from openstack_auth_shib.utils import add_unit_combos
+
 
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
@@ -75,14 +77,45 @@ class ExtCreateProjectInfo(baseWorkflows.CreateProjectInfo):
                    "description",
                    "enabled")
 
+class CustomProjectInfoAction(workflows.Action):
+
+    def __init__(self, request, *args, **kwargs):
+        super(CustomProjectInfoAction, self).__init__(request, *args, **kwargs)
+        add_unit_combos(self)
+
+    class Meta(object):
+        name = _("Cloud Veneto setup")
+        help_text = _("Custom parameters for Cloud Veneto")
+    
+class CustomProjectInfo(workflows.Step):
+    action_class = CustomProjectInfoAction
+    template_name = baseWorkflows.COMMON_HORIZONTAL_TEMPLATE
+
+    def __init__(self, workflow):
+        super(CustomProjectInfo, self).__init__(workflow)
+        unit_table = getattr(settings, 'UNIT_TABLE', {})
+
+        if len(unit_table) > 0:
+            contrib_list = [ 'unit' ]
+            for unit_id in unit_table:
+                contrib_list.append("%s-net" % unit_id)
+            self.contributes = tuple(contrib_list)
+
 class ExtCreateProject(baseWorkflows.CreateProject):
     success_url = "horizon:idmanager:project_manager:index"
     
     def __init__(self, request=None, context_seed=None, entry_point=None, *args, **kwargs):
 
-        self.default_steps = (ExtCreateProjectInfo,
-                              baseWorkflows.UpdateProjectMembers,
-                              baseWorkflows.UpdateProjectGroups)
+        unit_table = getattr(settings, 'UNIT_TABLE', {})
+        if len(unit_table) > 0:
+            self.default_steps = (ExtCreateProjectInfo,
+                                  baseWorkflows.UpdateProjectMembers,
+                                  baseWorkflows.UpdateProjectGroups,
+                                  CustomProjectInfo)
+        else:
+            self.default_steps = (ExtCreateProjectInfo,
+                                  baseWorkflows.UpdateProjectMembers,
+                                  baseWorkflows.UpdateProjectGroups)
 
         workflows.Workflow.__init__(self, request=request,
                                             context_seed=context_seed,
@@ -182,6 +215,17 @@ class ExtCreateProject(baseWorkflows.CreateProject):
 
         return result
 
+    def handle(self, request, data):
+        project = self._create_project(request, data)
+        if not project:
+            return False
+
+        self._update_project_members(request, data, project.id)
+        self._update_project_groups(request, data, project.id)
+        setup_new_project(request, project.id, project.name, data)
+        return True
+
+
 class ExtUpdateProjectInfoAction(baseWorkflows.UpdateProjectInfoAction):
 
     def clean(self):
@@ -236,28 +280,25 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
         
             ep_qset = Expiration.objects.filter(project=self.this_project)
         
-            #
-            # Delete expiration for manually removed users
-            #
-            tmpl = ep_qset.exclude(registration__userid__in=member_ids)
+            disposable_exps = ep_qset.exclude(registration__userid__in=member_ids)
 
-            rm_email_list = EMail.objects.filter(registration__in=[ x.registration for x in tmpl ])
+            changed_regs = [ x.registration for x in disposable_exps ]
 
-            tmpl.delete()
+            rm_email_list = EMail.objects.filter(registration__in=changed_regs)
 
             for item in ep_qset:
                 if item.registration.userid in member_ids:
                     member_ids.remove(item.registration.userid)
 
-            nreg_qset = Registration.objects.filter(userid__in=member_ids)
+            added_regs = Registration.objects.filter(userid__in=member_ids)
 
-            add_email_list = EMail.objects.filter(registration__in=nreg_qset)
+            add_email_list = EMail.objects.filter(registration__in=added_regs)
 
             #
             # Use per-user expiration date as a fall back
             # for expiration date per tenant
             #
-            for item in nreg_qset:
+            for item in added_regs:
 
                 def_expdate = item.expdate if item.expdate else datetime.now() + timedelta(365)
                 c_args = {
@@ -266,16 +307,22 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
                     'expdate' : item.expdate
                 }
                 Expiration(**c_args).save()
+
+                changed_regs.append(item)
         
             #
-            # Remove subscription request for manually added members
+            # Delete expiration for manually removed users
+            #
+
+            disposable_exps.delete()
+
+            #
+            # Remove subscription request for manually added or removed members
             #    
-            q_args = {
-                'registration__in' : nreg_qset,
-                'project' : self.this_project,
-                'flowstatus__in' : [ PSTATUS_PENDING, PSTATUS_RENEW_ADMIN, PSTATUS_RENEW_MEMB ]
-            }
-            PrjRequest.objects.filter(**q_args).delete()
+            PrjRequest.objects.filter(
+                registration__in =  changed_regs,
+                project = self.this_project
+            ).delete()
 
             #
             # Delete and re-create the project admin cache
@@ -310,6 +357,9 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
             }
             notifyUser(request=request, rcpt=e_item.email, action=MEMBER_FORCED_ADD, context=noti_params,
                        dst_project_id=self.this_project.projectid, dst_user_id=e_item.registration.userid)
+
+        if len(prjadm_ids) == 0:
+            messages.warning(request, _("Missing project admin for this project"))
 
         return result
 
@@ -347,7 +397,8 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
                 newpr.description = new_desc
                 newpr.status = self.this_project.status
                 newpr.save()
-            
+
+                #TODO verify updates
                 PrjRequest.objects.filter(project=self.this_project).update(project=newpr)
                 Expiration.objects.filter(project=self.this_project).update(project=newpr)
                 self.this_project.delete()

@@ -71,8 +71,8 @@ from openstack_auth_shib.models import OS_SNAME_LEN
 from openstack_auth_shib.utils import get_prjman_ids
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import PRJ_REGEX
-from openstack_auth_shib.utils import get_avail_subnets
 from openstack_auth_shib.utils import setup_new_project
+from openstack_auth_shib.utils import add_unit_combos
 
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -336,7 +336,7 @@ class GrantAllForm(PreCheckForm):
             widget=forms.widgets.Textarea()
         )
 
-        insert_unit_combos(self)
+        add_unit_combos(self)
 
     def preprocess_prj(self, registration, data):
 
@@ -614,7 +614,7 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
             widget=SelectDateWidget(None, years_list)
         )
 
-        insert_unit_combos(self)
+        add_unit_combos(self)
 
     def clean(self):
         data = super(NewProjectCheckForm, self).clean()
@@ -908,22 +908,5 @@ def chk_repl_project(regid, old_prjname, new_prjname, old_descr, new_descr):
 
     return (regid, new_prjname)
 
-def insert_unit_combos(newprjform):
-    unit_table = getattr(settings, 'UNIT_TABLE', {})
-    if len(unit_table) > 0:
-        newprjform.fields['unit'] = forms.ChoiceField(
-            label=_('Available units'),
-            required=True,
-            choices=[ (k,v['name']) for k, v in unit_table.items() ]
-        )
-
-        avail_subnets = get_avail_subnets(newprjform.request)
-
-        for unit_id in unit_table:
-            newprjform.fields["%s-net" % unit_id] = forms.ChoiceField(
-                label=_('Available networks'),
-                required=False,
-                choices=[ (k,k) for k in avail_subnets[unit_id] ]
-            )
 
 

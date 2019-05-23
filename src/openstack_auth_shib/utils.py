@@ -19,7 +19,12 @@ import re
 from django.conf import settings
 from django.db import transaction
 from django.utils.translation import ugettext as _
-import horizon
+
+from horizon import forms
+from horizon import get_dashboard
+from horizon import get_default_dashboard
+from horizon import messages
+from horizon.base import NotRegistered
 
 from openstack_dashboard.api import keystone as keystone_api
 from openstack_dashboard.api import cinder as cinder_api
@@ -76,7 +81,7 @@ def get_user_home(user):
     try:
 
         if user.is_superuser:
-            return horizon.get_dashboard('admin').get_absolute_url()
+            return get_dashboard('admin').get_absolute_url()
 
         if user.has_perms(('openstack.roles.' + TENANTADMIN_ROLE,)):
         
@@ -85,13 +90,13 @@ def get_user_home(user):
                 'flowstatus__in' : [ PSTATUS_PENDING, PSTATUS_RENEW_MEMB ]
             }
             if PrjRequest.objects.filter(**q_args).count() > 0:
-                idmanager_url = horizon.get_dashboard('idmanager').get_absolute_url()
+                idmanager_url = get_dashboard('idmanager').get_absolute_url()
                 return idmanager_url + 'subscription_manager/'
 
-    except horizon.base.NotRegistered:
+    except NotRegistered:
         LOG.error("Cannot retrieve user home", exc_info=True)
 
-    return horizon.get_default_dashboard().get_absolute_url()
+    return get_default_dashboard().get_absolute_url()
 
 def get_ostack_attributes(request):
     region = getattr(settings, 'OPENSTACK_KEYSTONE_URL').replace('v2.0','v3')
@@ -135,7 +140,7 @@ def check_projectname(prjname, error_class):
 CIDR_PATTERN = re.compile("(\d+\.\d+)\.(\d+).0/\d+")
 MAX_AVAIL = getattr(settings, 'MAX_PROPOSED_NETWORKS', 10)
 
-def get_avail_subnets(request):
+def get_avail_networks(request):
 
     unit_table = getattr(settings, 'UNIT_TABLE', {})
 
@@ -149,24 +154,21 @@ def get_avail_subnets(request):
         used_nets[cidr_match.group(1)].append(int(cidr_match.group(2)))
 
     avail_nets = dict()
-    for subprx, subnums in used_nets.items():
 
-        tmpa = [ k for k, v in unit_table.items() if v['lan_net_pool'] == subprx ]
-        if len(tmpa) == 0:
-            continue
-        unit_id = tmpa[0]
+    for unit_id, unit_data in unit_table.items():
 
-        avail_nets[unit_id] = list()
+        result = list()
 
-        max_avail = max(subnums)
-        if max_avail == 255:
-            continue
+        used_ipprefs = used_nets.get(unit_data['lan_net_pool'], [])
+        max_avail = max(used_ipprefs) if len(used_ipprefs) > 0 else 0
 
-        tmpl = list(set(range(max_avail + MAX_AVAIL + 1)) - set(subnums))
-        tmpl.sort(lambda x,y: y-x)
+        if max_avail < 255:
+            tmpl = list(set(range(1, max_avail + MAX_AVAIL + 1)) - set(used_ipprefs))
+            tmpl.sort(lambda x,y: x-y)
+            for idx in tmpl:
+                result.append("%s.%d.0/24" % (unit_data['lan_net_pool'], idx))
 
-        for idx in tmpl:
-            avail_nets[unit_id].append("%s.%d.0/24" % (subprx, idx))
+        avail_nets[unit_id] = result
 
     return avail_nets
 
@@ -181,6 +183,7 @@ def setup_new_project(request, project_id, project_name, data):
 
     unit_data = cloud_table[unit_id]
     prj_cname = re.sub(r'\s+', "-", project_name)
+    flow_step = 0
 
     try:
 
@@ -198,7 +201,7 @@ def setup_new_project(request, project_id, project_name, data):
 
     except:
             LOG.error("Cannot setup project quota", exc_info=True)
-            horizon.messages.error(request, _("Cannot setup project quota"))
+            messages.error(request, _("Cannot setup project quota"))
 
     try:
 
@@ -208,18 +211,27 @@ def setup_new_project(request, project_id, project_name, data):
             avail_zone = unit_data.get('availability_zone', 'nova')
 
             new_aggr = nova_api.aggregate_create(request, agg_prj_cname, avail_zone)
+            flow_step += 1
 
             for h_item in hyper_list:
                 nova_api.add_host_to_aggregate(request, new_aggr.id, h_item)
+            flow_step += 1
 
             all_md = { 'filter_tenant_id' : project_id }
             all_md.update(unit_data.get('metadata', {}))
 
             nova_api.aggregate_set_metadata(request, new_aggr.id, all_md)
+            flow_step = 0
 
     except:
-            LOG.error("Cannot setup host aggregate", exc_info=True)
-            horizon.messages.error(request, _("Cannot setup host aggregate"))
+        if flow_step == 0:
+            err_msg = _("Cannot create host aggregate")
+        elif flow_step == 1:
+            err_msg = _("Cannot insert hypervisor in aggregate")
+        else:
+            err_msg = _("Cannot set metadata for aggregate")
+        LOG.error(err_msg, exc_info=True)
+        messages.error(request, err_msg)
 
     try:
 
@@ -227,6 +239,8 @@ def setup_new_project(request, project_id, project_name, data):
         prj_lan_name = "%s-lan" % prj_cname
 
         prj_net = neutron_api.network_create(request, tenant_id=project_id, name=prj_lan_name)
+        flow_step += 1
+
         net_args = {
             'cidr' : subnet_cidr,
             'ip_version' : 4,
@@ -236,13 +250,22 @@ def setup_new_project(request, project_id, project_name, data):
             'name' : "sub-%s-lan" % prj_cname
         }
         prj_sub = neutron_api.subnet_create(request, prj_net['id'], **net_args)
+        flow_step += 1
+
         if 'lan_router' in unit_data:
             neutron_api.router_add_interface(request, unit_data['lan_router'], 
                                             subnet_id=prj_sub['id'])
+        flow_step = 0
 
     except:
-            LOG.error("Cannot setup networks", exc_info=True)
-            horizon.messages.error(request, _("Cannot setup networks"))
+        if flow_step == 0:
+            err_msg = _("Cannot create network")
+        elif flow_step == 1:
+            err_msg = _("Cannot create sub-network")
+        else:
+            err_msg = _("Cannot add interface to router")
+        LOG.error(err_msg, exc_info=True)
+        messages.error(request, err_msg)
 
     try:
         subnet_cidr = data['%s-net' % unit_id]
@@ -252,6 +275,7 @@ def setup_new_project(request, project_id, project_name, data):
                 def_sec_group = sg_item['id']
                 LOG.info("Found default security group %s" % def_sec_group)
                 break
+        flow_step += 1
 
 #        if not def_sec_group:
 #            sg_client = neutron_api.SecurityGroupManager(request).client
@@ -261,6 +285,7 @@ def setup_new_project(request, project_id, project_name, data):
 #                        'tenant_id': project_id }
 #            secgroup = sg_client.create_security_group({ 'security_group' : sg_args })
 #            def_sec_group = SecurityGroup(secgroup.get('security_group'))
+        flow_step += 1
 
         neutron_api.security_group_rule_create(request, def_sec_group, 'ingress',
                                                 'IPv4','tcp', 22, 22,
@@ -269,8 +294,14 @@ def setup_new_project(request, project_id, project_name, data):
                                                 'IPv4','icmp', None, None,
                                                subnet_cidr, None)
     except:
-            LOG.error("Cannot update default security group", exc_info=True)
-            horizon.messages.error(request, _("Cannot update default security group"))
+        if flow_step == 0:
+            err_msg = _("Cannot retrieve default security group")
+        elif flow_step == 1:
+            err_msg = _("Cannot create default security group")
+        else:
+            err_msg = _("Cannot insert basic rules")
+        LOG.error(err_msg, exc_info=True)
+        messages.error(request, err_msg)
 
     try:
 
@@ -278,6 +309,46 @@ def setup_new_project(request, project_id, project_name, data):
         kclient.projects.add_tag(project_id, unit_data.get('organization', 'other'))
 
     except:
-            LOG.error("Cannot add organization tag", exc_info=True)
-            horizon.messages.error(request, _("Cannot add organization tag"))
+        LOG.error("Cannot add organization tag", exc_info=True)
+        messages.error(request, _("Cannot add organization tag"))
+
+def add_unit_combos(newprjform):
+
+    unit_table = getattr(settings, 'UNIT_TABLE', {})
+    if len(unit_table) > 0:
+
+        avail_nets = get_avail_networks(newprjform.request)
+
+        choices_u = list()
+        for k, v in unit_table.items():
+            if len(avail_nets[k]) > 0:
+                choices_u.append((k,v['name']))
+
+        
+        newprjform.fields['unit'] = forms.ChoiceField(
+            label=_('Available units'),
+            required=True,
+            choices=choices_u,
+            widget=forms.Select(attrs={
+                'class': 'switchable',
+                'data-slug': 'unitselector'
+            })
+        )
+
+        for unit_id in unit_table:
+
+            if len(avail_nets[unit_id]) == 0:
+                continue
+
+            newprjform.fields["%s-net" % unit_id] = forms.ChoiceField(
+                label=_('Available networks'),
+                required=False,
+                choices=[ (k,k) for k in avail_nets[unit_id] ],
+                widget=forms.Select(attrs={
+                    'class': 'switched',
+                    'data-switch-on': 'unitselector',
+                    'data-unitselector-%s' % unit_id : _('Available networks')
+                })
+            )
+
 
