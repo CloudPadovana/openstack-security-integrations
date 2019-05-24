@@ -277,22 +277,45 @@ def setup_new_project(request, project_id, project_name, data):
                 break
         flow_step += 1
 
-#        if not def_sec_group:
-#            sg_client = neutron_api.SecurityGroupManager(request).client
-#
-#            sg_args = { 'name': 'default',
-#                        'description': 'Default Security Group for ' + project_name,
-#                        'tenant_id': project_id }
-#            secgroup = sg_client.create_security_group({ 'security_group' : sg_args })
-#            def_sec_group = SecurityGroup(secgroup.get('security_group'))
+        sg_client = neutron_api.SecurityGroupManager(request).client
+
+        if not def_sec_group:
+            sg_params = {
+                'name': 'default',
+                'description': 'Default Security Group for ' + project_name,
+                'tenant_id': project_id
+            }
+            secgroup = sg_client.create_security_group({ 'security_group' : sg_params })
+            def_sec_group = SecurityGroup(secgroup.get('security_group'))
         flow_step += 1
 
-        neutron_api.security_group_rule_create(request, def_sec_group, 'ingress',
-                                                'IPv4','tcp', 22, 22,
-                                               subnet_cidr, None)
-        neutron_api.security_group_rule_create(request, def_sec_group, 'ingress',
-                                                'IPv4','icmp', None, None,
-                                               subnet_cidr, None)
+        #
+        # Workaround: the tenant_id cannot be specified through high level API
+        #
+        port22_params = {
+            'security_group_id': def_sec_group,
+            'direction': 'ingress',
+            'ethertype': 'IPv4',
+            'protocol': 'tcp',
+            'port_range_min': 22,
+            'port_range_max': 22,
+            'remote_ip_prefix': subnet_cidr,
+            'tenant_id' : project_id
+        }
+
+        icmp_params = {
+            'security_group_id': def_sec_group,
+            'direction': 'ingress',
+            'ethertype': 'IPv4',
+            'protocol': 'icmp',
+            'remote_ip_prefix': subnet_cidr,
+            'tenant_id' : project_id
+        }
+
+        sg_client.create_security_group_rule({'security_group_rule': port22_params})
+
+        sg_client.create_security_group_rule({'security_group_rule': icmp_params})
+
     except:
         if flow_step == 0:
             err_msg = _("Cannot retrieve default security group")
@@ -307,6 +330,9 @@ def setup_new_project(request, project_id, project_name, data):
 
         kclient = keystone_api.keystoneclient(request)
         kclient.projects.add_tag(project_id, unit_data.get('organization', 'other'))
+        #
+        # TODO add tag for department if present
+        #
 
     except:
         LOG.error("Cannot add organization tag", exc_info=True)
