@@ -370,9 +370,7 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
         project_id = data['project_id']
 
         with transaction.atomic():
-            #
-            # TODO missing index
-            #
+
             pr_list = Project.objects.filter(projectid=project_id)
             
             if len(pr_list) == 0:
@@ -398,9 +396,35 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
                 newpr.status = self.this_project.status
                 newpr.save()
 
-                #TODO verify updates
-                PrjRequest.objects.filter(project=self.this_project).update(project=newpr)
-                Expiration.objects.filter(project=self.this_project).update(project=newpr)
+                old_reqs = PrjRequest.objects.filter(project=self.this_project)
+                for item in old_reqs:
+                    PrjRequest(
+                        registration = item.registration,
+                        project = newpr,
+                        flowstatus = item.flowstatus,
+                        notes = item.notes
+                    ).save()
+                old_reqs.delete()
+
+                old_exps = Expiration.objects.filter(project=self.this_project)
+                for item in old_exps:
+                    Expiration(
+                        registration = item.registration,
+                        project = newpr,
+                        expdate = item.expdate
+                    ).save()
+                old_exps.delete()
+
+                old_rules = PrjRole.objects.filter(project=self.this_project)
+                for item in old_rules:
+                    PrjRole(
+                        registration = item.registration,
+                        project = newpr,
+                        roleid = item.roleid,
+                        status = item.status
+                    ).save()
+                old_rules.delete()
+
                 self.this_project.delete()
                 self.this_project = newpr
             
