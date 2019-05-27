@@ -194,7 +194,7 @@ def get_prj_tags(data):
         return '-'
     tmps = data.tags.pop()
     for ptag in data.tags:
-        tmps += ptag
+        tmps = tmps + "," + ptag
     return tmps
     
 class ProjectsTable(baseTables.TenantsTable):

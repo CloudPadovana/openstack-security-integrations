@@ -152,8 +152,7 @@ class EditTagsForm(forms.SelfHandlingForm):
 
             kclient = keystone_api.keystoneclient(request)
             
-            for newtag in data['ptags']:
-                kclient.projects.add_tag(data['projectid'], newtag)
+            kclient.projects.update_tags(data['projectid'], data['ptags'])
 
         except:
             LOG.error("Cannot edit tags", exc_info=True)

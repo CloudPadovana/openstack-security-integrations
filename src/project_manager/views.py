@@ -36,12 +36,12 @@ from .workflows import ExtCreateProject
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_PRIVATE
+from openstack_auth_shib.utils import ORG_TAG_FMT
 
 from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
 baseViews.INDEX_URL = "horizon:idmanager:project_manager:index"
-COURSE_FOR = set(settings.HORIZON_CONFIG.get('course_for', {}).keys())
 
 class ExtPrjItem:
     def __init__(self, prj_data):
@@ -60,6 +60,8 @@ class IndexView(baseViews.IndexView):
     template_name = 'idmanager/project_manager/index.html'
 
     def get_data(self):
+
+        course_org_list = settings.HORIZON_CONFIG.get('course_for', {}).keys()
     
         result = list()
         try:
@@ -99,10 +101,10 @@ class IndexView(baseViews.IndexView):
                     else:
                         prj_table[prjname].tags = set()
 
-
                     if is_curr_admin:
-                        sdiff = prj_table[prjname].tags.intersection(COURSE_FOR)
-                        prj_table[prjname].handle_course = len(sdiff) > 0
+                        for item in course_org_list:
+                            if (ORG_TAG_FMT % item) in prj_table[prjname].tags:
+                                prj_table[prjname].handle_course = True
 
             tmplist = prj_table.keys()
             tmplist.sort()

@@ -44,6 +44,9 @@ TENANTADMIN_ROLEID = getattr(settings, 'TENANTADMIN_ROLE_ID', None)
 
 PRJ_REGEX = re.compile(r'[^a-zA-Z0-9-_ ]')
 
+ORG_TAG_FMT = "O=%s"
+OU_TAG_FMT = "OU=%s"
+
 def get_admin_roleid(request):
     global TENANTADMIN_ROLEID
     if TENANTADMIN_ROLEID == None:
@@ -328,15 +331,18 @@ def setup_new_project(request, project_id, project_name, data):
 
     try:
 
+        new_tag_set = set()
+        new_tag_set.add(ORG_TAG_FMT % unit_data.get('organization', 'other'))
+
+        if 'org_unit' in data:
+            new_tag_set.add(OU_TAG_FMT % data['org_unit'])
+
         kclient = keystone_api.keystoneclient(request)
-        kclient.projects.add_tag(project_id, unit_data.get('organization', 'other'))
-        #
-        # TODO add tag for department if present
-        #
+        kclient.projects.update_tags(project_id, new_tag_set)
 
     except:
-        LOG.error("Cannot add organization tag", exc_info=True)
-        messages.error(request, _("Cannot add organization tag"))
+        LOG.error("Cannot add organization tags", exc_info=True)
+        messages.error(request, _("Cannot add organization tags"))
 
 def add_unit_combos(newprjform):
 
