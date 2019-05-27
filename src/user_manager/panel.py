@@ -20,6 +20,5 @@ import horizon
 class UserManager(horizon.Panel):
     name = _("Users")
     slug = 'user_manager'
-    policy_rules = (("identity", "identity:get_user"),
-                    ("identity", "identity:list_users"))
+    permissions = ('openstack.roles.admin',)
 

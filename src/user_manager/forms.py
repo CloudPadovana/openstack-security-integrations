@@ -85,6 +85,10 @@ class RenewExpForm(forms.SelfHandlingForm):
             if d_item.startswith('prj_'):
                 exp_table[d_item[4:]] = data[d_item]
 
+        if not request.user.is_superuser:
+            messages.error(_("Operation not authorized"))
+            return False
+
         with transaction.atomic():
 
             q_args = {
@@ -141,6 +145,10 @@ class UpdateUserForm(baseForms.UpdateUserForm):
     def handle(self, request, data):
 
         user_id = data['id']
+
+        if not request.user.is_superuser:
+            messages.error(_("Operation not authorized"))
+            return False
 
         result = True
         try:
@@ -199,6 +207,11 @@ class ReactivateForm(forms.SelfHandlingForm):
         self.fields['projects'].choices = avail_prjs
 
     def handle(self, request, data):
+
+        if not request.user.is_superuser:
+            messages.error(_("Operation not authorized"))
+            return False
+
         try:
 
             with transaction.atomic():
