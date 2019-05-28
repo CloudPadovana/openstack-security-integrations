@@ -331,14 +331,14 @@ def setup_new_project(request, project_id, project_name, data):
 
     try:
 
-        new_tag_set = set()
-        new_tag_set.add(ORG_TAG_FMT % unit_data.get('organization', 'other'))
+        new_tags = list()
+        new_tags.append(ORG_TAG_FMT % unit_data.get('organization', 'other'))
 
-        if 'org_unit' in data:
-            new_tag_set.add(OU_TAG_FMT % data['org_unit'])
+        if '%s-ou' % unit_id in data:
+            new_tags.append(OU_TAG_FMT % data['%s-ou' % unit_id])
 
         kclient = keystone_api.keystoneclient(request)
-        kclient.projects.update_tags(project_id, new_tag_set)
+        kclient.projects.update_tags(project_id, new_tags)
 
     except:
         LOG.error("Cannot add organization tags", exc_info=True)
@@ -347,6 +347,8 @@ def setup_new_project(request, project_id, project_name, data):
 def add_unit_combos(newprjform):
 
     unit_table = getattr(settings, 'UNIT_TABLE', {})
+    org_table = settings.HORIZON_CONFIG.get('organization', {})
+
     if len(unit_table) > 0:
 
         avail_nets = get_avail_networks(newprjform.request)
@@ -367,7 +369,7 @@ def add_unit_combos(newprjform):
             })
         )
 
-        for unit_id in unit_table:
+        for unit_id, unit_data in unit_table.items():
 
             if len(avail_nets[unit_id]) == 0:
                 continue
@@ -382,5 +384,24 @@ def add_unit_combos(newprjform):
                     'data-unitselector-%s' % unit_id : _('Available networks')
                 })
             )
+
+            ou_list = org_table.get(unit_data.get('organization', ""), None)
+            if not ou_list:
+                continue
+
+            newprjform.fields["%s-ou" % unit_id] = forms.ChoiceField(
+                label=_('Available organization units'),
+                required=False,
+                choices=ou_list,
+                widget=forms.Select(attrs={
+                    'class': 'switched',
+                    'data-switch-on': 'unitselector',
+                    'data-unitselector-%s' % unit_id : _('Available organization units')
+                })
+            )
+
+
+
+
 
 
