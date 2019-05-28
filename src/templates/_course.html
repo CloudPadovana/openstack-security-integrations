@@ -1,0 +1,49 @@
+{% extends "horizon/common/_modal.html" %}
+
+{% comment %}
+  Copyright (c) 2014 INFN - "Istituto Nazionale di Fisica Nucleare" - Italy
+  All Rights Reserved.
+
+  Licensed under the Apache License, Version 2.0 (the "License"); you may
+  not use this file except in compliance with the License. You may obtain
+  a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  License for the specific language governing permissions and limitations
+  under the License. 
+{% endcomment %}
+
+{% load i18n %}
+
+{% block modal_id %}course_modal_id{% endblock %}
+
+{% block modal_class %}course_modal_class{% endblock %}
+
+{% block modal-header %}{% trans "Registration to " %} {{ name }}{% endblock %}
+
+{% block modal-body %}
+  {% if description %}
+  <div class="text-center">
+    <p>{{ description }}</p>
+  </div>
+  {% endif%}
+
+  {% if notes %}
+  <div class="text-center">
+    <p>{{ notes }}</p>
+  </div>
+  {% endif%}
+{% endblock %}
+
+{% block modal-footer %}
+  <button type="button"
+          title="{% trans 'Register' %}"
+          class="btn btn-primary pull-right"
+          onclick="location.href='{{ registration_url }}?projectname={{ project }}&ou={{ ou }}';">
+    {% trans "Register" %}
+  </button>
+{% endblock %}

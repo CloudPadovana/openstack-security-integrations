@@ -30,11 +30,6 @@
 {% block modal-body %}
   <div class="left">
     <fieldset>
-      {% if userid %}
-      <label>User ID</label>
-      <p>{{userid}}</p>
-      {% endif %}
-        
       {% include "horizon/common/_form_fields.html" %}
     </fieldset>
   </div>

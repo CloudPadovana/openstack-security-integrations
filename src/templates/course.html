@@ -1,4 +1,4 @@
-{% extends "_aai_status.html" %}
+{% extends "base.html" %}
 
 {% comment %}
   Copyright (c) 2014 INFN - "Istituto Nazionale di Fisica Nucleare" - Italy
@@ -17,31 +17,45 @@
   under the License. 
 {% endcomment %}
 
-{% load i18n %}
+{% load i18n staticfiles %}
 
-{% block title %}{% trans "Registration to course" %} {{ name }}{% endblock %}
+{% block css %}
+  {% include "_stylesheets.html" %}
+    <style>
+    .course_modal_class {
+      background: #fff url({% static "dashboard/img/logoCloudVeneto.png" %}) no-repeat center 35px;
+      position: absolute;
+      top: 80px;
+      left: 30%;
+      margin: 0 0 0 0px;
+      padding-top: 170px;
+      width: 820px;
+      border: 1px solid #e1e1e1;
+      max-height: none;
+      -webkit-border-radius: 6px;
+      -moz-border-radius: 6px;
+      border-radius: 6px;
+      -webkit-box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
+      -moz-box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
+      -webkit-background-clip: padding-box;
+      -moz-background-clip: padding-box;
+      background-clip: padding-box;
+    }
+    h3 {
+      font-weight: normal;
+      text-align: center;
+    }
+    </style>
+{% endblock %}
+
+{% block title %}{% trans "Registration to " %} {{ name }}{% endblock %}
 
 {% block body_id %}course_registr_id{% endblock %}
 
-{% block status_frame %}
-<h2>{% trans "Registration to course" %} {{ name }}</h2>
-
-{% if description %}
-<p>{{ description }}</p>
-{% endif%}
-
-{% if notes %}
-<p>{{ notes }}</p>
-{% endif%}
-
-  <!-- idp and idpdata are contained into HORIZON_CONFIG['identity_providers'] -->
-
-  <button type="button"
-          title="{% trans 'Register' %}"
-          class="btn btn-primary pull-right"
-          onclick="location.href='{{ registration_url }}?projectname={{ project }}&ou={{ ou }}';">
-    {% trans "Register" %}
-  </button>
-
+{% block content %}
+  {% include "_course.html" %}
 {% endblock %}
+
+
 

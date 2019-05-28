@@ -63,27 +63,30 @@ class RegistrForm(forms.SelfHandlingForm):
         # Account section
         #################################################################################
 
+        username_attrs = {'readonly': 'readonly'} if 'username' in initial else {}
         self.fields['username'] = forms.CharField(
             label=_('User name'),
             max_length=OS_LNAME_LEN,
-            widget=forms.HiddenInput if 'username' in initial else forms.TextInput
+            widget=forms.TextInput(attrs=username_attrs)
         )
-        
+
         self.fields['federated'] = forms.CharField(
             max_length=OS_LNAME_LEN,
             widget=forms.HiddenInput
         )
 
+        gname_attrs = {'readonly': 'readonly'} if 'givenname' in initial else {}
         self.fields['givenname'] = forms.CharField(
             label=_('First name'),
             max_length=OS_LNAME_LEN,
-            widget=forms.HiddenInput if 'givenname' in initial else forms.TextInput
+            widget=forms.TextInput(attrs=gname_attrs)
         )
-            
+
+        sname_attrs = {'readonly': 'readonly'} if 'sn' in initial else {}
         self.fields['sn'] = forms.CharField(
             label=_('Last name'),
             max_length=OS_LNAME_LEN,
-            widget=forms.HiddenInput if 'sn' in initial else forms.TextInput
+            widget=forms.TextInput(attrs=sname_attrs)
         )
         
         if initial['needpwd']:
@@ -100,11 +103,12 @@ class RegistrForm(forms.SelfHandlingForm):
                 max_length=PWD_LEN,
                 widget=forms.PasswordInput(render_value=False)
             )
-            
+
+        mail_attrs = {'readonly': 'readonly'} if 'email' in initial else {}
         self.fields['email'] = forms.EmailField(
             label=_('Email Address'),
             max_length=EMAIL_LEN,
-            widget=forms.HiddenInput if 'email' in initial else forms.TextInput
+            widget=forms.TextInput(attrs=mail_attrs)
         )
 
         #################################################################################
@@ -267,12 +271,16 @@ class RegistrForm(forms.SelfHandlingForm):
             )
 
 
-        phone_regex = settings.HORIZON_CONFIG.get('phone_regex', '^\s*\+*[0-9]+[0-9\s.]+\s*$')
-        self.fields['phone'] = forms.RegexField(
-            label=_('Phone number'),
-            required=True,
-            regex=phone_regex,
-            error_messages={'invalid': _("Wrong phone format")}
+        #phone_regex = settings.HORIZON_CONFIG.get('phone_regex', '^\s*\+*[0-9]+[0-9\s.]+\s*$')
+        #self.fields['phone'] = forms.RegexField(
+        #    label=_('Phone number'),
+        #    required=True,
+        #    regex=phone_regex,
+        #    error_messages={'invalid': _("Wrong phone format")}
+        #)
+        self.fields['phone'] = forms.CharField(
+            widget=forms.HiddenInput,
+            initial='00000000'
         )
     
         self.fields['notes'] = forms.CharField(

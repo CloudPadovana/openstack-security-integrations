@@ -72,6 +72,7 @@ template_list = [
     'src/templates/_aai_status.html',
     'src/templates/aai_error.html',
     'src/templates/aai_registration_ok.html',
+    'src/templates/_course.html',
     'src/templates/course.html'
 ]
 
