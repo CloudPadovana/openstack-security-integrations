@@ -47,6 +47,7 @@ PRJ_REGEX = re.compile(r'[^a-zA-Z0-9-_ ]')
 
 ORG_TAG_FMT = "O=%s"
 OU_TAG_FMT = "OU=%s"
+TAG_REGEX = re.compile(r'([a-zA-Z0-9-_]+)=([^\s,/]+)$')
 
 def get_admin_roleid(request):
     global TENANTADMIN_ROLEID

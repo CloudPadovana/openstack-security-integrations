@@ -179,9 +179,18 @@ class EditTagsView(forms.ModalFormView):
         return context
 
     def get_initial(self):
-        return {
+        result = {
             'projectid' : self.get_object().projectid,
         }
+
+        try:
+            kprj_man = keystone_api.keystoneclient(self.request).projects
+            init_tags = kprj_man.list_tags(self.kwargs['project_id'])
+            result['taglist'] = ", ".join(init_tags)
+        except:
+            LOG.error("Cannot retrieve tags", exc_info=True)
+
+        return result
 
 
 

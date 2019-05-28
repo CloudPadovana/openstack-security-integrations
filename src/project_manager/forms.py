@@ -31,6 +31,7 @@ from openstack_auth_shib.models import OS_SNAME_LEN
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_COURSE
+from openstack_auth_shib.utils import TAG_REGEX
 
 LOG = logging.getLogger(__name__)
 
@@ -133,14 +134,14 @@ class EditTagsForm(forms.SelfHandlingForm):
     def clean(self):
         data = super(EditTagsForm, self).clean()
 
-        if '/' in data['taglist']:
-            raise ValidationError(_('Bad character "/" in the tag list.'))
-
         new_list = list()
         for item in data['taglist'].split(','):
             tmps = item.strip()
             if len(tmps) > 255:
-                raise ValidationError(_('Tag too long.'))
+                raise ValidationError(_('Tag %s too long') % tmps)
+            tmpm = TAG_REGEX.search(tmps)
+            if not tmpm:
+                raise ValidationError(_('Bad format for tag %s') % tmps)
             new_list.append(tmps)
         data['ptags'] = new_list
 
