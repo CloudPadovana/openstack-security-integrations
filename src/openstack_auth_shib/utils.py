@@ -34,6 +34,7 @@ from openstack_dashboard.api import neutron as neutron_api
 
 from .models import Project
 from .models import PrjRequest
+from .models import PrjRole
 from .models import PSTATUS_PENDING
 from .models import PSTATUS_RENEW_MEMB
 
@@ -59,23 +60,18 @@ def get_admin_roleid(request):
 def get_prjman_ids(request, project_id):
     result = list()
 
-    kclient = keystone_api.keystoneclient(request, admin=True)
-    tntadm_role_id = get_admin_roleid(request)
+    #kclient = keystone_api.keystoneclient(request, admin=True)
+    #tntadm_role_id = get_admin_roleid(request)
 
-    url = '/role_assignments?scope.project.id=%s&role.id=%s'
-    resp, body = kclient.get(url % (project_id, tntadm_role_id))
+    #url = '/role_assignments?scope.project.id=%s&role.id=%s'
+    #resp, body = kclient.get(url % (project_id, tntadm_role_id))
 
-    for item in body['role_assignments']:
-        result.append(item['user']['id'])
+    #for item in body['role_assignments']:
+    #    result.append(item['user']['id'])
 
-    return result
-
-def get_project_managers(request, project_id):
-    result = list()
-
-    for item in get_prjman_ids(request, project_id):
-        tntadmin = keystone_api.user_get(request, item)
-        result.append(tntadmin)
+    for item in PrjRole.objects.filter(project__projectid = project_id):
+        if item.registration.userid:
+            result.append(item.registration.userid)
 
     return result
 

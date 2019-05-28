@@ -25,11 +25,10 @@ from openstack_dashboard.dashboards.identity.users import tables as baseTables
 
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import EMail
+from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import USER_PURGED_TYPE
-from openstack_auth_shib.utils import get_project_managers
-
-from openstack_dashboard.api import keystone as keystone_api
+from openstack_auth_shib.utils import get_prjman_ids
 
 from horizon import messages
 
@@ -44,39 +43,34 @@ class ChangePasswordLink(baseTables.ChangePasswordLink):
 class DeleteUsersAction(baseTables.DeleteUsersAction):
 
     def delete(self, request, obj_id):
-    
-        tenant_ref = None
-        tenants, dummy = keystone_api.tenant_list(request, user=obj_id)
-        
-        for tmpten in tenants:
-            tenant_managers = get_project_managers(request, tmpten.id)
-            if len(tenant_managers) == 1 and tenant_managers[0].id == obj_id:
-                tenant_ref = tmpten.name
-        
-        if tenant_ref:
-            
-            msg = _("User is the unique admin for %s") % tenant_ref
-            messages.error(request, msg)
-            raise Exception(msg)
-        
-        else:
+
+        with transaction.atomic():
+
+            critic_prjs = list()
+            for e_item in Expiration.objects.filter(registration__userid=obj_id):
+
+                prj_man_ids = get_prjman_ids(request, e_item.project.projectid)
+
+                if len(prj_man_ids) == 1 and prj_man_ids[0] == obj_id:
+                    critic_prjs.append(e_item.project.projectname)
+
+            if len(critic_prjs) > 0:
+                msg = _("User is the unique admin for %s") % ", ".join(critic_prjs)
+                messages.error(request, msg)
+                raise Exception(msg)
+
             tmpres = EMail.objects.filter(registration__userid=obj_id)
             user_email = tmpres[0].email if tmpres else None
             user_name = tmpres[0].registration.username if tmpres else None
 
-            with transaction.atomic():
-                Registration.objects.filter(userid=obj_id).delete()
-                super(DeleteUsersAction, self).delete(request, obj_id)
+            Registration.objects.filter(userid=obj_id).delete()
+            super(DeleteUsersAction, self).delete(request, obj_id)
 
-            noti_params = {
-                'username' : user_name
-            }
-            notifyUser(request=request, rcpt=user_email, action=USER_PURGED_TYPE,
-                       context=noti_params, dst_user_id=obj_id)
-
-            #
-            # TODO send notification to prj admins (if available)
-            #
+        noti_params = {
+            'username' : user_name
+        }
+        notifyUser(request=request, rcpt=user_email, action=USER_PURGED_TYPE,
+                   context=noti_params, dst_user_id=obj_id)
 
 class RenewLink(tables.LinkAction):
     name = "renewexp"
