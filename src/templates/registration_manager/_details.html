@@ -36,7 +36,9 @@
         <li>{% trans "Username" %}: {{ username }}</li>
         <li>{% trans "Fullname" %}: {{ fullname }}</li>
         <li>{% trans "Organization" %}: {{ organization }}</li>
+        {% if HORIZON_CONFIG.phone_regex %}
         <li>{% trans "Phone" %}: {{ phone }}</li>
+        {% endif %}
         {% if extaccount %}<li>{% trans "External Identity" %}: {{ extaccount }}</li>{% endif %}
         {% if contact %}<li>{% trans "Contact" %}: {{ contact }}</li>{% endif%}
         {% if email %}<li>{% trans "Email address" %}: <a href="mailto:{{ emailaddr }}">{{ email }}</a></li>{% endif%}

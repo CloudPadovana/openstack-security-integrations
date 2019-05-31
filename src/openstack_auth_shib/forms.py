@@ -275,18 +275,19 @@ class RegistrForm(forms.SelfHandlingForm):
                     })
                 )
 
-
-        #phone_regex = settings.HORIZON_CONFIG.get('phone_regex', '^\s*\+*[0-9]+[0-9\s.]+\s*$')
-        #self.fields['phone'] = forms.RegexField(
-        #    label=_('Phone number'),
-        #    required=True,
-        #    regex=phone_regex,
-        #    error_messages={'invalid': _("Wrong phone format")}
-        #)
-        self.fields['phone'] = forms.CharField(
-            widget=forms.HiddenInput,
-            initial='00000000'
-        )
+        # In case use regex: '^\s*\+*[0-9]+[0-9\s.]+\s*$'
+        if 'phone_regex' in settings.HORIZON_CONFIG:
+            self.fields['phone'] = forms.RegexField(
+                label=_('Phone number'),
+                required=True,
+                regex=settings.HORIZON_CONFIG['phone_regex'],
+                error_messages={'invalid': _("Wrong phone format")}
+            )
+        else:
+            self.fields['phone'] = forms.CharField(
+                widget=forms.HiddenInput,
+                initial='00000000'
+            )
     
         self.fields['notes'] = forms.CharField(
             label=_('Notes'),

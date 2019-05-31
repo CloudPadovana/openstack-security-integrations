@@ -192,7 +192,6 @@ class OperationTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))
     fullname = tables.Column('fullname', verbose_name=_('Full name'))
     organization = tables.Column('organization', verbose_name=_('Organization'))
-    phone = tables.Column('phone', verbose_name=_('Phone number'))
     project = tables.Column('project', verbose_name=_('Project'))
     description = tables.Column(repr, verbose_name=_('Description'))
 
