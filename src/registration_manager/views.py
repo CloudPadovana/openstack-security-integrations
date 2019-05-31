@@ -35,6 +35,8 @@ from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 
+from openstack_auth_shib.utils import REQID_REGEX
+
 from .tables import RegistrData
 from .tables import OperationTable
 from .forms import PreCheckForm
@@ -145,8 +147,8 @@ class AbstractCheckView(forms.ModalFormView):
     def get_object(self):
         if not hasattr(self, "_object"):
             try:
-                tmpTuple = self.kwargs['requestid'].split(':')
-                regid = int(tmpTuple[0])
+                tmpm = REQID_REGEX.search(self.kwargs['requestid'])
+                regid = int(tmpm.group(1))
                 
                 tmplist = RegRequest.objects.filter(registration__regid=regid, flowstatus=RSTATUS_PENDING)
                 if len(tmplist):
@@ -347,9 +349,9 @@ class DetailsView(forms.ModalFormView):
     def get_object(self):
         if not hasattr(self, "_object"):
             try:
-                tmpTuple = self.kwargs['requestid'].split(':')
-                regid = int(tmpTuple[0])
-                prjname = tmpTuple[1] if len(tmpTuple) > 1 else None
+                tmpm = REQID_REGEX.search(self.kwargs['requestid'])
+                regid = int(tmpm.group(1))
+                prjname = tmpm.group(2) if tmpm.group(2) else None
 
                 tmpdict = dict()
                 tmpdict['requestid'] = self.kwargs['requestid']
@@ -419,13 +421,17 @@ class DetailsView(forms.ModalFormView):
 
 def get_project_details(requestid):
 
-    tmpt = requestid.split(':')
+    #
+    # TODO investigate: called twice
+    #
+    tmpm = REQID_REGEX.search(requestid)
 
-    if len(tmpt) == 2:
+    if tmpm and tmpm.group(2):
+
         try:
             prj_req = PrjRequest.objects.filter(
-                registration__regid = int(tmpt[0]),
-                project__projectname = tmpt[1]
+                registration__regid = int(tmpm.group(1)),
+                project__projectname = tmpm.group(2)
             )[0]
             return (prj_req.project.projectname, prj_req.project.description)
         except Exception:

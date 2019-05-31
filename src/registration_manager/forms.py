@@ -71,6 +71,7 @@ from openstack_auth_shib.models import OS_SNAME_LEN
 from openstack_auth_shib.utils import get_prjman_ids
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import PRJ_REGEX
+from openstack_auth_shib.utils import REQID_REGEX
 from openstack_auth_shib.utils import setup_new_project
 from openstack_auth_shib.utils import add_unit_combos
 
@@ -454,12 +455,12 @@ class ForcedCheckForm(forms.SelfHandlingForm):
     
         try:
             tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
-            usr_and_prj = data['requestid'].split(':')
+            usr_and_prj = REQID_REGEX.search(data['requestid'])
 
             with transaction.atomic():
                 q_args = {
-                    'registration__regid' : int(usr_and_prj[0]),
-                    'project__projectname' : usr_and_prj[1]
+                    'registration__regid' : int(usr_and_prj.group(1)),
+                    'project__projectname' : usr_and_prj.group(2)
                 }
                 prj_req = PrjRequest.objects.filter(**q_args)[0]
                 
@@ -539,12 +540,12 @@ class ForcedRejectForm(forms.SelfHandlingForm):
     
         try:
             tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
-            usr_and_prj = data['requestid'].split(':')
+            usr_and_prj = REQID_REGEX.search(data['requestid'])
 
             with transaction.atomic():
                 q_args = {
-                    'registration__regid' : int(usr_and_prj[0]),
-                    'project__projectname' : usr_and_prj[1]
+                    'registration__regid' : int(usr_and_prj.group(1)),
+                    'project__projectname' : usr_and_prj.group(2)
                 }
                 prj_req = PrjRequest.objects.filter(**q_args)[0]
                 
@@ -631,12 +632,12 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
         try:
 
             tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
-            usr_and_prj = data['requestid'].split(':')
+            usr_and_prj = REQID_REGEX.search(data['requestid'])
 
             with transaction.atomic():
 
-                regid, prjname = chk_repl_project(int(usr_and_prj[0]),
-                                                  usr_and_prj[1], data['newname'],
+                regid, prjname = chk_repl_project(int(usr_and_prj.group(1)),
+                                                  usr_and_prj.group(2), data['newname'],
                                                   None, data['newdescr'])
 
                 #
@@ -734,7 +735,7 @@ class NewProjectRejectForm(forms.SelfHandlingForm):
         try:
 
             tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
-            usr_and_prj = data['requestid'].split(':')
+            usr_and_prj = REQID_REGEX.search(data['requestid'])
 
             with transaction.atomic():
 
@@ -742,8 +743,8 @@ class NewProjectRejectForm(forms.SelfHandlingForm):
                 # Creation of new tenant
                 #
                 q_args = {
-                    'registration__regid' : int(usr_and_prj[0]),
-                    'project__projectname' : usr_and_prj[1]
+                    'registration__regid' : int(usr_and_prj.group(1)),
+                    'project__projectname' : usr_and_prj.group(2)
                 }
                 prj_req = PrjRequest.objects.filter(**q_args)[0]
                 
@@ -799,12 +800,12 @@ class RenewAdminForm(forms.SelfHandlingForm):
         
             with transaction.atomic():
 
-                usr_and_prj = data['requestid'].split(':')
-                regid = int(usr_and_prj[0])
+                usr_and_prj = REQID_REGEX.search(data['requestid'])
+                regid = int(usr_and_prj.group(1))
 
                 prj_reqs = PrjRequest.objects.filter(
                     registration__regid = regid,
-                    project__projectname = usr_and_prj[1],
+                    project__projectname = usr_and_prj.group(2),
                     flowstatus__in = [ PSTATUS_RENEW_ADMIN, PSTATUS_RENEW_MEMB ]
                 )
                 
@@ -813,7 +814,7 @@ class RenewAdminForm(forms.SelfHandlingForm):
                 
                 prj_exp = Expiration.objects.filter(
                     registration__regid = regid,
-                    project__projectname = usr_and_prj[1]
+                    project__projectname = usr_and_prj.group(2)
                 )
                 prj_exp.update(expdate=data['expiration'])
                 
@@ -838,7 +839,7 @@ class RenewAdminForm(forms.SelfHandlingForm):
             #
             noti_params = {
                 'username' : user_reg.username,
-                'project' : usr_and_prj[1],
+                'project' : usr_and_prj.group(2),
                 'expiration' : data['expiration'].strftime("%d %B %Y")
             }
 

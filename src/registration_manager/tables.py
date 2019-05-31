@@ -24,6 +24,7 @@ from horizon import tables
 
 from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import RSTATUS_REMINDER
+from openstack_auth_shib.utils import REQID_REGEX
 
 LOG = logging.getLogger(__name__)
 
@@ -179,9 +180,9 @@ class ReminderAck(tables.Action):
     def single(self, data_table, request, object_id):
 
         with transaction.atomic():
-            req_data = object_id.split(':')
+            req_data = REQID_REGEX.search(object_id)
             RegRequest.objects.filter(
-                registration__regid = int(req_data[0]),
+                registration__regid = int(req_data.group(1)),
                 flowstatus = RSTATUS_REMINDER
             ).delete()
 
