@@ -124,7 +124,6 @@ class RegistrView(forms.ModalFormView):
                 result['email'] = attributes.email
             if attributes.provider:
                 result['organization'] = attributes.provider
-                result['contactper'] = ""
         else:
             result['needpwd'] = True
             result['federated'] = "false"

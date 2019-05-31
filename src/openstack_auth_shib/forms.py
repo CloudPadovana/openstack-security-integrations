@@ -115,6 +115,9 @@ class RegistrForm(forms.SelfHandlingForm):
         # Projects section
         #################################################################################
 
+        org_table = settings.HORIZON_CONFIG.get('organization', {})
+        dept_list = org_table.get(initial.get('organization', ''), None)
+
         if 'selprj' in initial:
 
             self.fields['prjaction'] = forms.CharField(
@@ -129,9 +132,22 @@ class RegistrForm(forms.SelfHandlingForm):
 
         else:
 
+            p_choices = [
+                ('selprj', _('Select existing projects')),
+                ('newprj', _('Create new project'))
+            ]
+            prjguest_name = settings.HORIZON_CONFIG.get('guest_project', "")
+            avail_prjs = list()
+
+            for prj_entry in Project.objects.exclude(status=PRJ_PRIVATE):
+                if prj_entry.projectname == prjguest_name:
+                    p_choices.append(('guestprj', _('Use guest project')))
+                elif prj_entry.projectid:
+                    avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
+
             self.fields['prjaction'] = forms.ChoiceField(
                 label=_('Project action'),
-                #choices = <see later>
+                choices = p_choices,
                 widget=forms.Select(attrs={
                     'class': 'switchable',
                     'data-slug': 'actsource'
@@ -139,9 +155,9 @@ class RegistrForm(forms.SelfHandlingForm):
             )
 
             self.fields['newprj'] = forms.CharField(
-                label=_('Personal project'),
+                label=_('Project name'),
                 max_length=OS_SNAME_LEN,
-                required=False,
+                required=True,
                 widget=forms.TextInput(attrs={
                     'class': 'switched',
                     'data-switch-on': 'actsource',
@@ -151,7 +167,7 @@ class RegistrForm(forms.SelfHandlingForm):
 
             self.fields['prjdescr'] = forms.CharField(
                 label=_("Project description"),
-                required=False,
+                required=True,
                 widget=forms.widgets.Textarea(attrs={
                     'class': 'switched',
                     'data-switch-on': 'actsource',
@@ -170,20 +186,26 @@ class RegistrForm(forms.SelfHandlingForm):
                 })
             )
 
-            self.fields['contactper'] = forms.CharField(
-                label=_('Contact person'),
-                required=False,
-                widget=forms.HiddenInput if 'contactper' in initial \
-                                         else forms.TextInput(attrs={
-                    'class': 'switched',
-                    'data-switch-on': 'actsource',
-                    'data-actsource-newprj': _('Contact person')
-                })
-            )
+            if dept_list:
+                self.fields['contactper'] = forms.CharField(
+                    widget=forms.HiddenInput,
+                    initial='unknown'
+                )
+            else:
+                self.fields['contactper'] = forms.CharField(
+                    label=_('Contact person'),
+                    required=False,
+                    widget=forms.TextInput(attrs={
+                        'class': 'switched',
+                        'data-switch-on': 'actsource',
+                        'data-actsource-newprj': _('Contact person')
+                    })
+                )
 
             self.fields['selprj'] = forms.MultipleChoiceField(
                 label=_('Available projects'),
                 required=False,
+                choices=avail_prjs,
                 widget=forms.SelectMultiple(attrs={
                     'class': 'switched',
                     'data-switch-on': 'actsource',
@@ -191,64 +213,31 @@ class RegistrForm(forms.SelfHandlingForm):
                 }),
             )
 
-            missing_guest = True
-            prjguest_name = settings.HORIZON_CONFIG.get('guest_project', "")
-            avail_prjs = list()
-            for prj_entry in Project.objects.exclude(status=PRJ_PRIVATE):
-                if prj_entry.projectname == prjguest_name:
-                    missing_guest = False
-                elif prj_entry.projectid:
-                    avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
-
-            self.fields['selprj'].choices = avail_prjs
-
-            if missing_guest:
-                p_choices = [
-                    ('selprj', _('Select existing projects')),
-                    ('newprj', _('Create new project'))
-                ]
-            else:
-                p_choices = [
-                    ('selprj', _('Select existing projects')),
-                    ('newprj', _('Create new project')),
-                    ('guestprj', _('Use guest project'))
-                ]
-
-            self.fields['prjaction'].choices = p_choices
-
         #################################################################################
         # Other Fields
         #################################################################################
 
-        org_table = settings.HORIZON_CONFIG.get('organization', {})
-        org_list = org_table.get(initial.get('organization', ""), None)
-
-        if org_list:
-
-            self.fields['organization'] = forms.ChoiceField(
-                label=_('Organization'),
-                required=True,
-                choices=org_list
-            )
-
-            self.fields['custom_org'] = forms.CharField(required=False, widget=forms.HiddenInput)
-
-        elif 'organization' in initial:
+        if 'organization' in initial:
 
             self.fields['organization'] = forms.CharField(required=True,  widget=forms.HiddenInput)
-            self.fields['custom_org'] = forms.CharField(required=False, widget=forms.HiddenInput)
+
+            if dept_list:
+
+                self.fields['org_unit'] = forms.ChoiceField(
+                    label=_('Organization Unit'),
+                    required=True,
+                    choices=[ x[:2] for x in dept_list ]
+                )
 
         else:
 
-            all_orgs = list()
-            for korg, kval in org_table.items():
-                if kval:
-                    all_orgs += kval
-                else:
-                    all_orgs.append(korg, korg)
-            all_orgs.append(('other', _('Other')))
+            #
+            # Workaround: hex string is required by the selector index
+            #
+            all_orgs = [ (x.encode('hex'), x) for x in org_table.keys() ]
+            all_orgs.append(('other', _('Other organization')))
 
-            self.fields['organization'] = forms.ChoiceField(
+            self.fields['encoded_org'] = forms.ChoiceField(
                 label=_('Organization'),
                 required=True,
                 choices=all_orgs,
@@ -256,19 +245,35 @@ class RegistrForm(forms.SelfHandlingForm):
                     'class': 'switchable',
                     'data-slug': 'orgwidget'
                 })
-
             )
 
             self.fields['custom_org'] = forms.CharField(
-                label=_('External organization'),
+                label=_('Enter organization'),
                 required=False,
                 widget=forms.widgets.TextInput(attrs={
                     'class': 'switched',
                     'data-switch-on': 'orgwidget',
                     'data-orgwidget-other': _('Enter organization')
                 })
-
             )
+
+            for org_id, ou_list in org_table.items():
+
+                enc_org_id = org_id.encode('hex')
+
+                if not ou_list:
+                    continue
+
+                self.fields['org_unit_%s' % enc_org_id] = forms.ChoiceField(
+                    label=_('Organization Unit'),
+                    required=True,
+                    choices=[ x[:2] for x in ou_list ],
+                    widget=forms.Select(attrs={
+                        'class': 'switched',
+                        'data-switch-on': 'orgwidget',
+                        'data-orgwidget-%s' % enc_org_id: _('Organization Unit')
+                    })
+                )
 
 
         #phone_regex = settings.HORIZON_CONFIG.get('phone_regex', '^\s*\+*[0-9]+[0-9\s.]+\s*$')
@@ -297,6 +302,9 @@ class RegistrForm(forms.SelfHandlingForm):
 
     def clean(self):
         data = super(RegistrForm, self).clean()
+        org_table = settings.HORIZON_CONFIG.get('organization', {})
+
+        LOG.debug("Registration posted data: %s" % str(data))
         
         if data['prjaction'] == 'newprj':
             data['newprj'] = check_projectname(data['newprj'], ValidationError)
@@ -316,17 +324,42 @@ class RegistrForm(forms.SelfHandlingForm):
             if data.get('federated', 'false') == 'false':
                 raise ValidationError(_("Invalid characters in user name (@:)"))
 
-        custom_org = data.get('custom_org', '').strip()
-        if custom_org:
-            tmpm = ORG_REGEX.search(custom_org)
-            if tmpm:
+        dept_id = None
+        curr_dept_list = None
+
+        cust_org = data.get('custom_org', '').strip()
+        if cust_org:
+
+            if ORG_REGEX.search(cust_org):
                 raise ValidationError(_('Bad character "%s" for organization.') % tmpm.group(0))
-            data['organization'] = custom_org
-        else:
-            org_ctctable = settings.HORIZON_CONFIG.get('org_contacts', {})
-            ocontact = org_ctctable.get(data['organization'], None)
-            if ocontact:
-                data['contactper'] = "%s <%s> (tel: %s)" % ocontact
+            data['organization'] = cust_org
+
+        elif 'encoded_org' in data:
+
+            try:
+                enc_org_id = data['encoded_org'].strip()
+                org_id = enc_org_id.decode('hex')
+
+                curr_dept_list = org_table.get(org_id, [])
+                dept_id = data.get('org_unit_%s' % enc_org_id, None)
+                data['organization'] = dept_id if dept_id else org_id
+
+            except:
+                LOG.error("Generic failure", exc_info=True)
+                raise ValidationError(_('Cannot retrieve organization.'))
+
+        elif 'org_unit' in data:
+            curr_dept_list = org_table.get(data['organization'], [])
+            dept_id = data['org_unit'].strip()
+            data['organization'] = dept_id
+
+        if curr_dept_list:
+            for item in curr_dept_list:
+                if item[0] <> dept_id:
+                    continue
+                if len(item) > 4 and item[2] and item[3] and item[4]:
+                    data['contactper'] = "%s <%s> (tel: %s)" % item[2:]
+                    break
 
         return data
 
