@@ -70,7 +70,7 @@ def get_description(data):
 class SubscriptionTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))
     fullname = tables.Column('fullname', verbose_name=_('Full name'))
-    organization = tables.Column('organization', verbose_name=_('Organization'))
+    organization = tables.Column('organization', verbose_name=_('Home institution'))
     notes = tables.Column('notes', verbose_name=_('Notes'))
     description = tables.Column(get_description, verbose_name=_('Description'))
 

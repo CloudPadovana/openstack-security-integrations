@@ -27,6 +27,7 @@ body: Your request to access the cloud infrastructure was rejected
 LOG: User {{ username }} removed from {{ project }} by {{ log.user_name }}
 subject: User removed from {{ project }}
 body: Your account has been removed from the project {{ project }}
+  {% if notes %}{{ notes }}{% endif %}
   For further information please contact {{ admin_address }}
   
   Please, don't reply to this message
@@ -35,6 +36,7 @@ body: Your account has been removed from the project {{ project }}
 LOG: User {{ username }} removed from {{ project }} by {{ log.user_name }}
 subject: User {{ username }} removed from {{ project }}
 body: User {{ username }} has been removed from the project {{ project }}
+  {% if notes %}{{ notes }}{% endif %}
   For further information please contact {{ admin_address }}
   
   Please, don't reply to this message

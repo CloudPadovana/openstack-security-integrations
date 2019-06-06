@@ -44,9 +44,13 @@ PSTATUS_RENEW_MEMB = 11
 #
 RSTATUS_PENDING = 0
 #
-# Reminder for cloud admin
+# Reminder for cloud admin (first step)
 #
 RSTATUS_REMINDER = 1
+#
+# Reminder for cloud admin (final step)
+#
+RSTATUS_REMINDACK = 2
 
 OS_ID_LEN = 64
 OS_LNAME_LEN = 255

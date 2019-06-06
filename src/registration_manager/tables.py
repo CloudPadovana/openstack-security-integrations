@@ -23,63 +23,12 @@ from django.utils.translation import ugettext as _
 from horizon import tables
 
 from openstack_auth_shib.models import RegRequest
-from openstack_auth_shib.models import RSTATUS_REMINDER
+from openstack_auth_shib.models import RSTATUS_REMINDACK
 from openstack_auth_shib.utils import REQID_REGEX
 
+from .utils import RegistrData
+
 LOG = logging.getLogger(__name__)
-
-class RegistrData:
-
-    NEW_USR_NEW_PRJ = 1
-    NEW_USR_EX_PRJ = 2
-    EX_USR_NEW_PRJ = 3
-    EX_USR_EX_PRJ = 4
-    USR_RENEW = 5
-    PRJADM_RENEW = 6
-    REMINDER = 7
-    ORPHAN = 8
-
-    DESCRARRAY = [
-        _('Unknown operation'),
-        _('New user and new project'),
-        _('New user to be pre-checked'),
-        _('User requires a new project'),
-        _('User requires membership'),
-        _('User requires renewal before '),
-        _('Project administrator requires renewal before'),
-        _('User requires post registration actions'),
-        _('Registered user is orphan')
-    ]
-
-    def __init__(self):
-        self.requestid = None
-        self.username = None
-        self.fullname = None
-        self.organization = None
-        self.phone = None
-        self.project = "-"
-        self.code = 0
-        self.notes = None
-    
-    def __cmp__(self, other):
-        if self.username < other.username:
-            return -1
-        if self.username > other.username:
-            return 1
-        if self.project < other.project:
-            return -1
-        if self.project > other.project:
-            return 1
-        return 0
-
-    def __repr__(self):
-        if self.code >= len(RegistrData.DESCRARRAY):
-            self.code = 0
-
-        result = RegistrData.DESCRARRAY[self.code]
-        if self.notes:
-            result += " %s" % str(self.notes)    
-        return result  
 
 class PreCheckLink(tables.LinkAction):
     name = "prechklink"
@@ -183,7 +132,7 @@ class ReminderAck(tables.Action):
             req_data = REQID_REGEX.search(object_id)
             RegRequest.objects.filter(
                 registration__regid = int(req_data.group(1)),
-                flowstatus = RSTATUS_REMINDER
+                flowstatus = RSTATUS_REMINDACK
             ).delete()
 
         return shortcuts.redirect(reverse('horizon:idmanager:registration_manager:index'))
@@ -191,7 +140,7 @@ class ReminderAck(tables.Action):
 class OperationTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))
     fullname = tables.Column('fullname', verbose_name=_('Full name'))
-    organization = tables.Column('organization', verbose_name=_('Organization'))
+    organization = tables.Column('organization', verbose_name=_('Home institution'))
     project = tables.Column('project', verbose_name=_('Project'))
     description = tables.Column(repr, verbose_name=_('Description'))
 

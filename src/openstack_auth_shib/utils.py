@@ -300,7 +300,7 @@ def setup_new_project(request, project_id, project_name, data):
             'protocol': 'tcp',
             'port_range_min': 22,
             'port_range_max': 22,
-            'remote_ip_prefix': subnet_cidr,
+            'remote_ip_prefix': "0.0.0.0/0",
             'tenant_id' : project_id
         }
 
@@ -309,7 +309,7 @@ def setup_new_project(request, project_id, project_name, data):
             'direction': 'ingress',
             'ethertype': 'IPv4',
             'protocol': 'icmp',
-            'remote_ip_prefix': subnet_cidr,
+            'remote_ip_prefix': "0.0.0.0/0",
             'tenant_id' : project_id
         }
 
@@ -332,8 +332,9 @@ def setup_new_project(request, project_id, project_name, data):
         new_tags = list()
         new_tags.append(ORG_TAG_FMT % unit_data.get('organization', 'other'))
 
-        if '%s-ou' % unit_id in data:
-            new_tags.append(OU_TAG_FMT % data['%s-ou' % unit_id])
+        ou_id = data.get('%s-ou' % unit_id, '').strip()
+        if ou_id:
+            new_tags.append(OU_TAG_FMT % ou_id)
 
         kclient = keystone_api.keystoneclient(request)
         kclient.projects.update_tags(project_id, new_tags)

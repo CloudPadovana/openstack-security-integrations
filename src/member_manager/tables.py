@@ -224,7 +224,7 @@ class MemberTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))
     #userid = tables.Column('userid', verbose_name=_('User ID'))
     fullname = tables.Column('fullname', verbose_name=_('Full name'))
-    organization = tables.Column('organization', verbose_name=_('Organization'))
+    organization = tables.Column('organization', verbose_name=_('Home institution'))
     expiration = tables.Column('expiration', verbose_name=_('Expiration date'))
     role = tables.Column(get_role, verbose_name=_('Role'))
     

@@ -157,7 +157,7 @@ class RegistrForm(forms.SelfHandlingForm):
             self.fields['newprj'] = forms.CharField(
                 label=_('Project name'),
                 max_length=OS_SNAME_LEN,
-                required=True,
+                required=False,
                 widget=forms.TextInput(attrs={
                     'class': 'switched',
                     'data-switch-on': 'actsource',
@@ -167,7 +167,7 @@ class RegistrForm(forms.SelfHandlingForm):
 
             self.fields['prjdescr'] = forms.CharField(
                 label=_("Project description"),
-                required=True,
+                required=False,
                 widget=forms.widgets.Textarea(attrs={
                     'class': 'switched',
                     'data-switch-on': 'actsource',
@@ -224,7 +224,7 @@ class RegistrForm(forms.SelfHandlingForm):
             if dept_list:
 
                 self.fields['org_unit'] = forms.ChoiceField(
-                    label=_('Organization Unit'),
+                    label=_('Unit or department'),
                     required=True,
                     choices=[ x[:2] for x in dept_list ]
                 )
@@ -238,7 +238,7 @@ class RegistrForm(forms.SelfHandlingForm):
             all_orgs.append(('other', _('Other organization')))
 
             self.fields['encoded_org'] = forms.ChoiceField(
-                label=_('Organization'),
+                label=_('Home institution'),
                 required=True,
                 choices=all_orgs,
                 widget=forms.Select(attrs={
@@ -248,12 +248,12 @@ class RegistrForm(forms.SelfHandlingForm):
             )
 
             self.fields['custom_org'] = forms.CharField(
-                label=_('Enter organization'),
+                label=_('Enter institution'),
                 required=False,
                 widget=forms.widgets.TextInput(attrs={
                     'class': 'switched',
                     'data-switch-on': 'orgwidget',
-                    'data-orgwidget-other': _('Enter organization')
+                    'data-orgwidget-other': _('Enter institution')
                 })
             )
 
@@ -265,13 +265,13 @@ class RegistrForm(forms.SelfHandlingForm):
                     continue
 
                 self.fields['org_unit_%s' % enc_org_id] = forms.ChoiceField(
-                    label=_('Organization Unit'),
+                    label=_('Unit or department'),
                     required=True,
                     choices=[ x[:2] for x in ou_list ],
                     widget=forms.Select(attrs={
                         'class': 'switched',
                         'data-switch-on': 'orgwidget',
-                        'data-orgwidget-%s' % enc_org_id: _('Organization Unit')
+                        'data-orgwidget-%s' % enc_org_id: _('Unit or department')
                     })
                 )
 
@@ -332,7 +332,7 @@ class RegistrForm(forms.SelfHandlingForm):
         if cust_org:
 
             if ORG_REGEX.search(cust_org):
-                raise ValidationError(_('Bad character "%s" for organization.') % tmpm.group(0))
+                raise ValidationError(_('Bad character "%s" for institution.') % tmpm.group(0))
             data['organization'] = cust_org
 
         elif 'encoded_org' in data:
@@ -347,7 +347,7 @@ class RegistrForm(forms.SelfHandlingForm):
 
             except:
                 LOG.error("Generic failure", exc_info=True)
-                raise ValidationError(_('Cannot retrieve organization.'))
+                raise ValidationError(_('Cannot retrieve institution.'))
 
         elif 'org_unit' in data:
             curr_dept_list = org_table.get(data['organization'], [])
@@ -358,8 +358,12 @@ class RegistrForm(forms.SelfHandlingForm):
             for item in curr_dept_list:
                 if item[0] <> dept_id:
                     continue
+                tmpctc = data.get('contactper', '').strip()
+                if tmpctc:
+                    tmpctc += '; '
                 if len(item) > 4 and item[2] and item[3] and item[4]:
-                    data['contactper'] = "%s <%s> (tel: %s)" % item[2:]
+                    tmpctc += "%s <%s> (tel: %s)" % item[2:]
+                    data['contactper'] = tmpctc
                     break
 
         return data

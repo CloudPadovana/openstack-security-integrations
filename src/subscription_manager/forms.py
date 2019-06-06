@@ -29,10 +29,13 @@ from django.views.decorators.debug import sensitive_variables
 
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import RSTATUS_REMINDER
+from openstack_auth_shib.models import RSTATUS_REMINDACK
 
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
@@ -132,7 +135,13 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                         missing_default = False
                 if missing_default:
                     raise Exception("Default role is undefined")
-                    
+                #
+                # Enable reminder for cloud admin
+                #
+                RegRequest.objects.filter(
+                    registration = prj_req.registration,
+                    flowstatus = RSTATUS_REMINDER
+                ).update(flowstatus = RSTATUS_REMINDACK)
                 #
                 # clear request
                 #

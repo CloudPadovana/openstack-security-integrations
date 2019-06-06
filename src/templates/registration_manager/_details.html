@@ -35,7 +35,7 @@
     <ul>
         <li>{% trans "Username" %}: {{ username }}</li>
         <li>{% trans "Fullname" %}: {{ fullname }}</li>
-        <li>{% trans "Organization" %}: {{ organization }}</li>
+        <li>{% trans "Home institution" %}: {{ organization }}</li>
         {% if HORIZON_CONFIG.phone_regex %}
         <li>{% trans "Phone" %}: {{ phone }}</li>
         {% endif %}
@@ -64,12 +64,8 @@
     {% if newprojects %}
     <h3>{% trans "Requests for project creation" %}:</h3>
     <ul>
-        {% for prjname, is_priv in newprojects %}
-        {% if is_priv %}
-        <li>{{ prjname }} ({% trans "Private" %})</li>
-        {% else %}
-        <li>{{ prjname }}</li>
-        {% endif %}
+        {% for prjname, prjdescr, is_priv in newprojects %}
+        <li>{{ prjname }}{% if is_priv %} ({% trans "Private" %}){% endif %}<br/>{{ prjdescr }}</li>
         {% endfor %}
     </ul>
     {% endif %}

@@ -30,14 +30,14 @@ from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import Expiration
 
 from openstack_auth_shib.models import RSTATUS_PENDING
-from openstack_auth_shib.models import RSTATUS_REMINDER
+from openstack_auth_shib.models import RSTATUS_REMINDACK
 from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 
 from openstack_auth_shib.utils import REQID_REGEX
 
-from .tables import RegistrData
+from .utils import RegistrData
 from .tables import OperationTable
 from .forms import PreCheckForm
 from .forms import GrantAllForm
@@ -49,6 +49,7 @@ from .forms import NewProjectRejectForm
 from .forms import RenewAdminForm
 from .forms import DetailsForm
 
+
 LOG = logging.getLogger(__name__)
 
 class MainView(tables.DataTableView):
@@ -56,18 +57,9 @@ class MainView(tables.DataTableView):
     template_name = 'idmanager/registration_manager/reg_manager.html'
     page_title = _("Registrations")
 
-    def _initRegistrData(self, registration):
-        rData = RegistrData()
-        rData.username = registration.username
-        rData.fullname = registration.givenname + " " + registration.sn
-        rData.organization = registration.organization
-        rData.phone = registration.phone
-        return rData
-
     def get_data(self):
     
         reqTable = dict()
-        remTable = dict()
         
         with transaction.atomic():
         
@@ -75,14 +67,18 @@ class MainView(tables.DataTableView):
             for tmpRegReq in RegRequest.objects.filter(flowstatus=RSTATUS_PENDING):
                 regid_pending.add(tmpRegReq.registration.regid)
 
-            for tmpRegReq in RegRequest.objects.filter(flowstatus=RSTATUS_REMINDER):
-                rData = self._initRegistrData(tmpRegReq.registration)
-                rData.requestid = "%d:" % tmpRegReq.registration.regid
-                remTable[tmpRegReq.registration.regid] = rData
+            for tmpRegReq in RegRequest.objects.filter(flowstatus=RSTATUS_REMINDACK):
+                req_id = "%d:" % tmpRegReq.registration.regid
+                rData = RegistrData(
+                    registration = tmpRegReq.registration,
+                    requestid = req_id,
+                    code = RegistrData.REMINDER
+                )
+                reqTable[req_id] = rData
 
             for prjReq in PrjRequest.objects.all():
-                
-                rData = self._initRegistrData(prjReq.registration)
+
+                rData = RegistrData(registration = prjReq.registration)
                 curr_regid = prjReq.registration.regid
                 
                 if prjReq.flowstatus == PSTATUS_RENEW_MEMB:
@@ -109,9 +105,6 @@ class MainView(tables.DataTableView):
                         rData.project = prjReq.project.projectname
                         requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
 
-                    if curr_regid in remTable:
-                        del remTable[curr_regid]
-
                 else:
 
                     if curr_regid in regid_pending:
@@ -123,22 +116,12 @@ class MainView(tables.DataTableView):
                     if prjReq.project.status == PRJ_PRIVATE:
                         rData.project += " (%s)" % _("Private")
 
-                    if curr_regid in remTable:
-                        del remTable[curr_regid]
-
                 rData.requestid = requestid
                 
                 if not requestid in reqTable:
                     reqTable[requestid] = rData
 
-            for regid, rData in remTable.items():
-                nMem = Expiration.objects.filter(registration__regid=regid).count()
-                if nMem > 0:
-                    rData.code = RegistrData.REMINDER
-                else:
-                    rData.code = RegistrData.ORPHAN
-
-        result = reqTable.values() + remTable.values()
+        result = reqTable.values()
         result.sort()
         return result
 
@@ -400,7 +383,8 @@ class DetailsView(forms.ModalFormView):
                         tmpdict['memberof'].append(prj_item.projectname)
                     else:
                         is_priv = prj_item.status == PRJ_PRIVATE
-                        tmpdict['newprojects'].append((prj_item.projectname, is_priv))
+                        tmpt = (prj_item.projectname, prj_item.description, is_priv)
+                        tmpdict['newprojects'].append(tmpt)
 
                 self._object = tmpdict
 
