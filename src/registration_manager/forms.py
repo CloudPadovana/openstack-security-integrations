@@ -65,6 +65,7 @@ from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import RSTATUS_PENDING
 from openstack_auth_shib.models import RSTATUS_REMINDER
+from openstack_auth_shib.models import RSTATUS_REMINDACK
 
 from openstack_auth_shib.models import OS_LNAME_LEN
 from openstack_auth_shib.models import OS_SNAME_LEN
@@ -488,6 +489,14 @@ class ForcedCheckForm(forms.SelfHandlingForm):
                 
                 keystone_api.add_tenant_user_role(request, project_id,
                                                 user_id, default_roleid)
+
+                #
+                # Enable reminder for cloud admin
+                #
+                RegRequest.objects.filter(
+                    registration = prj_req.registration,
+                    flowstatus = RSTATUS_REMINDER
+                ).update(flowstatus = RSTATUS_REMINDACK)
 
                 #
                 # clear request

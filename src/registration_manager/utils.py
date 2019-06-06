@@ -13,6 +13,8 @@
 #  License for the specific language governing permissions and limitations
 #  under the License. 
 
+from django.utils.translation import ugettext as _
+
 class RegistrData:
 
     NEW_USR_NEW_PRJ = 1
@@ -48,7 +50,7 @@ class RegistrData:
             self.fullname = registration.givenname + " " + registration.sn
             self.organization = registration.organization
             self.phone = registration.phone
-        else
+        else:
             self.username = None
             self.fullname = None
             self.organization = None

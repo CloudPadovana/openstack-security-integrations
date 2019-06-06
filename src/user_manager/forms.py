@@ -29,11 +29,14 @@ from horizon import messages
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import UserMapping
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import RSTATUS_REMINDER
+from openstack_auth_shib.models import RSTATUS_REMINDACK
 
 from openstack_auth_shib.notifications import notifyProject
 from openstack_auth_shib.notifications import notifyUser
@@ -220,6 +223,14 @@ class ReactivateForm(forms.SelfHandlingForm):
 
                 reg_user.expdate = data['expdate']
                 reg_user.save()
+
+                #
+                # Enable reminder for cloud admin if present
+                #
+                RegRequest.objects.filter(
+                    registration = reg_user,
+                    flowstatus = RSTATUS_REMINDER
+                ).update(flowstatus = RSTATUS_REMINDACK)
 
                 k_user = keystone_api.user_get(request, data['userid'])
                 if not k_user.enabled:

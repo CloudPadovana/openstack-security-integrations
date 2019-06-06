@@ -32,10 +32,14 @@ from openstack_dashboard.dashboards.identity.projects import workflows as baseWo
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_PUBLIC
+from openstack_auth_shib.models import RSTATUS_REMINDER
+from openstack_auth_shib.models import RSTATUS_REMINDACK
+
 from openstack_auth_shib.utils import check_projectname
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import setup_new_project
@@ -309,7 +313,14 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
                 Expiration(**c_args).save()
 
                 changed_regs.append(item)
-        
+            #
+            # Enable reminders to  cloud admin for manually added users
+            #
+            RegRequest.objects.filter(
+                    registration__in = added_regs,
+                    flowstatus = RSTATUS_REMINDER
+                ).update(flowstatus = RSTATUS_REMINDACK)
+
             #
             # Delete expiration for manually removed users
             #
