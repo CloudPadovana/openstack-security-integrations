@@ -44,6 +44,7 @@ from openstack_auth_shib.utils import check_projectname
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import setup_new_project
 from openstack_auth_shib.utils import add_unit_combos
+from openstack_auth_shib.utils import get_unit_table
 
 
 from openstack_auth_shib.notifications import notifyUser
@@ -97,7 +98,7 @@ class CustomProjectInfo(workflows.Step):
 
     def __init__(self, workflow):
         super(CustomProjectInfo, self).__init__(workflow)
-        unit_table = getattr(settings, 'UNIT_TABLE', {})
+        unit_table = get_unit_table()
 
         if len(unit_table) > 0:
             contrib_list = [ 'unit' ]
@@ -110,7 +111,7 @@ class ExtCreateProject(baseWorkflows.CreateProject):
     
     def __init__(self, request=None, context_seed=None, entry_point=None, *args, **kwargs):
 
-        unit_table = getattr(settings, 'UNIT_TABLE', {})
+        unit_table = get_unit_table()
         if len(unit_table) > 0:
             self.default_steps = (ExtCreateProjectInfo,
                                   baseWorkflows.UpdateProjectMembers,

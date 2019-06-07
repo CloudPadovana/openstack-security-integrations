@@ -15,6 +15,8 @@
 
 import logging
 import re
+import os
+import os.path
 
 from django.conf import settings
 from django.db import transaction
@@ -178,7 +180,7 @@ def setup_new_project(request, project_id, project_name, data):
 
     unit_id = data.get('unit', None)
 
-    cloud_table = getattr(settings, 'UNIT_TABLE', {})
+    cloud_table = get_unit_table()
     if not unit_id or not unit_id in cloud_table:
         return
 
@@ -332,9 +334,9 @@ def setup_new_project(request, project_id, project_name, data):
         new_tags = list()
         new_tags.append(ORG_TAG_FMT % unit_data.get('organization', 'other'))
 
-        ou_id = data.get('%s-ou' % unit_id, '').strip()
-        if ou_id:
-            new_tags.append(OU_TAG_FMT % ou_id)
+        for ou_id in data.get('%s-ou' % unit_id, []):
+            if ou_id.strip():
+                new_tags.append(OU_TAG_FMT % ou_id.strip())
 
         kclient = keystone_api.keystoneclient(request)
         kclient.projects.update_tags(project_id, new_tags)
@@ -345,7 +347,7 @@ def setup_new_project(request, project_id, project_name, data):
 
 def add_unit_combos(newprjform):
 
-    unit_table = getattr(settings, 'UNIT_TABLE', {})
+    unit_table = get_unit_table()
     org_table = settings.HORIZON_CONFIG.get('organization', {})
 
     if len(unit_table) > 0:
@@ -388,19 +390,35 @@ def add_unit_combos(newprjform):
             if not ou_list:
                 continue
 
-            newprjform.fields["%s-ou" % unit_id] = forms.ChoiceField(
-                label=_('Available organization units'),
+            newprjform.fields["%s-ou" % unit_id] = forms.MultipleChoiceField(
+                label=_('Unit or department'),
                 required=False,
-                choices=ou_list,
-                widget=forms.Select(attrs={
+                choices=[ x[:2] for x in ou_list ],
+                widget=forms.SelectMultiple(attrs={
                     'class': 'switched',
                     'data-switch-on': 'unitselector',
-                    'data-unitselector-%s' % unit_id : _('Available organization units')
+                    'data-unitselector-%s' % unit_id : _('Unit or department')
                 })
             )
 
 
+#
+# Workaround for unit_table reloading at runtime
+#
+def get_unit_table():
 
+    unit_filename = os.environ.get("CLOUDVENETO_UNITTABLE", 
+                                   "/etc/openstack-dashboard/unit_table.py")
+    try:
 
+        if os.path.exists(unit_filename):
+            with open(unit_filename) as f:
+                exec(f.read())
+            return UNIT_TABLE
+
+    except Exception:
+        LOG.error("Cannot exec unit table script", exc_info=True)
+
+    return getattr(settings, 'UNIT_TABLE', {})
 
 
