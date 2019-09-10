@@ -90,6 +90,7 @@ Group: System Environment/Libraries
 Requires: python-django-openstack-auth
 Requires: python-crypto
 Requires: python-keystoneclient
+Requires: python2-keystone
 Requires: openstack-dashboard
 
 %description -n openstack-auth-shib

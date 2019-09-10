@@ -26,7 +26,8 @@ from django.utils.translation import ugettext as _
 from django.views.decorators.debug import sensitive_variables
 from django.db import transaction, IntegrityError
 
-from .idpmanager import get_manager
+from .idpmanager import get_logout_url
+from .idpmanager import postproc_logout
 from .models import Registration
 from .models import Project
 from .models import RegRequest
@@ -369,11 +370,10 @@ class RegistrForm(forms.SelfHandlingForm):
         return data
 
     def _build_safe_redirect(self, request, location):
-        attributes = get_manager(request)
-        if attributes:
-            safe_loc = attributes.get_logout_url(location)
+        safe_loc = get_logout_url(request, location)
+        if safe_loc:
             response = shortcuts.redirect(safe_loc)
-            response = attributes.postproc_logout(response)
+            response = postproc_logout(request, response)
         else:
             safe_loc = location
             response = shortcuts.redirect(location)

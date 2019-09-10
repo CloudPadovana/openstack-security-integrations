@@ -14,121 +14,105 @@
 #  under the License. 
 
 import logging
-import urllib
-import glob
-import json
-import os.path
+from urllib import urlencode
 
 from django.conf import settings
 
 from openstack_dashboard.api import keystone as keystone_api
-
-from .models import OS_LNAME_LEN
+from keystone.federation import utils as federation_utils
 
 
 LOG = logging.getLogger(__name__)
 
-# #############################################################################
-#  Methods for the Registration site
-# #############################################################################
-#
-# Provider configuration table
-#
-# { 
-#   'context' : '/dashboard-openidc', 
-#   'path' : '/dashboard-openidc/auth/login', 
-#   'description' : 'INDIGO AAI', 
-#   'logo' : '/dashboard/static/dashboard/img/logoINDIGO.png',
-#   'uid_tag' : 'OIDC-preferred_username',
-#   'org_tag' : 'OIDC-organisation_name' 
-# }
-#
+class Federated_Account:
 
-def get_manager(request):
+    entity_table = getattr(settings, 'WEBSSO_IDP_ENTITIES', {})
+    mapping_table = getattr(settings, 'WEBSSO_IDP_MAPPING', {})
+    rule_table = getattr(settings, 'WEBSSO_IDP_RULES', {})
 
-    if not 'REMOTE_USER' in request.META:
-        return None
+    def __init__(self, request):
 
-    if request.META.get('AUTH_TYPE','') == 'shibboleth':
-        return SAML2_IdP(request)
-    
-    for item_id, item in settings.HORIZON_CONFIG['identity_providers'].iteritems():
-        if request.path.startswith(item['context']):
-            return OIDC_IdP(request, item)
+        self.root_url = request.META['SCRIPT_NAME']
+
+        if 'Shib-Identity-Provider' in request.META:
+
+            self.idpid = request.META['Shib-Identity-Provider']
+
+            idx = request.META.get('REMOTE_USER', '').find('@')
+            self.provider = request.META['REMOTE_USER'][idx+1:] if idx > 0 else 'Unknown'
+
+        elif 'OIDC-iss' in request.META:
+            self.idpid = request.META['OIDC-iss']
+            self.provider = request.META.get('OIDC-organisation_name', 'Unknown')
+        else:
+            self.idpid = None
+            self.provider = None
+
+        self.username = None
+        if self.idpid:
+            step1 = filter(lambda x : self.idpid in x[1], 
+                           Federated_Account.entity_table.items())
+            if len(step1) > 0:
+                step2 = filter(lambda x : step1[0][0] == x[1][0],
+                               Federated_Account.mapping_table.items())
+                if len(step2) > 0:
+                    rules = Federated_Account.rule_table.get(step2[0][0], [])
+
+                    ruleproc = federation_utils.RuleProcessor(step2[0][0], rules)
+                    res = ruleproc.process(request.META)
+                    if res and 'user' in res:
+                        self.username = res['user']['name']
+                        LOG.debug("Found account: %s" % self.username)
+                    else:
+                        LOG.debug("No rule for %s" % step2[0][0])
+                else:
+                    LOG.debug("No mapping for %s" % step1[0][0])
+            else:
+                LOG.debug("No identity provider for %s" % self.idpid)
+
+        self.email = None
+        for m_item in ['mail', 'OIDC-email']:
+            if m_item in request.META:
+                self.email = request.META[m_item].split(';')[0]
+                break
+
+        self.givenname = None
+        for gn_item in ['givenName', 'OIDC-given_name']:
+            if gn_item in request.META:
+                self.givenname = request.META[gn_item]
+                break
+
+        self.sn = None
+        for sn_item in ['sn', 'OIDC-family_name']:
+            if sn_item in request.META:
+                self.sn = request.META[sn_item]
+                break
+
+    def __nonzero__(self):
+        return 1 if self.username else 0
+
+def get_logout_url(request, *args):
+
+    tmpu = 'https://%s:%s' % (
+        request.META['SERVER_NAME'],
+        request.META['SERVER_PORT']
+    )
+    tmpu += args[0] if len(args) else '/dashboard'
+
+    if 'Shib-Identity-Provider' in request.META:
+        return '/Shibboleth.sso/Logout?%s' % urlencode({ 'return' : tmpu })
+
+    if 'OIDC-iss' in request.META:
+        redir_path = getattr(settings, 'OIDC_REDIRECT_PATH', 
+                             request.META['SCRIPT_NAME'] + '/redirect-uri')
+        return '%s?%s' % (redir_path, urlencode({ 'logout' : tmpu }))
 
     return None
 
+def postproc_logout(request, response):
+    # for any further customizations
+    return response
 
-
-class SAML2_IdP:
-
-    def __init__(self, request):
-    
-        self.root_url = '/' + request.path.split('/')[1]
-        self.logout_prefix = '/Shibboleth.sso/Logout?return=https://%s:%s' % \
-            (request.META['SERVER_NAME'], request.META['SERVER_PORT'])
-            
-        # the remote user corresponds to the ePPN
-        self.username = request.META['REMOTE_USER']
-        if len(self.username) > OS_LNAME_LEN:
-            self.username = self.username[0:OS_LNAME_LEN]
-        
-        tmpmail = request.META.get('mail', None)
-        if tmpmail:
-            self.email = tmpmail.split(';')[0]
-        else:
-            self.email = None
-        self.givenname = request.META.get('givenName', None)
-        self.sn = request.META.get('sn', None)
-        
-        # organization as in urn:mace:dir:attribute-def:eduPersonPrincipalName
-        idx = request.META['REMOTE_USER'].find('@')
-        if idx > 0:
-            self.provider = request.META['REMOTE_USER'][idx+1:]
-        else:
-            self.provider = None
-        
-    def get_logout_url(self, *args):
-        
-        result = self.logout_prefix
-        if len(args):
-            result += args[0]
-        else:
-            result += '/dashboard'
-        return result        
-    
-    def postproc_logout(self, response):
-        return response
-
-
-class OIDC_IdP:
-
-    def __init__(self, request, params):
-    
-        self.root_url = params['context']
-        self.logout_prefix = '%s/redirect-uri?logout=https://%s:%s/dashboard' % \
-            (params['context'], request.META['SERVER_NAME'], request.META['SERVER_PORT'])
-
-        self.username = request.META.get(params.get('uid_tag', 'REMOTE_USER'))
-        if len(self.username) > OS_LNAME_LEN:
-            self.username = self.username[0:OS_LNAME_LEN]
-
-        self.givenname = request.META.get(params.get('g_name_tag', 'OIDC-given_name'), None)
-        self.sn = request.META.get(params.get('s_name_tag', 'OIDC-family_name'), None)
-        self.email = request.META.get(params.get('email_tag', 'OIDC-email'), None)
-        self.provider = request.META.get(params.get('org_tag', 'OIDC-organisation_name'), 'OIDC')
-
-    def get_logout_url(self, *args):
-        return self.logout_prefix
-    
-    def postproc_logout(self, response):
-        return response
-
-
-
-# #############################################################################
-#  Methods for the new implementation
-# #############################################################################
 
 def checkFederationSetup(request):
 

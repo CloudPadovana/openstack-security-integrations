@@ -43,15 +43,17 @@ from .models import RegRequest
 from .models import Project
 from .models import PRJ_COURSE
 from .forms import RegistrForm
-from .idpmanager import get_manager
+from .idpmanager import Federated_Account
+from .idpmanager import get_logout_url
+from .idpmanager import postproc_logout
 from .idpmanager import checkFederationSetup
 
 LOG = logging.getLogger(__name__)
 
-def build_err_response(request, err_msg, attributes):
-    response = shortcuts.redirect(attributes.get_logout_url())
+def build_err_response(request, err_msg):
+    response = shortcuts.redirect(get_logout_url(request))
     if attributes:
-        response = attributes.postproc_logout(response)
+        response = attributes.postproc_logout(request, response)
 
     response.set_cookie('logout_reason', err_msg)
 
@@ -110,20 +112,21 @@ class RegistrView(forms.ModalFormView):
 
     def get_initial(self):
         result = super(RegistrView, self).get_initial()
-        attributes = get_manager(self.request)
+        if not hasattr(self, "attributes"):
+            self.attributes = Federated_Account(self.request)
 
-        if attributes:
+        if self.attributes:
             result['needpwd'] = False
-            result['username'] = attributes.username
+            result['username'] = self.attributes.username
             result['federated'] = "true"
-            if attributes.givenname:
-                result['givenname'] = attributes.givenname
-            if attributes.sn:
-                result['sn'] = attributes.sn
-            if attributes.email:
-                result['email'] = attributes.email
-            if attributes.provider:
-                result['organization'] = attributes.provider
+            if self.attributes.givenname:
+                result['givenname'] = self.attributes.givenname
+            if self.attributes.sn:
+                result['sn'] = self.attributes.sn
+            if self.attributes.email:
+                result['email'] = self.attributes.email
+            if self.attributes.provider:
+                result['organization'] = self.attributes.provider
         else:
             result['needpwd'] = True
             result['federated'] = "false"
@@ -143,24 +146,28 @@ class RegistrView(forms.ModalFormView):
 
     def get_context_data(self, **kwargs):
         context = super(RegistrView, self).get_context_data(**kwargs)
-        attributes = get_manager(self.request)
-        if attributes:
-            context['userid'] = attributes.username
-            context['form_action_url'] = '%s/auth/register/' % attributes.root_url
+        if not hasattr(self, "attributes"):
+            self.attributes = Federated_Account(self.request)
+
+        if self.attributes:
+            context['userid'] = self.attributes.username
+            context['form_action_url'] = '%s/auth/register/' % self.attributes.root_url
         else:
             context['form_action_url'] = '/dashboard/auth/register/'
         return context
 
     def get(self, request, *args, **kwargs):
 
-        attributes = get_manager(self.request)
-        if attributes:
+        if not hasattr(self, "attributes"):
+            self.attributes = Federated_Account(self.request)
 
-            if UserMapping.objects.filter(globaluser=attributes.username).count() \
+        if self.attributes:
+
+            if UserMapping.objects.filter(globaluser=self.attributes.username).count() \
                 and not 'projectname' in request.GET:
                 return alreay_registered(self.request)
 
-            if RegRequest.objects.filter(externalid=attributes.username).count():
+            if RegRequest.objects.filter(externalid=self.attributes.username).count():
                 return dup_login(self.request)
 
         return super(RegistrView, self).get(request, args, kwargs)
