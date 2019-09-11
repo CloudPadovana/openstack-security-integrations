@@ -35,6 +35,7 @@ from openstack_auth.views import logout as basic_logout
 from openstack_auth.views import switch as basic_switch
 from openstack_auth.views import switch_region as basic_switch_region
 from openstack_auth.utils import is_websso_enabled
+from openstack_auth.user import unset_session_user_variables
 
 from horizon import forms
 
@@ -44,20 +45,9 @@ from .models import Project
 from .models import PRJ_COURSE
 from .forms import RegistrForm
 from .idpmanager import Federated_Account
-from .idpmanager import get_logout_url
-from .idpmanager import postproc_logout
 from .idpmanager import checkFederationSetup
 
 LOG = logging.getLogger(__name__)
-
-def build_err_response(request, err_msg):
-    response = shortcuts.redirect(get_logout_url(request))
-    if attributes:
-        response = attributes.postproc_logout(request, response)
-
-    response.set_cookie('logout_reason', err_msg)
-
-    return response
 
 @sensitive_post_parameters()
 @csrf_protect
@@ -93,6 +83,7 @@ def websso(request):
 
 def logout(request):
 
+    # TODO investigare PDCL-1403
     return basic_logout(request)
 
 
