@@ -104,6 +104,7 @@ class CustomProjectInfo(workflows.Step):
             contrib_list = [ 'unit' ]
             for unit_id in unit_table:
                 contrib_list.append("%s-net" % unit_id)
+                contrib_list.append("%s-ou" % unit_id)
             self.contributes = tuple(contrib_list)
 
 class ExtCreateProject(baseWorkflows.CreateProject):
