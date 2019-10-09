@@ -45,7 +45,7 @@ LOG = logging.getLogger(__name__)
 TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 TENANTADMIN_ROLEID = getattr(settings, 'TENANTADMIN_ROLE_ID', None)
 
-PRJ_REGEX = re.compile(r'[^a-zA-Z0-9-_ ]')
+PRJ_REGEX = re.compile(r'[^a-zA-Z0-9-_ \.]')
 REQID_REGEX = re.compile(r'^([0-9]+):([a-zA-Z0-9-_ ]*)$')
 
 ORG_TAG_FMT = "O=%s"
