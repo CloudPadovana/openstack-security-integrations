@@ -256,8 +256,17 @@ def setup_new_project(request, project_id, project_name, data):
         flow_step += 1
 
         if 'lan_router' in unit_data:
+            f_ips = [{
+                "ip_address" : subnet_cidr.replace('0/24', '1'),
+                "subnet_id" : prj_sub['id']
+            }]
+            r_port = neutron_api.port_create(request, prj_net['id'],
+                                             tenant_id=project_id,
+                                             project_id=project_id,
+                                             fixed_ips=f_ips)
+
             neutron_api.router_add_interface(request, unit_data['lan_router'], 
-                                            subnet_id=prj_sub['id'])
+                                            port_id=r_port['id'])
         flow_step = 0
 
     except:
