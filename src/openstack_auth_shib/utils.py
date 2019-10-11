@@ -410,6 +410,82 @@ def add_unit_combos(newprjform):
                 })
             )
 
+def dispose_project(request, project_id):
+
+    # TODO missing check for VMs, Volumes and images
+
+    try:
+
+        flow_step = 0
+        prj_subnets = set()
+        for s_item in neutron_api.subnet_list(request, 
+            tenant_id=project_id,
+            project_id=project_id
+        ):
+            prj_subnets.add(s_item.id)
+
+        for r_item in neutron_api.router_list(request):
+            for p_item in neutron_api.port_list(request,
+                tenant_id=project_id,
+                project_id=project_id,
+                device_id=r_item.id
+            ):
+                for ip_item in p_item.fixed_ips:
+                    if ip_item.get('subnet_id') in prj_subnets:
+                        LOG.info('Removing port %s' % ip_item.get('ip_address'))
+                        #neutron_api.router_remove_interface(request, r_item.id, None, p_item.id)
+
+        flow_step = 1
+        for s_item in prj_subnets:
+            LOG.info('Removing subnet %s' % s_item)
+            #neutron_api.subnet_delete(request, s_item)
+
+        flow_step = 2
+        for n_item in neutron_api.network_list(request,
+            tenant_id=project_id,
+            project_id=project_id
+        ):
+            LOG.info('Removing network %s' % n_item.name)
+            #neutron_api.network_delete(request, n_item.id)
+
+        flow_step = 3
+        #TODO release FIPs
+
+    except:
+        if flow_step == 0:
+            err_msg = _("Cannot remove router interfaces")
+        elif flow_step == 1:
+            err_msg = _("Cannot remove subnets")
+        elif flow_step == 2:
+            err_msg = _("Cannot remove networks")
+        else:
+            err_msg = _("Cannot release FIPs")
+        LOG.error(err_msg, exc_info=True)
+        messages.error(request, err_msg)
+
+    try:
+
+        for agg_item in nova_api.aggregate_details_list(request):
+            if agg_item.metadata.get('filter_tenant_id', '') == project_id:
+                for agg_host in agg_item.hosts:
+                    LOG.info('Removing host %s from %s' % (agg_host, agg_item.name))
+                    #nova_api.remove_host_from_aggregate(request,
+                    #    agg_item.id,
+                    #    agg_host
+                    #)
+                LOG.info('Removing aggregate %s' % agg_item.name)
+                #nova_api.aggregate_delete(request, agg_item.id)
+
+    except:
+        err_msg = _("Cannot delete host aggregate")
+        LOG.error(err_msg, exc_info=True)
+        messages.error(request, err_msg)
+
+
+
+
+
+    return True
 
 #
 # Workaround for unit_table reloading at runtime
