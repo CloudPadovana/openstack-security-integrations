@@ -331,8 +331,8 @@ class RegistrForm(forms.SelfHandlingForm):
 
         cust_org = data.get('custom_org', '').strip()
         if cust_org:
-
-            if ORG_REGEX.search(cust_org):
+            tmpm = ORG_REGEX.search(cust_org)
+            if tmpm:
                 raise ValidationError(_('Bad character "%s" for institution.') % tmpm.group(0))
             data['organization'] = cust_org
 
