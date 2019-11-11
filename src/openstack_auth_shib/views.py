@@ -15,6 +15,7 @@
 
 import logging
 import re
+from urllib import urlencode
 
 from django import shortcuts
 from django import http as django_http
@@ -36,6 +37,8 @@ from openstack_auth.views import switch as basic_switch
 from openstack_auth.views import switch_region as basic_switch_region
 from openstack_auth.utils import is_websso_enabled
 from openstack_auth.user import unset_session_user_variables
+
+from openstack_dashboard.api import keystone as keystone_api
 
 from horizon import forms
 
@@ -83,9 +86,42 @@ def websso(request):
 
 def logout(request):
 
-    # TODO investigare PDCL-1403
-    return basic_logout(request)
+    use_slo = settings.HORIZON_CONFIG.get('enable_slo', False)
+    #use_slo = use_slo and request.user.is_federated
+    use_slo = use_slo and not 'finalstep' in request.GET
 
+    if not use_slo:
+        return basic_logout(request)
+
+    try:
+        site_name = request.META['SERVER_NAME']
+        site_port = int(request.META['SERVER_PORT'])
+
+        redir_url = 'https://%s:%d/dashboard/auth/logout?finalstep=true'
+
+        utoken = request.session.get('unscoped_token')
+        token_data = keystone_api.keystoneclient(request).tokens.get_token_data(utoken)
+
+        redir_str = None
+        if "openid" in token_data['token']['methods']:
+            redir_para = 'logout'
+            redir_str = "https://%s:%d/v3/auth/OS-FEDERATION/websso/openid/redirect%s"
+        elif "mapped" in token_data['token']['methods']:
+            redir_para = 'return'
+            redir_str = 'https://%s:%d/Shibboleth.sso/Logout?%s' 
+
+        if redir_str:
+            param_str = urlencode({ redir_para : redir_url  % (site_name, site_port)})
+            srv_table = settings.HORIZON_CONFIG.get('srv_bind_table', {})
+            ks_name = srv_table.get(site_name, site_name)
+            jumpto = redir_str % (ks_name, site_port, param_str)
+            
+            return django_http.HttpResponseRedirect(jumpto)
+
+    except:
+        LOG.error("SLO failure", exc_info=True)
+
+    return basic_logout(request)
 
 @login_required
 def switch(request, tenant_id, redirect_field_name=REDIRECT_FIELD_NAME):
