@@ -226,14 +226,15 @@ class PreCheckForm(forms.SelfHandlingForm):
                 #
                 if not registration.userid:
                     
+                    if is_local:
+                        registration.username = data['username']
+
                     kuser = keystone_api.user_create(request, 
                                                     name=registration.username,
                                                     password=password,
                                                     email=user_email,
                                                     enabled=True)
-                        
-                    if is_local:
-                        registration.username = data['username']
+
                     registration.expdate = self.expiration
                     registration.userid = kuser.id
                     registration.save()
