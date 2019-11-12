@@ -64,6 +64,7 @@ prj_panel_dir = os_dash_dir + 'idmanager/project_manager/templates/project_manag
 pwd_panel_dir = os_dash_dir + 'settings/password_manager/templates/password_manager'
 preq_panel_dir = os_dash_dir + 'idmanager/project_requests/templates/project_requests'
 log_panel_dir = os_dash_dir + 'idmanager/log_manager/templates/log_manager'
+api_access_dir = os_dash_dir + 'project/api_access_manager/templates/api_access_manager'
 theme_dir = os_main_dir + 'themes/cap'
 
 template_list = [
@@ -150,6 +151,10 @@ log_templ_list = [
     'src/templates/log_manager/detail.html',
 ]
 
+api_templ_list = [
+    'src/templates/api_access_manager/openrc.sh.template'
+]
+
 logo_list = [
     'src/templates/logoCloudAreapd.png',
     'src/templates/logoCloudAreapdStrip.png',
@@ -208,6 +213,7 @@ setup(
                   (member_panel_dir, member_templ_list),
                   (preq_panel_dir, preq_templ_list),
                   (log_panel_dir, log_templ_list),
+                  (api_access_dir, api_templ_list),
                   (img_dir, logo_list),
                   (theme_dir + '/static/img', ['src/templates/favicon.ico']),
                   ('etc/openstack-auth-shib', hz_confile_list),

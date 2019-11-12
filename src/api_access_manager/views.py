@@ -41,8 +41,7 @@ def download_rc_file(request):
     context['os_identity_api_version'] = 3
     context['os_auth_version'] = 3
 
-    #TODO retrieve token
-    context['os_auth_token'] = ""
+    context['os_auth_token'] = request.session.get('unscoped_token')
 
     return baseViews._download_rc_file_for_template(request, context, template)
 
