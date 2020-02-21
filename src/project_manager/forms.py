@@ -78,7 +78,7 @@ class CourseForm(forms.SelfHandlingForm):
         result = list()
         org_table = settings.HORIZON_CONFIG.get('organization', {})
         for korg in settings.HORIZON_CONFIG.get('course_for', {}).keys():
-            result += org_table[korg]
+            result += map(lambda x : x[0:2], org_table[korg])
         return result
 
     def clean(self):
