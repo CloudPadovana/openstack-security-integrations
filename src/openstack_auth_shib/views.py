@@ -36,7 +36,6 @@ from openstack_auth.views import logout as basic_logout
 from openstack_auth.views import switch as basic_switch
 from openstack_auth.views import switch_region as basic_switch_region
 from openstack_auth.utils import is_websso_enabled
-from openstack_auth.user import unset_session_user_variables
 
 from openstack_dashboard.api import keystone as keystone_api
 

@@ -181,6 +181,7 @@ module_list = [
     'password_manager',
     'log_manager',
     'project_requests',
+    'api_access_manager',
     'idmanager',
     'dashboard_conf',
     'commands'

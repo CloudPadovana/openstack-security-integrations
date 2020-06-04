@@ -16,5 +16,5 @@
 PANEL = 'api_access'
 PANEL_DASHBOARD = 'project'
 PANEL_GROUP = 'default'
-REMOVE_PANEL = True
+REMOVE_PANEL = False
 
