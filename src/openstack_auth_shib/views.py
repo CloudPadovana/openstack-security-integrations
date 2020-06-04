@@ -79,7 +79,7 @@ def websso(request):
     code = request.POST.get('code', '200')
     if code <> '200':
         res = django_http.HttpResponseRedirect(settings.LOGIN_URL)
-        res.set_cookie('logout_reason', "SSO unauthorized: %s" % code, max_age=10)
+        res.set_cookie('logout_reason', "User not registered or authorization failed", max_age=10)
         return res
 
     return basic_websso(request)
