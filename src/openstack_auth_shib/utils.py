@@ -17,6 +17,7 @@ import logging
 import re
 import os
 import os.path
+from datetime import datetime
 
 from django.conf import settings
 from django.db import transaction
@@ -34,6 +35,7 @@ from openstack_dashboard.api import nova as nova_api
 from openstack_dashboard.api import neutron as neutron_api
 
 
+from .models import Expiration
 from .models import Project
 from .models import PrjRequest
 from .models import PrjRole
@@ -505,5 +507,17 @@ def get_unit_table():
         LOG.error("Cannot exec unit table script", exc_info=True)
 
     return getattr(settings, 'UNIT_TABLE', {})
+
+#
+# Last expiration setup
+#
+def set_last_exp(uid):
+    all_exp = Expiration.objects.filter(registration__userid=uid)
+    if len(all_exp):
+        new_exp = max([ x.expdate for x in all_exp ])
+    else:
+        new_exp = datetime.now()
+    all_exp[0].registration.expdate = new_exp
+    all_exp[0].registration.save()
 
 

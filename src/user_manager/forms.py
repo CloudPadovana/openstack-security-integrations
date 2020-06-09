@@ -45,6 +45,7 @@ from openstack_auth_shib.notifications import SUBSCR_OK_TYPE
 from openstack_auth_shib.notifications import SUBSCR_FORCED_OK_TYPE
 
 from openstack_auth_shib.utils import get_prjman_ids
+from openstack_auth_shib.utils import set_last_exp
 
 from openstack_dashboard.api import keystone as keystone_api
 from openstack_dashboard.dashboards.identity.users import forms as baseForms
@@ -132,11 +133,7 @@ class RenewExpForm(forms.SelfHandlingForm):
                 except:
                     LOG.error("Cannot notify %s" % user_name, exc_info=True)
 
-            all_exp = Expiration.objects.filter(registration__userid=data['userid'])
-            if len(all_exp):
-                new_exp = max([ x.expdate for x in all_exp ])
-                all_exp[0].registration.expdate = new_exp
-                all_exp[0].registration.save()
+            set_last_exp(data['userid'])
 
         return True
 
