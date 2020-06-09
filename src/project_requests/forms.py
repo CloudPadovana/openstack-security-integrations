@@ -29,7 +29,9 @@ from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import EMail
 
-from openstack_auth_shib.models import PRJ_PUBLIC,PRJ_PRIVATE
+from openstack_auth_shib.models import PRJ_PUBLIC
+from openstack_auth_shib.models import PRJ_PRIVATE
+from openstack_auth_shib.models import PRJ_COURSE
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import OS_SNAME_LEN
 
@@ -116,7 +118,7 @@ class ProjectRequestForm(forms.SelfHandlingForm):
         excl_prjs = auth_prjs + self.pendingProjects
 
         prj_list = Project.objects.exclude(projectname__in=excl_prjs)
-        prj_list = prj_list.filter(status=PRJ_PUBLIC, projectid__isnull=False)
+        prj_list = prj_list.filter(status=[PRJ_PUBLIC, PRJ_COURSE], projectid__isnull=False)
 
         prjEntries = [
             (prj_entry.projectname, prj_entry.projectname) for prj_entry in prj_list
