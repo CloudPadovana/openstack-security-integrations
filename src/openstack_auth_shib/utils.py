@@ -523,20 +523,27 @@ def set_last_exp(uid):
 
 class AAIDBRouter:
 
+    AAIDB_NAME = 'cloudvenetoaai'
+
     def db_for_read(self, model, **hints):
         if model._meta.app_label == 'openstack_auth_shib':
-            return 'cloudvenetoaai'
+            return AAIDBRouter.AAIDB_NAME
         return None
+
     def db_for_write(self, model, **hints):
         if model._meta.app_label == 'openstack_auth_shib':
-            return 'cloudvenetoaai'
+            return AAIDBRouter.AAIDB_NAME
         return None
+
     def allow_relation(self, obj1, obj2, **hints):
-        if model._meta.app_label == 'openstack_auth_shib':
+        if obj1._meta.app_label == 'openstack_auth_shib':
+            return True
+        if obj2._meta.app_label == 'openstack_auth_shib':
             return True
         return None
+
     def allow_migrate(self, db, app_label, model_name=None, **hints):
-        if model._meta.app_label == 'openstack_auth_shib':
-            return True
+        if app_label == 'openstack_auth_shib':
+            return db == AAIDBRouter.AAIDB_NAME
         return None
 
