@@ -16,6 +16,7 @@
 import logging
 from datetime import datetime, timedelta
 
+from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.core.urlresolvers import reverse_lazy
 from django.db import transaction
@@ -371,6 +372,9 @@ class DetailsView(forms.ModalFormView):
                     tmpem = EMail.objects.filter(registration__regid=regid)
                     tmpdict['email'] = tmpem[0].email if len(tmpem) else "-"
                     tmpdict['notes'] = prj_req.notes
+                    tmpctc = self._getContact(reg_item.organization)
+                    if tmpctc:
+                        tmpdict['contact'] = tmpctc
 
                 if reg_item:
                     tmpdict['username'] = reg_item.username
@@ -402,6 +406,13 @@ class DetailsView(forms.ModalFormView):
         context = super(DetailsView, self).get_context_data(**kwargs)
         context.update(self.get_object())
         return context
+
+    def _getContact(self, dept_id):
+        for o_name, o_data in settings.HORIZON_CONFIG.get('organization', {}).items():
+            for ou_tuple in o_data:
+                if len(ou_tuple) > 4 and ou_tuple[0] == dept_id:
+                    return "%s <%s> (tel: %s)" % ou_tuple[2:]
+        return None
 
 def get_project_details(requestid):
 
