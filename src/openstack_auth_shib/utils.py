@@ -180,6 +180,17 @@ def get_avail_networks(request):
 
 def setup_new_project(request, project_id, project_name, data):
 
+    try:
+        acct_table = getattr(settings, 'ACCOUNTING', None)
+        if acct_table:
+            uid = acct_table.get('user_id', None)
+            roleid = acct_table.get('role_id', None)
+            if uid and roleid:
+                keystone_api.add_tenant_user_role(request, project_id, uid, roleid)
+    except:
+        LOG.error("Cannot add user for accounting", exc_info=True)
+        messages.error(request, _("Cannot add user for accounting"))
+
     unit_id = data.get('unit', None)
 
     cloud_table = get_unit_table()
