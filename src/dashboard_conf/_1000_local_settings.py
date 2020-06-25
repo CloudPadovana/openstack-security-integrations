@@ -14,14 +14,16 @@ WEBSSO_CHOICES = (("credentials", "Keystone Credentials"),)
 
 HORIZON_CONFIG['identity_providers'] = {}
 
-#DATABASES = {
-#    'default': {
-#        'ENGINE' : 'django.db.backends.mysql',
-#        'NAME' : '',
-#        'USER' : '',
-#        'PASSWORD' : '',
-#        'HOST' : '',
-#        'PORT' : '3306'
-#    }
-#}
+HORIZON_CONFIG['help_url'] = 'http://userguide.cloudveneto.it/'
+
+AVAILABLE_THEMES.append(( 'cap', pgettext_lazy("CloudVeneto theme", "CAP"), 'themes/cap' ))
+
+DEFAULT_THEME = 'cap'
+
+DATABASES = {}
+
+# Bind Horizon <-> Keystone for each point of access
+HORIZON_CONFIG['srv_bind_table'] = {}
+
+HORIZON_CONFIG['course_for'] = {}
 
