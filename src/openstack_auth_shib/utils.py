@@ -117,15 +117,41 @@ def check_projectname(prjname, error_class):
         raise error_class(_('Bad character "%s" for project name.') % tmpm.group(0))
     return tmps
 
-def parse_course_info(blob):
+#
+# Simple blob structure for course details
+#
+def parse_course_info(blob, default_name=""):
     data = blob.split('|')
     return {
-        'description' : data[0] if len(data) else None,
-        'name' : data[1] if len(data) > 1 else None,
-        'notes' : data[2] if len(data) > 2 else None,
+        'description' : data[0] if len(data) else _('Undefined'),
+        'name' : data[1] if len(data) > 1 else default_name,
+        'notes' : data[2] if len(data) > 2 else "",
         'ou' : data[3] if len(data) > 3 else 'other',
         'org' : data[4] if len(data) > 4 else 'unipd.it'
     }
+
+def encode_course_info(info_dict, default_name=""):
+    return '%s|%s|%s|%s|%s' % (info_dict.get('description', _('Undefined')),
+                               info_dict.get('name', default_name),
+                               info_dict.get('notes', ""),
+                               info_dict.get('ou', 'other'),
+                               info_dict.get('org', 'unipd.it'))
+
+def check_course_info(info_dict):
+    for info_key, info_value in info_dict.items():
+        if not '|' in info_value:
+            continue
+        if info_key == 'name':
+            return _('Bad character "|" in the course name.')
+        if info_key == 'description':
+            return _('Bad character "|" in the course description.')
+        if info_key == 'notes':
+            return _('Bad character "|" in the course notes.')
+        if info_key == 'ou':
+            return _('Bad character "|" in the course department.')
+        if info_key == 'org':
+            return _('Bad character "|" in the course institution.')
+    return None
 #
 # Project post creation
 #

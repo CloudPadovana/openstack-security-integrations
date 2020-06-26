@@ -33,6 +33,8 @@ from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_COURSE
 from openstack_auth_shib.utils import TAG_REGEX
+from openstack_auth_shib.utils import encode_course_info
+from openstack_auth_shib.utils import check_course_info
 
 LOG = logging.getLogger(__name__)
 
@@ -84,14 +86,9 @@ class CourseForm(forms.SelfHandlingForm):
 
     def clean(self):
         data = super(CourseForm, self).clean()
-        if '|' in data['name']:
-            raise ValidationError(_('Bad character "|" in the course name.'))
-        if '|' in data['description']:
-            raise ValidationError(_('Bad character "|" in the course description.'))
-        if '|' in data['notes']:
-            raise ValidationError(_('Bad character "|" in the course notes.'))        
-        if '|' in data['ou']:
-            raise ValidationError(_('Bad character "|" in the course department.'))
+        err_msg = check_course_info(data)
+        if err_msg:
+            raise ValidationError(err_msg)
         return data
 
     @sensitive_variables('data')
@@ -108,6 +105,7 @@ class CourseForm(forms.SelfHandlingForm):
 
                 new_descr = '%s|%s|%s|%s' % (data['description'], data['name'],
                                              data['notes'], data['ou'])
+                new_descr = encode_course_info(data)
                 c_prj.description = new_descr
                 c_prj.status = PRJ_COURSE
                 c_prj.save()

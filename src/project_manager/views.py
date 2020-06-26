@@ -156,14 +156,10 @@ class CourseView(forms.ModalFormView):
         return context
 
     def get_initial(self):
-        course_info = self.get_object().description.split('|')
-        return {
-            'projectid' : self.get_object().projectid,
-            'description' : course_info[0] if len(course_info) else _('Undefined'),
-            'name' : course_info[1] if len(course_info) > 1 else self.get_object().projectname,
-            'notes' : course_info[2] if len(course_info) > 2 else "",
-            'ou' : course_info[3] if len(course_info) > 3 else 'other'
-        }
+        course_info = parse_course_info(self.get_object().description,
+                                        self.get_object().projectname)
+        course_info['projectid'] = self.get_object().projectid
+        return course_info
 
 class CourseDetailView(forms.ModalFormView):
     form_class = CourseDetailForm
@@ -179,10 +175,11 @@ class CourseDetailView(forms.ModalFormView):
 
         suffix = "/auth/course_" + urllib.quote(self.get_object().projectname)
 
-        info_table = parse_course_info(self.get_object().description)
+        info_table = parse_course_info(self.get_object().description,
+                                       self.get_object().projectname)
 
         course_table = settings.HORIZON_CONFIG.get('course_for', {})
-        LOG.info("-------------- organization : %s" % info_table['org'])
+
         idpref = course_table.get(info_table['org'], None)
         if idpref:
             reg_path = settings.HORIZON_CONFIG['identity_providers'][idpref]['path']
