@@ -28,6 +28,7 @@ from horizon import messages
 from openstack_dashboard.api import keystone as keystone_api
 
 from openstack_auth_shib.models import OS_SNAME_LEN
+from openstack_auth_shib.models import OS_LNAME_LEN
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_COURSE
@@ -118,6 +119,22 @@ class CourseForm(forms.SelfHandlingForm):
 
         return True
 
+class CourseDetailForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(CourseDetailForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['courseref'] = forms.CharField(
+            label=_('Course Link'),
+            required=True,
+            max_length=OS_LNAME_LEN,
+            widget=forms.TextInput(attrs={'readonly': 'readonly'})
+        )
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+        return True
+
 class EditTagsForm(forms.SelfHandlingForm):
 
     def __init__(self, request, *args, **kwargs):
@@ -152,7 +169,8 @@ class EditTagsForm(forms.SelfHandlingForm):
         try:
 
             kclient = keystone_api.keystoneclient(request)
-            
+            # TODO update does not work in train
+            #      replace with delete&set
             kclient.projects.update_tags(data['projectid'], data['ptags'])
 
         except:

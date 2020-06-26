@@ -117,7 +117,15 @@ def check_projectname(prjname, error_class):
         raise error_class(_('Bad character "%s" for project name.') % tmpm.group(0))
     return tmps
 
-
+def parse_course_info(blob):
+    data = blob.split('|')
+    return {
+        'description' : data[0] if len(data) else None,
+        'name' : data[1] if len(data) > 1 else None,
+        'notes' : data[2] if len(data) > 2 else None,
+        'ou' : data[3] if len(data) > 3 else 'other',
+        'org' : data[4] if len(data) > 4 else 'unipd.it'
+    }
 #
 # Project post creation
 #

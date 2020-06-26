@@ -48,6 +48,7 @@ from .models import PRJ_COURSE
 from .forms import RegistrForm
 from .idpmanager import Federated_Account
 from .idpmanager import checkFederationSetup
+from .utils import parse_course_info
 
 LOG = logging.getLogger(__name__)
 
@@ -299,27 +300,30 @@ def course(request, project_name):
     if project[0].status <> PRJ_COURSE:
         tempDict = {
             'error_header' : _("Course not yet available"),
-            'error_text' : "%s: %s" % (_("Course not found"), project_name),
+            'error_text' : "%s: %s" % (_("Course not yet available"), project_name),
             'redirect_url' : '/dashboard',
             'redirect_label' : _("Home")
         }
         return shortcuts.render(request, 'aai_error.html', tempDict)
 
-    org, idpref = course_table.items()[0]
+    info_table = parse_course_info(project[0].description)
+
+    idpref = course_table.get(info_table['org'], None)
+    if not idpref:
+        tempDict = {
+            'error_header' : _("Course management error"),
+            'error_text' : "%s: %s" % (_("Course management error"), project_name),
+            'redirect_url' : '/dashboard',
+            'redirect_label' : _("Home")
+        }
+        return shortcuts.render(request, 'aai_error.html', tempDict)
+
     reg_path = settings.HORIZON_CONFIG['identity_providers'][idpref]['path']
 
+    info_table['project'] = project_name
+    info_table['registration_url'] = reg_path
 
-    course_info = project[0].description.split('|')
-
-    tempDict = {
-        'project' : project_name,
-        'description' : course_info[0] if len(course_info) else None,
-        'name' : course_info[1] if len(course_info) > 1 else project_name,
-        'notes' : course_info[2] if len(course_info) > 2 else None,
-        'ou' : course_info[3] if len(course_info) > 3 else 'other',
-        'registration_url' : reg_path
-    }
-    return shortcuts.render(request, 'course.html', tempDict)
+    return shortcuts.render(request, 'course.html', info_table)
 
 
 

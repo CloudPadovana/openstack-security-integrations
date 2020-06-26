@@ -31,6 +31,8 @@ quota_url = url(r'^(?P<tenant_id>[^/]+)/update_quotas/$',
         baseViews.UpdateQuotasView.as_view(), name='update_quotas')
 course_url = url(r'^(?P<project_id>[^/]+)/course/$',
         views.CourseView.as_view(), name='course')
+cdetail_url = url(r'^(?P<project_id>[^/]+)/course_detail/$',
+        views.CourseDetailView.as_view(), name='course_detail')
 edittags_url = url(r'^(?P<project_id>[^/]+)/edittags/$',
         views.EditTagsView.as_view(), name='edittags')
 
@@ -46,6 +48,7 @@ if django_version[1] < 11:
         detail_url,
         quota_url,
         course_url,
+        cdetail_url,
         edittags_url,
     )
 
@@ -59,6 +62,7 @@ else:
         detail_url,
         quota_url,
         course_url,
+        cdetail_url,
         edittags_url
     ]
 

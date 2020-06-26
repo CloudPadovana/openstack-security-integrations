@@ -14,6 +14,7 @@
 #  under the License. 
 
 import logging
+import urllib
 
 from django.db import transaction
 from django.conf import settings
@@ -29,6 +30,7 @@ from openstack_dashboard import api
 
 from .forms import CourseForm
 from .forms import EditTagsForm
+from .forms import CourseDetailForm
 from .tables import ProjectsTable
 from .workflows import ExtUpdateProject
 from .workflows import ExtCreateProject
@@ -37,6 +39,7 @@ from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.utils import ORG_TAG_FMT
+from openstack_auth_shib.utils import parse_course_info
 
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -161,6 +164,30 @@ class CourseView(forms.ModalFormView):
             'notes' : course_info[2] if len(course_info) > 2 else "",
             'ou' : course_info[3] if len(course_info) > 3 else 'other'
         }
+
+class CourseDetailView(forms.ModalFormView):
+    form_class = CourseDetailForm
+    template_name = 'idmanager/project_manager/course_detail.html'
+    success_url = reverse_lazy('horizon:idmanager:project_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            self._object = Project.objects.filter(projectid=self.kwargs['project_id'])[0]
+        return self._object
+
+    def get_initial(self):
+
+        suffix = "/auth/course_" + urllib.quote(self.get_object().projectname)
+
+        info_table = parse_course_info(self.get_object().description)
+
+        course_table = settings.HORIZON_CONFIG.get('course_for', {})
+        LOG.info("-------------- organization : %s" % info_table['org'])
+        idpref = course_table.get(info_table['org'], None)
+        if idpref:
+            reg_path = settings.HORIZON_CONFIG['identity_providers'][idpref]['path']
+            return { 'courseref': reg_path[0:reg_path.find('dashboard') + 9] + suffix }
+        return { 'courseref' : 'https://cloudveneto.ict.unipd.it/dashboard' + suffix }
 
 class EditTagsView(forms.ModalFormView):
     form_class = EditTagsForm
