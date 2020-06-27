@@ -69,7 +69,6 @@ mkdir -p %{buildroot}/etc/openstack-auth-shib/notifications
 
 mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d
 mv %{buildroot}/%{python_sitelib}/dashboard_conf/_1000_* \
-    %{buildroot}/%{python_sitelib}/dashboard_conf/_1001_* \
     %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d
 
 mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/enabled
@@ -225,9 +224,6 @@ Customization of Openstack Horizon for Cloud Area Padovana
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVenetoStrip.png
 /usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
-/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cap_*.py
-/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cap_*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1001_cap_*.pyo
 %dir /usr/share/openstack-dashboard/openstack_dashboard/themes/cap
 %dir /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/static
 %dir /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/static/img
