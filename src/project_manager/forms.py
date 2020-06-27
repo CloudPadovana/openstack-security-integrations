@@ -63,27 +63,6 @@ class CourseForm(forms.SelfHandlingForm):
             widget=forms.widgets.Textarea()
         )
 
-        ou_choices = self._get_OU_list()
-        if len(ou_choices) > 0:
-            self.fields['ou'] = forms.ChoiceField(
-                label=_('Department'),
-                required=True,
-                choices=ou_choices
-            )
-        else:
-            self.fields['ou'] = forms.CharField(
-                required=True,
-                initial="other",
-                widget=forms.HiddenInput
-            )
-
-    def _get_OU_list(self):
-        result = list()
-        org_table = settings.HORIZON_CONFIG.get('organization', {})
-        for korg in settings.HORIZON_CONFIG.get('course_for', {}).keys():
-            result += map(lambda x : x[0:2], org_table[korg])
-        return result
-
     def clean(self):
         data = super(CourseForm, self).clean()
         err_msg = check_course_info(data)
@@ -103,8 +82,13 @@ class CourseForm(forms.SelfHandlingForm):
                     messages.error(request, _("Operation not allowed"))
                     return False
 
-                new_descr = '%s|%s|%s|%s' % (data['description'], data['name'],
-                                             data['notes'], data['ou'])
+                kclient = keystone_api.keystoneclient(request)
+                for p_tag in kclient.projects.list_tags(c_prj.projectid):
+                    if p_tag.startswith('OU='):
+                        data['ou'] = p_tag[3:]
+                    if p_tag.startswith('O='):
+                        data['org'] = p_tag[2:]
+
                 new_descr = encode_course_info(data)
                 c_prj.description = new_descr
                 c_prj.status = PRJ_COURSE
@@ -157,7 +141,12 @@ class EditTagsForm(forms.SelfHandlingForm):
             tmpm = TAG_REGEX.search(tmps)
             if not tmpm:
                 raise ValidationError(_('Bad format for tag %s') % tmps)
-            new_list.append(tmps)
+            if tmps.startswith('ou='):
+                new_list.append(tmps.replace('ou=', 'OU='))
+            elif tmps.startswith('o='):
+                new_list.append(tmps.replace('o=', 'O='))
+            else:
+                new_list.append(tmps)
         data['ptags'] = new_list
 
         return data
