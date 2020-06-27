@@ -156,8 +156,7 @@ class EditTagsForm(forms.SelfHandlingForm):
         try:
 
             kclient = keystone_api.keystoneclient(request)
-            # TODO update does not work in train
-            #      replace with delete&set
+            kclient.projects.update_tags(data['projectid'], [])
             kclient.projects.update_tags(data['projectid'], data['ptags'])
 
         except:
