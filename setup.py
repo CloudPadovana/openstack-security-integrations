@@ -22,7 +22,7 @@ from distutils.command.bdist_rpm import bdist_rpm as _bdist_rpm
 
 pkg_name = 'openstack-security-integrations'
 pkg_version = '1.2.4'
-pkg_release = '0'
+pkg_release = '1'
 
 source_items = "setup.py src config"
 
@@ -183,7 +183,6 @@ module_list = [
     'password_manager',
     'log_manager',
     'project_requests',
-    'api_access_manager',
     'idmanager',
     'dashboard_conf',
     'commands'
@@ -216,7 +215,6 @@ setup(
                   (member_panel_dir, member_templ_list),
                   (preq_panel_dir, preq_templ_list),
                   (log_panel_dir, log_templ_list),
-                  (api_access_dir, api_templ_list),
                   (img_dir, logo_list),
                   (theme_dir + '/static/img', ['src/templates/favicon.ico']),
                   ('etc/openstack-auth-shib', hz_confile_list),

@@ -58,8 +58,8 @@ mv %{buildroot}/%{python_sitelib}/project_requests/* \
 mv %{buildroot}/%{python_sitelib}/password_manager/* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager
 
-mv %{buildroot}/%{python_sitelib}/api_access_manager/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager
+#mv %{buildroot}/%{python_sitelib}/api_access_manager/* \
+#   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager
 
 mkdir -p %{buildroot}/%{python_sitelib}/horizon/management/commands
 mv %{buildroot}/%{python_sitelib}/commands/* \
@@ -72,6 +72,7 @@ mv %{buildroot}/%{python_sitelib}/dashboard_conf/_1000_* \
     %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d
 
 mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/enabled
+rm %{buildroot}/%{python_sitelib}/dashboard_conf/_18*.py*
 mv %{buildroot}/%{python_sitelib}/dashboard_conf/_*.py* \
    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/enabled
    
@@ -185,13 +186,13 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/*.pyc
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/*.pyo
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/templates/password_manager/*.html
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/templates
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/templates/api_access_manager
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/templates/api_access_manager/*
+#%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager
+#%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/templates
+#%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/templates/api_access_manager
+#/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/*.py
+#/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/*.pyc
+#/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/*.pyo
+#/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/templates/api_access_manager/*
 %{python_sitelib}/horizon/management/commands/*.py
 %{python_sitelib}/horizon/management/commands/*.pyc
 %{python_sitelib}/horizon/management/commands/*.pyo
