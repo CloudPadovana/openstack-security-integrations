@@ -36,6 +36,7 @@ from openstack_auth.views import logout as basic_logout
 from openstack_auth.views import switch as basic_switch
 from openstack_auth.views import switch_region as basic_switch_region
 from openstack_auth.utils import is_websso_enabled
+from openstack_auth.utils import get_websso_url
 
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -56,6 +57,14 @@ LOG = logging.getLogger(__name__)
 @csrf_protect
 @never_cache
 def login(request):
+
+    if request.method == 'POST' and is_websso_enabled():
+        auth_type = request.POST.get('auth_type', 'credentials')
+        auth_url = request.POST.get('region', None)
+
+        if  auth_type != 'credentials' and auth_url != None:
+            url = get_websso_url(request, auth_url, auth_type)
+            return shortcuts.redirect(url)
 
     result = basic_login(request)
     if request.user.is_authenticated and request.user.is_superuser:
