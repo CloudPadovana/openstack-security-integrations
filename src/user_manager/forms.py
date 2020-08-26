@@ -54,7 +54,7 @@ LOG = logging.getLogger(__name__)
 
 def get_year_list():
     curr_year = datetime.now().year
-    return range(curr_year, curr_year+25)
+    return list(range(curr_year, curr_year+25))
 
 def get_default_role(request):
     DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
@@ -97,7 +97,7 @@ class RenewExpForm(forms.SelfHandlingForm):
 
             q_args = {
                 'registration__userid' : data['userid'],
-                'project__projectname__in' : exp_table.keys()
+                'project__projectname__in' : list(exp_table.keys())
             }
             for exp_item in Expiration.objects.filter(**q_args):
 
@@ -117,7 +117,7 @@ class RenewExpForm(forms.SelfHandlingForm):
                 q_args['flowstatus__in'] = [ PSTATUS_RENEW_ADMIN, PSTATUS_RENEW_MEMB ]
                 PrjRequest.objects.filter(**q_args).delete()
                 
-                if not mail_table.has_key(user_name):
+                if user_name not in mail_table:
                     tmpobj = EMail.objects.filter(registration__userid=data['userid'])
                     mail_table[user_name] = tmpobj[0].email if len(tmpobj) else None
 
@@ -160,7 +160,7 @@ class UpdateUserForm(baseForms.UpdateUserForm):
                     tmpres = EMail.objects.filter(registration=reg_usr)
                     tmpres.update(email=data['email'])
 
-                if "name" in data and data['name'] <> reg_usr.username:
+                if "name" in data and data['name'] != reg_usr.username:
                     reg_usr.username=data['name']
                     reg_usr.save()
 

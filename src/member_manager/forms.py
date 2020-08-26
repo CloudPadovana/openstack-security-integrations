@@ -54,7 +54,7 @@ class ModifyExpForm(forms.SelfHandlingForm):
         self.fields['userid'] = forms.CharField(widget=HiddenInput)
         
         curr_year = datetime.utcnow().year
-        years_list = range(curr_year, curr_year + MAX_RENEW)           
+        years_list = list(range(curr_year, curr_year + MAX_RENEW))           
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
             required=True,

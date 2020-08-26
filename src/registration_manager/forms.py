@@ -325,7 +325,7 @@ class GrantAllForm(PreCheckForm):
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
             required=True,
-            widget=SelectDateWidget(None, range(curr_year, curr_year + 25))
+            widget=SelectDateWidget(None, list(range(curr_year, curr_year + 25)))
         )
 
         self.fields['rename'] = forms.CharField(
@@ -445,7 +445,7 @@ class ForcedCheckForm(forms.SelfHandlingForm):
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
 
         curr_year = datetime.now().year
-        years_list = range(curr_year, curr_year+25)
+        years_list = list(range(curr_year, curr_year + 25))
 
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
@@ -618,7 +618,7 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
 
         curr_year = datetime.now().year
-        years_list = range(curr_year, curr_year+25)
+        years_list = list(range(curr_year, curr_year + 25))
 
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Administrator expiration date"),
@@ -796,7 +796,7 @@ class RenewAdminForm(forms.SelfHandlingForm):
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
 
         curr_year = datetime.now().year
-        years_list = range(curr_year, curr_year + 25)
+        years_list = list(range(curr_year, curr_year + 25))
 
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),

@@ -72,7 +72,7 @@ class IndexView(tables.DataTableView):
                     
                 member_id_dict[r_item.user['id']][1] += 1
             
-            for rp_item in member_id_dict.itervalues():
+            for rp_item in member_id_dict.values():
                 rp_item[2] = number_of_admins
         
             result = list()

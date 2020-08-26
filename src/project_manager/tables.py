@@ -142,7 +142,7 @@ class CourseOnLink(tables.LinkAction):
     classes = ("ajax-modal", "btn-edit")
     
     def allowed(self, request, datum):
-        return datum.handle_course and datum.status <> PRJ_COURSE
+        return datum.handle_course and datum.status != PRJ_COURSE
 
 class EditCourseLink(tables.LinkAction):
     name = "editcourse"

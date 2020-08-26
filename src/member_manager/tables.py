@@ -53,16 +53,16 @@ class DeleteMemberAction(tables.DeleteAction):
     @staticmethod
     def action_present(count):
         return ungettext_lazy(
-            u"Delete Member",
-            u"Delete Members",
+            "Delete Member",
+            "Delete Members",
             count
         )
 
     @staticmethod
     def action_past(count):
         return ungettext_lazy(
-            u"Deleted Member",
-            u"Deleted Members",
+            "Deleted Member",
+            "Deleted Members",
             count
         )
 

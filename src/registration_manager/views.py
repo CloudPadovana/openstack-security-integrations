@@ -122,7 +122,7 @@ class MainView(tables.DataTableView):
                 if not requestid in reqTable:
                     reqTable[requestid] = rData
 
-        result = reqTable.values()
+        result = list(reqTable.values())
         result.sort()
         return result
 

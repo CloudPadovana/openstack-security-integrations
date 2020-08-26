@@ -14,7 +14,7 @@
 #  under the License. 
 
 import logging
-import urllib
+import urllib.parse
 
 from django.db import transaction
 from django.conf import settings
@@ -64,7 +64,7 @@ class IndexView(baseViews.IndexView):
 
     def get_data(self):
 
-        course_org_list = settings.HORIZON_CONFIG.get('course_for', {}).keys()
+        course_table = settings.HORIZON_CONFIG.get('course_for', {})
     
         result = list()
         try:
@@ -80,7 +80,7 @@ class IndexView(baseViews.IndexView):
 
             with transaction.atomic():
 
-                prj_list = Project.objects.filter(projectname__in=prj_table.keys())
+                prj_list = Project.objects.filter(projectname__in=list(prj_table.keys()))
 
                 role_list = PrjRole.objects.filter(
                     registration__userid = self.request.user.id,
@@ -105,11 +105,11 @@ class IndexView(baseViews.IndexView):
                         prj_table[prjname].tags = set()
 
                     if is_curr_admin:
-                        for item in course_org_list:
+                        for item in course_table.keys():
                             if (ORG_TAG_FMT % item) in prj_table[prjname].tags:
                                 prj_table[prjname].handle_course = True
 
-            tmplist = prj_table.keys()
+            tmplist = list(prj_table.keys())
             tmplist.sort()
             for item in tmplist:
                 result.append(prj_table[item])
@@ -173,7 +173,7 @@ class CourseDetailView(forms.ModalFormView):
 
     def get_initial(self):
 
-        suffix = "/auth/course_" + urllib.quote(self.get_object().projectname)
+        suffix = "/auth/course_" + urllib.parse.quote(self.get_object().projectname)
 
         info_table = parse_course_info(self.get_object().description,
                                        self.get_object().projectname)

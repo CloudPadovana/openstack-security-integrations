@@ -45,7 +45,7 @@ class Command(CloudVenetoCommand):
 
                 for prj_req in PrjRequest.objects.filter(flowstatus=PSTATUS_PENDING):
                     prjname = prj_req.project.projectname
-                    if not req_table.has_key(prjname):
+                    if prjname not in req_table:
                         req_table[prjname] = list()
                     req_table[prjname].append(prj_req.registration.username)
 
@@ -56,11 +56,11 @@ class Command(CloudVenetoCommand):
                         user_id = p_role.registration.userid
                         user_tuple = (user_name, user_id)
 
-                        if not admin_table.has_key(user_tuple):
+                        if user_tuple not in admin_table:
                             admin_table[user_tuple] = list()
                         admin_table[user_tuple].append(p_role.project.projectname)
 
-                        if not mail_table.has_key(user_name):
+                        if user_name not in mail_table:
                             tmpres = EMail.objects.filter(registration__username=user_name)
                             if len(tmpres):
                                 mail_table[user_name] = tmpres[0].email

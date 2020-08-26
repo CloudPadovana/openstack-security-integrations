@@ -81,7 +81,7 @@ class Command(CloudVenetoCommand):
 
                     LOG.info("Issued renewal for %s" % req_pair[0].username)
 
-                    if mail_table.has_key(req_pair[1].projectname):
+                    if req_pair[1].projectname in mail_table:
                         continue
 
                     tmpl = list()
