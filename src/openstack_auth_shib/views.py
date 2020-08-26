@@ -85,12 +85,6 @@ def websso(request):
         }
         return shortcuts.render(request, 'aai_error.html', tempDict)
 
-    code = request.POST.get('code', '200')
-    if code <> '200':
-        res = django_http.HttpResponseRedirect(settings.LOGIN_URL)
-        res.set_cookie('logout_reason', "User not registered or authorization failed", max_age=10)
-        return res
-
     return basic_websso(request)
 
 def logout(request):
@@ -269,10 +263,10 @@ def auth_error(request):
     if 'errorText' in request.GET:
         err_msg = "%s: [%s]" % (_("Original error"), request.GET['errorText'])
     else:
-        err_msg = _("A failure occurs authenticating user")
+        err_msg = _("User not registered or authorization failed")
     
     tempDict = {
-        'error_header' : _("Authentication error"),
+        'error_header' : _("Access denied"),
         'error_text' : err_msg,
         'contacts' : getattr(settings, 'MANAGERS', None),
         'redirect_url' : '/dashboard',
