@@ -51,7 +51,7 @@
             id="reg_btn_id" disabled
             class="btn btn-primary pull-right">{% trans "Register" %}</button>
     <button type="button"
-            onclick="location.href='/dashboard'"
+            onclick="location.href='{% url 'resetsso' %}'"
             class="btn btn-primary pull-right">{% trans "Cancel" %}</button>
   </div>
 {% endblock %}

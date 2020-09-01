@@ -52,6 +52,7 @@ from .idpmanager import checkFederationSetup
 from .utils import parse_course_info
 
 LOG = logging.getLogger(__name__)
+AUTHZCOOKIE = "keystoneidpid"
 
 @sensitive_post_parameters()
 @csrf_protect
@@ -64,7 +65,9 @@ def login(request):
 
         if  auth_type != 'credentials' and auth_url != None:
             url = get_websso_url(request, auth_url, auth_type)
-            return shortcuts.redirect(url)
+            tmpresp = shortcuts.redirect(url)
+            tmpresp.set_cookie(AUTHZCOOKIE, auth_type)
+            return tmpresp
 
     result = basic_login(request)
     if request.user.is_authenticated and request.user.is_superuser:
@@ -85,7 +88,9 @@ def websso(request):
         }
         return shortcuts.render(request, 'aai_error.html', tempDict)
 
-    return basic_websso(request)
+    tmpresp = basic_websso(request)
+    tmpresp.delete_cookie(AUTHZCOOKIE)
+    return tmpresp
 
 def logout(request):
 
@@ -260,6 +265,14 @@ def dup_login(request):
 #
 def auth_error(request):
 
+    try:
+        if AUTHZCOOKIE in request.COOKIES:
+            idpdata = settings.HORIZON_CONFIG['identity_providers'][request.COOKIES[AUTHZCOOKIE]]
+            tmpresp = django_http.HttpResponseRedirect(idpdata['path'].replace('register', 'authzchk'))
+            return tmpresp
+    except:
+        LOG.error("Cookie detection error", exc_info=True)
+
     if 'errorText' in request.GET:
         err_msg = "%s: [%s]" % (_("Original error"), request.GET['errorText'])
     else:
@@ -328,10 +341,32 @@ def course(request, project_name):
 
     return shortcuts.render(request, 'course.html', info_table)
 
+def authzchk(request):
+    attributes = Federated_Account(request)
+
+    try:
+        if AUTHZCOOKIE in request.COOKIES and attributes \
+            and UserMapping.objects.filter(globaluser=attributes.username).count() == 0:
+            idpdata = settings.HORIZON_CONFIG['identity_providers'][request.COOKIES[AUTHZCOOKIE]]
+            tmpresp = django_http.HttpResponseRedirect(idpdata['path'])
+            tmpresp.delete_cookie(AUTHZCOOKIE)
+            return tmpresp
+    except:
+        LOG.error("Cookie detection error", exc_info=True)
+
+    return shortcuts.render(request, 'aai_error.html', {
+        'error_header' : _("Access denied"),
+        'error_text' : _("User not registered or authorization failed"),
+        'redirect_url' : '/dashboard',
+        'redirect_label' : _("Home")
+    })
 
 
-
-
-
+def resetsso(request):
+    # TODO missing local logout
+    tmpresp = django_http.HttpResponseRedirect(reverse_lazy('login'))
+    if AUTHZCOOKIE in request.COOKIES:
+        tmpresp.delete_cookie(AUTHZCOOKIE)
+    return tmpresp
 
 

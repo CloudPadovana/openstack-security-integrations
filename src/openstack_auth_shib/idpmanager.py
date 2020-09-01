@@ -58,13 +58,16 @@ class Federated_Account:
                 if len(step2) > 0:
                     rules = Federated_Account.rule_table.get(step2[0][0], [])
 
-                    ruleproc = federation_utils.RuleProcessor(step2[0][0], rules)
-                    res = ruleproc.process(request.META)
-                    if res and 'user' in res:
-                        self.username = res['user']['name']
-                        LOG.debug("Found account: %s" % self.username)
-                    else:
-                        LOG.debug("No rule for %s" % step2[0][0])
+                    try:
+                        ruleproc = federation_utils.RuleProcessor(step2[0][0], rules)
+                        res = ruleproc.process(request.META)
+                        if res and 'user' in res:
+                            self.username = res['user']['name']
+                            LOG.debug("Found account: %s" % self.username)
+                        else:
+                            LOG.debug("No rule for %s" % step2[0][0])
+                    except Exception as exc:
+                        LOG.debug(str(exc), exc_info=True)
                 else:
                     LOG.debug("No mapping for %s" % step1[0][0])
             else:

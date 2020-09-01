@@ -43,6 +43,8 @@ dup_url = url(r"^dup_login/$", views.dup_login, name='dup_login')
 sub_dup_url = url(r"^already_subscribed/$", views.alreay_subscribed, name='dup_subscr')
 err_url = url(r"^auth_error/$", views.auth_error, name='auth_error')
 course_url = url(r"^course_(?P<project_name>[^/$]+)/$", views.course, name='course')
+authzchk_url = url(r"^authzchk/$", views.authzchk, name='authzchk')
+resetsso_url = url(r"^resetsso/$", views.resetsso, name='resetsso')
 
 if django_version[1] < 11:
 
@@ -50,6 +52,8 @@ if django_version[1] < 11:
 
     urlpatterns = patterns('openstack_auth_shib.views',
                            login_url,
+                           authzchk_url,
+                           resetsso_url,
                            course_url,
                            websso_url,
                            logout_url,
@@ -68,6 +72,8 @@ else:
 
     urlpatterns = [
         login_url,
+        authzchk_url,
+        resetsso_url,
         course_url,
         websso_url,
         logout_url,
