@@ -33,6 +33,10 @@
 
 {% block login_header %}
   {% include "auth/_splash.html" %}
+  <div id="sct_panel_div"
+       class="text-center">
+  </div>
+
 {% endblock %}
 
 {% block login_body %}
@@ -80,6 +84,13 @@
 
     <div id="idpbtndiv" class="text-center" style="display: block;">
 
+      <div class="text-center">
+        <p>{% trans "Sign in with the following methods or" %}
+        <button type="button"
+                onclick="showRegistr()"
+                class="btn btn-primary">{% trans "Register" %}</button></p>
+      </div>
+
       <input id="auth_type_in" type="hidden" name="auth_type" value="credentials" />
 
       {% for idpid, idpdata in HORIZON_CONFIG.identity_providers.iteritems %}
@@ -110,9 +121,11 @@
          class="text-center"
          style="display: none;">
 
-      <div class="text-center alert alert-info">
-        <p>{% trans "Please select your institution." %}
-        <p>{% trans "Register with username-password (last button) otherwise." %}</p>
+      <div class="text-center">
+        <p><button type="button"
+                onclick="showIdPs()"
+                class="btn btn-primary">{% trans "Sign-in" %}</button>
+           {% trans "or Register with the following methods" %}</p>
       </div>
       
       {% for idpid, idpdata in HORIZON_CONFIG.identity_providers.iteritems %}
@@ -141,14 +154,6 @@
 
 
 {% block login_footer %}
-  <div id="main_btn_div"
-       class="clearfix"
-       style="display: block;">
-    <button type="button"
-            onclick="showRegistr()"
-            class="btn btn-primary pull-right">{% trans "Register" %}</button>
-  </div>
-  
   <div id="login_sel_div"
        class="clearfix"
        style="display: none;">
@@ -159,14 +164,6 @@
             class="btn btn-primary pull-right">{% trans "Back" %}</button>
   </div>
   
-  <div id="regist_sel_div"
-       class="clearfix"
-       style="display: none;">
-    <button type="button" 
-            onclick="showIdPs()"
-            class="btn btn-primary pull-right">{% trans "Back" %}</button>
-  </div>
-
   <div>
     <a target="_new" href="{{ HORIZON_CONFIG.help_url }}">
       <img class="btn" src="/dashboard/static/dashboard/img/help-transparent.png"/>
@@ -185,8 +182,6 @@
   function showLoginForm () {
       document.getElementById('idpbtndiv').style.display='none';
       document.getElementById('register_div').style.display='none';
-      document.getElementById('main_btn_div').style.display='none';
-      document.getElementById('regist_sel_div').style.display='none';
       document.getElementById('logformdiv').style.display='block';
       document.getElementById('login_sel_div').style.display='block';
   }
@@ -195,18 +190,17 @@
       document.getElementById('logformdiv').style.display='none';
       document.getElementById('login_sel_div').style.display='none';
       document.getElementById('register_div').style.display='none';
-      document.getElementById('regist_sel_div').style.display='none';
       document.getElementById('idpbtndiv').style.display='block';
-      document.getElementById('main_btn_div').style.display='block';
   }
   
   function showRegistr () {
       document.getElementById('logformdiv').style.display='none';
       document.getElementById('login_sel_div').style.display='none';
       document.getElementById('idpbtndiv').style.display='none';
-      document.getElementById('main_btn_div').style.display='none';
       document.getElementById('register_div').style.display='block';
-      document.getElementById('regist_sel_div').style.display='block';
+
+      document.getElementById('act_signin_btn').disabled=false;
+      document.getElementById('act_regist_btn').disabled=true;
   }
   
   function selectIdP (idpID) {
