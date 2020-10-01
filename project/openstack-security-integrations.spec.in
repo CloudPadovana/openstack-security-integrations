@@ -125,6 +125,8 @@ Django plugin for Shibboleth authentication
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoUsrPwd.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoUsrReg.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/empty.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/cv-selector-register.png
+/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/cv-selector-signin.png
 /usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/help-transparent.png
 %dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager
 /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.py

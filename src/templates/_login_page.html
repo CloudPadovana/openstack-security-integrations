@@ -33,10 +33,6 @@
 
 {% block login_header %}
   {% include "auth/_splash.html" %}
-  <div id="sct_panel_div"
-       class="text-center">
-  </div>
-
 {% endblock %}
 
 {% block login_body %}
@@ -82,19 +78,28 @@
       {% endif %}
     </div>
 
-    <div id="idpbtndiv" class="text-center" style="display: block;">
+    <div id="idpbtndiv"
+        {% if HORIZON_CONFIG.new_splash %}
+         style="display: block;border-style: solid;border-color: #dddddd;border-top-width: 0px;border-right-width: 1px;border-left-width: 1px;border-bottom-width: 1px;"
+        {% else %}
+         style="display: block;"
+        {% endif %}
+         class="text-center">
 
+      {% if HORIZON_CONFIG.new_splash %}
       <div class="text-center">
-        <p>{% trans "Sign in with the following methods or" %}
-        <button type="button"
-                onclick="showRegistr()"
-                class="btn btn-primary">{% trans "Register" %}</button></p>
+        <img align="middle" src="/dashboard/static/dashboard/img/cv-selector-signin.png" usemap="#registermap"/>
+        <map name="registermap">
+          <area shape="rect" coords="220,0,420,30" alt="Register" onclick="showRegistr()"/>
+        </map>
       </div>
+      {% endif %}
 
       <input id="auth_type_in" type="hidden" name="auth_type" value="credentials" />
 
       {% for idpid, idpdata in HORIZON_CONFIG.identity_providers.iteritems %}
       <button type="button"
+              style="margin-top: 5px;margin-bottom: 5px;"
               title="{% trans 'Sign in with' %} {{ idpdata.description }}"
               onclick="selectIdP('{{ idpid }}')">
          <img align="middle" height="80px" width="80px" 
@@ -104,6 +109,7 @@
       {% endfor %}
 
       <button type="button"
+              style="margin-top: 5px;margin-bottom: 5px;"
               title="{% trans 'Sign in with username and password' %}"
               onclick="showLoginForm()">
         <img align="middle" height="80px" width="80px" alt="{% trans 'Local account' %}" 
@@ -117,19 +123,31 @@
       {% include 'horizon/common/_form_field.html' with field=form.password %}
     </div>
     
-    <div id="register_div" 
-         class="text-center"
-         style="display: none;">
+    <div id="register_div"
+        {% if HORIZON_CONFIG.new_splash %}
+         style="display: none;border-style: solid;border-color: #dddddd;border-top-width: 0px;border-right-width: 1px;border-left-width: 1px;border-bottom-width: 1px;"
+        {% else %}
+         style="display: none;"
+        {% endif %}
+         class="text-center">
 
+      {% if HORIZON_CONFIG.new_splash %}
       <div class="text-center">
-        <p><button type="button"
-                onclick="showIdPs()"
-                class="btn btn-primary">{% trans "Sign-in" %}</button>
-           {% trans "or Register with the following methods" %}</p>
+       <img align="middle" src="/dashboard/static/dashboard/img/cv-selector-register.png" usemap="#signinmap"/>
+        <map name="signinmap">
+          <area shape="rect" coords="0,0,200,30" alt="Sign In" onclick="showIdPs()"/>
+        </map/>
       </div>
+      {% else %}
+      <div class="text-center alert alert-info">
+        <p>{% trans "Please select your institution." %}
+        <p>{% trans "Register with username-password (last button) otherwise." %}</p>
+      </div>
+      {% endif %}
       
       {% for idpid, idpdata in HORIZON_CONFIG.identity_providers.iteritems %}
       <button type="button"
+              style="margin-top: 5px;margin-bottom: 5px;"
               title="{% trans 'Register using' %} {{ idpdata.description }}"
               onclick="location.href='{{ idpdata.path }}';">
          <img align="middle" height="80px" width="80px" 
@@ -139,6 +157,7 @@
       {% endfor %}
 
       <button type="button"
+              style="margin-top: 5px;margin-bottom: 5px;"
               title="{% trans 'Register with username and password' %}"
               onclick="location.href='/dashboard/auth/register/';">
         <img align="middle" height="80px" width="80px"
@@ -154,6 +173,16 @@
 
 
 {% block login_footer %}
+  {% if not HORIZON_CONFIG.new_splash %}
+  <div id="main_btn_div"
+       class="clearfix"
+       style="display: block;">
+    <button type="button"
+            onclick="showRegistr()"
+            class="btn btn-primary pull-right">{% trans "Register" %}</button>
+  </div>
+  {% endif %}
+
   <div id="login_sel_div"
        class="clearfix"
        style="display: none;">
@@ -164,6 +193,16 @@
             class="btn btn-primary pull-right">{% trans "Back" %}</button>
   </div>
   
+  {% if not HORIZON_CONFIG.new_splash %}
+  <div id="regist_sel_div"
+       class="clearfix"
+       style="display: none;">
+    <button type="button" 
+            onclick="showIdPs()"
+            class="btn btn-primary pull-right">{% trans "Back" %}</button>
+  </div>
+  {% endif %}
+
   <div>
     <a target="_new" href="{{ HORIZON_CONFIG.help_url }}">
       <img class="btn" src="/dashboard/static/dashboard/img/help-transparent.png"/>
@@ -184,6 +223,11 @@
       document.getElementById('register_div').style.display='none';
       document.getElementById('logformdiv').style.display='block';
       document.getElementById('login_sel_div').style.display='block';
+
+      {% if not HORIZON_CONFIG.new_splash %}
+      document.getElementById('main_btn_div').style.display='none';
+      document.getElementById('regist_sel_div').style.display='none';
+      {% endif %}
   }
   
   function showIdPs () {
@@ -191,6 +235,11 @@
       document.getElementById('login_sel_div').style.display='none';
       document.getElementById('register_div').style.display='none';
       document.getElementById('idpbtndiv').style.display='block';
+
+      {% if not HORIZON_CONFIG.new_splash %}
+      document.getElementById('main_btn_div').style.display='block';
+      document.getElementById('regist_sel_div').style.display='none';
+      {% endif %}
   }
   
   function showRegistr () {
@@ -199,8 +248,10 @@
       document.getElementById('idpbtndiv').style.display='none';
       document.getElementById('register_div').style.display='block';
 
-      document.getElementById('act_signin_btn').disabled=false;
-      document.getElementById('act_regist_btn').disabled=true;
+      {% if not HORIZON_CONFIG.new_splash %}
+      document.getElementById('main_btn_div').style.display='none';
+      document.getElementById('regist_sel_div').style.display='block';
+      {% endif %}
   }
   
   function selectIdP (idpID) {
