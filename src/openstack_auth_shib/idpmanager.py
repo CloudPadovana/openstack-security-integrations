@@ -38,18 +38,21 @@ class Federated_Account:
 
             self.idpid = request.META['Shib-Identity-Provider']
 
-            idx = request.META.get('REMOTE_USER', '').find('@')
+            self.username = request.META['REMOTE_USER']
+            idx = request.META['REMOTE_USER'].find('@')
             self.provider = request.META['REMOTE_USER'][idx+1:] if idx > 0 else 'Unknown'
 
         elif 'OIDC-iss' in request.META:
+            self.username = None
             self.idpid = request.META['OIDC-iss']
             self.provider = request.META.get('OIDC-organisation_name', 'Unknown')
+            self.username = None
         else:
+            self.username = None
             self.idpid = None
             self.provider = None
 
-        self.username = None
-        if self.idpid:
+        if self.idpid and not self.username:
             step1 = list(x for x in Federated_Account.entity_table.items()
                          if self.idpid in x[1])
             if len(step1) > 0:
@@ -58,13 +61,16 @@ class Federated_Account:
                 if len(step2) > 0:
                     rules = Federated_Account.rule_table.get(step2[0][0], [])
 
-                    ruleproc = federation_utils.RuleProcessor(step2[0][0], rules)
-                    res = ruleproc.process(request.META)
-                    if res and 'user' in res:
-                        self.username = res['user']['name']
-                        LOG.debug("Found account: %s" % self.username)
-                    else:
-                        LOG.debug("No rule for %s" % step2[0][0])
+                    try:
+                        ruleproc = federation_utils.RuleProcessor(step2[0][0], rules)
+                        res = ruleproc.process(request.META)
+                        if res and 'user' in res:
+                            self.username = res['user']['name']
+                            LOG.debug("Found account: %s" % self.username)
+                        else:
+                            LOG.debug("No rule for %s" % step2[0][0])
+                    except Exception as exc:
+                        LOG.debug(str(exc), exc_info=True)
                 else:
                     LOG.debug("No mapping for %s" % step1[0][0])
             else:
@@ -115,6 +121,9 @@ def postproc_logout(request, response):
 
 
 def checkFederationSetup(request):
+
+    if not getattr(settings, 'check_federation_setup', False):
+        return
 
     mapping_table = getattr(settings, 'WEBSSO_IDP_MAPPING', {})
     entity_table = getattr(settings, 'WEBSSO_IDP_ENTITIES', {})

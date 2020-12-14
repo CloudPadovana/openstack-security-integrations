@@ -27,3 +27,5 @@ HORIZON_CONFIG['srv_bind_table'] = {}
 
 HORIZON_CONFIG['course_for'] = {}
 
+HORIZON_CONFIG['new_splash'] = False
+

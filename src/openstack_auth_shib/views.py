@@ -20,7 +20,6 @@ from urllib.parse import urlencode
 from django import shortcuts
 from django import http as django_http
 from django.conf import settings
-from django.core.urlresolvers import reverse_lazy
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.utils.translation import ugettext as _
 
@@ -52,6 +51,7 @@ from .idpmanager import checkFederationSetup
 from .utils import parse_course_info
 
 LOG = logging.getLogger(__name__)
+AUTHZCOOKIE = "keystoneidpid"
 
 @sensitive_post_parameters()
 @csrf_protect
@@ -64,7 +64,9 @@ def login(request):
 
         if  auth_type != 'credentials' and auth_url != None:
             url = get_websso_url(request, auth_url, auth_type)
-            return shortcuts.redirect(url)
+            tmpresp = shortcuts.redirect(url)
+            tmpresp.set_cookie(AUTHZCOOKIE, auth_type)
+            return tmpresp
 
     result = basic_login(request)
     if request.user.is_authenticated and request.user.is_superuser:
@@ -85,7 +87,9 @@ def websso(request):
         }
         return shortcuts.render(request, 'aai_error.html', tempDict)
 
-    return basic_websso(request)
+    tmpresp = basic_websso(request)
+    tmpresp.delete_cookie(AUTHZCOOKIE)
+    return tmpresp
 
 def logout(request):
 
@@ -108,7 +112,7 @@ def logout(request):
         redir_str = None
         if "openid" in token_data['token']['methods']:
             redir_para = 'logout'
-            redir_str = "https://%s:%d/v3/auth/OS-FEDERATION/websso/openid/redirect%s"
+            redir_str = "https://%s:%d/v3/auth/OS-FEDERATION/websso/openid/redirect?%s"
         elif "mapped" in token_data['token']['methods']:
             redir_para = 'return'
             redir_str = 'https://%s:%d/Shibboleth.sso/Logout?%s' 
@@ -260,6 +264,14 @@ def dup_login(request):
 #
 def auth_error(request):
 
+    try:
+        if AUTHZCOOKIE in request.COOKIES:
+            idpdata = settings.HORIZON_CONFIG['identity_providers'][request.COOKIES[AUTHZCOOKIE]]
+            tmpresp = django_http.HttpResponseRedirect(idpdata['path'].replace('register', 'authzchk'))
+            return tmpresp
+    except:
+        LOG.error("Cookie detection error", exc_info=True)
+
     if 'errorText' in request.GET:
         err_msg = "%s: [%s]" % (_("Original error"), request.GET['errorText'])
     else:
@@ -328,10 +340,54 @@ def course(request, project_name):
 
     return shortcuts.render(request, 'course.html', info_table)
 
+def authzchk(request):
+    attributes = Federated_Account(request)
 
+    tmpresp = None
+    try:
+        if AUTHZCOOKIE in request.COOKIES and attributes \
+            and UserMapping.objects.filter(globaluser=attributes.username).count() == 0:
+            idpdata = settings.HORIZON_CONFIG['identity_providers'][request.COOKIES[AUTHZCOOKIE]]
+            tmpresp = django_http.HttpResponseRedirect(idpdata['path'])
+    except:
+        LOG.error("Cookie detection error", exc_info=True)
 
+    if not tmpresp:
+        tmpresp = shortcuts.render(request, 'aai_error.html', {
+            'error_header' : _("Access denied"),
+            'error_text' : _("User not registered or authorization failed"),
+            'redirect_url' : '/dashboard',
+            'redirect_label' : _("Home")
+        })
 
+    if AUTHZCOOKIE in request.COOKIES:
+        tmpresp.delete_cookie(AUTHZCOOKIE)
 
+    return tmpresp
 
+def resetsso(request):
 
+    hname = request.META['SERVER_NAME']
+    hport = int(request.META['SERVER_PORT'])
+    redir_url = 'https://%s:%d/dashboard/auth/login' % (hname, hport)
+
+    try:
+        method = None
+        for idpid, idpdata in list(settings.HORIZON_CONFIG['identity_providers'].items()):
+            if idpdata['context'] in request.META['REQUEST_URI']:
+                method = settings.WEBSSO_IDP_MAPPING[idpid][1]
+                break
+
+        if method == "mapped":
+            param_str = urlencode({ 'return' : redir_url })
+            redir_str = 'https://%s:%d/Shibboleth.sso/Logout?%s' % (hname, hport, param_str)
+        elif method in [ "openid", "oidc", "openidc"]:
+            param_str = urlencode({ 'logout' : redir_url })
+            redir_str = ("https://%s:%d" + settings.OIDC_REDIRECT_PATH + "?%s") % (hname, hport, param_str)
+        else:
+            redir_str = redir_url
+    except:
+        LOG.error("SSO reset error", exc_info=True)
+
+    return django_http.HttpResponseRedirect(redir_str)
 
