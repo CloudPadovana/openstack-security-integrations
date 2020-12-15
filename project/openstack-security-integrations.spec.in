@@ -97,9 +97,15 @@ rm -rf %{buildroot}
 %package -n openstack-auth-shib
 Summary: Django plugin for Shibboleth authentication
 Group: System Environment/Libraries
+%if %{?rhel}%{!?rhel:0} >= 8
+Requires: python3-django-horizon
+Requires: python3-keystoneclient
+Requires: python3-keystone
+%else
 Requires: python-django-openstack-auth
 Requires: python-keystoneclient
 #Requires: python2-keystone
+%endif
 Requires: openstack-dashboard
 
 %description -n openstack-auth-shib
@@ -242,7 +248,6 @@ Django plugin for Shibboleth authentication
 Summary: Customization of Openstack Horizon for Cloud Area Padovana
 Group: System Environment/Libraries
 Requires: openstack-auth-shib
-Conflicts: openstack-auth-cedc
 
 %description -n openstack-auth-cap
 Customization of Openstack Horizon for Cloud Area Padovana
