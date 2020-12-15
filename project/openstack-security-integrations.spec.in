@@ -1,3 +1,15 @@
+%if %{?rhel}%{!?rhel:0} >= 8
+%global __python /usr/bin/python3
+%global python_sitelib /usr/lib/python3.6/site-packages
+%global python_sitearch /usr/lib64/python3.6/site-packages
+%else
+%global __python /usr/bin/python2
+%global python_sitelib /usr/lib/python2.7/site-packages
+%global python_sitearch /usr/lib64/python2.7/site-packages
+%endif
+
+%global os_dashboard_dir /usr/share/openstack-dashboard/openstack_dashboard
+
 Summary: Shibboleth-Openstack integrations
 Name: openstack-security-integrations
 Version: @PKGVERSION@
@@ -12,11 +24,6 @@ AutoReqProv: yes
 Source: %{name}.tar.gz
 
 
-%if ! (0%{?fedora} > 12 || 0%{?rhel} > 5)
-%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
-%{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
-%endif
-
 %description
 Shibboleth-Openstack integrations.
 
@@ -29,37 +36,37 @@ Shibboleth-Openstack integrations.
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}
-python setup.py install -O1 --prefix %{buildroot}/usr --install-data %{buildroot}
+%{__python} setup.py install -O1 --prefix %{buildroot}/usr --install-data %{buildroot}
 
 mv %{buildroot}/%{python_sitelib}/idmanager/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager
+   %{buildroot}%{os_dashboard_dir}/dashboards/idmanager
    
 mv %{buildroot}/%{python_sitelib}/registration_manager/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager
+   %{buildroot}%{os_dashboard_dir}/dashboards/idmanager/registration_manager
 
 mv %{buildroot}/%{python_sitelib}/subscription_manager/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager
+   %{buildroot}%{os_dashboard_dir}/dashboards/idmanager/subscription_manager
 
 mv %{buildroot}/%{python_sitelib}/member_manager/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager
+   %{buildroot}%{os_dashboard_dir}/dashboards/idmanager/member_manager
 
 mv %{buildroot}/%{python_sitelib}/project_manager/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager
+   %{buildroot}%{os_dashboard_dir}/dashboards/idmanager/project_manager
 
 mv %{buildroot}/%{python_sitelib}/user_manager/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager
+   %{buildroot}%{os_dashboard_dir}/dashboards/idmanager/user_manager
 
 mv %{buildroot}/%{python_sitelib}/log_manager/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager
+   %{buildroot}%{os_dashboard_dir}/dashboards/idmanager/log_manager
 
 mv %{buildroot}/%{python_sitelib}/project_requests/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests
+   %{buildroot}%{os_dashboard_dir}/dashboards/idmanager/project_requests
 
 mv %{buildroot}/%{python_sitelib}/password_manager/* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager
+   %{buildroot}%{os_dashboard_dir}/dashboards/settings/password_manager
 
 #mv %{buildroot}/%{python_sitelib}/api_access_manager/* \
-#   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager
+#   %{buildroot}%{os_dashboard_dir}/dashboards/project/api_access_manager
 
 mkdir -p %{buildroot}/%{python_sitelib}/horizon/management/commands
 mv %{buildroot}/%{python_sitelib}/commands/* \
@@ -67,14 +74,14 @@ mv %{buildroot}/%{python_sitelib}/commands/* \
 
 mkdir -p %{buildroot}/etc/openstack-auth-shib/notifications
 
-mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d
+mkdir -p %{buildroot}%{os_dashboard_dir}/local/local_settings.d
 mv %{buildroot}/%{python_sitelib}/dashboard_conf/_1000_* \
-    %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d
+    %{buildroot}%{os_dashboard_dir}/local/local_settings.d
 
-mkdir -p %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/enabled
+mkdir -p %{buildroot}%{os_dashboard_dir}/enabled
 rm %{buildroot}/%{python_sitelib}/dashboard_conf/_18*.py*
 mv %{buildroot}/%{python_sitelib}/dashboard_conf/_*.py* \
-   %{buildroot}/usr/share/openstack-dashboard/openstack_dashboard/enabled
+   %{buildroot}%{os_dashboard_dir}/enabled
    
 rm -rf %{buildroot}/%{python_sitelib}/dashboard_conf
 
@@ -110,101 +117,124 @@ Django plugin for Shibboleth authentication
 %attr(0750, apache, apache) %dir /var/cache/openstack-auth-shib/msg
 %dir %{python_sitelib}/openstack_auth_shib
 %{python_sitelib}/openstack_auth_shib/*.py
-%{python_sitelib}/openstack_auth_shib/*.pyc
-%{python_sitelib}/openstack_auth_shib/*.pyo
 %{python_sitelib}/*.egg-info
 %dir /usr/share/openstack-auth-shib
 /usr/share/openstack-auth-shib/attribute-map.xml
-/usr/share/openstack-dashboard/openstack_dashboard/templates/*.html
-/usr/share/openstack-dashboard/openstack_dashboard/templates/auth/*.html
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoGoogle.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoIDEM.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoInfnAAI.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoUniPD.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoINDIGO.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoUsrPwd.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoUsrReg.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/empty.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/cv-selector-register.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/cv-selector-signin.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/help-transparent.png
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/*.pyo
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/templates
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/templates/registration_manager
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/registration_manager/templates/registration_manager/*.html
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/templates
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/templates/project_manager
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_manager/templates/project_manager/*.html
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/templates
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/templates/user_manager
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/user_manager/templates/user_manager/*.html
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/templates
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/templates/subscription_manager
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/subscription_manager/templates/subscription_manager/*.html
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/templates
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/templates/member_manager
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/member_manager/templates/member_manager/*.html
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/templates
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/templates/log_manager
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/log_manager/templates/log_manager/*.html
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/templates
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/templates/project_requests
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/idmanager/project_requests/templates/project_requests/*.html
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/templates
-%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/templates/password_manager
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/dashboards/settings/password_manager/templates/password_manager/*.html
-#%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager
-#%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/templates
-#%dir /usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/templates/api_access_manager
-#/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/*.py
-#/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/*.pyc
-#/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/*.pyo
-#/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/api_access_manager/templates/api_access_manager/*
+%{os_dashboard_dir}/templates/*.html
+%{os_dashboard_dir}/templates/auth/*.html
+%{os_dashboard_dir}/static/dashboard/img/logoGoogle.png
+%{os_dashboard_dir}/static/dashboard/img/logoIDEM.png
+%{os_dashboard_dir}/static/dashboard/img/logoInfnAAI.png
+%{os_dashboard_dir}/static/dashboard/img/logoUniPD.png
+%{os_dashboard_dir}/static/dashboard/img/logoINDIGO.png
+%{os_dashboard_dir}/static/dashboard/img/logoUsrPwd.png
+%{os_dashboard_dir}/static/dashboard/img/logoUsrReg.png
+%{os_dashboard_dir}/static/dashboard/img/empty.png
+%{os_dashboard_dir}/static/dashboard/img/cv-selector-register.png
+%{os_dashboard_dir}/static/dashboard/img/cv-selector-signin.png
+%{os_dashboard_dir}/static/dashboard/img/help-transparent.png
+%dir %{os_dashboard_dir}/dashboards/idmanager
+%{os_dashboard_dir}/dashboards/idmanager/*.py
+%dir %{os_dashboard_dir}/dashboards/idmanager/registration_manager
+%dir %{os_dashboard_dir}/dashboards/idmanager/registration_manager/templates
+%dir %{os_dashboard_dir}/dashboards/idmanager/registration_manager/templates/registration_manager
+%{os_dashboard_dir}/dashboards/idmanager/registration_manager/*.py
+%{os_dashboard_dir}/dashboards/idmanager/registration_manager/templates/registration_manager/*.html
+%dir %{os_dashboard_dir}/dashboards/idmanager/project_manager
+%dir %{os_dashboard_dir}/dashboards/idmanager/project_manager/templates
+%dir %{os_dashboard_dir}/dashboards/idmanager/project_manager/templates/project_manager
+%{os_dashboard_dir}/dashboards/idmanager/project_manager/*.py
+%{os_dashboard_dir}/dashboards/idmanager/project_manager/templates/project_manager/*.html
+%dir %{os_dashboard_dir}/dashboards/idmanager/user_manager
+%dir %{os_dashboard_dir}/dashboards/idmanager/user_manager/templates
+%dir %{os_dashboard_dir}/dashboards/idmanager/user_manager/templates/user_manager
+%{os_dashboard_dir}/dashboards/idmanager/user_manager/*.py
+%{os_dashboard_dir}/dashboards/idmanager/user_manager/templates/user_manager/*.html
+%dir %{os_dashboard_dir}/dashboards/idmanager/subscription_manager
+%dir %{os_dashboard_dir}/dashboards/idmanager/subscription_manager/templates
+%dir %{os_dashboard_dir}/dashboards/idmanager/subscription_manager/templates/subscription_manager
+%{os_dashboard_dir}/dashboards/idmanager/subscription_manager/*.py
+%{os_dashboard_dir}/dashboards/idmanager/subscription_manager/templates/subscription_manager/*.html
+%dir %{os_dashboard_dir}/dashboards/idmanager/member_manager
+%dir %{os_dashboard_dir}/dashboards/idmanager/member_manager/templates
+%dir %{os_dashboard_dir}/dashboards/idmanager/member_manager/templates/member_manager
+%{os_dashboard_dir}/dashboards/idmanager/member_manager/*.py
+%{os_dashboard_dir}/dashboards/idmanager/member_manager/templates/member_manager/*.html
+%dir %{os_dashboard_dir}/dashboards/idmanager/log_manager
+%dir %{os_dashboard_dir}/dashboards/idmanager/log_manager/templates
+%dir %{os_dashboard_dir}/dashboards/idmanager/log_manager/templates/log_manager
+%{os_dashboard_dir}/dashboards/idmanager/log_manager/*.py
+%{os_dashboard_dir}/dashboards/idmanager/log_manager/templates/log_manager/*.html
+%dir %{os_dashboard_dir}/dashboards/idmanager/project_requests
+%dir %{os_dashboard_dir}/dashboards/idmanager/project_requests/templates
+%dir %{os_dashboard_dir}/dashboards/idmanager/project_requests/templates/project_requests
+%{os_dashboard_dir}/dashboards/idmanager/project_requests/*.py
+%{os_dashboard_dir}/dashboards/idmanager/project_requests/templates/project_requests/*.html
+%dir %{os_dashboard_dir}/dashboards/settings/password_manager
+%dir %{os_dashboard_dir}/dashboards/settings/password_manager/templates
+%dir %{os_dashboard_dir}/dashboards/settings/password_manager/templates/password_manager
+%{os_dashboard_dir}/dashboards/settings/password_manager/*.py
+%{os_dashboard_dir}/dashboards/settings/password_manager/templates/password_manager/*.html
 %{python_sitelib}/horizon/management/commands/*.py
+%{os_dashboard_dir}/enabled/*.py
+%{os_dashboard_dir}/local/local_settings.d/_1000_*.py
+
+
+%if %{?rhel}%{!?rhel:0} >= 8
+
+%dir %{python_sitelib}/openstack_auth_shib/__pycache__
+%{python_sitelib}/openstack_auth_shib/__pycache__/*
+%dir %{os_dashboard_dir}/dashboards/idmanager/__pycache__
+%{os_dashboard_dir}/dashboards/idmanager/__pycache__/*
+%dir %{os_dashboard_dir}/dashboards/idmanager/registration_manager/__pycache__
+%{os_dashboard_dir}/dashboards/idmanager/registration_manager/__pycache__/*
+%dir %{os_dashboard_dir}/dashboards/idmanager/project_manager/__pycache__
+%{os_dashboard_dir}/dashboards/idmanager/project_manager/__pycache__/*
+%dir %{os_dashboard_dir}/dashboards/idmanager/user_manager/__pycache__
+%{os_dashboard_dir}/dashboards/idmanager/user_manager/__pycache__/*
+%dir %{os_dashboard_dir}/dashboards/idmanager/subscription_manager/__pycache__
+%{os_dashboard_dir}/dashboards/idmanager/subscription_manager/__pycache__/*
+%dir %{os_dashboard_dir}/dashboards/idmanager/member_manager/__pycache__
+%{os_dashboard_dir}/dashboards/idmanager/member_manager/__pycache__/*
+%dir %{os_dashboard_dir}/dashboards/idmanager/log_manager/__pycache__
+%{os_dashboard_dir}/dashboards/idmanager/log_manager/__pycache__/*
+%dir %{os_dashboard_dir}/dashboards/idmanager/project_requests/__pycache__
+%{os_dashboard_dir}/dashboards/idmanager/project_requests/__pycache__/*
+%dir %{os_dashboard_dir}/dashboards/settings/password_manager/__pycache__
+%{os_dashboard_dir}/dashboards/settings/password_manager/__pycache__/*
+%dir %{python_sitelib}/horizon/management/commands/__pycache__
+%{python_sitelib}/horizon/management/commands/__pycache__/*
+
+%else
+
+%{python_sitelib}/openstack_auth_shib/*.pyc
+%{python_sitelib}/openstack_auth_shib/*.pyo
+%{os_dashboard_dir}/dashboards/idmanager/*.pyc
+%{os_dashboard_dir}/dashboards/idmanager/*.pyo
+%{os_dashboard_dir}/dashboards/idmanager/registration_manager/*.pyc
+%{os_dashboard_dir}/dashboards/idmanager/registration_manager/*.pyo
+%{os_dashboard_dir}/dashboards/idmanager/project_manager/*.pyc
+%{os_dashboard_dir}/dashboards/idmanager/project_manager/*.pyo
+%{os_dashboard_dir}/dashboards/idmanager/user_manager/*.pyc
+%{os_dashboard_dir}/dashboards/idmanager/user_manager/*.pyo
+%{os_dashboard_dir}/dashboards/idmanager/subscription_manager/*.pyc
+%{os_dashboard_dir}/dashboards/idmanager/subscription_manager/*.pyo
+%{os_dashboard_dir}/dashboards/idmanager/member_manager/*.pyc
+%{os_dashboard_dir}/dashboards/idmanager/member_manager/*.pyo
+%{os_dashboard_dir}/dashboards/idmanager/log_manager/*.pyc
+%{os_dashboard_dir}/dashboards/idmanager/log_manager/*.pyo
+%{os_dashboard_dir}/dashboards/idmanager/project_requests/*.pyc
+%{os_dashboard_dir}/dashboards/idmanager/project_requests/*.pyo
+%{os_dashboard_dir}/dashboards/settings/password_manager/*.pyc
+%{os_dashboard_dir}/dashboards/settings/password_manager/*.pyo
 %{python_sitelib}/horizon/management/commands/*.pyc
 %{python_sitelib}/horizon/management/commands/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/enabled/*.py
-/usr/share/openstack-dashboard/openstack_dashboard/enabled/*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/enabled/*.pyo
-/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1000_*.py
-/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1000_*.pyc
-/usr/share/openstack-dashboard/openstack_dashboard/local/local_settings.d/_1000_*.pyo
+%{os_dashboard_dir}/enabled/*.pyc
+%{os_dashboard_dir}/enabled/*.pyo
+%{os_dashboard_dir}/local/local_settings.d/_1000_*.pyc
+%{os_dashboard_dir}/local/local_settings.d/_1000_*.pyo
 
+%endif
 
 
 
@@ -222,35 +252,41 @@ Customization of Openstack Horizon for Cloud Area Padovana
 %defattr(-,root,root)
 %config(noreplace) /etc/openstack-auth-shib/idem-template-metadata.xml
 /etc/openstack-auth-shib/notifications/notifications_en.txt
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapd.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudAreapdStrip.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVeneto.png
-/usr/share/openstack-dashboard/openstack_dashboard/static/dashboard/img/logoCloudVenetoStrip.png
-/usr/share/openstack-dashboard/openstack_dashboard/templates/aup.html
-%dir /usr/share/openstack-dashboard/openstack_dashboard/themes/cap
-%dir /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/static
-%dir /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/static/img
-%dir /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates
-%dir /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/auth
-%dir /usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/header
-/usr/share/openstack-dashboard/openstack_dashboard/themes/cap/static/_styles.scss
-/usr/share/openstack-dashboard/openstack_dashboard/themes/cap/static/_variables.scss
-/usr/share/openstack-dashboard/openstack_dashboard/themes/cap/static/img/favicon.ico
-/usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/_aai_status_style.html
-/usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/_aai_registr_style.html
-/usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/auth/_splash.html
-/usr/share/openstack-dashboard/openstack_dashboard/themes/cap/templates/header/_brand.html
+%{os_dashboard_dir}/static/dashboard/img/logoCloudAreapd.png
+%{os_dashboard_dir}/static/dashboard/img/logoCloudAreapdStrip.png
+%{os_dashboard_dir}/static/dashboard/img/logoCloudVeneto.png
+%{os_dashboard_dir}/static/dashboard/img/logoCloudVenetoStrip.png
+%{os_dashboard_dir}/templates/aup.html
+%dir %{os_dashboard_dir}/themes/cap
+%dir %{os_dashboard_dir}/themes/cap/static
+%dir %{os_dashboard_dir}/themes/cap/static/img
+%dir %{os_dashboard_dir}/themes/cap/templates
+%dir %{os_dashboard_dir}/themes/cap/templates/auth
+%dir %{os_dashboard_dir}/themes/cap/templates/header
+%{os_dashboard_dir}/themes/cap/static/_styles.scss
+%{os_dashboard_dir}/themes/cap/static/_variables.scss
+%{os_dashboard_dir}/themes/cap/static/img/favicon.ico
+%{os_dashboard_dir}/themes/cap/templates/_aai_status_style.html
+%{os_dashboard_dir}/themes/cap/templates/_aai_registr_style.html
+%{os_dashboard_dir}/themes/cap/templates/auth/_splash.html
+%{os_dashboard_dir}/themes/cap/templates/header/_brand.html
 
 
 %changelog
-* Fri Sep 07 2018 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - @PKGVERSION@-@PKGRELEASE@
+* Tue Jul 21 2020 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.2.4.1
+- Porting Train
+
+* Fri Jun 7 2019 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.2.3-0
+- Porting Rocky
+
+* Fri Sep 7 2018 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.2.2-1
 - Fixed issue https://issues.infn.it/jira/browse/PDCL-690
 - Fixed issue https://issues.infn.it/jira/browse/PDCL-1035
 - Fixed issue https://issues.infn.it/jira/browse/PDCL-1079
 - Fixed issue https://issues.infn.it/jira/browse/PDCL-1097
 - Fixed issue https://issues.infn.it/jira/browse/PDCL-1156
 
-* Mon Apr 09 2018 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.2.1-1
+* Mon Apr 9 2018 Cloud Area Padovana <cloud-support@lists.pd.infn.it> - 1.2.1-1
 - Porting on Ocata
 - Migration to OS-Federation
 
