@@ -23,7 +23,7 @@ from django.db import transaction
 from django.conf import settings
 from django.forms import ValidationError
 from django.forms.widgets import HiddenInput
-from django.forms.extras.widgets import SelectDateWidget
+from django.forms.widgets import SelectDateWidget
 from django.utils.translation import ugettext as _
 from django.views.decorators.debug import sensitive_variables
 
