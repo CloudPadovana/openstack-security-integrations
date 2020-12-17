@@ -20,7 +20,7 @@
 import logging
 import datetime
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _

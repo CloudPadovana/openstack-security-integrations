@@ -16,7 +16,7 @@
 import logging
 
 from django.utils.translation import ugettext_lazy as _
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse
 
 from horizon import exceptions
 from horizon import forms
@@ -34,5 +34,5 @@ LOG = logging.getLogger(__name__)
 class RequestView(forms.ModalFormView):
     form_class = ProjectRequestForm
     template_name = 'idmanager/project_requests/prj_request.html'
-    success_url = reverse_lazy('horizon:project:overview:index')
+    success_url = reverse('horizon:project:overview:index')
 

@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse
 
 from horizon import tables
 from horizon import messages
@@ -122,7 +122,7 @@ class AbstractProcessView(forms.ModalFormView):
 class ApproveView(AbstractProcessView):
     form_class = ApproveSubscrForm
     template_name = 'idmanager/subscription_manager/subscr_approve.html'
-    success_url = reverse_lazy('horizon:idmanager:subscription_manager:index')
+    success_url = reverse('horizon:idmanager:subscription_manager:index')
 
     def get_context_data(self, **kwargs):
         context = super(ApproveView, self).get_context_data(**kwargs)
@@ -137,7 +137,7 @@ class ApproveView(AbstractProcessView):
 class RejectView(AbstractProcessView):
     form_class = RejectSubscrForm
     template_name = 'idmanager/subscription_manager/subscr_approve.html'
-    success_url = reverse_lazy('horizon:idmanager:subscription_manager:index')
+    success_url = reverse('horizon:idmanager:subscription_manager:index')
 
     def get_context_data(self, **kwargs):
         context = super(RejectView, self).get_context_data(**kwargs)
@@ -147,7 +147,7 @@ class RejectView(AbstractProcessView):
 class RenewView(AbstractProcessView):
     form_class = RenewSubscrForm
     template_name = 'idmanager/subscription_manager/subscr_renew.html'
-    success_url = reverse_lazy('horizon:idmanager:subscription_manager:index')
+    success_url = reverse('horizon:idmanager:subscription_manager:index')
 
     def get_context_data(self, **kwargs):
         context = super(RenewView, self).get_context_data(**kwargs)
@@ -162,7 +162,7 @@ class RenewView(AbstractProcessView):
 class DiscardView(AbstractProcessView):
     form_class = DiscSubscrForm
     template_name = 'idmanager/subscription_manager/subscr_renew.html'
-    success_url = reverse_lazy('horizon:idmanager:subscription_manager:index')
+    success_url = reverse('horizon:idmanager:subscription_manager:index')
 
     def get_context_data(self, **kwargs):
         context = super(DiscardView, self).get_context_data(**kwargs)

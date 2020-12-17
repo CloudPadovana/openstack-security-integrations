@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse
 
 from horizon import tables
 from horizon import messages
@@ -94,7 +94,7 @@ class IndexView(tables.DataTableView):
 class ModifyExpView(forms.ModalFormView):
     form_class = ModifyExpForm
     template_name = 'idmanager/member_manager/modifyexp.html'
-    success_url = reverse_lazy('horizon:idmanager:member_manager:index')
+    success_url = reverse('horizon:idmanager:member_manager:index')
 
     def get_context_data(self, **kwargs):
         context = super(ModifyExpView, self).get_context_data(**kwargs)

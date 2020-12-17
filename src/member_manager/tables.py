@@ -18,7 +18,7 @@ import logging
 from django import shortcuts
 from django.db import transaction
 from django.conf import settings
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ungettext_lazy
 
@@ -198,12 +198,12 @@ class ToggleRoleAction(tables.Action):
             messages.error(request, _('Unable to toggle the role.'))
            
         if obj_id == request.user.id:
-            response = shortcuts.redirect(reverse_lazy('logout'))
+            response = shortcuts.redirect(reverse('logout'))
             msg = _("Roles changed. Please log in again to continue.")
             utils.add_logout_reason(request, response, msg)
             return response
             
-        return shortcuts.redirect(reverse_lazy('horizon:idmanager:member_manager:index'))
+        return shortcuts.redirect(reverse('horizon:idmanager:member_manager:index'))
 
 class ChangeExpAction(tables.LinkAction):
     name = "change_expiration"

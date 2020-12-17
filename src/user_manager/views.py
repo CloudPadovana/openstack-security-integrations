@@ -17,7 +17,7 @@ import logging
 from datetime import datetime, timedelta
 
 from django.utils.translation import ugettext_lazy as _
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse
 
 from horizon import forms
 from horizon import exceptions
@@ -45,7 +45,7 @@ class UpdateView(baseViews.UpdateView):
     template_name = 'idmanager/user_manager/update.html'
     form_class = UpdateUserForm
     submit_url = "horizon:idmanager:user_manager:update"
-    success_url = reverse_lazy('horizon:idmanager:user_manager:index')
+    success_url = reverse('horizon:idmanager:user_manager:index')
 
     def get_object(self):
         if not hasattr(self, "_object"):
@@ -54,7 +54,7 @@ class UpdateView(baseViews.UpdateView):
                                                      self.kwargs['user_id'],
                                                      admin=True)
             except Exception:
-                redirect = reverse_lazy('horizon:idmanager:user_manager:index')
+                redirect = reverse('horizon:idmanager:user_manager:index')
                 exceptions.handle(self.request, _('Unable to update user.'),
                                   redirect=redirect)
         return self._object
@@ -62,7 +62,7 @@ class UpdateView(baseViews.UpdateView):
 class RenewView(forms.ModalFormView):
     form_class = RenewExpForm
     template_name = 'idmanager/user_manager/renewexp.html'
-    success_url = reverse_lazy('horizon:idmanager:user_manager:index')
+    success_url = reverse('horizon:idmanager:user_manager:index')
 
     def get_object(self):
         if not hasattr(self, "_object"):
@@ -72,7 +72,7 @@ class RenewView(forms.ModalFormView):
 
             except Exception:
                 LOG.error("Renew error", exc_info=True)
-                redirect = reverse_lazy('horizon:idmanager:user_manager:index')
+                redirect = reverse('horizon:idmanager:user_manager:index')
                 exceptions.handle(self.request, _('Unable to renew user.'),
                                   redirect=redirect)
 
@@ -97,7 +97,7 @@ class DetailView(baseViews.DetailView):
     template_name = 'idmanager/user_manager/detail.html'
 
     def get_redirect_url(self):
-        return reverse_lazy('horizon:idmanager:user_manager:index')
+        return reverse('horizon:idmanager:user_manager:index')
 
     def get_context_data(self, **kwargs):
         context = super(DetailView, self).get_context_data(**kwargs)
@@ -108,7 +108,7 @@ class DetailView(baseViews.DetailView):
 class ChangePasswordView(baseViews.ChangePasswordView):
     template_name = 'idmanager/user_manager/change_password.html'
     submit_url = 'horizon:idmanager:user_manager:change_password'
-    success_url = reverse_lazy('horizon:idmanager:user_manager:index')
+    success_url = reverse('horizon:idmanager:user_manager:index')
 
     @memoized.memoized_method
     def get_object(self):
@@ -116,7 +116,7 @@ class ChangePasswordView(baseViews.ChangePasswordView):
             return api.keystone.user_get(self.request, self.kwargs['user_id'],
                                          admin=True)
         except Exception:
-            redirect = reverse_lazy("horizon:idmanager:user_manager:index")
+            redirect = reverse("horizon:idmanager:user_manager:index")
             exceptions.handle(self.request,
                               _('Unable to retrieve user information.'),
                               redirect=redirect)
@@ -155,7 +155,7 @@ class CheckOrphansView(tables.DataTableView):
 class ReactivateView(forms.ModalFormView):
     form_class = ReactivateForm
     template_name = 'idmanager/user_manager/reactivate.html'
-    success_url = reverse_lazy('horizon:idmanager:user_manager:index')
+    success_url = reverse('horizon:idmanager:user_manager:index')
 
     def get_object(self):
         if not hasattr(self, "_object"):

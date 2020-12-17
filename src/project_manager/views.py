@@ -18,8 +18,7 @@ import urllib.parse
 
 from django.db import transaction
 from django.conf import settings
-from django.core.urlresolvers import reverse
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import forms
@@ -143,7 +142,7 @@ class DetailProjectView(baseViews.DetailProjectView):
 class CourseView(forms.ModalFormView):
     form_class = CourseForm
     template_name = 'idmanager/project_manager/course.html'
-    success_url = reverse_lazy('horizon:idmanager:project_manager:index')
+    success_url = reverse('horizon:idmanager:project_manager:index')
 
     def get_object(self):
         if not hasattr(self, "_object"):
@@ -164,7 +163,7 @@ class CourseView(forms.ModalFormView):
 class CourseDetailView(forms.ModalFormView):
     form_class = CourseDetailForm
     template_name = 'idmanager/project_manager/course_detail.html'
-    success_url = reverse_lazy('horizon:idmanager:project_manager:index')
+    success_url = reverse('horizon:idmanager:project_manager:index')
 
     def get_object(self):
         if not hasattr(self, "_object"):
@@ -189,7 +188,7 @@ class CourseDetailView(forms.ModalFormView):
 class EditTagsView(forms.ModalFormView):
     form_class = EditTagsForm
     template_name = 'idmanager/project_manager/edittags.html'
-    success_url = reverse_lazy('horizon:idmanager:project_manager:index')
+    success_url = reverse('horizon:idmanager:project_manager:index')
 
     def get_object(self):
         if not hasattr(self, "_object"):
