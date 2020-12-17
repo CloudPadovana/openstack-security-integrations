@@ -16,29 +16,11 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-from django import VERSION as django_version
 from django.conf.urls import url
 from openstack_dashboard.dashboards.idmanager.log_manager import views
 
-index_url = url(r'^$', views.MainView.as_view(), name='index')
-detail_url = url(r'^(?P<log_id>[^/]+)/detail/$', views.DetailView.as_view(), name='detail')
+urlpatterns = [
+    url(r'^$', views.MainView.as_view(), name='index'),
+    url(r'^(?P<log_id>[^/]+)/detail/$', views.DetailView.as_view(), name='detail')
+]
 
-if django_version[1] < 11:
-
-    from django.conf.urls import patterns
-
-    prefix = 'openstack_dashboard.dashboards.idmanager.log_manager.views'
-
-    urlpatterns = patterns(
-        prefix,
-        index_url,
-        detail_url,
-    )
-
-else:
-
-    urlpatterns = [
-        index_url,
-        detail_url
-    ]
-    
