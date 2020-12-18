@@ -15,7 +15,7 @@
 
 from horizon import forms
 
-from django.urls import reverse
+from django.urls import reverse_lazy as reverse
 
 from .forms import PasswordForm
 

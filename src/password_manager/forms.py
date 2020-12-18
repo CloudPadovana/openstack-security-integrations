@@ -17,7 +17,7 @@
 from django.forms import ValidationError
 from django import http
 from django.utils.translation import ugettext_lazy as _
-from django.urls import reverse
+from django.urls import reverse_lazy as reverse
 from django.views.decorators.debug import sensitive_variables
 
 from horizon import exceptions

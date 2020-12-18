@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from django.urls import reverse
+from django.urls import reverse_lazy as reverse
 from django.db import transaction
 
 from horizon import tables

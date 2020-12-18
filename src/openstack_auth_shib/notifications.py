@@ -18,7 +18,6 @@ import os, os.path
 import re
 import json
 import threading
-from types import ListType, TupleType
 from configparser import ConfigParser
 
 from django.conf import settings
@@ -133,7 +132,7 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
     extra = {}
     if getattr(settings, 'LOG_MANAGER_KEEP_NOTIFICATIONS_EMAIL', True):
         to = rcpt
-        if not type(to) is ListType:
+        if not isinstance(to, list):
             to = [to, ]
         to = ', '.join(map(str, to))
 
@@ -248,7 +247,7 @@ def notify(recpt, subject, body):
     if not recpt:
         LOG.error('Missing recipients')
         return
-    if type(recpt) is ListType:
+    if isinstance(recpt, list):
         recipients = recpt
     else:
         recipients = [ str(recpt) ]
