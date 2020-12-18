@@ -97,7 +97,7 @@
 
       <input id="auth_type_in" type="hidden" name="auth_type" value="credentials" />
 
-      {% for idpid, idpdata in HORIZON_CONFIG.identity_providers.iteritems %}
+      {% for idpid, idpdata in HORIZON_CONFIG.identity_providers.items %}
       <button type="button"
               style="margin-top: 5px;margin-bottom: 5px;"
               title="{% trans 'Sign in with' %} {{ idpdata.description }}"
@@ -145,7 +145,7 @@
       </div>
       {% endif %}
       
-      {% for idpid, idpdata in HORIZON_CONFIG.identity_providers.iteritems %}
+      {% for idpid, idpdata in HORIZON_CONFIG.identity_providers.items %}
       <button type="button"
               style="margin-top: 5px;margin-bottom: 5px;"
               title="{% trans 'Register using' %} {{ idpdata.description }}"
@@ -257,7 +257,7 @@
   function selectIdP (idpID) {
       document.getElementById('auth_type_in').value=idpID;
 
-      {% for kbind, vbind in HORIZON_CONFIG.srv_bind_table.iteritems %}
+      {% for kbind, vbind in HORIZON_CONFIG.srv_bind_table.items %}
       {% if kbind == request.META.SERVER_NAME %}
       document.getElementById('id_region').value="https://{{ vbind }}/v3"; 
       {% endif %}

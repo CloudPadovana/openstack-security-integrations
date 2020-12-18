@@ -19,6 +19,7 @@ import re
 import json
 import threading
 from configparser import ConfigParser
+from configparser import ExtendedInterpolation
 
 from django.conf import settings
 from django.core.mail import send_mail, mail_managers
@@ -223,7 +224,7 @@ def load_templates():
             TEMPLATE_TABLE[locale] = dict()
         
             tpl_filename = os.path.join(tpl_dir, tpl_item)
-            parser = ConfigParser()
+            parser = ConfigParser(interpolation=ExtendedInterpolation())
             parser.readfp(open(tpl_filename))
         
             for sect in parser.sections():
