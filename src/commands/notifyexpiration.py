@@ -17,6 +17,7 @@ import logging
 
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone
 
 from django.core.management.base import CommandError
 from openstack_auth_shib.models import Expiration
@@ -53,7 +54,7 @@ class Command(CloudVenetoCommand):
 
         try:
 
-            now = datetime.now()
+            now = datetime.now(timezone.utc)
             noti_table = dict()
             user_set = set()
             prj_set = set()

@@ -15,7 +15,7 @@
 
 import logging
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from django.db import transaction
 from django.core.management.base import CommandError
@@ -63,7 +63,7 @@ class Command(CloudVenetoCommand):
 
         updated_prjs = set()
 
-        exp_date = datetime.now() - timedelta(self.config.cron_defer)
+        exp_date = datetime.now(timezone.utc) - timedelta(self.config.cron_defer)
 
         for mem_item in Expiration.objects.filter(expdate__lt=exp_date):
 

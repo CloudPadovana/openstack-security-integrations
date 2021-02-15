@@ -15,7 +15,7 @@
 
 import logging
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from django.db import transaction
 from django.core.management.base import CommandError
@@ -42,7 +42,7 @@ class Command(CloudVenetoCommand):
 
         super(Command, self).handle(options)
 
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         exp_date = now + timedelta(self.config.cron_renewd)
 
         LOG.info("Checking for renewal after %s" % str(exp_date))
