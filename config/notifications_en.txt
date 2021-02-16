@@ -96,9 +96,13 @@ body: The cloud administrator rejected the creation of project {{ project }}
 
 [registration_available]
 LOG: Registration request of user {{ username }} and {% if project_creation %}creation of{% else %}affiliation to{% endif %} {{ projects|join:', ' }} available
+  {% if notes %}Notes: {{ notes }}{% endif %}
+  {% if contactper %}Contact person: {{ contactper }}{% endif %}
 subject: New request for registration available ({{ username }})
 body: A new request for registration is available
   {% if username %}The username is {{ username }}{% endif %}
+  {% if notes %}Notes: {{ notes }}{% endif %}
+  {% if contactper %}Contact person: {{ contactper }}{% endif %}
   
   Please, don't reply to this message
 

@@ -502,6 +502,8 @@ class RegistrForm(forms.SelfHandlingForm):
                 'username': data['username'],
                 'projects': list(p[0] for p in prjlist),
                 'project_creation': (prj_action == 'newprj'),
+                'notes' : data['notes'],
+                'contactper' : data['contactper']
             }
             notifyAdmin(request=self.request, action=REGISTR_AVAIL_TYPE, context=noti_params)
 
