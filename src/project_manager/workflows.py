@@ -39,6 +39,8 @@ from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_PUBLIC
 from openstack_auth_shib.models import RSTATUS_REMINDER
 from openstack_auth_shib.models import RSTATUS_REMINDACK
+from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
+from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 
 from openstack_auth_shib.utils import check_projectname
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
@@ -319,9 +321,9 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
             # Enable reminders to  cloud admin for manually added users
             #
             RegRequest.objects.filter(
-                    registration__in = added_regs,
-                    flowstatus = RSTATUS_REMINDER
-                ).update(flowstatus = RSTATUS_REMINDACK)
+                registration__in = added_regs,
+                flowstatus = RSTATUS_REMINDER
+            ).update(flowstatus = RSTATUS_REMINDACK)
 
             #
             # Delete expiration for manually removed users
@@ -351,6 +353,21 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
 
             result = super(ExtUpdateProject, self)._update_project_members(request, data, project_id)
 
+            #
+            # Change the type of request for renewal
+            #
+            PrjRequest.objects.filter(
+                project = self.this_project,
+                flowstatus = PSTATUS_RENEW_ADMIN
+            ).exclude(
+                registration__userid__in = prjadm_ids
+            ).update(flowstatus = PSTATUS_RENEW_MEMB)
+
+            PrjRequest.objects.filter(
+                registration__userid__in = prjadm_ids,
+                project = self.this_project,
+                flowstatus = PSTATUS_RENEW_MEMB
+            ).update(flowstatus = PSTATUS_RENEW_ADMIN)
         #
         # Notify users, both new and removed
         #
