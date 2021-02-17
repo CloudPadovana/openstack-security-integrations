@@ -214,6 +214,12 @@ class ChangeExpAction(tables.LinkAction):
     def allowed(self, request, datum):
         return not datum.is_t_admin
 
+class SendMessageAction(tables.LinkAction):
+    name = "send_message"
+    verbose_name = _("Send Message")
+    url = "horizon:idmanager:member_manager:sendmsg"
+    classes = ("ajax-modal", "btn-edit")
+
 def get_role(data):
     if data.is_t_admin:
         return _('Project manager')
@@ -232,7 +238,7 @@ class MemberTable(tables.DataTable):
         name = "member_table"
         verbose_name = _("Project members")
         row_actions = (ToggleRoleAction, ChangeExpAction, DeleteMemberAction,)
-        table_actions = ()
+        table_actions = (SendMessageAction,)
 
     def get_object_id(self, datum):
         return datum.userid

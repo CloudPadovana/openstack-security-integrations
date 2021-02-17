@@ -210,4 +210,12 @@ body: The account {{ username }} has been removed from Cloud Area Padovana.
   
   Please, don't reply to this message
 
+[generic_message]
+LOG: Message from project admin: {{ username }}
+subject: Message from the project administrator of {{ project }}
+body: The administrator of the project {{ project }} have just sent the following message:
+  {{ message }}
+  
+  Please, don't reply to this message
+
 

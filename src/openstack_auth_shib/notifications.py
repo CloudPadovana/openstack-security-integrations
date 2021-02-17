@@ -63,6 +63,7 @@ USER_RENEWED_TYPE = 'user_renewed'
 USER_EXPIRED_TYPE = 'user_expired'
 USER_PURGED_TYPE = 'user_purged'
 NEWPRJ_BY_ADM = 'project_created_by_admin'
+GENERIC_MESSAGE = 'generic_message'
 
 
 # DO NOT CHANGE the LOG_TYPE_* constants
