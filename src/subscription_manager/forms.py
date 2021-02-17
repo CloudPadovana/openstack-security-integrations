@@ -15,6 +15,7 @@
 
 import logging
 from datetime import datetime
+from datetime import timezone
 
 from horizon import forms
 from horizon import exceptions
@@ -63,7 +64,7 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
 
         self.fields['regid'] = forms.CharField(widget=HiddenInput)
 
-        curr_year = datetime.utcnow().year
+        curr_year = datetime.now(timezone.utc).year
         years_list = list(range(curr_year, curr_year + MAX_RENEW))
 
         self.fields['expiration'] = forms.DateTimeField(
@@ -73,7 +74,7 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
 
     def clean(self):
         data = super(ApproveSubscrForm, self).clean()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if data['expiration'].date() < now.date():
             raise ValidationError(_('Invalid expiration time.'))
         if data['expiration'].year > now.year + MAX_RENEW:
@@ -236,7 +237,7 @@ class RenewSubscrForm(forms.SelfHandlingForm):
 
         self.fields['regid'] = forms.CharField(widget=HiddenInput)
 
-        curr_year = datetime.utcnow().year
+        curr_year = datetime.now(timezone.utc).year
         years_list = list(range(curr_year, curr_year + MAX_RENEW))
 
         self.fields['expiration'] = forms.DateTimeField(
@@ -246,7 +247,7 @@ class RenewSubscrForm(forms.SelfHandlingForm):
 
     def clean(self):
         data = super(RenewSubscrForm, self).clean()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if data['expiration'].date() < now.date():
             raise ValidationError(_('Invalid expiration time.'))
         if data['expiration'].year > now.year + MAX_RENEW:
