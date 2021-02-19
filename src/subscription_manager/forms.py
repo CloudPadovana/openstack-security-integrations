@@ -45,6 +45,7 @@ from openstack_auth_shib.notifications import SUBSCR_NO_TYPE
 from openstack_auth_shib.notifications import MEMBER_REMOVED
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
+from openstack_auth_shib.utils import set_last_exp
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
@@ -115,13 +116,7 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 expiration.expdate = data['expiration']
                 expiration.save()
                 
-                #
-                # Update the max expiration per user
-                #
-                user_reg = prj_req.registration
-                if data['expiration'] > user_reg.expdate:
-                    user_reg.expdate = data['expiration']
-                    user_reg.save()
+                set_last_exp(member_id)
 
                 roles_obj = client_factory(request).roles
                 arg_dict = {
