@@ -14,11 +14,11 @@
 #  under the License. 
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy as reverse
 
 from horizon import tables
 from horizon import messages
@@ -31,6 +31,7 @@ from openstack_auth_shib.utils import get_admin_roleid
 
 from .tables import MemberTable
 from .forms import ModifyExpForm
+from .forms import SendMsgForm
 
 LOG = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ class IndexView(tables.DataTableView):
                     
                 member_id_dict[r_item.user['id']][1] += 1
             
-            for rp_item in member_id_dict.itervalues():
+            for rp_item in member_id_dict.values():
                 rp_item[2] = number_of_admins
         
             result = list()
@@ -94,7 +95,7 @@ class IndexView(tables.DataTableView):
 class ModifyExpView(forms.ModalFormView):
     form_class = ModifyExpForm
     template_name = 'idmanager/member_manager/modifyexp.html'
-    success_url = reverse_lazy('horizon:idmanager:member_manager:index')
+    success_url = reverse('horizon:idmanager:member_manager:index')
 
     def get_context_data(self, **kwargs):
         context = super(ModifyExpView, self).get_context_data(**kwargs)
@@ -104,7 +105,7 @@ class ModifyExpView(forms.ModalFormView):
     def get_initial(self):
         return {
             'userid' : self.get_object(),
-            'expiration' : datetime.utcnow() + timedelta(365)
+            'expiration' : datetime.now(timezone.utc) + timedelta(365)
         }
 
     def get_object(self):
@@ -112,6 +113,9 @@ class ModifyExpView(forms.ModalFormView):
             self._object = self.kwargs['userid']
         return self._object
 
-
+class SendMsgView(forms.ModalFormView):
+    form_class = SendMsgForm
+    template_name = 'idmanager/member_manager/sendmsg.html'
+    success_url = reverse('horizon:idmanager:member_manager:index')
 
 

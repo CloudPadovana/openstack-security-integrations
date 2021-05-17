@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy as reverse
 from django.db import transaction
 
 from horizon import tables
@@ -122,7 +122,7 @@ class MainView(tables.DataTableView):
                 if not requestid in reqTable:
                     reqTable[requestid] = rData
 
-        result = reqTable.values()
+        result = list(reqTable.values())
         result.sort()
         return result
 
@@ -142,7 +142,7 @@ class AbstractCheckView(forms.ModalFormView):
                     
             except Exception:
                 LOG.error("Registration error", exc_info=True)
-                redirect = reverse_lazy("horizon:idmanager:registration_manager:index")
+                redirect = reverse("horizon:idmanager:registration_manager:index")
                 exceptions.handle(self.request, _('Unable to pre-check request.'), redirect=redirect)
 
         return self._object
@@ -159,7 +159,7 @@ class AbstractCheckView(forms.ModalFormView):
 class PreCheckView(AbstractCheckView):
     form_class = PreCheckForm
     template_name = 'idmanager/registration_manager/precheck.html'
-    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+    success_url = reverse('horizon:idmanager:registration_manager:index')
 
     def get_initial(self):
         return {
@@ -171,7 +171,7 @@ class PreCheckView(AbstractCheckView):
 class GrantAllView(AbstractCheckView):
     form_class = GrantAllForm
     template_name = 'idmanager/registration_manager/precheck.html'
-    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+    success_url = reverse('horizon:idmanager:registration_manager:index')
 
     def get_context_data(self, **kwargs):
         context = super(GrantAllView, self).get_context_data(**kwargs)
@@ -194,7 +194,7 @@ class GrantAllView(AbstractCheckView):
 class RejectView(AbstractCheckView):
     form_class = RejectForm
     template_name = 'idmanager/registration_manager/reject.html'
-    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+    success_url = reverse('horizon:idmanager:registration_manager:index')
 
     def get_initial(self):
         return {
@@ -204,7 +204,7 @@ class RejectView(AbstractCheckView):
 class ForcedApproveView(forms.ModalFormView):
     form_class = ForcedCheckForm
     template_name = 'idmanager/registration_manager/forced.html'
-    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+    success_url = reverse('horizon:idmanager:registration_manager:index')
 
     def get_object(self):
         if not hasattr(self, "_object"):
@@ -226,7 +226,7 @@ class ForcedApproveView(forms.ModalFormView):
 class ForcedRejectView(forms.ModalFormView):
     form_class = ForcedRejectForm
     template_name = 'idmanager/registration_manager/forced.html'
-    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+    success_url = reverse('horizon:idmanager:registration_manager:index')
 
     def get_object(self):
         if not hasattr(self, "_object"):
@@ -247,7 +247,7 @@ class ForcedRejectView(forms.ModalFormView):
 class NewProjectView(forms.ModalFormView):
     form_class = NewProjectCheckForm
     template_name = 'idmanager/registration_manager/newproject.html'
-    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+    success_url = reverse('horizon:idmanager:registration_manager:index')
     
     def get_object(self):
         if not hasattr(self, "_object"):
@@ -274,7 +274,7 @@ class NewProjectView(forms.ModalFormView):
 class RejectProjectView(forms.ModalFormView):
     form_class = NewProjectRejectForm
     template_name = 'idmanager/registration_manager/newproject.html'
-    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+    success_url = reverse('horizon:idmanager:registration_manager:index')
     
     def get_object(self):
         if not hasattr(self, "_object"):
@@ -295,7 +295,7 @@ class RejectProjectView(forms.ModalFormView):
 class RenewAdminView(forms.ModalFormView):
     form_class = RenewAdminForm
     template_name = 'idmanager/registration_manager/renewadmin.html'
-    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+    success_url = reverse('horizon:idmanager:registration_manager:index')
 
     def get_object(self):
         if not hasattr(self, "_object"):
@@ -318,7 +318,7 @@ class RenewAdminView(forms.ModalFormView):
 class ForcedRenewView(RenewAdminView):
     form_class = RenewAdminForm
     template_name = 'idmanager/registration_manager/renewadmin.html'
-    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+    success_url = reverse('horizon:idmanager:registration_manager:index')
 
     def get_context_data(self, **kwargs):
         context = super(ForcedRenewView, self).get_context_data(**kwargs)
@@ -328,7 +328,7 @@ class ForcedRenewView(RenewAdminView):
 class DetailsView(forms.ModalFormView):
     form_class = DetailsForm
     template_name = 'idmanager/registration_manager/details.html'
-    success_url = reverse_lazy('horizon:idmanager:registration_manager:index')
+    success_url = reverse('horizon:idmanager:registration_manager:index')
 
     def get_object(self):
         if not hasattr(self, "_object"):
@@ -394,7 +394,7 @@ class DetailsView(forms.ModalFormView):
 
             except Exception:
                 LOG.error("Registration error", exc_info=True)
-                redirect = reverse_lazy("horizon:idmanager:registration_manager:index")
+                redirect = reverse("horizon:idmanager:registration_manager:index")
                 exceptions.handle(self.request, _('Unable to retrieve details.'), redirect=redirect)
 
         return self._object

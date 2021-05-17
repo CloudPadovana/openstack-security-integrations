@@ -18,8 +18,8 @@ import os, os.path
 import re
 import json
 import threading
-from types import ListType, TupleType
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
+from configparser import ExtendedInterpolation
 
 from django.conf import settings
 from django.core.mail import send_mail, mail_managers
@@ -63,6 +63,7 @@ USER_RENEWED_TYPE = 'user_renewed'
 USER_EXPIRED_TYPE = 'user_expired'
 USER_PURGED_TYPE = 'user_purged'
 NEWPRJ_BY_ADM = 'project_created_by_admin'
+GENERIC_MESSAGE = 'generic_message'
 
 
 # DO NOT CHANGE the LOG_TYPE_* constants
@@ -110,10 +111,10 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
     if project_name is None:
         project_name = _try_get_from_request_user(request, 'project_name')
 
-    LOG.debug(u'notify user_id={user_id}, project_id={project_id}, '
-              u'user_name={user_name}, project_name={project_name}, '
-              u'dst_user_id={dst_user_id}, dst_project_id={dst_project_id}, '
-              u'rcpt={rcpt}, action={action}, context={context}'
+    LOG.debug('notify user_id={user_id}, project_id={project_id}, '
+              'user_name={user_name}, project_name={project_name}, '
+              'dst_user_id={dst_user_id}, dst_project_id={dst_project_id}, '
+              'rcpt={rcpt}, action={action}, context={context}'
               .format(user_id=user_id, project_id=project_id,
                       user_name=user_name, project_name=project_name,
                       dst_user_id=dst_user_id, dst_project_id=dst_project_id,
@@ -133,11 +134,11 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
     extra = {}
     if getattr(settings, 'LOG_MANAGER_KEEP_NOTIFICATIONS_EMAIL', True):
         to = rcpt
-        if not type(to) is ListType:
+        if not isinstance(to, list):
             to = [to, ]
         to = ', '.join(map(str, to))
 
-        extra['email'] = u'To: {to}\nSubject: {subject}\n\n{body}'.format(
+        extra['email'] = 'To: {to}\nSubject: {subject}\n\n{body}'.format(
             to=to, subject=subject, body=body)
 
     Log.objects.log_action(
@@ -166,7 +167,7 @@ def warn_if_missing(arg_name):
     def wrapper(func):
         def wrapped(*args, **kwargs):
             if arg_name not in kwargs:
-                LOG.warn(u'{func_name}: `{arg_name}` not given. The log will not be visible by the corresponding entity'
+                LOG.warn('{func_name}: `{arg_name}` not given. The log will not be visible by the corresponding entity'
                          .format(func_name=func.__name__, arg_name=arg_name))
             return func(*args, **kwargs)
         return wrapped
@@ -224,7 +225,7 @@ def load_templates():
             TEMPLATE_TABLE[locale] = dict()
         
             tpl_filename = os.path.join(tpl_dir, tpl_item)
-            parser = ConfigParser()
+            parser = ConfigParser(interpolation=ExtendedInterpolation())
             parser.readfp(open(tpl_filename))
         
             for sect in parser.sections():
@@ -248,7 +249,7 @@ def notify(recpt, subject, body):
     if not recpt:
         LOG.error('Missing recipients')
         return
-    if type(recpt) is ListType:
+    if isinstance(recpt, list):
         recipients = recpt
     else:
         recipients = [ str(recpt) ]

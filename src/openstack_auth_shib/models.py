@@ -186,7 +186,7 @@ class LogManager(models.Manager):
             dst_user_id=dst_user_id,
         )
 
-        for k, v in extra.iteritems():
+        for k, v in extra.items():
             log.logextra_set.create(key=k, value=v)
 
         return log

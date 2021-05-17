@@ -14,56 +14,27 @@
 #  under the License. 
 
 
-from django import VERSION as django_version
 from django.conf.urls import url
 from openstack_dashboard.dashboards.idmanager.project_manager import views
 from openstack_dashboard.dashboards.identity.projects import views as baseViews
 
-index_url = url(r'^$', views.IndexView.as_view(), name='index')
-create_url = url(r'^create$', views.CreateProjectView.as_view(), name='create')
-mod_url = url(r'^(?P<tenant_id>[^/]+)/update/$',
-        views.UpdateProjectView.as_view(), name='update')
-use_url = url(r'^(?P<tenant_id>[^/]+)/usage/$',
-        views.ProjectUsageView.as_view(), name='usage')
-detail_url = url(r'^(?P<project_id>[^/]+)/detail/$',
-        views.DetailProjectView.as_view(), name='detail')
-quota_url = url(r'^(?P<tenant_id>[^/]+)/update_quotas/$',
-        baseViews.UpdateQuotasView.as_view(), name='update_quotas')
-course_url = url(r'^(?P<project_id>[^/]+)/course/$',
-        views.CourseView.as_view(), name='course')
-cdetail_url = url(r'^(?P<project_id>[^/]+)/course_detail/$',
-        views.CourseDetailView.as_view(), name='course_detail')
-edittags_url = url(r'^(?P<project_id>[^/]+)/edittags/$',
+urlpatterns = [
+    url(r'^$', views.IndexView.as_view(), name='index'),
+    url(r'^create$', views.CreateProjectView.as_view(), name='create'),
+    url(r'^(?P<tenant_id>[^/]+)/update/$',
+        views.UpdateProjectView.as_view(), name='update'),
+    url(r'^(?P<tenant_id>[^/]+)/usage/$',
+        views.ProjectUsageView.as_view(), name='usage'),
+    url(r'^(?P<project_id>[^/]+)/detail/$',
+        views.DetailProjectView.as_view(), name='detail'),
+    url(r'^(?P<tenant_id>[^/]+)/update_quotas/$',
+        baseViews.UpdateQuotasView.as_view(), name='update_quotas'),
+    url(r'^(?P<project_id>[^/]+)/course/$',
+        views.CourseView.as_view(), name='course'),
+    url(r'^(?P<project_id>[^/]+)/course_detail/$',
+        views.CourseDetailView.as_view(), name='course_detail'),
+    url(r'^(?P<project_id>[^/]+)/edittags/$',
         views.EditTagsView.as_view(), name='edittags')
-
-if django_version[1] < 11:
-
-    from django.conf.urls import patterns
-
-    urlpatterns = patterns('',
-        index_url,
-        create_url,
-        mod_url,
-        use_url,
-        detail_url,
-        quota_url,
-        course_url,
-        cdetail_url,
-        edittags_url,
-    )
-
-else:
-
-    urlpatterns = [
-        index_url,
-        create_url,
-        mod_url,
-        use_url,
-        detail_url,
-        quota_url,
-        course_url,
-        cdetail_url,
-        edittags_url
-    ]
+]
 
 

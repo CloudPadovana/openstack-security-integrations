@@ -13,37 +13,14 @@
 #  License for the specific language governing permissions and limitations
 #  under the License. 
 
-from django import VERSION as django_version
 from django.conf.urls import url
 from openstack_dashboard.dashboards.idmanager.subscription_manager import views
 
-index_url = url(r'^$', views.IndexView.as_view(), name='index')
-appr_url = url(r'^(?P<regid>[^/]+)/approve/$', views.ApproveView.as_view(), name='approve')
-rej_url = url(r'^(?P<regid>[^/]+)/reject/$', views.RejectView.as_view(), name='reject')
-ren_url = url(r'^(?P<regid>[^/]+)/renew/$', views.RenewView.as_view(), name='renew')
-disc_url = url(r'^(?P<regid>[^/]+)/discard/$', views.DiscardView.as_view(), name='discard')
-
-if django_version[1] < 11:
-
-    from django.conf.urls import patterns
-
-    prefix = 'openstack_dashboard.dashboards.idmanager.subscription_manager.views'
-
-    urlpatterns = patterns(prefix,
-                           index_url,
-                           appr_url,
-                           rej_url,
-                           ren_url,
-                           disc_url
-    )
-
-else:
-
-    urlpatterns = [
-        index_url,
-        appr_url,
-        rej_url,
-        ren_url,
-        disc_url
-    ]
+urlpatterns = [
+    url(r'^$', views.IndexView.as_view(), name='index'),
+    url(r'^(?P<regid>[^/]+)/approve/$', views.ApproveView.as_view(), name='approve'),
+    url(r'^(?P<regid>[^/]+)/reject/$', views.RejectView.as_view(), name='reject'),
+    url(r'^(?P<regid>[^/]+)/renew/$', views.RenewView.as_view(), name='renew'),
+    url(r'^(?P<regid>[^/]+)/discard/$', views.DiscardView.as_view(), name='discard')
+]
 

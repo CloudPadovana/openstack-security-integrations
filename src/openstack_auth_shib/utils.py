@@ -17,7 +17,7 @@ import logging
 import re
 import os
 import os.path
-from datetime import datetime
+from datetime import datetime, timezone
 
 from django.conf import settings
 from django.db import transaction
@@ -561,7 +561,7 @@ def set_last_exp(uid):
     if len(all_exp):
         new_exp = max([ x.expdate for x in all_exp ])
     else:
-        new_exp = datetime.now()
+        new_exp = datetime.now(timezone.utc)
     all_exp[0].registration.expdate = new_exp
     all_exp[0].registration.save()
 

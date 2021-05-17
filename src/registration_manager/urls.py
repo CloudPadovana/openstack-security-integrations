@@ -13,61 +13,26 @@
 #  License for the specific language governing permissions and limitations
 #  under the License. 
 
-from django import VERSION as django_version
 from django.conf.urls import url
 from openstack_dashboard.dashboards.idmanager.registration_manager import views
 
-index_url = url(r'^$', views.MainView.as_view(), name='index')
-prechk_url = url(r'^(?P<requestid>[^/]+)/precheck/$', views.PreCheckView.as_view(), name='precheck')
-grant_url = url(r'^(?P<requestid>[^/]+)/grantall/$', views.GrantAllView.as_view(), name='grantall')
-rej_url = url(r'^(?P<requestid>[^/]+)/reject/$', views.RejectView.as_view(), name='reject')
-detail_url = url(r'^(?P<requestid>[^/]+)/details/$', views.DetailsView.as_view(), name='details')
-f_app_url = url(r'^(?P<requestid>[^/]+)/forcedapprove/$', views.ForcedApproveView.as_view(), 
-        name='forcedapprove')
-f_rej_url = url(r'^(?P<requestid>[^/]+)/forcedreject/$', views.ForcedRejectView.as_view(), 
-        name='forcedreject')
-newprj_url = url(r'^(?P<requestid>[^/]+)/newproject/$', views.NewProjectView.as_view(), 
-        name='newproject')
-rejprj_url = url(r'^(?P<requestid>[^/]+)/rejectproject/$', views.RejectProjectView.as_view(), 
-        name='rejectproject')
-renadm_url = url(r'^(?P<requestid>[^/]+)/renewadmin/$', views.RenewAdminView.as_view(), 
-        name='renewadmin')
-f_renew_url = url(r'^(?P<requestid>[^/]+)/forcedrenew/$', views.ForcedRenewView.as_view(), 
+urlpatterns = [
+    url(r'^$', views.MainView.as_view(), name='index'),
+    url(r'^(?P<requestid>[^/]+)/precheck/$', views.PreCheckView.as_view(), name='precheck'),
+    url(r'^(?P<requestid>[^/]+)/grantall/$', views.GrantAllView.as_view(), name='grantall'),
+    url(r'^(?P<requestid>[^/]+)/reject/$', views.RejectView.as_view(), name='reject'),
+    url(r'^(?P<requestid>[^/]+)/details/$', views.DetailsView.as_view(), name='details'),
+    url(r'^(?P<requestid>[^/]+)/forcedapprove/$', views.ForcedApproveView.as_view(), 
+        name='forcedapprove'),
+    url(r'^(?P<requestid>[^/]+)/forcedreject/$', views.ForcedRejectView.as_view(), 
+        name='forcedreject'),
+    url(r'^(?P<requestid>[^/]+)/newproject/$', views.NewProjectView.as_view(), 
+        name='newproject'),
+    url(r'^(?P<requestid>[^/]+)/rejectproject/$', views.RejectProjectView.as_view(), 
+        name='rejectproject'),
+    url(r'^(?P<requestid>[^/]+)/renewadmin/$', views.RenewAdminView.as_view(), 
+        name='renewadmin'),
+    url(r'^(?P<requestid>[^/]+)/forcedrenew/$', views.ForcedRenewView.as_view(), 
         name='forcedrenew')
-
-if django_version[1] < 11:
-
-    from django.conf.urls import patterns
-
-    prefix = 'openstack_dashboard.dashboards.idmanager.registration_manager.views'
-
-    urlpatterns = patterns(prefix,
-                           index_url,
-                           prechk_url,
-                           grant_url,
-                           rej_url,
-                           detail_url,
-                           f_app_url,
-                           f_rej_url,
-                           newprj_url,
-                           rejprj_url,
-                           renadm_url,
-                           f_renew_url
-        )
-
-else:
-
-    urlpatterns = [
-        index_url,
-        prechk_url,
-        grant_url,
-        rej_url,
-        detail_url,
-        f_app_url,
-        f_rej_url,
-        newprj_url,
-        rejprj_url,
-        renadm_url,
-        f_renew_url
-    ]
+]
 

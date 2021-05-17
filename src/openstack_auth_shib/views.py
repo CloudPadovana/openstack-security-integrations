@@ -15,7 +15,7 @@
 
 import logging
 import re
-from urllib import urlencode
+from urllib.parse import urlencode
 
 from django import shortcuts
 from django import http as django_http
@@ -312,7 +312,7 @@ def course(request, project_name):
         }
         return shortcuts.render(request, 'aai_error.html', tempDict)
 
-    if project[0].status <> PRJ_COURSE:
+    if project[0].status != PRJ_COURSE:
         tempDict = {
             'error_header' : _("Course not yet available"),
             'error_text' : "%s: %s" % (_("Course not yet available"), project_name),

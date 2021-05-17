@@ -15,6 +15,7 @@
 
 import logging
 from datetime import datetime
+from datetime import timezone
 
 from horizon import forms
 from horizon import exceptions
@@ -23,7 +24,7 @@ from django.db import transaction
 from django.conf import settings
 from django.forms import ValidationError
 from django.forms.widgets import HiddenInput
-from django.forms.extras.widgets import SelectDateWidget
+from django.forms.widgets import SelectDateWidget
 from django.utils.translation import ugettext as _
 from django.views.decorators.debug import sensitive_variables
 
@@ -44,6 +45,7 @@ from openstack_auth_shib.notifications import SUBSCR_NO_TYPE
 from openstack_auth_shib.notifications import MEMBER_REMOVED
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
+from openstack_auth_shib.utils import set_last_exp
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
@@ -63,8 +65,8 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
 
         self.fields['regid'] = forms.CharField(widget=HiddenInput)
 
-        curr_year = datetime.utcnow().year
-        years_list = range(curr_year, curr_year + MAX_RENEW)
+        curr_year = datetime.now(timezone.utc).year
+        years_list = list(range(curr_year, curr_year + MAX_RENEW))
 
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
@@ -73,7 +75,7 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
 
     def clean(self):
         data = super(ApproveSubscrForm, self).clean()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if data['expiration'].date() < now.date():
             raise ValidationError(_('Invalid expiration time.'))
         if data['expiration'].year > now.year + MAX_RENEW:
@@ -114,13 +116,7 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 expiration.expdate = data['expiration']
                 expiration.save()
                 
-                #
-                # Update the max expiration per user
-                #
-                user_reg = prj_req.registration
-                if data['expiration'] > user_reg.expdate:
-                    user_reg.expdate = data['expiration']
-                    user_reg.save()
+                set_last_exp(member_id)
 
                 roles_obj = client_factory(request).roles
                 arg_dict = {
@@ -236,8 +232,8 @@ class RenewSubscrForm(forms.SelfHandlingForm):
 
         self.fields['regid'] = forms.CharField(widget=HiddenInput)
 
-        curr_year = datetime.utcnow().year
-        years_list = range(curr_year, curr_year + MAX_RENEW)
+        curr_year = datetime.now(timezone.utc).year
+        years_list = list(range(curr_year, curr_year + MAX_RENEW))
 
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
@@ -246,7 +242,7 @@ class RenewSubscrForm(forms.SelfHandlingForm):
 
     def clean(self):
         data = super(RenewSubscrForm, self).clean()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if data['expiration'].date() < now.date():
             raise ValidationError(_('Invalid expiration time.'))
         if data['expiration'].year > now.year + MAX_RENEW:

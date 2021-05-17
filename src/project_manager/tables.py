@@ -17,7 +17,7 @@ import logging
 
 from django import shortcuts
 from django.db import transaction
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.translation import ugettext as _
 from django.utils.http import urlencode
 
@@ -142,7 +142,7 @@ class CourseOnLink(tables.LinkAction):
     classes = ("ajax-modal", "btn-edit")
     
     def allowed(self, request, datum):
-        return datum.handle_course and datum.status <> PRJ_COURSE
+        return datum.handle_course and datum.status != PRJ_COURSE
 
 class EditCourseLink(tables.LinkAction):
     name = "editcourse"

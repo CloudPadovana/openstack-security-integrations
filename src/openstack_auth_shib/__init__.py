@@ -15,4 +15,12 @@
 
 # following PEP 386
 __version__ = "1.0.0"
-__all__ = [ "views", "backend", "urls", "models", "forms" ]
+__all__ = [ 
+    "views",
+    "urls",
+    "models",
+    "forms",
+    "idpmanager",
+    "notifications",
+    "utils"
+]

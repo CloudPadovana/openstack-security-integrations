@@ -96,9 +96,13 @@ body: The cloud administrator rejected the creation of project {{ project }}
 
 [registration_available]
 LOG: Registration request of user {{ username }} and {% if project_creation %}creation of{% else %}affiliation to{% endif %} {{ projects|join:', ' }} available
+  {% if notes %}Notes: {{ notes }}{% endif %}
+  {% if contactper %}Contact person: {{ contactper }}{% endif %}
 subject: New request for registration available ({{ username }})
 body: A new request for registration is available
   {% if username %}The username is {{ username }}{% endif %}
+  {% if notes %}Notes: {{ notes }}{% endif %}
+  {% if contactper %}Contact person: {{ contactper }}{% endif %}
   
   Please, don't reply to this message
 
@@ -203,6 +207,14 @@ body: The affiliation for {{ username }} to {{ project }} is expired.
 LOG: User {{ username }} removed by {{ log.user_name }}
 subject: Account for user {{ username }} has been removed
 body: The account {{ username }} has been removed from Cloud Area Padovana.
+  
+  Please, don't reply to this message
+
+[generic_message]
+LOG: Message from project admin: {{ username }}
+subject: Message from the project administrator of {{ project }}
+body: The administrator of the project {{ project }} have just sent the following message:
+  {{ message }}
   
   Please, don't reply to this message
 

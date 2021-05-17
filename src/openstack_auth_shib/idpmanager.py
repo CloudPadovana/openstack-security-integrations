@@ -14,7 +14,7 @@
 #  under the License. 
 
 import logging
-from urllib import urlencode
+from urllib.parse import urlencode
 
 from django.conf import settings
 
@@ -53,11 +53,11 @@ class Federated_Account:
             self.provider = None
 
         if self.idpid and not self.username:
-            step1 = filter(lambda x : self.idpid in x[1], 
-                           Federated_Account.entity_table.items())
+            step1 = list(x for x in Federated_Account.entity_table.items()
+                         if self.idpid in x[1])
             if len(step1) > 0:
-                step2 = filter(lambda x : step1[0][0] == x[1][0],
-                               Federated_Account.mapping_table.items())
+                step2 = list(x for x in Federated_Account.mapping_table.items()
+                             if step1[0][0] == x[1][0])
                 if len(step2) > 0:
                     rules = Federated_Account.rule_table.get(step2[0][0], [])
 
@@ -94,8 +94,8 @@ class Federated_Account:
                 self.sn = request.META[sn_item]
                 break
 
-    def __nonzero__(self):
-        return 1 if self.username else 0
+    def __bool__(self):
+        return self.username != None
 
 def get_logout_url(request, *args):
 

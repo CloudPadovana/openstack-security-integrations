@@ -103,6 +103,8 @@ subscr_templ_list = [
 
 member_templ_list = [
     'src/templates/member_manager/member_manager.html',
+    'src/templates/member_manager/sendmsg.html',
+    'src/templates/member_manager/_sendmsg.html',
     'src/templates/member_manager/modifyexp.html',
     'src/templates/member_manager/_modifyexp.html'
 ]

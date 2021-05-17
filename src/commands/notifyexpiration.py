@@ -17,6 +17,7 @@ import logging
 
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone
 
 from django.core.management.base import CommandError
 from openstack_auth_shib.models import Expiration
@@ -53,7 +54,7 @@ class Command(CloudVenetoCommand):
 
         try:
 
-            now = datetime.now()
+            now = datetime.now(timezone.utc)
             noti_table = dict()
             user_set = set()
             prj_set = set()
@@ -82,7 +83,7 @@ class Command(CloudVenetoCommand):
             admin_table = dict()
             for p_role in PrjRole.objects.filter(project__projectname__in=prj_set):
                 prjname = p_role.project.projectname
-                if not admin_table.has_key(prjname):
+                if prjname not in admin_table:
                     admin_table[prjname] = list()
                 admin_table[prjname].append(p_role.registration.userid)
                 user_set.add(p_role.registration.userid)
@@ -95,7 +96,7 @@ class Command(CloudVenetoCommand):
             for prjname, uid_list in admin_table.items():
                 contact_table[prjname] = list()
                 for userid in uid_list:
-                    if mail_table.has_key(userid):
+                    if userid in mail_table:
                         contact_table[prjname].append(mail_table[userid])
 
             for days_to_exp, noti_list in noti_table.items():

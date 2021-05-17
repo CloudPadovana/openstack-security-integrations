@@ -16,14 +16,9 @@
 import sys
 import re
 import logging
-import base64
+import string
+import secrets
 from datetime import datetime, timedelta
-
-from Crypto import __version__ as crypto_version
-if crypto_version.startswith('2.0'):
-    from Crypto.Util import randpool
-else:
-    from Crypto import Random
 
 from horizon import forms
 from horizon import messages
@@ -32,7 +27,7 @@ from django.db import transaction
 from django.conf import settings
 from django.forms import ValidationError
 from django.forms.widgets import HiddenInput
-from django.forms.extras.widgets import SelectDateWidget
+from django.forms.widgets import SelectDateWidget
 from django.views.decorators.debug import sensitive_variables
 from django.utils.translation import ugettext as _
 
@@ -69,6 +64,7 @@ from openstack_auth_shib.models import RSTATUS_REMINDACK
 
 from openstack_auth_shib.models import OS_LNAME_LEN
 from openstack_auth_shib.models import OS_SNAME_LEN
+from openstack_auth_shib.models import PWD_LEN
 from openstack_auth_shib.utils import get_prjman_ids
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import PRJ_REGEX
@@ -81,13 +77,8 @@ from openstack_dashboard.api import keystone as keystone_api
 LOG = logging.getLogger(__name__)
 
 def generate_pwd():
-    if crypto_version.startswith('2.0'):
-        prng = randpool.RandomPool()
-        iv = prng.get_bytes(256)
-    else:
-        prng = Random.new()
-        iv = prng.read(16)
-    return base64.b64encode(iv)
+    alphabet = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(alphabet) for i in range(PWD_LEN))
     
 def check_and_get_roleids(request):
     tenantadmin_roleid = None
@@ -325,7 +316,7 @@ class GrantAllForm(PreCheckForm):
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
             required=True,
-            widget=SelectDateWidget(None, range(curr_year, curr_year + 25))
+            widget=SelectDateWidget(None, list(range(curr_year, curr_year + 25)))
         )
 
         self.fields['rename'] = forms.CharField(
@@ -445,7 +436,7 @@ class ForcedCheckForm(forms.SelfHandlingForm):
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
 
         curr_year = datetime.now().year
-        years_list = range(curr_year, curr_year+25)
+        years_list = list(range(curr_year, curr_year + 25))
 
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
@@ -618,7 +609,7 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
 
         curr_year = datetime.now().year
-        years_list = range(curr_year, curr_year+25)
+        years_list = list(range(curr_year, curr_year + 25))
 
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Administrator expiration date"),
@@ -796,7 +787,7 @@ class RenewAdminForm(forms.SelfHandlingForm):
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
 
         curr_year = datetime.now().year
-        years_list = range(curr_year, curr_year + 25)
+        years_list = list(range(curr_year, curr_year + 25))
 
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),

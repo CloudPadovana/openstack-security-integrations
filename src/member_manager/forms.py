@@ -16,12 +16,13 @@
 import logging
 
 from datetime import datetime
+from datetime import timezone
 
 from django.db import transaction
 from django.conf import settings
 from django.forms import ValidationError
 from django.forms.widgets import HiddenInput
-from django.forms.extras.widgets import SelectDateWidget
+from django.forms.widgets import SelectDateWidget
 from django.utils.translation import ugettext as _
 from django.views.decorators.debug import sensitive_variables
 
@@ -36,6 +37,7 @@ from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
+from openstack_auth_shib.notifications import GENERIC_MESSAGE
 
 from openstack_auth_shib.utils import set_last_exp
 
@@ -53,8 +55,8 @@ class ModifyExpForm(forms.SelfHandlingForm):
 
         self.fields['userid'] = forms.CharField(widget=HiddenInput)
         
-        curr_year = datetime.utcnow().year
-        years_list = range(curr_year, curr_year + MAX_RENEW)           
+        curr_year = datetime.now(timezone.utc).year
+        years_list = list(range(curr_year, curr_year + MAX_RENEW))           
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
             required=True,
@@ -64,7 +66,7 @@ class ModifyExpForm(forms.SelfHandlingForm):
     def clean(self):
         data = super(ModifyExpForm, self).clean()
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if data['expiration'].date() < now.date():
             raise ValidationError(_('Invalid expiration time.'))
         if data['expiration'].year > now.year + MAX_RENEW:
@@ -122,6 +124,38 @@ class ModifyExpForm(forms.SelfHandlingForm):
             return False
         return True
 
+
+class SendMsgForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(SendMsgForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['message'] = forms.CharField(
+            label=_('Message'),
+            required=True,
+            widget=forms.widgets.Textarea()
+        )
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+        try:
+            with transaction.atomic():
+                q_args = {
+                    'project__projectid' : self.request.user.tenant_id
+                }
+                tmpl = [ x.registration for x in Expiration.objects.filter(**q_args) ]
+                e_addresses = [ x.email for x in EMail.objects.filter(registration__in = tmpl) ]
+                noti_params = {
+                    'username' : self.request.user.username,
+                    'project' : self.request.user.tenant_name,
+                    'message' : data['message']
+                }
+                notifyUser(request=request, rcpt=e_addresses, action=GENERIC_MESSAGE,
+                           context=noti_params, dst_user_id=self.request.user.id)
+        except:
+            exceptions.handle(request)
+            return False
+        return True
 
 
 

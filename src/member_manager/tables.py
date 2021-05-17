@@ -18,7 +18,7 @@ import logging
 from django import shortcuts
 from django.db import transaction
 from django.conf import settings
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy as reverse
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ungettext_lazy
 
@@ -42,6 +42,7 @@ from openstack_auth_shib.notifications import MEMBER_REMOVED_ADM
 from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import get_admin_roleid
+from openstack_auth_shib.utils import set_last_exp
 
 LOG = logging.getLogger(__name__)
 DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', '')
@@ -53,16 +54,16 @@ class DeleteMemberAction(tables.DeleteAction):
     @staticmethod
     def action_present(count):
         return ungettext_lazy(
-            u"Delete Member",
-            u"Delete Members",
+            "Delete Member",
+            "Delete Members",
             count
         )
 
     @staticmethod
     def action_past(count):
         return ungettext_lazy(
-            u"Deleted Member",
-            u"Deleted Members",
+            "Deleted Member",
+            "Deleted Members",
             count
         )
 
@@ -82,6 +83,8 @@ class DeleteMemberAction(tables.DeleteAction):
                 Expiration.objects.filter(**q_args).delete()
                 PrjRequest.objects.filter(**q_args).delete()
                 PrjRole.objects.filter(**q_args).delete()
+
+                set_last_exp(obj_id)
 
                 roles_obj = client_factory(request).roles
                 role_assign_obj = client_factory(request).role_assignments
@@ -198,12 +201,12 @@ class ToggleRoleAction(tables.Action):
             messages.error(request, _('Unable to toggle the role.'))
            
         if obj_id == request.user.id:
-            response = shortcuts.redirect(reverse_lazy('logout'))
+            response = shortcuts.redirect(reverse('logout'))
             msg = _("Roles changed. Please log in again to continue.")
             utils.add_logout_reason(request, response, msg)
             return response
             
-        return shortcuts.redirect(reverse_lazy('horizon:idmanager:member_manager:index'))
+        return shortcuts.redirect(reverse('horizon:idmanager:member_manager:index'))
 
 class ChangeExpAction(tables.LinkAction):
     name = "change_expiration"
@@ -213,6 +216,12 @@ class ChangeExpAction(tables.LinkAction):
 
     def allowed(self, request, datum):
         return not datum.is_t_admin
+
+class SendMessageAction(tables.LinkAction):
+    name = "send_message"
+    verbose_name = _("Send Message")
+    url = "horizon:idmanager:member_manager:sendmsg"
+    classes = ("ajax-modal", "btn-edit")
 
 def get_role(data):
     if data.is_t_admin:
@@ -232,7 +241,7 @@ class MemberTable(tables.DataTable):
         name = "member_table"
         verbose_name = _("Project members")
         row_actions = (ToggleRoleAction, ChangeExpAction, DeleteMemberAction,)
-        table_actions = ()
+        table_actions = (SendMessageAction,)
 
     def get_object_id(self, datum):
         return datum.userid

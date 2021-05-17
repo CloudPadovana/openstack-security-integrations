@@ -235,7 +235,7 @@ class RegistrForm(forms.SelfHandlingForm):
             #
             # Workaround: hex string is required by the selector index
             #
-            all_orgs = [ (x.encode('hex'), x) for x in org_table.keys() ]
+            all_orgs = list((bytes(x, 'utf8').hex(), x) for x in org_table.keys())
             all_orgs.append(('other', _('Other organization')))
 
             self.fields['encoded_org'] = forms.ChoiceField(
@@ -260,7 +260,7 @@ class RegistrForm(forms.SelfHandlingForm):
 
             for org_id, ou_list in org_table.items():
 
-                enc_org_id = org_id.encode('hex')
+                enc_org_id = bytes(org_id, 'utf8').hex()
 
                 if not ou_list:
                     continue
@@ -313,10 +313,10 @@ class RegistrForm(forms.SelfHandlingForm):
         elif data['prjaction'] == 'selprj':
             if not data['selprj']:
                 raise ValidationError(_('Missing selected project.'))
-        elif data['prjaction'] <> 'guestprj':
+        elif data['prjaction'] != 'guestprj':
             raise ValidationError(_('Wrong project parameter.'))
         
-        if data.get('aupok', 'reject') <> 'accept':
+        if data.get('aupok', 'reject') != 'accept':
             raise ValidationError(_('You must accept Cloud Padovana AUP.'))
             
         if 'pwd' in data and data['pwd'] != data.get('repwd', None):
@@ -340,7 +340,7 @@ class RegistrForm(forms.SelfHandlingForm):
 
             try:
                 enc_org_id = data['encoded_org'].strip()
-                org_id = enc_org_id.decode('hex')
+                org_id = bytes.fromhex(enc_org_id).decode('utf8')
 
                 curr_dept_list = org_table.get(org_id, [])
                 dept_id = data.get('org_unit_%s' % enc_org_id, None)
@@ -357,7 +357,7 @@ class RegistrForm(forms.SelfHandlingForm):
 
         if curr_dept_list:
             for item in curr_dept_list:
-                if item[0] <> dept_id:
+                if item[0] != dept_id:
                     continue
                 tmpctc = data.get('contactper', '').strip()
                 if tmpctc:
@@ -502,6 +502,8 @@ class RegistrForm(forms.SelfHandlingForm):
                 'username': data['username'],
                 'projects': list(p[0] for p in prjlist),
                 'project_creation': (prj_action == 'newprj'),
+                'notes' : data['notes'],
+                'contactper' : data['contactper']
             }
             notifyAdmin(request=self.request, action=REGISTR_AVAIL_TYPE, context=noti_params)
 

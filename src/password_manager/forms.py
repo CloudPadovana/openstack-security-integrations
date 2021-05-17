@@ -17,7 +17,7 @@
 from django.forms import ValidationError
 from django import http
 from django.utils.translation import ugettext_lazy as _
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy as reverse
 from django.views.decorators.debug import sensitive_variables
 
 from horizon import exceptions
@@ -63,7 +63,7 @@ class PasswordForm(forms.SelfHandlingForm):
             #api.keystone.user_update_own_password(request, None, data['new_password'])
             api.keystone.user_update_password(request, request.user.id, data['new_password'], False)
             
-            response = http.HttpResponseRedirect(reverse_lazy('logout'))
+            response = http.HttpResponseRedirect(reverse('logout'))
             msg = _("Password changed. Please log in again to continue.")
             utils.add_logout_reason(request, response, msg)
             return response
