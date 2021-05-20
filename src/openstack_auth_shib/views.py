@@ -34,7 +34,6 @@ from openstack_auth.views import websso as basic_websso
 from openstack_auth.views import logout as basic_logout
 from openstack_auth.views import switch as basic_switch
 from openstack_auth.views import switch_region as basic_switch_region
-from openstack_auth.utils import is_websso_enabled
 from openstack_auth.utils import get_websso_url
 
 from openstack_dashboard.api import keystone as keystone_api
@@ -58,7 +57,7 @@ AUTHZCOOKIE = "keystoneidpid"
 @never_cache
 def login(request):
 
-    if request.method == 'POST' and is_websso_enabled():
+    if request.method == 'POST':
         auth_type = request.POST.get('auth_type', 'credentials')
         auth_url = request.POST.get('region', None)
 
@@ -77,15 +76,6 @@ def login(request):
 @csrf_exempt
 @never_cache
 def websso(request):
-
-    if not is_websso_enabled():
-        tempDict = {
-            'error_header' : _("Web SSO error"),
-            'error_text' : _("Web SSO is not supported"),
-            'redirect_url' : '/dashboard',
-            'redirect_label' : _("Home")
-        }
-        return shortcuts.render(request, 'aai_error.html', tempDict)
 
     tmpresp = basic_websso(request)
     tmpresp.delete_cookie(AUTHZCOOKIE)
