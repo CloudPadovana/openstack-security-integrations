@@ -75,7 +75,7 @@ class Command(CloudVenetoCommand):
             prjid = mem_item.project.projectid
 
             updated_prjs.add(prjid)
-            uid_lists.append(userid)
+            uid_list.append(userid)
 
             try:
                 with transaction.atomic():
