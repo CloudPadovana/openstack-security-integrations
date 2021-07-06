@@ -45,7 +45,6 @@ from openstack_auth_shib.notifications import SUBSCR_NO_TYPE
 from openstack_auth_shib.notifications import MEMBER_REMOVED
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
-from openstack_auth_shib.utils import set_last_exp
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
@@ -110,13 +109,11 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
             
                 default_role = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
                 
-                expiration = Expiration()
-                expiration.registration = prj_req.registration
-                expiration.project = prj_req.project
-                expiration.expdate = data['expiration']
-                expiration.save()
-                
-                set_last_exp(member_id)
+                expiration = Expiration.objects.create_expiration(
+                    registration = prj_req.registration,
+                    project = prj_req.project,
+                    expdate = data['expiration']
+                )
 
                 roles_obj = client_factory(request).roles
                 arg_dict = {

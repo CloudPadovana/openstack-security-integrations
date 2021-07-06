@@ -129,7 +129,26 @@ class UserMapping(models.Model):
                                     db_index=False,
                                     on_delete=models.CASCADE)
 
+class ExpManager(models.Manager):
+    use_in_migrations = True
+
+    def create_expiration(self, **kwargs):
+        reg_item = kwargs['registration']
+        result = self.model.objects.create(
+            registration = reg_item,
+            project = kwargs['project'],
+            expdate = kwargs['expdate']
+        )
+
+        if reg_item.expdate < kwargs['expdate']:
+            reg_item.expdate = kwargs['expdate']
+            reg_item.save()
+
+        return result
+
 class Expiration(models.Model):
+    objects = ExpManager()
+
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     expdate = models.DateTimeField(db_index=True)
