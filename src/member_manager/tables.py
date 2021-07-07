@@ -42,7 +42,6 @@ from openstack_auth_shib.notifications import MEMBER_REMOVED_ADM
 from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import get_admin_roleid
-from openstack_auth_shib.utils import set_last_exp
 
 LOG = logging.getLogger(__name__)
 DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', '')
@@ -80,11 +79,9 @@ class DeleteMemberAction(tables.DeleteAction):
                     'registration__userid' : obj_id,
                     'project__projectname' : request.user.tenant_name
                 }
-                Expiration.objects.filter(**q_args).delete()
+                Expiration.objects.delete_expiration(**q_args)
                 PrjRequest.objects.filter(**q_args).delete()
                 PrjRole.objects.filter(**q_args).delete()
-
-                set_last_exp(obj_id)
 
                 roles_obj = client_factory(request).roles
                 role_assign_obj = client_factory(request).role_assignments

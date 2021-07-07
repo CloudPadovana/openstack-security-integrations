@@ -266,21 +266,13 @@ class RenewSubscrForm(forms.SelfHandlingForm):
                 
                 q_args = {
                     'registration__regid' : int(data['regid']),
-                    'project__projectname' : curr_prjname
+                    'project__projectname' : curr_prjname,
+                    'expdate' : data['expiration']
                 }
-                
-                prj_exp = Expiration.objects.filter(**q_args)
-                prj_exp.update(expdate=data['expiration'])
-                
-                #
-                # Update the max expiration per user
-                #
-                user_reg = Registration.objects.get(regid=int(data['regid']))
-                if data['expiration'] > user_reg.expdate:
-                    user_reg.expdate = data['expiration']
-                    user_reg.save()
+                Expiration.objects.update_expiration(**q_args)
 
-                tmpres = EMail.objects.filter(registration=user_reg)
+                user_reg = Registration.objects.get(regid=int(data['regid']))
+                tmpres = EMail.objects.filter(registration = user_reg)
                 user_mail = tmpres[0].email if len(tmpres) > 0 else None
 
                 #
@@ -350,7 +342,7 @@ class DiscSubscrForm(forms.SelfHandlingForm):
                     'registration__regid' : int(data['regid']),
                     'project__projectname' : curr_prjname
                 }                
-                Expiration.objects.filter(**q_args).delete()
+                Expiration.objects.delete_expiration(**q_args)
                 PrjRole.objects.filter(**q_args).delete()
 
                 #

@@ -29,7 +29,6 @@ from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import USER_EXPIRED_TYPE
 from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
-from openstack_auth_shib.utils import set_last_exp
 
 from horizon.management.commands.cronscript_utils import CloudVenetoCommand
 from horizon.management.commands.cronscript_utils import get_prjman_roleid
@@ -87,7 +86,7 @@ class Command(CloudVenetoCommand):
                         'registration' : mem_item.registration,
                         'project' : mem_item.project
                     }
-                    Expiration.objects.filter(**q_args).delete()
+                    Expiration.objects.delete_expiration(**q_args)
                     PrjRequest.objects.filter(**q_args).delete()
                     PrjRole.objects.filter(**q_args).delete()
 
@@ -106,13 +105,6 @@ class Command(CloudVenetoCommand):
 
             except:
                 LOG.error("Check expiration failed for %s" % username, exc_info=True)
-
-        #
-        # Update the last expiration date for each user
-        #
-        with transaction.atomic():
-            for item in uid_list:
-                set_last_exp(item)
 
         #
         # Check for tenants without admin (use cloud admin if missing)
