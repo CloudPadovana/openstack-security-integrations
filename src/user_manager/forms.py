@@ -239,11 +239,11 @@ class ReactivateForm(forms.SelfHandlingForm):
 
             try:
                 with transaction.atomic():
-                    Expiration(
-                        registration=reg_user,
-                        project=prj_item,
-                        expdate=data['expdate']
-                    ).save()
+                    Expiration.objects.create_expiration(
+                        registration = reg_user,
+                        project = prj_item,
+                        expdate = data['expdate']
+                    )
 
                     keystone_api.add_tenant_user_role(
                         request, prj_item.projectid,
