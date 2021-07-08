@@ -34,7 +34,7 @@ from openstack_dashboard.api import cinder as cinder_api
 from openstack_dashboard.api import nova as nova_api
 from openstack_dashboard.api import neutron as neutron_api
 
-
+from .models import Registration
 from .models import Expiration
 from .models import Project
 from .models import PrjRequest
@@ -560,10 +560,11 @@ def set_last_exp(uid):
     all_exp = Expiration.objects.filter(registration__userid=uid)
     if len(all_exp):
         new_exp = max([ x.expdate for x in all_exp ])
+        all_exp[0].registration.expdate = new_exp
+        all_exp[0].registration.save()
     else:
         new_exp = datetime.now(timezone.utc)
-    all_exp[0].registration.expdate = new_exp
-    all_exp[0].registration.save()
+        Registration.objects.filter(userid=uid).update(expdate=new_exp)
 
 
 class AAIDBRouter:

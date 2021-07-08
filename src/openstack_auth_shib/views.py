@@ -160,11 +160,16 @@ class RegistrView(forms.ModalFormView):
             result['prjaction'] = 'selprj'
             result['selprj'] = prjname_param
 
+        org = self.request.GET.get('org', None)
+        if org:
+            result['organization'] = org
+
         org_unit = self.request.GET.get('ou', None)
         if org_unit:
-            result['organization'] = org_unit
+            result['org_unit'] = org_unit
 
         result['custom_org'] = ""
+        result['contactper'] = "unknown"
 
         return result
 

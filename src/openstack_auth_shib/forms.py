@@ -189,6 +189,7 @@ class RegistrForm(forms.SelfHandlingForm):
 
             if dept_list:
                 self.fields['contactper'] = forms.CharField(
+                    required=False,
                     widget=forms.HiddenInput,
                     initial='unknown'
                 )
