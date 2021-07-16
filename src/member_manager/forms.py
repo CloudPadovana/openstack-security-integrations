@@ -39,8 +39,6 @@ from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 from openstack_auth_shib.notifications import GENERIC_MESSAGE
 
-from openstack_auth_shib.utils import set_last_exp
-
 LOG = logging.getLogger(__name__)
 
 try:
@@ -94,11 +92,10 @@ class ModifyExpForm(forms.SelfHandlingForm):
                     'registration__userid' : data['userid'],
                     'project__projectid' : request.user.tenant_id
                 }
-                Expiration.objects.filter(**q_args).update(expdate=data['expiration'])
-
-                set_last_exp(data['userid'])
-
                 PrjRequest.objects.filter(**q_args).delete()
+
+                q_args['expdate'] = data['expiration']
+                Expiration.objects.update_expiration(**q_args)
 
                 tmpres = EMail.objects.filter(registration__userid=data['userid'])
                 if len(tmpres) == 0:

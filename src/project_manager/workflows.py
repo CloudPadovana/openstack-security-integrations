@@ -180,11 +180,11 @@ class ExtCreateProject(baseWorkflows.CreateProject):
             #
             for u_item in Registration.objects.filter(userid__in=member_ids):
 
-                new_p_exp = Expiration()
-                new_p_exp.registration = u_item
-                new_p_exp.project = self.this_project
-                new_p_exp.expdate = u_item.expdate
-                new_p_exp.save()
+                Expiration.objects.create_expiration(
+                    registration = u_item,
+                    project = self.this_project,
+                    expdate = u_item.expdate
+                )
 
                 if u_item.userid in prjadm_ids:
                     new_prjrole = PrjRole()
@@ -308,13 +308,11 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
             #
             for item in added_regs:
 
-                def_expdate = item.expdate if item.expdate else datetime.now() + timedelta(365)
-                c_args = {
-                    'registration' : item,
-                    'project' : self.this_project,
-                    'expdate' : item.expdate
-                }
-                Expiration(**c_args).save()
+                Expiration.objects.create_expiration(
+                    registration = item,
+                    project = self.this_project,
+                    expdate = item.expdate if item.expdate else datetime.now() + timedelta(365)
+                )
 
                 changed_regs.append(item)
             #
@@ -438,11 +436,11 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
 
                 old_exps = Expiration.objects.filter(project=self.this_project)
                 for item in old_exps:
-                    Expiration(
+                    Expiration.objects.create_expiration(
                         registration = item.registration,
                         project = newpr,
                         expdate = item.expdate
-                    ).save()
+                    )
                 old_exps.delete()
 
                 old_rules = PrjRole.objects.filter(project=self.this_project)

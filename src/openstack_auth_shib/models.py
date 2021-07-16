@@ -13,6 +13,9 @@
 #  License for the specific language governing permissions and limitations
 #  under the License. 
 
+from datetime import datetime
+from datetime import timezone as tzone
+
 from django.db import models
 from django.utils import timezone
 
@@ -129,7 +132,74 @@ class UserMapping(models.Model):
                                     db_index=False,
                                     on_delete=models.CASCADE)
 
+class ExpManager(models.Manager):
+    use_in_migrations = True
+
+    def create_expiration(self, **kwargs):
+        reg_item = kwargs['registration']
+        result = self.model.objects.create(
+            registration = reg_item,
+            project = kwargs['project'],
+            expdate = kwargs['expdate']
+        )
+
+        if reg_item.expdate < kwargs['expdate']:
+            reg_item.expdate = kwargs['expdate']
+            reg_item.save()
+
+        return result
+
+    def _operate_expiration(self, op, **kwargs):
+        q_args = dict()
+        if 'registration' in kwargs:
+            q_args['registration'] = kwargs['registration']
+        elif 'registration__regid' in kwargs:
+            q_args['registration__regid'] = kwargs['registration__regid']
+        elif 'registration__userid' in kwargs:
+            q_args['registration__userid'] = kwargs['registration__userid']
+        else:
+            raise Exception('Missing registration')
+
+        if 'project' in kwargs:
+            q_args['project'] = kwargs['project']
+        elif 'project__projectname' in kwargs:
+            q_args['project__projectname'] = kwargs['project__projectname']
+        elif 'project__projectid' in kwargs:
+            q_args['project__projectid'] = kwargs['project__projectid']
+        else:
+            raise Exception('Missing project')
+
+        prj_exp = self.model.objects.filter(**q_args)
+        if len(prj_exp) == 0:
+            return
+        regid = prj_exp[0].registration.regid
+
+        if op == 0:
+            prj_exp.update(expdate = kwargs['expdate'])
+        else:
+            prj_exp.delete()
+
+        all_exp = self.model.objects.filter(
+            registration__regid = regid
+        )
+        if len(all_exp):
+            new_exp = max([ x.expdate for x in all_exp ])
+            all_exp[0].registration.expdate = new_exp
+            all_exp[0].registration.save()
+        else:
+            newdate = datetime.now(tzone.utc)
+            Registration.objects.filter(regid = regid).update(expdate = newdate)
+
+    def update_expiration(self, **kwargs):
+        self._operate_expiration(0, **kwargs)
+
+    def delete_expiration(self, **kwargs):
+        self._operate_expiration(1, **kwargs)
+
+
 class Expiration(models.Model):
+    objects = ExpManager()
+
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     expdate = models.DateTimeField(db_index=True)

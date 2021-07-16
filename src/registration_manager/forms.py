@@ -242,11 +242,11 @@ class PreCheckForm(forms.SelfHandlingForm):
                 #
                 for prj_item in new_prj_list:
 
-                    expiration = Expiration()
-                    expiration.registration = registration
-                    expiration.project = prj_item
-                    expiration.expdate = self.expiration
-                    expiration.save()
+                    expiration = Expiration.objects.create_expiration(
+                        registration = registration,
+                        project = prj_item,
+                        expdate = self.expiration
+                    )
 
                     prjRole = PrjRole()
                     prjRole.registration = registration
@@ -460,19 +460,11 @@ class ForcedCheckForm(forms.SelfHandlingForm):
                 #
                 # Insert expiration date per tenant
                 #
-                expiration = Expiration()
-                expiration.registration = prj_req.registration
-                expiration.project = prj_req.project
-                expiration.expdate = data['expiration']
-                expiration.save()
-
-                #
-                # Update the max expiration per user
-                #
-                user_reg = prj_req.registration
-                if data['expiration'] > user_reg.expdate:
-                    user_reg.expdate = data['expiration']
-                    user_reg.save()
+                expiration = Expiration.objects.create_expiration(
+                    registration = prj_req.registration,
+                    project = prj_req.project,
+                    expdate = data['expiration']
+                )
 
                 project_name = prj_req.project.projectname
                 project_id = prj_req.project.projectid
@@ -674,19 +666,11 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 #
                 # Insert expiration date per tenant
                 #
-                expiration = Expiration()
-                expiration.registration = prj_req.registration
-                expiration.project = prj_req.project
-                expiration.expdate = data['expiration']
-                expiration.save()
-
-                #
-                # Update the max expiration per user
-                #
-                user_reg = prj_req.registration
-                if data['expiration'] > user_reg.expdate:
-                    user_reg.expdate = data['expiration']
-                    user_reg.save()
+                expiration = Expiration.objects.create_expiration(
+                    registration = prj_req.registration,
+                    project = prj_req.project,
+                    expdate = data['expiration']
+                )
 
                 #
                 # Clear request
@@ -813,11 +797,11 @@ class RenewAdminForm(forms.SelfHandlingForm):
                 if len(prj_reqs) == 0:
                     return True
                 
-                prj_exp = Expiration.objects.filter(
+                Expiration.objects.update_expiration(
                     registration__regid = regid,
-                    project__projectname = usr_and_prj.group(2)
+                    project__projectname = usr_and_prj.group(2),
+                    expdate=data['expiration']
                 )
-                prj_exp.update(expdate=data['expiration'])
                 
                 #
                 # Update the max expiration per user

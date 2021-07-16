@@ -45,7 +45,6 @@ from openstack_auth_shib.notifications import SUBSCR_OK_TYPE
 from openstack_auth_shib.notifications import SUBSCR_FORCED_OK_TYPE
 
 from openstack_auth_shib.utils import get_prjman_ids
-from openstack_auth_shib.utils import set_last_exp
 
 from openstack_dashboard.api import keystone as keystone_api
 from openstack_dashboard.dashboards.identity.users import forms as baseForms
@@ -108,15 +107,16 @@ class RenewExpForm(forms.SelfHandlingForm):
                 if not c_exp or exp_item.expdate == c_exp:
                     continue
 
-                q_args = {
+                q2_args = {
                     'registration__userid' : data['userid'],
                     'project__projectname' : prj_name
                 }
-                Expiration.objects.filter(**q_args).update(expdate=c_exp)
+                q2_args['flowstatus__in'] = [ PSTATUS_RENEW_ADMIN, PSTATUS_RENEW_MEMB ]
+                PrjRequest.objects.filter(**q2_args).delete()
 
-                q_args['flowstatus__in'] = [ PSTATUS_RENEW_ADMIN, PSTATUS_RENEW_MEMB ]
-                PrjRequest.objects.filter(**q_args).delete()
-                
+                q2_args['expdate'] = c_exp
+                Expiration.objects.update_expiration(**q2_args)
+
                 if user_name not in mail_table:
                     tmpobj = EMail.objects.filter(registration__userid=data['userid'])
                     mail_table[user_name] = tmpobj[0].email if len(tmpobj) else None
@@ -132,8 +132,6 @@ class RenewExpForm(forms.SelfHandlingForm):
                                context=noti_params, dst_user_id=data['userid'])
                 except:
                     LOG.error("Cannot notify %s" % user_name, exc_info=True)
-
-            set_last_exp(data['userid'])
 
         return True
 
@@ -241,11 +239,11 @@ class ReactivateForm(forms.SelfHandlingForm):
 
             try:
                 with transaction.atomic():
-                    Expiration(
-                        registration=reg_user,
-                        project=prj_item,
-                        expdate=data['expdate']
-                    ).save()
+                    Expiration.objects.create_expiration(
+                        registration = reg_user,
+                        project = prj_item,
+                        expdate = data['expdate']
+                    )
 
                     keystone_api.add_tenant_user_role(
                         request, prj_item.projectid,

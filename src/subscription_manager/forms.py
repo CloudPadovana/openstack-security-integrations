@@ -45,7 +45,6 @@ from openstack_auth_shib.notifications import SUBSCR_NO_TYPE
 from openstack_auth_shib.notifications import MEMBER_REMOVED
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
-from openstack_auth_shib.utils import set_last_exp
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
@@ -110,13 +109,11 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
             
                 default_role = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
                 
-                expiration = Expiration()
-                expiration.registration = prj_req.registration
-                expiration.project = prj_req.project
-                expiration.expdate = data['expiration']
-                expiration.save()
-                
-                set_last_exp(member_id)
+                expiration = Expiration.objects.create_expiration(
+                    registration = prj_req.registration,
+                    project = prj_req.project,
+                    expdate = data['expiration']
+                )
 
                 roles_obj = client_factory(request).roles
                 arg_dict = {
@@ -269,21 +266,13 @@ class RenewSubscrForm(forms.SelfHandlingForm):
                 
                 q_args = {
                     'registration__regid' : int(data['regid']),
-                    'project__projectname' : curr_prjname
+                    'project__projectname' : curr_prjname,
+                    'expdate' : data['expiration']
                 }
-                
-                prj_exp = Expiration.objects.filter(**q_args)
-                prj_exp.update(expdate=data['expiration'])
-                
-                #
-                # Update the max expiration per user
-                #
-                user_reg = Registration.objects.get(regid=int(data['regid']))
-                if data['expiration'] > user_reg.expdate:
-                    user_reg.expdate = data['expiration']
-                    user_reg.save()
+                Expiration.objects.update_expiration(**q_args)
 
-                tmpres = EMail.objects.filter(registration=user_reg)
+                user_reg = Registration.objects.get(regid=int(data['regid']))
+                tmpres = EMail.objects.filter(registration = user_reg)
                 user_mail = tmpres[0].email if len(tmpres) > 0 else None
 
                 #
@@ -353,7 +342,7 @@ class DiscSubscrForm(forms.SelfHandlingForm):
                     'registration__regid' : int(data['regid']),
                     'project__projectname' : curr_prjname
                 }                
-                Expiration.objects.filter(**q_args).delete()
+                Expiration.objects.delete_expiration(**q_args)
                 PrjRole.objects.filter(**q_args).delete()
 
                 #

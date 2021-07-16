@@ -17,7 +17,6 @@ import logging
 import re
 import os
 import os.path
-from datetime import datetime, timezone
 
 from django.conf import settings
 from django.db import transaction
@@ -552,19 +551,6 @@ def get_unit_table():
         LOG.error("Cannot exec unit table script", exc_info=True)
 
     return getattr(settings, 'UNIT_TABLE', {})
-
-#
-# Last expiration setup
-#
-def set_last_exp(uid):
-    all_exp = Expiration.objects.filter(registration__userid=uid)
-    if len(all_exp):
-        new_exp = max([ x.expdate for x in all_exp ])
-        all_exp[0].registration.expdate = new_exp
-        all_exp[0].registration.save()
-    else:
-        new_exp = datetime.now(timezone.utc)
-        Registration.objects.filter(userid=uid).update(expdate=new_exp)
 
 
 class AAIDBRouter:
