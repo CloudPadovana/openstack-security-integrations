@@ -61,7 +61,7 @@ class Command(CloudVenetoCommand):
             LOG.error("Check expiration failed", exc_info=True)
             raise CommandError("Check expiration failed")
 
-        updated_prjs = set()
+        updated_prjs = dict()
 
         exp_date = datetime.now(timezone.utc) - timedelta(self.config.cron_defer)
 
@@ -73,7 +73,7 @@ class Command(CloudVenetoCommand):
             prjname = mem_item.project.projectname
             prjid = mem_item.project.projectid
 
-            updated_prjs.add(prjid)
+            updated_prjs[prjid] = prjname
             uid_list.append(userid)
 
             try:
@@ -109,13 +109,13 @@ class Command(CloudVenetoCommand):
         #
         # Check for tenants without admin (use cloud admin if missing)
         #
-        for prj_id in updated_prjs:
+        for prj_id, prjname in updated_prjs.items():
             if PrjRole.objects.filter(project__projectid=prj_id).count() == 0:
                 try:
                     keystone_client.roles.grant(prjman_roleid, user=cloud_adminid, project=prj_id)
                     LOG.info("Cloud Administrator as admin for %s" % prj_id)
                     noti_params = { 
-                        'project' : prj_id,
+                        'project' : prjname,
                         's_role' : 'None',
                         'd_role' : 'project_manager'
                     }
