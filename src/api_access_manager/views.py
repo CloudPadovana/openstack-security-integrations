@@ -15,21 +15,14 @@
 
 import logging
 
-from django.conf import settings
-
 from openstack_dashboard.dashboards.project.api_access import views as baseViews
-from openstack_auth_shib.idpmanager import Federated_Account
+from .tables import EndpointsTable
 
 LOG = logging.getLogger(__name__)
 
-def download_rc_file(request):
+def download_os_token_file(request):
 
-    f_account = Federated_Account(request)
-    if not f_account:
-        return baseViews.download_rc_file(request)
-
-    template = getattr(settings, 'OPENRC_CUSTOM_TEMPLATE',
-                       'project/api_access_manager/openrc.sh.template')
+    template = 'project/api_access_manager/openrc.sh.template'
 
     context = baseViews._get_openrc_credentials(request)
     context['user_domain_name'] = request.user.user_domain_name
@@ -45,3 +38,5 @@ def download_rc_file(request):
 
     return baseViews._download_rc_file_for_template(request, context, template)
 
+class IndexView(baseViews.IndexView):
+    table_class = EndpointsTable

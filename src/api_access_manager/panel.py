@@ -21,3 +21,7 @@ class ApiAccessManager(horizon.Panel):
     name = _("API Access")
     slug = 'api_access_manager'
 
+prj_dashboard = horizon.get_dashboard('project')
+std_api_panel = prj_dashboard.get_panel('api_access')
+std_api_panel.nav = False
+
