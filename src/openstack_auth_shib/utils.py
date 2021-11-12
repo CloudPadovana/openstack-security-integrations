@@ -202,7 +202,7 @@ def get_avail_networks(request):
 
         if max_avail < 255:
             tmpl = list(set(range(1, max_avail + MAX_AVAIL + 1)) - set(used_ipprefs))
-            tmpl.sort(lambda x,y: x-y)
+            tmpl.sort()
             for idx in tmpl:
                 result.append("%s.%d.0/24" % (unit_data['lan_net_pool'], idx))
 
