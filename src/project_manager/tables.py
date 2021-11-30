@@ -32,6 +32,7 @@ from openstack_auth_shib.models import Project, PrjRequest
 from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.models import PRJ_PUBLIC
 from openstack_auth_shib.models import PRJ_COURSE
+from openstack_auth_shib.utils import dispose_project
 
 LOG = logging.getLogger(__name__)
 
@@ -86,8 +87,9 @@ class DeleteProjectAction(baseTables.DeleteTenantsAction):
                         _("Cannot delete project: there are pending registrations"))
                     raise Exception("Pending registrations")
 
-            Project.objects.filter(projectid=obj_id).delete()
-            super(DeleteProjectAction, self).delete(request, obj_id)
+            if dispose_project(request, obj_id):
+                Project.objects.filter(projectid=obj_id).delete()
+                super(DeleteProjectAction, self).delete(request, obj_id)
 
 class RescopeTokenToProject(baseTables.RescopeTokenToProject):
 
