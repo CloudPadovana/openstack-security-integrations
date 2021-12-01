@@ -456,27 +456,35 @@ def add_unit_combos(newprjform):
                 })
             )
 
-def dispose_project(request, project_id):
+def check_VMs_and_Volumes(request, **kwargs):
 
     try:        
-        q_args = {
-            'all_tenants' : True,
-            'project_id' : project_id
-        }
-        (servers, d1) = nova_api.server_list(request, q_args, False)
+        kwargs['all_tenants'] = True
+        (servers, d1) = nova_api.server_list(request, kwargs, False)
         if len(servers) > 0:
             err_msg = _("Existing instances: ") + '\n'.join([x.name for x in servers])
             messages.error(request, err_msg)
             return False
 
-        (volumes, d1, d2) = cinder_api.volume_list_paged(request, q_args)
+        volumes = cinder_api.volume_list(request, kwargs)
         if len(volumes) > 0:
             err_msg = _("Existing volumes: ") + '\n'.join([x.name for x in volumes])
+            messages.error(request, err_msg)
+            return False
+
+        snapshots = cinder_api.volume_snapshot_list(request, kwargs)
+        if len(snapshots) > 0:
+            err_msg = _("Existing snapshots: ") + '\n'.join([x.name for x in snapshots])
             messages.error(request, err_msg)
             return False
     except:
         LOG.error(_("Failed checks for project removal"), exc_info=True)
         messages.error(request, _("Failed checks for project removal"))
+        return False
+
+def dispose_project(request, project_id):
+
+    if not check_VMs_and_Volumes(request, project_id = project_id):
         return False
 
     try:
