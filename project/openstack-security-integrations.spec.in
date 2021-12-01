@@ -79,7 +79,6 @@ mv %{buildroot}/%{python_sitelib}/dashboard_conf/_1000_* \
     %{buildroot}%{os_dashboard_dir}/local/local_settings.d
 
 mkdir -p %{buildroot}%{os_dashboard_dir}/enabled
-rm %{buildroot}/%{python_sitelib}/dashboard_conf/_18*.py*
 mv %{buildroot}/%{python_sitelib}/dashboard_conf/_*.py* \
    %{buildroot}%{os_dashboard_dir}/enabled
    
