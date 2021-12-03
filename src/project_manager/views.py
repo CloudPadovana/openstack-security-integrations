@@ -35,6 +35,7 @@ from .tables import ProjectsTable
 from .workflows import ExtUpdateProject
 from .workflows import ExtCreateProject
 
+from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_PRIVATE
@@ -134,10 +135,34 @@ class DetailProjectView(baseViews.DetailProjectView):
     def get_context_data(self, **kwargs):
         context = super(baseViews.DetailProjectView, self).get_context_data(**kwargs)
         project = self.get_data()
-        table = ProjectsTable(self.request)
         context["project"] = project
         context["url"] = reverse("horizon:idmanager:project_manager:index")
-        context["actions"] = table.render_row_actions(project)
+
+        #context["actions"] = ProjectsTable(self.request).render_row_actions(project)
+
+        if not self.request.user.is_superuser:
+            return context
+
+        try:
+            kprj_man = keystone_api.keystoneclient(self.request).projects
+            context['prj_tags'] = ", ".join(kprj_man.list_tags(project.id))
+
+            with transaction.atomic():
+                tmpl = PrjRole.objects.filter(project__projectid = project.id)
+                q_list = [ x.registration for x in tmpl ]
+                admin_list = [
+                    {
+                        'id' : x.registration.username,
+                        'givenname' : x.registration.givenname,
+                        'sn' : x.registration.sn,
+                        'email' : x.email
+                    }
+                    for x in EMail.objects.filter(registration__in = q_list)
+                ]
+            context['admin_list'] = admin_list
+        except:
+            LOG.error("Cannot retrieve project details", exc_info=True)
+
         return context
 
 class CourseView(forms.ModalFormView):
