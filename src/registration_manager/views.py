@@ -39,6 +39,7 @@ from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.utils import REQID_REGEX
 
 from .utils import RegistrData
+from .utils import getProjectInfo
 from .tables import OperationTable
 from .forms import PreCheckForm
 from .forms import GrantAllForm
@@ -49,7 +50,6 @@ from .forms import NewProjectCheckForm
 from .forms import NewProjectRejectForm
 from .forms import RenewAdminForm
 from .forms import DetailsForm
-
 
 LOG = logging.getLogger(__name__)
 
@@ -384,7 +384,7 @@ class DetailsView(forms.ModalFormView):
 
                 for prj_item in prj_list:
                     if prj_item.projectid:
-                        tmpdict['memberof'].append(prj_item.projectname)
+                        tmpdict['memberof'].append(getProjectInfo(self.request, prj_item))
                     else:
                         is_priv = prj_item.status == PRJ_PRIVATE
                         tmpt = (prj_item.projectname, prj_item.description, is_priv)
