@@ -259,26 +259,23 @@ def setup_new_project(request, project_id, project_name, data):
             agg_prj_cname = "%s-%s" % (unit_data.get('aggregate_prefix', unit_id), prj_cname)
             avail_zone = unit_data.get('availability_zone', 'nova')
 
+            err_msg = _("Cannot create host aggregate")
             new_aggr = nova_api.aggregate_create(request, agg_prj_cname, avail_zone)
-            flow_step += 1
 
+            err_msg = _("Cannot insert hypervisor in aggregate: ")
             for h_item in hyper_list:
-                nova_api.add_host_to_aggregate(request, new_aggr.id, h_item)
-            flow_step += 1
+                try:
+                    nova_api.add_host_to_aggregate(request, new_aggr.id, h_item)
+                except:
+                    LOG.error(err_msg + new_aggr.name, exc_info=True)
 
             all_md = { 'filter_tenant_id' : project_id }
             all_md.update(unit_data.get('metadata', {}))
 
+            err_msg = _("Cannot insert hypervisor in aggregate")
             nova_api.aggregate_set_metadata(request, new_aggr.id, all_md)
-            flow_step = 0
 
     except:
-        if flow_step == 0:
-            err_msg = _("Cannot create host aggregate")
-        elif flow_step == 1:
-            err_msg = _("Cannot insert hypervisor in aggregate")
-        else:
-            err_msg = _("Cannot set metadata for aggregate")
         LOG.error(err_msg, exc_info=True)
         messages.error(request, err_msg)
 
