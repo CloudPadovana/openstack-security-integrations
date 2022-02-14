@@ -99,8 +99,9 @@ class IndexView(baseViews.IndexView):
                     is_curr_admin = is_curr_admin and prj_table[prjname].isadmin
 
                     can_list_tags = self.request.user.is_superuser or is_curr_admin
+                    show_tags = settings.HORIZON_CONFIG.get('show_tags', False)
 
-                    if prj_item.projectid and can_list_tags:
+                    if prj_item.projectid and can_list_tags and show_tags:
                         prj_table[prjname].tags = set(kprj_man.list_tags(prj_item.projectid))
                     else:
                         prj_table[prjname].tags = set()
