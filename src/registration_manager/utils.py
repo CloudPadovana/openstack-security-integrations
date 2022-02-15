@@ -101,7 +101,7 @@ def getProjectInfo(request, project):
 
     try:
         kprj_man = keystone_api.keystoneclient(request).projects
-        for item in comp_rules['organizations']:
+        for item in comp_rules.get('organizations', []):
             if ('O=' + item) in kprj_man.list_tags(project.projectid):
                 result['comp_required'] = True
     except:
@@ -110,7 +110,7 @@ def getProjectInfo(request, project):
 
     try:
         for s_item in neutron_api.subnet_list(request, project_id = project.projectid):
-            for p_item in comp_rules['subnets']:
+            for p_item in comp_rules.get('subnets', []):
                 if p_item in item.cidr:
                     result['comp_required'] = True
     except:
