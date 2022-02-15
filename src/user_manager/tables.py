@@ -129,6 +129,9 @@ class ReactivateLink(tables.LinkAction):
     url = "horizon:idmanager:user_manager:reactivate"
     classes = ("ajax-modal", "btn-edit")
 
+    def allowed(self, request, datum):
+        return not datum.pending
+
 class OrphanTable(tables.DataTable):
     name = tables.Column('name', verbose_name=_('User name'))
     fullname = tables.Column('fullname', verbose_name=_('Full name'))

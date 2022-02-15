@@ -30,9 +30,11 @@ from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import RegRequest
+from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import UserMapping
+from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import RSTATUS_REMINDER
@@ -43,6 +45,8 @@ from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 from openstack_auth_shib.notifications import SUBSCR_OK_TYPE
 from openstack_auth_shib.notifications import SUBSCR_FORCED_OK_TYPE
+from openstack_auth_shib.notifications import notifyAdmin
+from openstack_auth_shib.notifications import MEMBER_REQUEST
 
 from openstack_auth_shib.utils import get_prjman_ids
 
@@ -188,11 +192,6 @@ class ReactivateForm(forms.SelfHandlingForm):
             widget=HiddenInput
         )
 
-        self.fields['expdate'] = forms.DateTimeField(
-            label="Expiration date",
-            widget=SelectDateWidget(None, get_year_list())
-        )
-
         self.fields['projects'] = forms.MultipleChoiceField(
             label=_('Available projects'),
             required=True,
@@ -204,12 +203,49 @@ class ReactivateForm(forms.SelfHandlingForm):
             avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
         self.fields['projects'].choices = avail_prjs
 
+        self.fields['action'] = forms.ChoiceField(
+            label=_('Re-activation mode'),
+            choices = [
+                ('forward', _('Forward to project admin')),
+                ('forced', _('Forced reactivation'))
+            ],
+            widget=forms.Select(attrs={
+                'class': 'switchable',
+                'data-slug': 'actsource'
+            })
+        )
+
+        self.fields['expdate'] = forms.DateTimeField(
+            label=_("Expiration date"),
+            widget=SelectDateWidget({
+                'class': 'switched',
+                'data-switch-on': 'actsource',
+                'data-actsource-forced': _("Expiration date")
+            }, get_year_list())
+        )
+
+        self.fields['notes'] = forms.CharField(
+            label=_('Notes'),
+            required=False,
+            widget=forms.widgets.Textarea(attrs = {
+                'class': 'switched',
+                'data-switch-on': 'actsource',
+                'data-actsource-forward': _("Notes")
+            })
+        )
+
     def handle(self, request, data):
 
         if not request.user.is_superuser:
             messages.error(_("Operation not authorized"))
             return False
+        
+        if data['action'] == 'forced':
+            return self.handle_forced(request, data)
+        else:
+            return self.handle_forward(request, data)
 
+    def handle_forced(self, request, data):
         try:
 
             with transaction.atomic():
@@ -276,4 +312,45 @@ class ReactivateForm(forms.SelfHandlingForm):
                 LOG.error("Generic failure", exc_info=True)
         return True
 
+
+    def handle_forward(self, request, data):
+        try:
+            with transaction.atomic():
+
+                reg_user = Registration.objects.filter(userid=data['userid'])[0]
+                prj_list = Project.objects.filter(projectname__in=data['projects'])
+
+                for prj_item in prj_list:
+                    reqArgs = {
+                        'registration' : reg_user,
+                        'project' : prj_item,
+                        'flowstatus' : PSTATUS_PENDING,
+                        'notes' : data['notes']
+                    }                
+                    reqPrj = PrjRequest(**reqArgs)
+                    reqPrj.save()
+
+                    try:
+                        #
+                        # send notification to project managers and users
+                        #
+                        admin_emails = list()
+                        for prj_role in PrjRole.objects.filter(project=prj_item):
+                            for email_obj in EMail.objects.filter(registration=prj_role.registration):
+                                admin_emails.append(email_obj.email)
+
+                        noti_params = {
+                            'username' : reg_user.username,
+                            'project' : prj_item.projectname
+                        }
+                        notifyProject(request=request, rcpt=admin_emails, action=MEMBER_REQUEST, 
+                                      context=noti_params)
+                    except:
+                        LOG.error("Generic failure", exc_info=True)
+
+        except:
+            LOG.error("Generic failure", exc_info=True)
+            return False
+
+        return True
 
