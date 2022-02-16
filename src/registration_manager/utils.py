@@ -111,7 +111,7 @@ def getProjectInfo(request, project):
     try:
         for s_item in neutron_api.subnet_list(request, project_id = project.projectid):
             for p_item in comp_rules.get('subnets', []):
-                if p_item in item.cidr:
+                if p_item in s_item.cidr:
                     result['comp_required'] = True
     except:
         LOG.error("Registration error", exc_info=True)
