@@ -55,8 +55,11 @@
     {% if memberof %}
     <h3>{% trans "Subscriptions to project" %}:</h3>
     <ul>
-        {% for prjname in memberof %}
-        <li>{{ prjname }}</li>
+        {% for prjitem in memberof %}
+        <li>
+            {{ prjitem.name }}{% if prjitem.comp_required %} ({% trans "Compliance required" %}){% endif %}
+            {% if prjitem.err_msg %}<br/>{{ prjitem.err_msg }}{% endif %}
+        </li>
         {% endfor %}
     </ul>
     {% endif %}

@@ -16,6 +16,7 @@
 import logging
 
 from django import shortcuts
+from django.conf import settings
 from django.db import transaction
 from django.urls import reverse
 from django.utils.translation import ugettext as _
@@ -32,6 +33,7 @@ from openstack_auth_shib.models import Project, PrjRequest
 from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.models import PRJ_PUBLIC
 from openstack_auth_shib.models import PRJ_COURSE
+from openstack_auth_shib.utils import dispose_project
 
 LOG = logging.getLogger(__name__)
 
@@ -86,8 +88,9 @@ class DeleteProjectAction(baseTables.DeleteTenantsAction):
                         _("Cannot delete project: there are pending registrations"))
                     raise Exception("Pending registrations")
 
-            Project.objects.filter(projectid=obj_id).delete()
-            super(DeleteProjectAction, self).delete(request, obj_id)
+            if dispose_project(request, obj_id):
+                Project.objects.filter(projectid=obj_id).delete()
+                super(DeleteProjectAction, self).delete(request, obj_id)
 
 class RescopeTokenToProject(baseTables.RescopeTokenToProject):
 
@@ -213,6 +216,7 @@ class ProjectsTable(baseTables.TenantsTable):
     def __init__(self, request, data=None, needs_form_wrapper=None, **kwargs):
         super(ProjectsTable, self).__init__(request, data=data,
                                             needs_form_wrapper=needs_form_wrapper, **kwargs)
+
         # patch for ajax update disabled
         self.columns['name'].update_action = None
         if 'description' in self.columns:
@@ -222,7 +226,7 @@ class ProjectsTable(baseTables.TenantsTable):
 
         # patch for columns removal
         del(self.columns['domain_name'])
-        if not request.user.is_superuser:
+        if not request.user.is_superuser or not settings.HORIZON_CONFIG.get('show_tags', False):
             del(self.columns['tags'])
         # end of patch
 

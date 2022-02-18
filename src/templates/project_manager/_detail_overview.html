@@ -31,6 +31,20 @@
     <dd>{{ project.enabled }}</dd>
     <dt>{% trans "Description" %}</dt>
     <dd>{{ project.description|default:_("None") }}</dd>
+    {% if prj_tags %}
+    <dt>{% trans "Tags" %}</dt>
+    <dd>{{ prj_tags }}</dd>
+    {% endif %}
   </dl>
+
+  {% if admin_list %}
+  <hr class="header_rule">
+  <h4>{% trans "Project administrators" %}</h4>
+  <ul>
+  {% for admin in admin_list %}
+    <li>{{ admin.givenname }} {{ admin.sn }} ({{ admin.id }}): <a href="mailto:{{ admin.email }}">{{ admin.email }}</a></li>
+  {% endfor %}
+  </ul>
+  {% endif %}
 </div>
 

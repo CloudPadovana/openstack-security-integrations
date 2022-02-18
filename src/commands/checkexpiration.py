@@ -29,7 +29,6 @@ from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import USER_EXPIRED_TYPE
 from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
-from openstack_auth_shib.utils import set_last_exp
 
 from horizon.management.commands.cronscript_utils import CloudVenetoCommand
 from horizon.management.commands.cronscript_utils import get_prjman_roleid
@@ -62,7 +61,7 @@ class Command(CloudVenetoCommand):
             LOG.error("Check expiration failed", exc_info=True)
             raise CommandError("Check expiration failed")
 
-        updated_prjs = set()
+        updated_prjs = dict()
 
         exp_date = datetime.now(timezone.utc) - timedelta(self.config.cron_defer)
 
@@ -74,7 +73,7 @@ class Command(CloudVenetoCommand):
             prjname = mem_item.project.projectname
             prjid = mem_item.project.projectid
 
-            updated_prjs.add(prjid)
+            updated_prjs[prjid] = prjname
             uid_list.append(userid)
 
             try:
@@ -87,7 +86,7 @@ class Command(CloudVenetoCommand):
                         'registration' : mem_item.registration,
                         'project' : mem_item.project
                     }
-                    Expiration.objects.filter(**q_args).delete()
+                    Expiration.objects.delete_expiration(**q_args)
                     PrjRequest.objects.filter(**q_args).delete()
                     PrjRole.objects.filter(**q_args).delete()
 
@@ -108,22 +107,15 @@ class Command(CloudVenetoCommand):
                 LOG.error("Check expiration failed for %s" % username, exc_info=True)
 
         #
-        # Update the last expiration date for each user
-        #
-        with transaction.atomic():
-            for item in uid_list:
-                set_last_exp(item)
-
-        #
         # Check for tenants without admin (use cloud admin if missing)
         #
-        for prj_id in updated_prjs:
+        for prj_id, prjname in updated_prjs.items():
             if PrjRole.objects.filter(project__projectid=prj_id).count() == 0:
                 try:
                     keystone_client.roles.grant(prjman_roleid, user=cloud_adminid, project=prj_id)
                     LOG.info("Cloud Administrator as admin for %s" % prj_id)
                     noti_params = { 
-                        'project' : prj_id,
+                        'project' : prjname,
                         's_role' : 'None',
                         'd_role' : 'project_manager'
                     }

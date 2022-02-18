@@ -19,12 +19,12 @@ from openstack_dashboard.dashboards.project.api_access import views as baseViews
 from openstack_dashboard.dashboards.project.api_access_manager import views
 
 urlpatterns = [
-    url(r'^$', baseViews.IndexView.as_view(), name='index'),
+    url(r'^$', views.IndexView.as_view(), name='index'),
     url(r'^ec2/$', baseViews.download_ec2_bundle, name='ec2'),
     url(r'^clouds.yaml/$',
         baseViews.download_clouds_yaml_file, name='clouds.yaml'),
-    url(r'^openrc/$', views.download_rc_file, name='openrc'),
-    url(r'^openrcv2/$', baseViews.download_rc_file_v2, name='openrcv2'),
+    url(r'^openrc/$', baseViews.download_rc_file, name='openrc'),
+    url(r'^ostoken/$', views.download_os_token_file, name='ostoken'),
     url(r'^view_credentials/$', baseViews.CredentialsView.as_view(),
         name='view_credentials'),
     url(r'^recreate_ec2_credentials/$',

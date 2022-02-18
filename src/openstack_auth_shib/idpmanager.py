@@ -122,7 +122,7 @@ def postproc_logout(request, response):
 
 def checkFederationSetup(request):
 
-    if not getattr(settings, 'check_federation_setup', False):
+    if not getattr(settings, 'CHECK_FEDERATION_SETUP', False):
         return
 
     mapping_table = getattr(settings, 'WEBSSO_IDP_MAPPING', {})

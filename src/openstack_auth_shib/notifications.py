@@ -132,7 +132,7 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
     subject, body, msg = notification_render(action, context, locale)
 
     extra = {}
-    if getattr(settings, 'LOG_MANAGER_KEEP_NOTIFICATIONS_EMAIL', True):
+    if getattr(settings, 'LOG_MANAGER_KEEP_NOTIFICATIONS_EMAIL', False):
         to = rcpt
         if not isinstance(to, list):
             to = [to, ]
@@ -140,6 +140,9 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
 
         extra['email'] = 'To: {to}\nSubject: {subject}\n\n{body}'.format(
             to=to, subject=subject, body=body)
+
+    if 'notes' in context:
+        extra['notes'] = context['notes']
 
     Log.objects.log_action(
         log_type=LOG_TYPE_EMAIL,

@@ -16,6 +16,7 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
+from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
 from django.urls import reverse_lazy as reverse
 
@@ -26,7 +27,10 @@ from horizon.utils import memoized
 
 from openstack_dashboard.dashboards.identity.users import views as baseViews
 
-from openstack_auth_shib.models import Registration, Expiration
+from openstack_auth_shib.models import Registration
+from openstack_auth_shib.models import Expiration
+from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import PSTATUS_PENDING
 
 from openstack_dashboard import api
 
@@ -122,11 +126,12 @@ class ChangePasswordView(baseViews.ChangePasswordView):
                               redirect=redirect)
 
 class OrphanData:
-    def __init__(self, uid, uname, full_name, expdate):
+    def __init__(self, uid, uname, full_name, expdate, pending):
         self.id = uid
         self.name = uname
         self.fullname = full_name
         self.expdate = expdate
+        self.pending = pending
 
 class CheckOrphansView(tables.DataTableView):
     table_class = OrphanTable
@@ -134,22 +139,25 @@ class CheckOrphansView(tables.DataTableView):
 
     def get_data(self):
         result = list()
-        #
-        # TODO improve query
-        #      use models.Registration.expdate as last expiration date
-        #
-        active_ids = [ item.registration.regid for item in Expiration.objects.all() ];
-        for item in Registration.objects.exclude(regid__in=active_ids):
+        with transaction.atomic():
+            active_ids = [ item.registration.regid for item in Expiration.objects.all() ];
+            for reg_item in Registration.objects.exclude(regid__in=active_ids):
 
-            if not item.userid:
-                continue
+                if not reg_item.userid:
+                    continue
 
-            result.append(OrphanData(
-                item.userid,
-                item.username,
-                item.givenname + " " + item.sn,
-                item.expdate
-            ))
+                q_args = {
+                    'registration' : reg_item,
+                    'flowstatus' : PSTATUS_PENDING,
+                }                
+
+                result.append(OrphanData(
+                    reg_item.userid,
+                    reg_item.username,
+                    reg_item.givenname + " " + reg_item.sn,
+                    reg_item.expdate,
+                    PrjRequest.objects.filter(**q_args).count() > 0
+                ))
         return result
 
 class ReactivateView(forms.ModalFormView):

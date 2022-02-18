@@ -21,8 +21,8 @@ from distutils.core import setup
 from distutils.command.bdist_rpm import bdist_rpm as _bdist_rpm
 
 pkg_name = 'openstack-security-integrations'
-pkg_version = '1.2.5'
-pkg_release = '2'
+pkg_version = '1.2.6'
+pkg_release = '1'
 
 source_items = "setup.py src config"
 
@@ -179,6 +179,7 @@ logo_list = [
 
 module_list = [
     'openstack_auth_shib',
+    'api_access_manager',
     'registration_manager',
     'project_manager',
     'subscription_manager',
@@ -214,6 +215,7 @@ setup(
                   (reg_panel_dir, reg_templ_list),
                   (user_panel_dir, usr_templ_list),
                   (prj_panel_dir, prj_templ_list),
+                  (api_access_dir, api_templ_list),
                   (pwd_panel_dir, pwd_templ_list),
                   (subscr_panel_dir, subscr_templ_list),
                   (member_panel_dir, member_templ_list),

@@ -17,7 +17,6 @@ import logging
 import re
 import os
 import os.path
-from datetime import datetime, timezone
 
 from django.conf import settings
 from django.db import transaction
@@ -203,7 +202,7 @@ def get_avail_networks(request):
 
         if max_avail < 255:
             tmpl = list(set(range(1, max_avail + MAX_AVAIL + 1)) - set(used_ipprefs))
-            tmpl.sort(lambda x,y: x-y)
+            tmpl.sort()
             for idx in tmpl:
                 result.append("%s.%d.0/24" % (unit_data['lan_net_pool'], idx))
 
@@ -260,26 +259,23 @@ def setup_new_project(request, project_id, project_name, data):
             agg_prj_cname = "%s-%s" % (unit_data.get('aggregate_prefix', unit_id), prj_cname)
             avail_zone = unit_data.get('availability_zone', 'nova')
 
+            err_msg = _("Cannot create host aggregate")
             new_aggr = nova_api.aggregate_create(request, agg_prj_cname, avail_zone)
-            flow_step += 1
 
+            err_msg = _("Cannot insert hypervisor in aggregate: ")
             for h_item in hyper_list:
-                nova_api.add_host_to_aggregate(request, new_aggr.id, h_item)
-            flow_step += 1
+                try:
+                    nova_api.add_host_to_aggregate(request, new_aggr.id, h_item)
+                except:
+                    LOG.error(err_msg + new_aggr.name, exc_info=True)
 
             all_md = { 'filter_tenant_id' : project_id }
             all_md.update(unit_data.get('metadata', {}))
 
+            err_msg = _("Cannot insert hypervisor in aggregate")
             nova_api.aggregate_set_metadata(request, new_aggr.id, all_md)
-            flow_step = 0
 
     except:
-        if flow_step == 0:
-            err_msg = _("Cannot create host aggregate")
-        elif flow_step == 1:
-            err_msg = _("Cannot insert hypervisor in aggregate")
-        else:
-            err_msg = _("Cannot set metadata for aggregate")
         LOG.error(err_msg, exc_info=True)
         messages.error(request, err_msg)
 
@@ -457,80 +453,81 @@ def add_unit_combos(newprjform):
                 })
             )
 
+def check_VMs_and_Volumes(request, **kwargs):
+
+    try:        
+        kwargs['all_tenants'] = True
+        (servers, d1) = nova_api.server_list(request, kwargs, False)
+        if len(servers) > 0:
+            err_msg = _("Existing instances: ") + '\n'.join([x.name for x in servers])
+            messages.error(request, err_msg)
+            return False
+
+        volumes = cinder_api.volume_list(request, kwargs)
+        if len(volumes) > 0:
+            err_msg = _("Existing volumes: ") + '\n'.join([x.name for x in volumes])
+            messages.error(request, err_msg)
+            return False
+
+        snapshots = cinder_api.volume_snapshot_list(request, kwargs)
+        if len(snapshots) > 0:
+            err_msg = _("Existing snapshots: ") + '\n'.join([x.name for x in snapshots])
+            messages.error(request, err_msg)
+            return False
+    except:
+        LOG.error(_("Failed checks for project removal"), exc_info=True)
+        messages.error(request, _("Failed checks for project removal"))
+        return False
+
+    return True
+
 def dispose_project(request, project_id):
 
-    # TODO missing check for VMs, Volumes and images
+    if not check_VMs_and_Volumes(request, project_id = project_id):
+        return False
 
     try:
-
-        flow_step = 0
         prj_subnets = set()
-        for s_item in neutron_api.subnet_list(request, 
-            tenant_id=project_id,
-            project_id=project_id
-        ):
+        for s_item in neutron_api.subnet_list(request, project_id = project_id):
             prj_subnets.add(s_item.id)
 
         for r_item in neutron_api.router_list(request):
+
             for p_item in neutron_api.port_list(request,
-                tenant_id=project_id,
-                project_id=project_id,
-                device_id=r_item.id
+                project_id = project_id,
+                device_id = r_item.id
             ):
+                if p_item.device_owner == "network:router_gateway":
+                    continue
                 for ip_item in p_item.fixed_ips:
                     if ip_item.get('subnet_id') in prj_subnets:
-                        LOG.info('Removing port %s' % ip_item.get('ip_address'))
-                        #neutron_api.router_remove_interface(request, r_item.id, None, p_item.id)
+                        tmpt = (ip_item.get('ip_address'), r_item.name)
+                        LOG.info('Removing port %s from %s' % tmpt)
+                        neutron_api.router_remove_interface(request, r_item.id, None, p_item.id)
 
-        flow_step = 1
         for s_item in prj_subnets:
             LOG.info('Removing subnet %s' % s_item)
-            #neutron_api.subnet_delete(request, s_item)
+            neutron_api.subnet_delete(request, s_item)
 
-        flow_step = 2
-        for n_item in neutron_api.network_list(request,
-            tenant_id=project_id,
-            project_id=project_id
-        ):
+        for n_item in neutron_api.network_list(request, project_id = project_id):
             LOG.info('Removing network %s' % n_item.name)
-            #neutron_api.network_delete(request, n_item.id)
-
-        flow_step = 3
-        #TODO release FIPs
-
+            neutron_api.network_delete(request, n_item.id)
     except:
-        if flow_step == 0:
-            err_msg = _("Cannot remove router interfaces")
-        elif flow_step == 1:
-            err_msg = _("Cannot remove subnets")
-        elif flow_step == 2:
-            err_msg = _("Cannot remove networks")
-        else:
-            err_msg = _("Cannot release FIPs")
-        LOG.error(err_msg, exc_info=True)
-        messages.error(request, err_msg)
+        LOG.error(_("Cannot remove neutron objects"), exc_info=True)
+        messages.error(request, _("Cannot remove neutron objects"))
 
     try:
-
         for agg_item in nova_api.aggregate_details_list(request):
             if agg_item.metadata.get('filter_tenant_id', '') == project_id:
                 for agg_host in agg_item.hosts:
                     LOG.info('Removing host %s from %s' % (agg_host, agg_item.name))
-                    #nova_api.remove_host_from_aggregate(request,
-                    #    agg_item.id,
-                    #    agg_host
-                    #)
+                    nova_api.remove_host_from_aggregate(request, agg_item.id, agg_host)
                 LOG.info('Removing aggregate %s' % agg_item.name)
-                #nova_api.aggregate_delete(request, agg_item.id)
-
+                nova_api.aggregate_delete(request, agg_item.id)
     except:
         err_msg = _("Cannot delete host aggregate")
         LOG.error(err_msg, exc_info=True)
         messages.error(request, err_msg)
-
-
-
-
 
     return True
 
@@ -552,19 +549,6 @@ def get_unit_table():
         LOG.error("Cannot exec unit table script", exc_info=True)
 
     return getattr(settings, 'UNIT_TABLE', {})
-
-#
-# Last expiration setup
-#
-def set_last_exp(uid):
-    all_exp = Expiration.objects.filter(registration__userid=uid)
-    if len(all_exp):
-        new_exp = max([ x.expdate for x in all_exp ])
-        all_exp[0].registration.expdate = new_exp
-        all_exp[0].registration.save()
-    else:
-        new_exp = datetime.now(timezone.utc)
-        Registration.objects.filter(userid=uid).update(expdate=new_exp)
 
 
 class AAIDBRouter:
