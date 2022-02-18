@@ -479,6 +479,8 @@ def check_VMs_and_Volumes(request, **kwargs):
         messages.error(request, _("Failed checks for project removal"))
         return False
 
+    return True
+
 def dispose_project(request, project_id):
 
     if not check_VMs_and_Volumes(request, project_id = project_id):
@@ -486,26 +488,30 @@ def dispose_project(request, project_id):
 
     try:
         prj_subnets = set()
-        q_args = { 'tenant_id' : project_id, 'project_id' : project_id }
-        for s_item in neutron_api.subnet_list(request, **q_args):
+        for s_item in neutron_api.subnet_list(request, project_id = project_id):
             prj_subnets.add(s_item.id)
 
         for r_item in neutron_api.router_list(request):
-            q_args['device_id'] = r_item.id
-            for p_item in neutron_api.port_list(request, **q_args):
+
+            for p_item in neutron_api.port_list(request,
+                project_id = project_id,
+                device_id = r_item.id
+            ):
+                if p_item.device_owner == "network:router_gateway":
+                    continue
                 for ip_item in p_item.fixed_ips:
                     if ip_item.get('subnet_id') in prj_subnets:
-                        tmpt = (ip_item.get('ip_address'), ip_item.get('subnet_id'))
+                        tmpt = (ip_item.get('ip_address'), r_item.name)
                         LOG.info('Removing port %s from %s' % tmpt)
-                        #neutron_api.router_remove_interface(request, r_item.id, None, ip_item.id)
+                        neutron_api.router_remove_interface(request, r_item.id, None, p_item.id)
 
         for s_item in prj_subnets:
             LOG.info('Removing subnet %s' % s_item)
-            #neutron_api.subnet_delete(request, s_item)
+            neutron_api.subnet_delete(request, s_item)
 
-        for n_item in neutron_api.network_list(request, **q_args):
+        for n_item in neutron_api.network_list(request, project_id = project_id):
             LOG.info('Removing network %s' % n_item.name)
-            #neutron_api.network_delete(request, n_item.id)
+            neutron_api.network_delete(request, n_item.id)
     except:
         LOG.error(_("Cannot remove neutron objects"), exc_info=True)
         messages.error(request, _("Cannot remove neutron objects"))
@@ -515,9 +521,9 @@ def dispose_project(request, project_id):
             if agg_item.metadata.get('filter_tenant_id', '') == project_id:
                 for agg_host in agg_item.hosts:
                     LOG.info('Removing host %s from %s' % (agg_host, agg_item.name))
-                    #nova_api.remove_host_from_aggregate(request, agg_item.id, agg_host)
+                    nova_api.remove_host_from_aggregate(request, agg_item.id, agg_host)
                 LOG.info('Removing aggregate %s' % agg_item.name)
-                #nova_api.aggregate_delete(request, agg_item.id)
+                nova_api.aggregate_delete(request, agg_item.id)
     except:
         err_msg = _("Cannot delete host aggregate")
         LOG.error(err_msg, exc_info=True)
