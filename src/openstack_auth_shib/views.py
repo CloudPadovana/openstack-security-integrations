@@ -261,8 +261,13 @@ def auth_error(request):
 
     try:
         if AUTHZCOOKIE in request.COOKIES:
-            idpdata = settings.HORIZON_CONFIG['identity_providers'][request.COOKIES[AUTHZCOOKIE]]
-            tmpresp = django_http.HttpResponseRedirect(idpdata['path'].replace('register', 'authzchk'))
+            idp_tag = request.COOKIES[AUTHZCOOKIE]
+
+            idpdata = settings.HORIZON_CONFIG['identity_providers'][idp_tag]
+            dest_url = idpdata['path'].replace('register', 'authzchk')
+            tmpresp = django_http.HttpResponseRedirect("%s?idp_tag=%s" % (dest_url, idp_tag))
+            tmpresp.delete_cookie(AUTHZCOOKIE)
+
             return tmpresp
     except:
         LOG.error("Cookie detection error", exc_info=True)
@@ -339,10 +344,11 @@ def authzchk(request):
     attributes = Federated_Account(request)
 
     tmpresp = None
+    idp_tag = request.GET.get('idp_tag', None)
     try:
-        if AUTHZCOOKIE in request.COOKIES and attributes \
+        if idp_tag and attributes \
             and UserMapping.objects.filter(globaluser=attributes.username).count() == 0:
-            idpdata = settings.HORIZON_CONFIG['identity_providers'][request.COOKIES[AUTHZCOOKIE]]
+            idpdata = settings.HORIZON_CONFIG['identity_providers'][idp_tag]
             tmpresp = django_http.HttpResponseRedirect(idpdata['path'])
     except:
         LOG.error("Cookie detection error", exc_info=True)
@@ -354,9 +360,6 @@ def authzchk(request):
             'redirect_url' : '/dashboard',
             'redirect_label' : _("Home")
         })
-
-    if AUTHZCOOKIE in request.COOKIES:
-        tmpresp.delete_cookie(AUTHZCOOKIE)
 
     return tmpresp
 
