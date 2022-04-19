@@ -460,18 +460,21 @@ def check_VMs_and_Volumes(request, **kwargs):
         (servers, d1) = nova_api.server_list(request, kwargs, False)
         if len(servers) > 0:
             err_msg = _("Existing instances: ") + '\n'.join([x.name for x in servers])
+            LOG.error(err_msg, exc_info=True)
             messages.error(request, err_msg)
             return False
 
         volumes = cinder_api.volume_list(request, kwargs)
         if len(volumes) > 0:
             err_msg = _("Existing volumes: ") + '\n'.join([x.name for x in volumes])
+            LOG.error(err_msg, exc_info=True)
             messages.error(request, err_msg)
             return False
 
         snapshots = cinder_api.volume_snapshot_list(request, kwargs)
         if len(snapshots) > 0:
             err_msg = _("Existing snapshots: ") + '\n'.join([x.name for x in snapshots])
+            LOG.error(err_msg, exc_info=True)
             messages.error(request, err_msg)
             return False
     except:
@@ -513,8 +516,10 @@ def dispose_project(request, project_id):
             LOG.info('Removing network %s' % n_item.name)
             neutron_api.network_delete(request, n_item.id)
     except:
-        LOG.error(_("Cannot remove neutron objects"), exc_info=True)
-        messages.error(request, _("Cannot remove neutron objects"))
+        err_msg = _("Cannot remove neutron objects. Manual removal required.")
+        LOG.error(err_msg, exc_info=True)
+        messages.error(request, err_msg)
+        return False
 
     try:
         for agg_item in nova_api.aggregate_details_list(request):
@@ -525,9 +530,10 @@ def dispose_project(request, project_id):
                 LOG.info('Removing aggregate %s' % agg_item.name)
                 nova_api.aggregate_delete(request, agg_item.id)
     except:
-        err_msg = _("Cannot delete host aggregate")
+        err_msg = _("Cannot remove host aggregates. Manual removal required.")
         LOG.error(err_msg, exc_info=True)
         messages.error(request, err_msg)
+        return False
 
     return True
 

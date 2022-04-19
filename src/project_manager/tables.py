@@ -91,6 +91,8 @@ class DeleteProjectAction(baseTables.DeleteTenantsAction):
             if dispose_project(request, obj_id):
                 Project.objects.filter(projectid=obj_id).delete()
                 super(DeleteProjectAction, self).delete(request, obj_id)
+            else:
+                raise Exception(_("Network or Compute error"))
 
 class RescopeTokenToProject(baseTables.RescopeTokenToProject):
 
