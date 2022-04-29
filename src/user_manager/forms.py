@@ -21,7 +21,7 @@ from django.db import transaction
 from django.conf import settings
 from django.forms.widgets import HiddenInput
 from django.forms.widgets import SelectDateWidget
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 from horizon import forms
 from horizon import messages

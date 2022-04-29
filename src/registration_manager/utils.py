@@ -16,7 +16,7 @@
 import logging
 
 from django.conf import settings
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 from openstack_dashboard.api import keystone as keystone_api
 from openstack_dashboard.api import neutron as neutron_api

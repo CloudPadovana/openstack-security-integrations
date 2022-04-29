@@ -29,7 +29,7 @@ from django.forms import ValidationError
 from django.forms.widgets import HiddenInput
 from django.forms.widgets import SelectDateWidget
 from django.views.decorators.debug import sensitive_variables
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 from openstack_auth_shib.notifications import notifyProject
 from openstack_auth_shib.notifications import notifyUser

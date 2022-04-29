@@ -25,7 +25,7 @@ from django.conf import settings
 from django.forms import ValidationError
 from django.forms.widgets import HiddenInput
 from django.forms.widgets import SelectDateWidget
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from django.views.decorators.debug import sensitive_variables
 
 from openstack_auth_shib.models import Registration
@@ -48,7 +48,7 @@ from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 LOG = logging.getLogger(__name__)
 

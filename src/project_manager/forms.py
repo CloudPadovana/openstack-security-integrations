@@ -20,7 +20,7 @@ from django.db import transaction
 from django.forms import ValidationError
 from django.forms.widgets import HiddenInput
 from django.views.decorators.debug import sensitive_variables
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 from horizon import forms
 from horizon import messages

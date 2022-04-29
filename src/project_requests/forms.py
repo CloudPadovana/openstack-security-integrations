@@ -42,7 +42,7 @@ from openstack_auth_shib.notifications import MEMBER_REQUEST
 
 from openstack_auth_shib.utils import PRJ_REGEX
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 LOG = logging.getLogger(__name__)
 

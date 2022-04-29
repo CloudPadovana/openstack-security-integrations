@@ -14,7 +14,7 @@
 #  under the License. 
 
 
-from django.conf.urls import url
+from django.urls import re_path as url
 from openstack_dashboard.dashboards.idmanager.project_manager import views
 from openstack_dashboard.dashboards.identity.projects import views as baseViews
 

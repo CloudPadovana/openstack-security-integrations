@@ -13,7 +13,7 @@
 #  License for the specific language governing permissions and limitations
 #  under the License. 
 
-from django.conf.urls import url
+from django.urls import re_path as url
 from openstack_auth_shib import views
 
 from openstack_auth.utils import patch_middleware_get_user

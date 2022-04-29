@@ -21,7 +21,7 @@ from django import shortcuts
 from django import http as django_http
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.debug import sensitive_post_parameters

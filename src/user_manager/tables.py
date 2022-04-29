@@ -17,7 +17,7 @@ import logging
 
 from django.urls import reverse
 from django.db import transaction
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 from horizon import tables
 

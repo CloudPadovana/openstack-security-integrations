@@ -17,7 +17,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from django.db import transaction
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.urls import reverse_lazy as reverse
 
 from horizon import forms
