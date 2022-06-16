@@ -217,4 +217,12 @@ body: The administrator of the project {{ project }} has just sent the following
   
   Please, don't reply to this message
 
+[proposed_renewal]
+LOG: Proposed renewal to {{ username }} for project {{ project }}
+subject: Proposed renewal to {{ username }} for project {{ project }}
+body: Your affiliation to the project {{ project }} is going to expire
+  If you wish to renew the affiliation please enter the the project work area in the dashboard.
+  
+  Please, don't reply to this message
+
 
