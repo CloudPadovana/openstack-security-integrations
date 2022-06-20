@@ -44,7 +44,10 @@ PSTATUS_RENEW_MEMB = 11
 # Subscription renewal proposed to the user
 #
 PSTATUS_RENEW_ATTEMPT = 12
-
+#
+# Subscription renewal rejected to the user
+#
+PSTATUS_RENEW_DISC = 13
 
 #
 # Registration request is waiting for pre-check

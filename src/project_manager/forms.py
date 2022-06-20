@@ -36,7 +36,7 @@ from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PRJ_COURSE
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
-from openstack_auth_shib.models import PSTATUS_RENEW_ATTEMPT
+from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 from openstack_auth_shib.notifications import notifyProject
 from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import USER_NEED_RENEW
@@ -218,8 +218,7 @@ class ProposedRenewForm(forms.SelfHandlingForm):
                         tmp_el = EMail.objects.filter(registration__in = [ x.registration for x in tmp_ad ])
                         prj_mails = [ y.email for y in tmp_el ]
                 else:
-                    q_args['flowstatus'] = PSTATUS_RENEW_ATTEMPT
-                    PrjRequest.objects.filter(**q_args).delete()
+                    PrjRequest.objects.filter(**q_args).update(flowstatus = PSTATUS_RENEW_DISC)
                     return True
 
         except:

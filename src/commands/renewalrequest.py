@@ -28,6 +28,7 @@ from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PSTATUS_RENEW_ATTEMPT
+from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import PROPOSED_RENEWAL
@@ -55,7 +56,12 @@ class Command(CloudVenetoCommand):
             with transaction.atomic():
 
                 stored_reqs = set()
-                renew_status_list = [ PSTATUS_RENEW_ADMIN, PSTATUS_RENEW_MEMB, PSTATUS_RENEW_ATTEMPT ]
+                renew_status_list = [
+                    PSTATUS_RENEW_ADMIN,
+                    PSTATUS_RENEW_MEMB,
+                    PSTATUS_RENEW_ATTEMPT,
+                    PSTATUS_RENEW_DISC
+                ]
                 for prj_req in PrjRequest.objects.filter(flowstatus__in=renew_status_list):
                     stored_reqs.add((prj_req.registration.regid, prj_req.project.projectname))
 
