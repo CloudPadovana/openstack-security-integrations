@@ -38,8 +38,10 @@ from .workflows import ExtCreateProject
 
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import Project
+from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_PRIVATE
+from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.utils import ORG_TAG_FMT
 from openstack_auth_shib.utils import parse_course_info
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
@@ -60,6 +62,7 @@ class ExtPrjItem:
         self.managed = False
         self.isadmin = False
         self.handle_course = False
+        self.flowstatus = PSTATUS_REG
 
 class IndexView(baseViews.IndexView):
     table_class = ProjectsTable
@@ -112,6 +115,14 @@ class IndexView(baseViews.IndexView):
                         for item in course_table.keys():
                             if (ORG_TAG_FMT % item) in prj_table[prjname].tags:
                                 prj_table[prjname].handle_course = True
+
+                if not self.request.user.is_superuser:
+                    preq_list = PrjRequest.objects.filter(
+                        registration__userid = self.request.user.id,
+                        project__in = prj_list
+                    )
+                    for req_item in preq_list:
+                        prj_table[req_item.project.projectname].flowstatus = req_item.flowstatus
 
             tmplist = list(prj_table.keys())
             tmplist.sort()

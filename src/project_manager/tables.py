@@ -29,10 +29,15 @@ from horizon import messages
 from openstack_dashboard import policy
 from openstack_dashboard.dashboards.identity.projects import tables as baseTables
 
-from openstack_auth_shib.models import Project, PrjRequest
+from openstack_auth_shib.models import Project
+from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.models import PRJ_PUBLIC
 from openstack_auth_shib.models import PRJ_COURSE
+from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
+from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 from openstack_auth_shib.utils import dispose_project
 
 LOG = logging.getLogger(__name__)
@@ -210,7 +215,31 @@ def get_prj_tags(data):
     for ptag in data.tags:
         tmps = tmps + "," + ptag
     return tmps
-    
+
+class ReqRenewLink(tables.Action):
+    name = "reqrenew"
+    verbose_name = _("Need Renew")
+
+    def allowed(self, request, datum):
+        result = request.user.is_superuser
+        result = datum.flowstatus == PSTATUS_RENEW_DISC
+        return result
+
+    def single(self, data_table, request, object_id):
+
+        with transaction.atomic():
+            q_args = {
+                'registration__userid' : request.user.id,
+                'project__projectid' : object_id
+            }
+            is_admin = PrjRole.objects.filter(**q_args).count() > 0
+            next_flow = PSTATUS_RENEW_ADMIN if is_admin else PSTATUS_RENEW_MEMB
+            PrjRequest.objects.filter(**q_args).update(flowstatus = next_flow)
+        #TODO missing notifications
+
+        return shortcuts.redirect(reverse('horizon:idmanager:project_manager:index'))
+
+
 class ProjectsTable(baseTables.TenantsTable):
     tags = tables.Column(get_prj_tags, verbose_name=_('Tags'))
     status = tables.Column(get_prj_status, verbose_name=_('Status'))
@@ -253,6 +282,7 @@ class ProjectsTable(baseTables.TenantsTable):
                        ViewCourseLink,
                        CourseOffLink,
                        EditTagsLink,
+                       ReqRenewLink,
                        DeleteProjectAction,
                        RescopeTokenToProject)
         table_actions = (baseTables.TenantFilterAction, 
