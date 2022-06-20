@@ -20,6 +20,7 @@ import os.path
 
 from django.conf import settings
 from django.db import transaction
+from django.urls import reverse_lazy
 from django.utils.translation import gettext as _
 
 from horizon import forms
@@ -40,6 +41,7 @@ from .models import PrjRequest
 from .models import PrjRole
 from .models import PSTATUS_PENDING
 from .models import PSTATUS_RENEW_MEMB
+from .models import PSTATUS_RENEW_ATTEMPT
 
 LOG = logging.getLogger(__name__)
 
@@ -87,15 +89,21 @@ def get_user_home(user):
         if user.is_superuser:
             return get_dashboard('admin').get_absolute_url()
 
+        q_args = {
+            'registration__userid' : user.id,
+            'project__projectname' : user.tenant_name,
+            'flowstatus' : PSTATUS_RENEW_ATTEMPT
+        }
+        if PrjRequest.objects.filter(**q_args).count() > 0:
+            return reverse_lazy('horizon:idmanager:project_manager:proposedrenew')
+
         if user.has_perms(('openstack.roles.' + TENANTADMIN_ROLE,)):
-        
             q_args = {
                 'project__projectname' : user.tenant_name,
                 'flowstatus__in' : [ PSTATUS_PENDING, PSTATUS_RENEW_MEMB ]
             }
             if PrjRequest.objects.filter(**q_args).count() > 0:
-                idmanager_url = get_dashboard('idmanager').get_absolute_url()
-                return idmanager_url + 'subscription_manager/'
+                return reverse_lazy('horizon:idmanager:subscription_manager:index')
 
     except NotRegistered:
         LOG.error("Cannot retrieve user home", exc_info=True)

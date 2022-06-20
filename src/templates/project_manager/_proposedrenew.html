@@ -1,0 +1,57 @@
+{% extends "horizon/common/_modal_form.html" %}
+
+{% comment %}
+  Copyright (c) 2014 INFN - "Istituto Nazionale di Fisica Nucleare" - Italy
+  All Rights Reserved.
+
+  Licensed under the Apache License, Version 2.0 (the "License"); you may
+  not use this file except in compliance with the License. You may obtain
+  a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  License for the specific language governing permissions and limitations
+  under the License. 
+{% endcomment %}
+
+{% load i18n %}
+
+{% block form_id %}proposed_renewal_form{% endblock %}
+{% block form_action %}
+{% url 'horizon:idmanager:project_manager:proposedrenew' %}
+{% endblock %}
+
+{% block modal-header %}{% trans "Your affiliation is going to expire" %}{% endblock %}
+
+{% block modal-body %}
+    <p>{% trans "Do you want to renew your affilition to" %} {{ project }}?</p>
+    <fieldset>
+    {% include "horizon/common/_form_fields.html" %}
+    </fieldset>
+{% endblock %}
+
+{% block modal-footer %}
+    
+    <input type="button"
+           class="btn btn-primary pull-right"
+           onclick="RenewAction()"
+           value="{% trans 'Yes' %}"/>  
+
+    <input type="submit"
+           class="btn btn-primary pull-right"
+           value="{% trans 'No' %}"/>  
+
+{% endblock %}
+
+{% block modal-js %}
+<script id="scriptforclipboard" type="text/javascript">
+function RenewAction() {
+  document.getElementById('id_action').value="renew";
+  document.forms['proposed_renewal_form'].submit();
+}
+</script>
+{% endblock %}
+

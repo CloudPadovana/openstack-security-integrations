@@ -31,6 +31,7 @@ from openstack_dashboard import api
 from .forms import CourseForm
 from .forms import EditTagsForm
 from .forms import CourseDetailForm
+from .forms import ProposedRenewForm
 from .tables import ProjectsTable
 from .workflows import ExtUpdateProject
 from .workflows import ExtCreateProject
@@ -41,6 +42,7 @@ from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.utils import ORG_TAG_FMT
 from openstack_auth_shib.utils import parse_course_info
+from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -242,5 +244,20 @@ class EditTagsView(forms.ModalFormView):
 
         return result
 
+class ProposedRenewView(forms.ModalFormView):
+    form_class = ProposedRenewForm
+    template_name = 'idmanager/project_manager/proposedrenew.html'
+    success_url = reverse_lazy('horizon:idmanager:project_manager:index')  # TODO redirect to user home
 
+    def get_context_data(self, **kwargs):
+        context = super(ProposedRenewView, self).get_context_data(**kwargs)
+        context['project'] = self.request.user.tenant_name
+
+        if self.request.user.has_perms(('openstack.roles.' + TENANTADMIN_ROLE,)):
+            q_args = { 'project__projectid' : self.request.user.tenant_id }
+            context['unique_admin'] = PrjRole.objects.filter(**q_args).count() == 1
+        else:
+            context['unique_admin'] = False
+
+        return context
 

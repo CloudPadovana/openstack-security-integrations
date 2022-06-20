@@ -34,7 +34,9 @@ urlpatterns = [
     url(r'^(?P<project_id>[^/]+)/course_detail/$',
         views.CourseDetailView.as_view(), name='course_detail'),
     url(r'^(?P<project_id>[^/]+)/edittags/$',
-        views.EditTagsView.as_view(), name='edittags')
+        views.EditTagsView.as_view(), name='edittags'),
+    url(r'^proposedrenew/$',
+        views.ProposedRenewView.as_view(), name='proposedrenew')
 ]
 
 

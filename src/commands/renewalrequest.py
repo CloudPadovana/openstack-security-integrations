@@ -29,8 +29,7 @@ from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PSTATUS_RENEW_ATTEMPT
 
-from openstack_auth_shib.notifications import notifyProject
-from openstack_auth_shib.notifications import notifyAdmin
+from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import PROPOSED_RENEWAL
 
 from horizon.management.commands.cronscript_utils import CloudVenetoCommand

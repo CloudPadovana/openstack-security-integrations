@@ -30,8 +30,16 @@ from openstack_dashboard.api import keystone as keystone_api
 from openstack_auth_shib.models import OS_SNAME_LEN
 from openstack_auth_shib.models import OS_LNAME_LEN
 from openstack_auth_shib.models import Project
+from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import PrjRole
+from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PRJ_COURSE
+from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
+from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import PSTATUS_RENEW_ATTEMPT
+from openstack_auth_shib.notifications import notifyProject
+from openstack_auth_shib.notifications import notifyAdmin
+from openstack_auth_shib.notifications import USER_NEED_RENEW
 from openstack_auth_shib.utils import TAG_REGEX
 from openstack_auth_shib.utils import encode_course_info
 from openstack_auth_shib.utils import check_course_info
@@ -166,7 +174,77 @@ class EditTagsForm(forms.SelfHandlingForm):
 
         return True
 
+class ProposedRenewForm(forms.SelfHandlingForm):
 
+    def __init__(self, request, *args, **kwargs):
+        super(ProposedRenewForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['projectid'] = forms.CharField(
+            widget = HiddenInput,
+            initial = request.user.tenant_id
+        )
+
+        self.fields['action'] = forms.CharField(
+            widget = HiddenInput,
+            initial = 'discard'
+        )
+
+    def clean(self):
+        data = super(ProposedRenewForm, self).clean()
+        if not data['action'] in [ 'renew', 'discard' ]:
+             raise ValidationError(_('Bad action %s') % data['action'])
+        return data
+    
+    @sensitive_variables('data')
+    def handle(self, request, data):
+
+        q_args = {
+            'registration__userid' : request.user.id,
+            'project__projectid' : request.user.tenant_id
+        }
+        is_admin = True
+        prj_mails = None
+
+        try:
+            with transaction.atomic():
+                if data['action'] == 'renew':
+                    is_admin = PrjRole.objects.filter(**q_args).count() > 0
+                    if is_admin:
+                        PrjRequest.objects.filter(**q_args).update(flowstatus = PSTATUS_RENEW_ADMIN)
+                    else:
+                        PrjRequest.objects.filter(**q_args).update(flowstatus = PSTATUS_RENEW_MEMB)
+
+                        tmp_ad = PrjRole.objects.filter(project__projectid = request.user.tenant_id)
+                        tmp_el = EMail.objects.filter(registration__in = [ x.registration for x in tmp_ad ])
+                        prj_mails = [ y.email for y in tmp_el ]
+                else:
+                    q_args['flowstatus'] = PSTATUS_RENEW_ATTEMPT
+                    PrjRequest.objects.filter(**q_args).delete()
+                    return True
+
+        except:
+            LOG.error("Cannot process proposed renewal", exc_info=True)
+            messages.error(request, _("Cannot process proposed renewal"))
+            return False
+
+        try:
+            noti_params = {
+                'username' : request.user.username,
+                'project' : request.user.tenant_name
+            }
+            if is_admin:
+                notifyAdmin(USER_NEED_RENEW, noti_params, user_id=request.user.id,
+                            project_id=request.user.tenant_id,
+                            dst_project_id=request.user.tenant_id)
+            elif prj_mails:
+                notifyProject(prj_mails, USER_NEED_RENEW,
+                              noti_params, user_id=request.user.id,
+                              project_id=request.user.tenant_id,
+                              dst_project_id=request.user.tenant_id)
+        except:
+            LOG.error("Cannot notify %s" % request.user.username, exc_info=True)
+
+        return True
 
 
 
