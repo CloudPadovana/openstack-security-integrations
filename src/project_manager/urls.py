@@ -21,6 +21,7 @@ from openstack_dashboard.dashboards.identity.projects import views as baseViews
 urlpatterns = [
     url(r'^$', views.IndexView.as_view(), name='index'),
     url(r'^create$', views.CreateProjectView.as_view(), name='create'),
+    url(r'^subscribe$', views.SubscribeView.as_view(), name='subscribe'),
     url(r'^(?P<tenant_id>[^/]+)/update/$',
         views.UpdateProjectView.as_view(), name='update'),
     url(r'^(?P<tenant_id>[^/]+)/usage/$',

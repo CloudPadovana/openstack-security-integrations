@@ -59,9 +59,6 @@ mv %{buildroot}/%{python_sitelib}/user_manager/* \
 mv %{buildroot}/%{python_sitelib}/log_manager/* \
    %{buildroot}%{os_dashboard_dir}/dashboards/idmanager/log_manager
 
-mv %{buildroot}/%{python_sitelib}/project_requests/* \
-   %{buildroot}%{os_dashboard_dir}/dashboards/idmanager/project_requests
-
 mv %{buildroot}/%{python_sitelib}/password_manager/* \
    %{buildroot}%{os_dashboard_dir}/dashboards/settings/password_manager
 
@@ -169,11 +166,6 @@ Django plugin for Shibboleth authentication
 %dir %{os_dashboard_dir}/dashboards/idmanager/log_manager/templates/log_manager
 %{os_dashboard_dir}/dashboards/idmanager/log_manager/*.py
 %{os_dashboard_dir}/dashboards/idmanager/log_manager/templates/log_manager/*.html
-%dir %{os_dashboard_dir}/dashboards/idmanager/project_requests
-%dir %{os_dashboard_dir}/dashboards/idmanager/project_requests/templates
-%dir %{os_dashboard_dir}/dashboards/idmanager/project_requests/templates/project_requests
-%{os_dashboard_dir}/dashboards/idmanager/project_requests/*.py
-%{os_dashboard_dir}/dashboards/idmanager/project_requests/templates/project_requests/*.html
 %dir %{os_dashboard_dir}/dashboards/settings/password_manager
 %dir %{os_dashboard_dir}/dashboards/settings/password_manager/templates
 %dir %{os_dashboard_dir}/dashboards/settings/password_manager/templates/password_manager
@@ -204,8 +196,6 @@ Django plugin for Shibboleth authentication
 %{os_dashboard_dir}/dashboards/idmanager/member_manager/__pycache__/*
 %dir %{os_dashboard_dir}/dashboards/idmanager/log_manager/__pycache__
 %{os_dashboard_dir}/dashboards/idmanager/log_manager/__pycache__/*
-%dir %{os_dashboard_dir}/dashboards/idmanager/project_requests/__pycache__
-%{os_dashboard_dir}/dashboards/idmanager/project_requests/__pycache__/*
 %dir %{os_dashboard_dir}/dashboards/settings/password_manager/__pycache__
 %{os_dashboard_dir}/dashboards/settings/password_manager/__pycache__/*
 %dir %{os_dashboard_dir}/dashboards/project/api_access_manager/__pycache__
@@ -231,8 +221,6 @@ Django plugin for Shibboleth authentication
 %{os_dashboard_dir}/dashboards/idmanager/member_manager/*.pyo
 %{os_dashboard_dir}/dashboards/idmanager/log_manager/*.pyc
 %{os_dashboard_dir}/dashboards/idmanager/log_manager/*.pyo
-%{os_dashboard_dir}/dashboards/idmanager/project_requests/*.pyc
-%{os_dashboard_dir}/dashboards/idmanager/project_requests/*.pyo
 %{os_dashboard_dir}/dashboards/settings/password_manager/*.pyc
 %{os_dashboard_dir}/dashboards/settings/password_manager/*.pyo
 %{os_dashboard_dir}/dashboards/project/api_access_manager/*.pyc

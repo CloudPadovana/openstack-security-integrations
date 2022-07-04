@@ -62,7 +62,7 @@ member_panel_dir = os_dash_dir + 'idmanager/member_manager/templates/member_mana
 user_panel_dir = os_dash_dir + 'idmanager/user_manager/templates/user_manager'
 prj_panel_dir = os_dash_dir + 'idmanager/project_manager/templates/project_manager'
 pwd_panel_dir = os_dash_dir + 'settings/password_manager/templates/password_manager'
-preq_panel_dir = os_dash_dir + 'idmanager/project_requests/templates/project_requests'
+#preq_panel_dir = os_dash_dir + 'idmanager/project_requests/templates/project_requests'
 log_panel_dir = os_dash_dir + 'idmanager/log_manager/templates/log_manager'
 api_access_dir = os_dash_dir + 'project/api_access_manager/templates/api_access_manager'
 theme_dir = os_main_dir + 'themes/cap'
@@ -137,6 +137,8 @@ prj_templ_list = [
     'src/templates/project_manager/edittags.html',
     'src/templates/project_manager/_detail_overview.html',
     'src/templates/project_manager/detail.html',
+    'src/templates/project_manager/prj_request.html',
+    'src/templates/project_manager/_prj_request.html',
     'src/templates/project_manager/_common_horizontal_form.html'
 ]
 
@@ -145,10 +147,10 @@ pwd_templ_list = [
     'src/templates/password_manager/_activate.html'
 ]
 
-preq_templ_list = [
-    'src/templates/project_requests/prj_request.html',
-    'src/templates/project_requests/_prj_request.html'
-]
+#preq_templ_list = [
+#    'src/templates/project_requests/prj_request.html',
+#    'src/templates/project_requests/_prj_request.html'
+#]
 
 log_templ_list = [
     'src/templates/log_manager/log_manager.html',
@@ -219,7 +221,7 @@ setup(
                   (pwd_panel_dir, pwd_templ_list),
                   (subscr_panel_dir, subscr_templ_list),
                   (member_panel_dir, member_templ_list),
-                  (preq_panel_dir, preq_templ_list),
+#                  (preq_panel_dir, preq_templ_list),
                   (log_panel_dir, log_templ_list),
                   (img_dir, logo_list),
                   (theme_dir + '/static/img', ['src/templates/favicon.ico']),

@@ -32,6 +32,7 @@ from .forms import CourseForm
 from .forms import EditTagsForm
 from .forms import CourseDetailForm
 from .forms import ProposedRenewForm
+from .forms import SubscribeForm
 from .tables import ProjectsTable
 from .workflows import ExtUpdateProject
 from .workflows import ExtCreateProject
@@ -271,4 +272,9 @@ class ProposedRenewView(forms.ModalFormView):
             context['unique_admin'] = False
 
         return context
+
+class SubscribeView(forms.ModalFormView):
+    form_class = SubscribeForm
+    template_name = 'idmanager/project_manager/prj_request.html'
+    success_url = reverse_lazy('horizon:idmanager:project_manager:index')
 

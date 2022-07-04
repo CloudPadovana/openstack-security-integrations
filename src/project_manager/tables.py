@@ -139,7 +139,7 @@ class ToggleVisibility(tables.Action):
 class ReqProjectLink(tables.LinkAction):
     name = "reqproject"
     verbose_name = _("Subscribe to project")
-    url = "horizon:idmanager:project_requests:index"
+    url = "horizon:idmanager:project_manager:subscribe"
     classes = ("ajax-modal", "btn-edit")
 
     def allowed(self, request, datum):
