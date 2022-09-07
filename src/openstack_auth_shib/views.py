@@ -43,6 +43,7 @@ from horizon import forms
 from .models import UserMapping
 from .models import RegRequest
 from .models import Project
+from .models import Expiration
 from .models import PRJ_COURSE
 from .forms import RegistrForm
 from .idpmanager import Federated_Account
@@ -346,10 +347,29 @@ def authzchk(request):
     tmpresp = None
     idp_tag = request.GET.get('idp_tag', None)
     try:
-        if idp_tag and attributes \
-            and UserMapping.objects.filter(globaluser=attributes.username).count() == 0:
-            idpdata = settings.HORIZON_CONFIG['identity_providers'][idp_tag]
-            tmpresp = django_http.HttpResponseRedirect(idpdata['path'])
+        if attributes:
+            umap = UserMapping.objects.filter(globaluser = attributes.username)
+            if idp_tag and len(umap) == 0:
+                idpdata = settings.HORIZON_CONFIG['identity_providers'][idp_tag]
+                tmpresp = django_http.HttpResponseRedirect(idpdata['path'])
+            elif len(umap) > 0:
+                e_msg = None
+                q_args = { 'registration' : umap[0].registration }
+                pend_req = PrjRequest.objects.filter(**q_args)
+                if len(pend_req):
+                    e_msg = _("User is waiting for affiliation to %s")
+                    e_msg = e_msg % pend_req[0].project.projectname
+                elif Expiration.objects.filter(**q_args).count() == 0:
+                    e_msg = _("No affiliation available for the user")
+
+                if e_msg:
+                    tmpresp = shortcuts.render(request, 'aai_error.html', {
+                        'error_header' : _("Access denied"),
+                        'error_text' : e_msg,
+                        'redirect_url' : '/dashboard',
+                        'redirect_label' : _("Home")
+                    })
+                    
     except:
         LOG.error("Cookie detection error", exc_info=True)
 
