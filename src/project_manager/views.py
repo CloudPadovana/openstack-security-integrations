@@ -41,6 +41,7 @@ from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import PrjRole
+from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.utils import ORG_TAG_FMT
@@ -60,6 +61,7 @@ class ExtPrjItem:
         self.enabled = prj_data.enabled
         self.tags = None
         self.status = PRJ_PRIVATE
+        self.expiraton = None
         self.managed = False
         self.isadmin = False
         self.handle_course = False
@@ -124,6 +126,11 @@ class IndexView(baseViews.IndexView):
                     )
                     for req_item in preq_list:
                         prj_table[req_item.project.projectname].flowstatus = req_item.flowstatus
+
+                    qset1 = Expiration.objects.filter(registration__userid = self.request.user.id)
+                    for prjname, expdate in qset1.values_list('project', 'expdate'):
+                        prj_table[prjname].expiration = expdate
+
 
             tmplist = list(prj_table.keys())
             tmplist.sort()

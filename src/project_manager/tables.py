@@ -221,7 +221,6 @@ class ReqRenewLink(tables.Action):
     verbose_name = _("Need Renew")
 
     def allowed(self, request, datum):
-        result = request.user.is_superuser
         result = datum.flowstatus == PSTATUS_RENEW_DISC
         return result
 
@@ -243,6 +242,7 @@ class ReqRenewLink(tables.Action):
 class ProjectsTable(baseTables.TenantsTable):
     tags = tables.Column(get_prj_tags, verbose_name=_('Tags'))
     status = tables.Column(get_prj_status, verbose_name=_('Status'))
+    expiration = tables.Column('expiration', verbose_name=_('Expiration date'))
 
     def __init__(self, request, data=None, needs_form_wrapper=None, **kwargs):
         super(ProjectsTable, self).__init__(request, data=data,
@@ -259,6 +259,8 @@ class ProjectsTable(baseTables.TenantsTable):
         del(self.columns['domain_name'])
         if not request.user.is_superuser or not settings.HORIZON_CONFIG.get('show_tags', False):
             del(self.columns['tags'])
+        if request.user.is_superuser:
+            del(self.columns['expiration'])
         # end of patch
 
     def get_project_detail_link(self, project):
