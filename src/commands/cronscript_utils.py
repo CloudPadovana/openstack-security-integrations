@@ -87,15 +87,22 @@ def get_prjman_roleid(keystone):
 
 class ConfigBin:
     def __init__(self):
-        self.cron_user = getattr(settings, 'CRON_USER', 'admin')
-        self.cron_pwd = getattr(settings, 'CRON_PWD', '')
-        self.cron_prj = getattr(settings, 'CRON_PROJECT', 'admin')
-        self.cron_domain = getattr(settings, 'CRON_DOMAIN', 'Default')
-        self.cron_ca = getattr(settings, 'OPENSTACK_SSL_CACERT', '')
-        self.cron_kurl = getattr(settings, 'OPENSTACK_KEYSTONE_URL', '')
-        self.cron_renewd = getattr(settings, 'CRON_RENEW_DAYS', 30)
-        self.cron_defer = getattr(settings, 'CRON_DEFER_DAYS', 0)
-        self.cron_plan = getattr(settings, 'NOTIFICATION_PLAN', None)
+        script_params = getattr(settings, 'SCRIPT_PARAMETERS', {})
+
+        self.cron_user = script_params.get('CRON_USER', 'admin')
+        self.cron_pwd = script_params.get('CRON_PWD', '')
+        self.cron_prj = script_params.get('CRON_PROJECT', 'admin')
+        self.cron_domain = script_params.get('CRON_DOMAIN', 'Default')
+        self.cron_ca = script_params.get('OPENSTACK_SSL_CACERT', '')
+        self.cron_kurl = script_params.get('OPENSTACK_KEYSTONE_URL', '')
+        self.cron_renewd = script_params.get('CRON_RENEW_DAYS', 30)
+        self.cron_defer = script_params.get('CRON_DEFER_DAYS', 0)
+        self.cron_plan = script_params.get('NOTIFICATION_PLAN', None)
+        self.key_path = script_params.get('PRIVATE_KEY_PATH', None)
+        self.gate_user = script_params.get('GATE_USER', 'root')
+        self.gate_address = script_params.get('GATE_ADDRESS', None)
+        self.ban_script = script_params.get('GATE_BAN_SCRIPT', None)
+        self.allow_script = script_params.get('GATE_ALLOW_SCRIPT', None)
 
 def build_contact_list():
     return getattr(settings, 'MANAGERS', None)

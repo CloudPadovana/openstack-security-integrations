@@ -61,6 +61,14 @@ RSTATUS_REMINDER = 1
 # Reminder for cloud admin (final step)
 #
 RSTATUS_REMINDACK = 2
+#
+# Orphan user scheduled for ban on gate
+#
+RSTATUS_DISABLING = 3
+#
+# Orphan user banned on gate
+#
+RSTATUS_DISABLED = 4
 
 OS_ID_LEN = 64
 OS_LNAME_LEN = 255
