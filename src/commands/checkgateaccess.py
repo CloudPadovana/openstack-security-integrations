@@ -26,6 +26,7 @@ from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import RSTATUS_DISABLING
 from openstack_auth_shib.models import RSTATUS_DISABLED
+from openstack_auth_shib.models import RSTATUS_REENABLING
 from openstack_auth_shib.models import RSTATUS_REMINDER
 from openstack_auth_shib.models import RSTATUS_REMINDACK
 
@@ -64,39 +65,62 @@ class Command(CloudVenetoCommand):
             LOG.error("Orphan schedule failed", exc_info=True)
             raise CommandError("Orphan schedule failed")
 
+    def run_remote_script(self, remote_script, u_email):
+        try:
+            cmd_args = [
+                '/usr/bin/ssh', '-i', self.config.key_path,
+                '-oStrictHostKeyChecking=no',
+                '-oUserKnownHostsFile=/tmp/horizon_known_hosts',
+                "%s@%s" % (self.config.gate_user, self.config.gate_address),
+                remote_script, u_email
+            ]
+            ssh_proc = subprocess.run(cmd_args)
+        except:
+            LOG.error("Cannot disable user %s on gate" % orphan.registration.username, exc_info=True)
+            return False
+
+        return ssh_proc.returncode == 0
 
     def ban_user(self):
         disabled_users = list()
-        qset3 = RegRequest.objects.filter(flowstatus = RSTATUS_DISABLING)
-        for orphan in EMail.objects.filter(registration__in = [ x.registration for x in qset3 ]):
-            try:
-                cmd_args = [
-                    '/usr/bin/ssh', '-i', self.config.key_path,
-                    '-oStrictHostKeyChecking=no',
-                    '-oUserKnownHostsFile=/tmp/horizon_known_hosts',
-                    "%s@%s" % (self.config.gate_user, self.config.gate_address),
-                    self.config.ban_script, orphan.email
-                ]
-                ssh_proc = subprocess.run(cmd_args)
-                if ssh_proc.returncode == 0:
+        with transaction.atomic():
+            qset3 = RegRequest.objects.filter(flowstatus = RSTATUS_DISABLING)
+            for orphan in EMail.objects.filter(registration__in = [ x.registration for x in qset3 ]):
+                if self.run_remote_script(self.config.ban_script, orphan.email):
                     disabled_users.append(orphan.registration)
-            except:
-                LOG.error("Cannot disable user %s on gate" % orphan.registration.username, exc_info=True)
 
-        RegRequest.objects.filter(registration__in = disabled_users).update(flowstatus = RSTATUS_DISABLED)
+            qset4 = RegRequest.objects.filter(registration__in = disabled_users)
+            qset4.update(flowstatus = RSTATUS_DISABLED)
+
         for orphan in disabled_users:
             LOG.info("Disabled user %s" % orphan.username)
 
+    def allow_user(self):
+        enabled_users = list()
+        with transaction.atomic():
+            qset5 = RegRequest.objects.filter(flowstatus = RSTATUS_REENABLING)
+            for orphan in EMail.objects.filter(registration__in = [ x.registration for x in qset5 ]):
+                if self.run_remote_script(self.config.allow_script, orphan.email):
+                    enabled_users.append(orphan.registration)
+
+            RegRequest.objects.filter(registration__in = enabled_users).delete()
+
+        for orphan in enabled_users:
+            LOG.info("Enabled user %s" % orphan.username)
 
     def handle(self, *args, **options):
     
         super(Command, self).handle(options)
-        if not self.config.key_path or not self.config.gate_address or not self.config.ban_script:
+        if not self.config.key_path or not self.config.gate_address:
             return
 
         self.schedule_ban()
 
-        time.sleep(1)
+        if self.config.ban_script:
+            time.sleep(1)
+            self.ban_user()
 
-        self.ban_user()
+        if self.config.allow_script:
+            time.sleep(1)
+            self.ban_user()
 

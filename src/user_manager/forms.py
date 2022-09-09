@@ -43,6 +43,7 @@ from openstack_auth_shib.models import RSTATUS_REMINDER
 from openstack_auth_shib.models import RSTATUS_REMINDACK
 from openstack_auth_shib.models import RSTATUS_DISABLING
 from openstack_auth_shib.models import RSTATUS_DISABLED
+from openstack_auth_shib.models import RSTATUS_REENABLING
 
 from openstack_auth_shib.notifications import notifyProject
 from openstack_auth_shib.notifications import notifyUser
@@ -244,38 +245,27 @@ class ReactivateForm(forms.SelfHandlingForm):
         )
 
     def manage_user_on_gate(self, reg_user):
-        params = getattr(settings, 'SCRIPT_PARAMETERS', {})
-        if not params.key_path or not params.gate_address or not params.allow_script:
-            return
-
-        tmpobj = EMail.objects.filter(registration = reg_user)
-        if len(tmpobj) == 0:
-            return
-
-        try:
-            cmd_args = [
-                '/usr/bin/ssh', '-i', params.key_path,
-                "%s@%s" % (params.gate_user, params.gate_address),
-                params.allow_script, orphan.email
-            ]
-            ssh_proc = subprocess.run(cmd_args)
-            if ssh_proc.returncode != 0:
-                messages.error(_("Cannot enable user on gate. Manually activation required"))
-        except:
-            LOG.error("Cannot disable user %s on gate" % reg_user.username, exc_info=True)
 
         q_args = {
             'registration' : reg_user,
             'flowstatus__in' : [ RSTATUS_DISABLING, RSTATUS_DISABLED ]
         }
-        RegRequest.object.filter(**q_args).delete()
+        rreqs = RegRequest.object.filter(**q_args)
+
+        if len(rreq) == 0:
+            return
+
+        if rreqs[0].flowstatus == RSTATUS_DISABLING:
+            rreqs.delete()
+        else:
+            rreqs.update(flowstatus = RSTATUS_REENABLING)
 
     def handle(self, request, data):
 
         if not request.user.is_superuser:
             messages.error(_("Operation not authorized"))
             return False
-        
+
         if data['action'] == 'forced':
             return self.handle_forced(request, data)
         else:

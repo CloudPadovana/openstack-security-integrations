@@ -69,6 +69,10 @@ RSTATUS_DISABLING = 3
 # Orphan user banned on gate
 #
 RSTATUS_DISABLED = 4
+#
+# Orphan user to be re-enabled on gate
+#
+RSTATUS_REENABLING = 5
 
 OS_ID_LEN = 64
 OS_LNAME_LEN = 255
