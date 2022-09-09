@@ -74,7 +74,7 @@ class DeleteUsersAction(baseTables.DeleteUsersAction):
 
 class RenewLink(tables.LinkAction):
     name = "renewexp"
-    verbose_name = _("Renew Expiration")
+    verbose_name = _("Manage Expiration")
     url = "horizon:idmanager:user_manager:renew"
     classes = ("ajax-modal", "btn-edit")
 

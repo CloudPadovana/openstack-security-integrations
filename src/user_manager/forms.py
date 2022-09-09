@@ -37,6 +37,8 @@ from openstack_auth_shib.models import UserMapping
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import PSTATUS_RENEW_ATTEMPT
+from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 from openstack_auth_shib.models import RSTATUS_REMINDER
 from openstack_auth_shib.models import RSTATUS_REMINDACK
 from openstack_auth_shib.models import RSTATUS_DISABLING
@@ -115,9 +117,14 @@ class RenewExpForm(forms.SelfHandlingForm):
 
                 q2_args = {
                     'registration__userid' : data['userid'],
-                    'project__projectname' : prj_name
+                    'project__projectname' : prj_name,
+                    'flowstatus__in' : [
+                        PSTATUS_RENEW_ADMIN,
+                        PSTATUS_RENEW_MEMB,
+                        PSTATUS_RENEW_ATTEMPT,
+                        PSTATUS_RENEW_DISC
+                    ]
                 }
-                q2_args['flowstatus__in'] = [ PSTATUS_RENEW_ADMIN, PSTATUS_RENEW_MEMB ]
                 PrjRequest.objects.filter(**q2_args).delete()
 
                 q2_args['expdate'] = c_exp

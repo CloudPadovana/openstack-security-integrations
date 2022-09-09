@@ -72,6 +72,8 @@ class Command(CloudVenetoCommand):
             try:
                 cmd_args = [
                     '/usr/bin/ssh', '-i', self.config.key_path,
+                    '-oStrictHostKeyChecking=no',
+                    '-oUserKnownHostsFile=/tmp/horizon_known_hosts',
                     "%s@%s" % (self.config.gate_user, self.config.gate_address),
                     self.config.ban_script, orphan.email
                 ]
@@ -83,7 +85,7 @@ class Command(CloudVenetoCommand):
 
         RegRequest.objects.filter(registration__in = disabled_users).update(flowstatus = RSTATUS_DISABLED)
         for orphan in disabled_users:
-            LOG.info("Disabled user %s" % orphan.registration.username)
+            LOG.info("Disabled user %s" % orphan.username)
 
 
     def handle(self, *args, **options):
@@ -94,7 +96,7 @@ class Command(CloudVenetoCommand):
 
         self.schedule_ban()
 
-        time.sleep(10)
+        time.sleep(1)
 
         self.ban_user()
 
