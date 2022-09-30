@@ -61,6 +61,7 @@ class Command(CloudVenetoCommand):
                         'notes' : "-"
                     }
                     RegRequest(**q_args).save()
+                    LOG.info("Scheduled ban for %s" % item.username)
         except:
             LOG.error("Orphan schedule failed", exc_info=True)
             raise CommandError("Orphan schedule failed")
@@ -122,5 +123,5 @@ class Command(CloudVenetoCommand):
 
         if self.config.allow_script:
             time.sleep(1)
-            self.ban_user()
+            self.allow_user()
 

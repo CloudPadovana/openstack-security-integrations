@@ -250,9 +250,9 @@ class ReactivateForm(forms.SelfHandlingForm):
             'registration' : reg_user,
             'flowstatus__in' : [ RSTATUS_DISABLING, RSTATUS_DISABLED ]
         }
-        rreqs = RegRequest.object.filter(**q_args)
+        rreqs = RegRequest.objects.filter(**q_args)
 
-        if len(rreq) == 0:
+        if len(rreqs) == 0:
             return
 
         if rreqs[0].flowstatus == RSTATUS_DISABLING:
