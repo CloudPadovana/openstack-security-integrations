@@ -20,6 +20,7 @@ from urllib.parse import urlencode
 from django import shortcuts
 from django import http as django_http
 from django.conf import settings
+from django.contrib import auth as django_auth
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.utils.translation import gettext as _
 
@@ -35,6 +36,8 @@ from openstack_auth.views import logout as basic_logout
 from openstack_auth.views import switch as basic_switch
 from openstack_auth.views import switch_region as basic_switch_region
 from openstack_auth.utils import get_websso_url
+from openstack_auth.utils import clean_up_auth_url
+from openstack_auth.exceptions import KeystoneAuthException
 
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -42,6 +45,7 @@ from horizon import forms
 
 from .models import UserMapping
 from .models import RegRequest
+from .models import PrjRequest
 from .models import Project
 from .models import Expiration
 from .models import PRJ_COURSE
@@ -78,9 +82,29 @@ def login(request):
 @never_cache
 def websso(request):
 
-    tmpresp = basic_websso(request)
-    tmpresp.delete_cookie(AUTHZCOOKIE)
-    return tmpresp
+    # imported from base class
+    if settings.WEBSSO_USE_HTTP_REFERER:
+        referer = request.META.get('HTTP_REFERER',
+                                   settings.OPENSTACK_KEYSTONE_URL)
+        auth_url = clean_up_auth_url(referer)
+    else:
+        auth_url = settings.OPENSTACK_KEYSTONE_URL
+    token = request.POST.get('token')
+
+    try:
+        request.user = django_auth.authenticate(request,
+                                                auth_url = auth_url,
+                                                token = token)
+    except KeystoneAuthException as exc:
+        return auth_error(request)
+
+    auth_user.set_session_from_user(request, request.user)
+    django_auth.login(request, request.user)
+    if request.session.test_cookie_worked():
+        request.session.delete_test_cookie()
+    sso_resp = django_http.HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
+    sso_resp.delete_cookie(AUTHZCOOKIE)
+    return sso_resp
 
 def logout(request):
 
@@ -249,7 +273,7 @@ def name_exists(request):
 def dup_login(request):
     tempDict = {
         'error_header' : _("Registration error"),
-        'error_text' : _("Request has already been sent"),
+        'error_text' : _("Request has already been sent but it is not yet authorized"),
         'redirect_url' : '/dashboard',
         'redirect_label' : _("Home")
     }
@@ -274,7 +298,8 @@ def auth_error(request):
         LOG.error("Cookie detection error", exc_info=True)
 
     if 'errorText' in request.GET:
-        err_msg = "%s: [%s]" % (_("Original error"), request.GET['errorText'])
+        LOG.error("Bad message from keystone: %s", request.GET['errorText'])
+        err_msg = _("An error occurs contacting the identity service")
     else:
         err_msg = _("User not registered or authorization failed")
     
@@ -369,7 +394,7 @@ def authzchk(request):
                         'redirect_url' : '/dashboard',
                         'redirect_label' : _("Home")
                     })
-                    
+
     except:
         LOG.error("Cookie detection error", exc_info=True)
 
