@@ -30,6 +30,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.csrf import csrf_exempt
 
+from openstack_auth import user as auth_user
 from openstack_auth.views import login as basic_login
 from openstack_auth.views import websso as basic_websso
 from openstack_auth.views import logout as basic_logout
