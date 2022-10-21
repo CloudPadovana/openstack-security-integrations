@@ -261,7 +261,7 @@ def notify(recpt, subject, body):
             "to" : recpt if isinstance(recpt, list) else [ str(recpt) ]
         }
 
-        replyto = getattr(settings, 'REPLAYTO', None)
+        replyto = getattr(settings, 'REPLYTO', None)
         if replyto:
             m_args["reply_to", replyto if isinstance(replyto, list) else [ str(replyto) ]]
 
