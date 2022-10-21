@@ -22,7 +22,7 @@ from configparser import ConfigParser
 from configparser import ExtendedInterpolation
 
 from django.conf import settings
-from django.core.mail import send_mail, mail_managers
+from django.core.mail import EmailMessage
 from django.template import Template as DjangoTemplate
 from django.template import Context as DjangoContext
 from django.utils.translation import gettext as _
@@ -249,27 +249,30 @@ def load_templates():
 
 def notify(recpt, subject, body):
     
-    sender = settings.SERVER_EMAIL
     if not recpt:
         LOG.error('Missing recipients')
         return
-    if isinstance(recpt, list):
-        recipients = recpt
-    else:
-        recipients = [ str(recpt) ]
     
     try:
-        send_mail(subject, body, sender, recipients)
-        LOG.debug("Sending %s - %s - to %s" % (subject, body, str(recipients)))
+        m_args = {
+            "subject" : subject,
+            "body" : body,
+            "from_email" : settings.SERVER_EMAIL,
+            "to" : recpt if isinstance(recpt, list) else [ str(recpt) ]
+        }
+
+        replyto = getattr(settings, 'REPLAYTO', None)
+        if replyto:
+            m_args["reply_to", replyto if isinstance(replyto, list) else [ str(replyto) ]]
+
+        EmailMessage(**m_args).send()
+        LOG.debug("Sending %s - %s - to %s" % (subject, body, str(recpt)))
     except:
         LOG.error("Cannot send notification", exc_info=True)
 
 
 def notifyManagers(subject, body):
 
-    try:
-        mail_managers(subject, body)
-        LOG.debug("Sending %s - %s - to managers" % (subject, body))
-    except:
-        LOG.error("Cannot send notification", exc_info=True)
+    l_managers = getattr(settings, 'MANAGERS', None)
+    notify(l_managers, subject, body)
 
