@@ -21,7 +21,7 @@ from distutils.core import setup
 from distutils.command.bdist_rpm import bdist_rpm as _bdist_rpm
 
 pkg_name = 'openstack-security-integrations'
-pkg_version = '1.2.7'
+pkg_version = '1.2.8'
 pkg_release = '1'
 
 source_items = "setup.py src config"
@@ -139,6 +139,8 @@ prj_templ_list = [
     'src/templates/project_manager/detail.html',
     'src/templates/project_manager/prj_request.html',
     'src/templates/project_manager/_prj_request.html',
+    'src/templates/project_manager/_proposedrenew.html',
+    'src/templates/project_manager/proposedrenew.html',
     'src/templates/project_manager/_common_horizontal_form.html'
 ]
 
