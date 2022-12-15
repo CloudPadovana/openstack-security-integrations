@@ -111,9 +111,9 @@ Django plugin for Shibboleth authentication
 %defattr(-,root,root)
 %dir /etc/openstack-auth-shib
 %dir /etc/openstack-auth-shib/notifications
-%config(noreplace) /etc/openstack-auth-shib/actions.conf
-%config(noreplace) /etc/openstack-auth-shib/logging.conf
-%config(noreplace) /etc/cron.d/openstack-auth-shib-cron
+/etc/openstack-auth-shib/actions.conf
+/etc/openstack-auth-shib/logging.conf
+/etc/cron.d/openstack-auth-shib-cron
 %attr(0750, apache, apache) %dir /var/cache/openstack-auth-shib
 %attr(0750, apache, apache) %dir /var/cache/openstack-auth-shib/msg
 %dir %{python_sitelib}/openstack_auth_shib
@@ -247,7 +247,7 @@ Customization of Openstack Horizon for Cloud Area Padovana
 
 %files -n openstack-auth-cap
 %defattr(-,root,root)
-%config(noreplace) /etc/openstack-auth-shib/idem-template-metadata.xml
+/etc/openstack-auth-shib/idem-template-metadata.xml
 /etc/openstack-auth-shib/notifications/notifications_en.txt
 %{os_dashboard_dir}/static/dashboard/img/logoCloudAreapd.png
 %{os_dashboard_dir}/static/dashboard/img/logoCloudAreapdStrip.png
