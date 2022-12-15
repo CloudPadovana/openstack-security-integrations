@@ -44,6 +44,8 @@ from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.models import PSTATUS_REG
+from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
+from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.utils import ORG_TAG_FMT
 from openstack_auth_shib.utils import parse_course_info
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
@@ -129,7 +131,11 @@ class IndexView(baseViews.IndexView):
 
                     qset1 = Expiration.objects.filter(registration__userid = self.request.user.id)
                     for prjname, expdate in qset1.values_list('project', 'expdate'):
-                        prj_table[prjname].expiration = expdate
+                        if prj_table[prjname].flowstatus == PSTATUS_RENEW_ADMIN \
+                            or prj_table[prjname].flowstatus == PSTATUS_RENEW_MEMB:
+                            prj_table[prjname].expiration = _("Waiting for renewal")
+                        else:
+                            prj_table[prjname].expiration = expdate
 
 
             tmplist = list(prj_table.keys())

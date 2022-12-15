@@ -225,8 +225,10 @@ class ProposedRenewForm(forms.SelfHandlingForm):
                         tmp_ad = PrjRole.objects.filter(project__projectid = request.user.tenant_id)
                         tmp_el = EMail.objects.filter(registration__in = [ x.registration for x in tmp_ad ])
                         prj_mails = [ y.email for y in tmp_el ]
+                    messages.info(request, _("Renewal request sent to the project administrators"))
                 else:
                     PrjRequest.objects.filter(**q_args).update(flowstatus = PSTATUS_RENEW_DISC)
+                    messages.info(request, _("Your membership will be cancelled at the expiration date"))
                     return True
 
         except:
