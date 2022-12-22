@@ -35,6 +35,8 @@ from openstack_auth_shib.models import RSTATUS_REMINDACK
 from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import PSTATUS_RENEW_ATTEMPT
+from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 
 from openstack_auth_shib.utils import REQID_REGEX
 
@@ -79,9 +81,12 @@ class MainView(tables.DataTableView):
 
             for prjReq in PrjRequest.objects.all():
 
+                if prjReq.flowstatus == PSTATUS_RENEW_ATTEMPT or prjReq.flowstatus == PSTATUS_RENEW_DISC:
+                    continue
+
                 rData = RegistrData(registration = prjReq.registration)
                 curr_regid = prjReq.registration.regid
-                
+
                 if prjReq.flowstatus == PSTATUS_RENEW_MEMB:
 
                     rData.code = RegistrData.USR_RENEW
