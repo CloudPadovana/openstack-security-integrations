@@ -33,6 +33,8 @@ class RegistrData:
     PRJADM_RENEW = 6
     REMINDER = 7
     ORPHAN = 8
+    REN_ATTEMPT = 9
+    REN_DISC = 10
 
     DESCRARRAY = [
         _('Unknown operation'),
@@ -43,7 +45,9 @@ class RegistrData:
         _('User requires renewal before '),
         _('Project administrator requires renewal before'),
         _('User requires post registration actions'),
-        _('Registered user is orphan')
+        _('Registered user is orphan'),
+        _('Renewal waiting for user'),
+        _('User is not interested in renewal')
     ]
 
     def __init__(self, **kwargs):

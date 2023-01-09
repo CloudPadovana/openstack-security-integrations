@@ -81,13 +81,24 @@ class MainView(tables.DataTableView):
 
             for prjReq in PrjRequest.objects.all():
 
-                if prjReq.flowstatus == PSTATUS_RENEW_ATTEMPT or prjReq.flowstatus == PSTATUS_RENEW_DISC:
-                    continue
-
                 rData = RegistrData(registration = prjReq.registration)
                 curr_regid = prjReq.registration.regid
 
-                if prjReq.flowstatus == PSTATUS_RENEW_MEMB:
+                if prjReq.flowstatus == PSTATUS_RENEW_ATTEMPT:
+
+                    rData.code = RegistrData.REN_ATTEMPT
+                    rData.project = prjReq.project.projectname
+                    rData.notes = prjReq.notes
+                    requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
+
+                elif prjReq.flowstatus == PSTATUS_RENEW_DISC:
+
+                    rData.code = RegistrData.REN_DISC
+                    rData.project = prjReq.project.projectname
+                    rData.notes = prjReq.notes
+                    requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
+
+                elif prjReq.flowstatus == PSTATUS_RENEW_MEMB:
 
                     rData.code = RegistrData.USR_RENEW
                     rData.project = prjReq.project.projectname
