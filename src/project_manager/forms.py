@@ -293,11 +293,7 @@ class SubscribeForm(forms.SelfHandlingForm):
         label=_("Private project"),
         required=False,
         initial=False,
-        widget=forms.widgets.CheckboxInput(attrs={
-            'class': 'switched',
-            'data-switch-on': 'actsource',
-            'data-actsource-newprj': _('Private project')
-        })
+        widget=forms.HiddenInput
     )
     
     selprj = forms.MultipleChoiceField(
@@ -337,10 +333,9 @@ class SubscribeForm(forms.SelfHandlingForm):
         if len(prjEntries):
             self.fields['selprj'].choices = prjEntries
             self.fields['prjaction'].choices = [
-                ('newprj', _('Create new project')),
-                ('selprj', _('Select existing projects'))
+                ('selprj', _('Select existing projects')),
+                ('newprj', _('Create new project'))
             ]
-        
 
     def clean(self):
         data = super(SubscribeForm, self).clean()

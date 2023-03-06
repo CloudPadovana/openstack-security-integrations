@@ -180,11 +180,7 @@ class RegistrForm(forms.SelfHandlingForm):
                 label=_("Private project"),
                 required=False,
                 initial=False,
-                widget=forms.widgets.CheckboxInput(attrs={
-                    'class': 'switched',
-                    'data-switch-on': 'actsource',
-                    'data-actsource-newprj': _('Private project')
-                })
+                widget=forms.HiddenInput
             )
 
             if dept_list:
