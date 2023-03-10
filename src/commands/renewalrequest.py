@@ -31,7 +31,9 @@ from openstack_auth_shib.models import PSTATUS_RENEW_ATTEMPT
 from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 
 from openstack_auth_shib.notifications import notifyUser
+from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import PROPOSED_RENEWAL
+from openstack_auth_shib.notifications import USER_NEED_RENEW
 
 from horizon.management.commands.cronscript_utils import CloudVenetoCommand
 
@@ -70,20 +72,26 @@ class Command(CloudVenetoCommand):
                     regid = e_item.registration.regid
                     if not (regid, e_item.project.projectname) in stored_reqs:
 
+                        q_args = {
+                            'registration' : e_item.registration,
+                            'project' : e_item.project
+                        }
+                        is_admin = (PrjRole.objects.filter(**q_args).count() > 0)
+
                         if not regid in mail_table:
                             tmpobj = EMail.objects.filter(registration=e_item.registration)
                             mail_table[regid] = tmpobj[0].email if len(tmpobj) else None
 
                         f_exp = e_item.expdate.date().isoformat()
 
-                        new_reqs[(e_item.registration, e_item.project)] = (mail_table[regid], f_exp)
+                        new_reqs[(e_item.registration, e_item.project)] = (mail_table[regid], f_exp, is_admin)
 
                 for req_pair, req_data in new_reqs.items():
                     reqArgs = {
                         'registration' : req_pair[0],
                         'project' : req_pair[1],
                         'notes' : req_data[1],
-                        'flowstatus' : PSTATUS_RENEW_ATTEMPT
+                        'flowstatus' : PSTATUS_RENEW_ADMIN if req_data[2] else PSTATUS_RENEW_ATTEMPT
                     }
                     PrjRequest(**reqArgs).save()
 
@@ -95,9 +103,14 @@ class Command(CloudVenetoCommand):
                         'username' : req_pair[0].username,
                         'project' : req_pair[1].projectname
                     }
-                    notifyUser(req_data[0], PROPOSED_RENEWAL, noti_params,
-                               project_id=req_pair[1].projectid,
-                               dst_user_id=req_pair[0].userid)
+                    if req_data[2]:
+                        notifyAdmin(USER_NEED_RENEW, noti_params, user_id=req_pair[0].userid,
+                                    project_id=req_pair[1].projectid,
+                                    dst_project_id=req_pair[1].projectid)
+                    else:
+                        notifyUser(req_data[0], PROPOSED_RENEWAL, noti_params,
+                                   project_id=req_pair[1].projectid,
+                                   dst_user_id=req_pair[0].userid)
                 except:
                     LOG.error("Cannot notify %s" % req_pair[0].username, exc_info=True)
         except:

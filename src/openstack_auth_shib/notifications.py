@@ -65,7 +65,7 @@ USER_PURGED_TYPE = 'user_purged'
 NEWPRJ_BY_ADM = 'project_created_by_admin'
 GENERIC_MESSAGE = 'generic_message'
 PROPOSED_RENEWAL = 'proposed_renewal'
-
+DEL_USERS_SUMMARY = 'deleted_users_summary'
 
 # DO NOT CHANGE the LOG_TYPE_* constants
 LOG_TYPE_EMAIL = '__EMAIL__'

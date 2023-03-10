@@ -28,7 +28,7 @@ from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import USER_EXPIRED_TYPE
-from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
+from openstack_auth_shib.notifications import DEL_USERS_SUMMARY
 
 from horizon.management.commands.cronscript_utils import CloudVenetoCommand
 from horizon.management.commands.cronscript_utils import get_prjman_roleid
@@ -61,11 +61,10 @@ class Command(CloudVenetoCommand):
             LOG.error("Check expiration failed", exc_info=True)
             raise CommandError("Check expiration failed")
 
-        updated_prjs = dict()
-
         exp_date = datetime.now(timezone.utc) - timedelta(self.config.cron_defer)
 
-        uid_list = list()
+        summary_list = list()
+
         for mem_item in Expiration.objects.filter(expdate__lt=exp_date):
 
             username = mem_item.registration.username
@@ -73,8 +72,7 @@ class Command(CloudVenetoCommand):
             prjname = mem_item.project.projectname
             prjid = mem_item.project.projectid
 
-            updated_prjs[prjid] = prjname
-            uid_list.append(userid)
+            is_last_admin = False
 
             try:
                 with transaction.atomic():
@@ -86,41 +84,42 @@ class Command(CloudVenetoCommand):
                         'registration' : mem_item.registration,
                         'project' : mem_item.project
                     }
+
                     Expiration.objects.delete_expiration(**q_args)
+
                     PrjRequest.objects.filter(**q_args).delete()
-                    PrjRole.objects.filter(**q_args).delete()
+
+                    n_del, dummy_d = PrjRole.objects.filter(**q_args).delete()
+                    if n_del > 0:
+                        is_last_admin = (PrjRole.objects.filter(project = mem_item.project).count() == 0)
 
                     arg_dict = { 'project' : prjid, 'user' : userid }
                     for r_item in keystone_client.role_assignments.list(**arg_dict):
                         keystone_client.roles.revoke(r_item.role['id'], **arg_dict)
 
+                    summary_list.append((username, user_mail, prjname, is_last_admin))
                     LOG.info("Removed %s from %s" % (username, prjid))
-
-                noti_params = { 'username' : username, 'project' : prjname }
-                notifyUser(user_mail, USER_EXPIRED_TYPE, noti_params,
-                           project_id=prjid, dst_user_id=userid)
-                #
-                # TODO notify project admins
-                #
-
             except:
                 LOG.error("Check expiration failed for %s" % username, exc_info=True)
 
-        #
-        # Check for tenants without admin (use cloud admin if missing)
-        #
-        for prj_id, prjname in updated_prjs.items():
-            if PrjRole.objects.filter(project__projectid=prj_id).count() == 0:
-                try:
-                    keystone_client.roles.grant(prjman_roleid, user=cloud_adminid, project=prj_id)
-                    LOG.info("Cloud Administrator as admin for %s" % prj_id)
-                    noti_params = { 
-                        'project' : prjname,
-                        's_role' : 'None',
-                        'd_role' : 'project_manager'
-                    }
-                    notifyAdmin(CHANGED_MEMBER_ROLE, noti_params, dst_user_id=prj_id)
-                except:
-                    LOG.error("Cannot set super admin for %s" % username, exc_info=True)
+            try:
+                if is_last_admin:
+                    keystone_client.roles.grant(prjman_roleid, user=cloud_adminid, project=prjid)
+                    LOG.info("Cloud Administrator as admin for %s" % prjid)
+            except:
+                LOG.error("Cannot set super admin for project %s" % prjname, exc_info=True)
 
+            try:
+                noti_params = { 'username' : username, 'project' : prjname }
+                notifyUser(user_mail, USER_EXPIRED_TYPE, noti_params,
+                           project_id=prjid, dst_user_id=userid)
+            except:
+                LOG.error("Cannot send notification for expired user %s" % username, exc_info=True)
+
+        if len(summary_list) > 0:
+            try:
+                noti_params = { 'summary' : summary_list }
+                notifyAdmin(DEL_USERS_SUMMARY, noti_params)
+            except:
+                LOG.error("Cannot send summary", exc_info=True)
 

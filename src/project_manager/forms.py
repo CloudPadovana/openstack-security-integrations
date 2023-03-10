@@ -39,7 +39,6 @@ from openstack_auth_shib.models import PRJ_PUBLIC
 from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PRJ_COURSE
-from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 from openstack_auth_shib.notifications import notifyProject
@@ -210,21 +209,16 @@ class ProposedRenewForm(forms.SelfHandlingForm):
             'registration__userid' : request.user.id,
             'project__projectid' : request.user.tenant_id
         }
-        is_admin = True
         prj_mails = None
 
         try:
             with transaction.atomic():
                 if data['action'] == 'renew':
-                    is_admin = PrjRole.objects.filter(**q_args).count() > 0
-                    if is_admin:
-                        PrjRequest.objects.filter(**q_args).update(flowstatus = PSTATUS_RENEW_ADMIN)
-                    else:
-                        PrjRequest.objects.filter(**q_args).update(flowstatus = PSTATUS_RENEW_MEMB)
+                    PrjRequest.objects.filter(**q_args).update(flowstatus = PSTATUS_RENEW_MEMB)
 
-                        tmp_ad = PrjRole.objects.filter(project__projectid = request.user.tenant_id)
-                        tmp_el = EMail.objects.filter(registration__in = [ x.registration for x in tmp_ad ])
-                        prj_mails = [ y.email for y in tmp_el ]
+                    tmp_ad = PrjRole.objects.filter(project__projectid = request.user.tenant_id)
+                    tmp_el = EMail.objects.filter(registration__in = [ x.registration for x in tmp_ad ])
+                    prj_mails = [ y.email for y in tmp_el ]
                     messages.info(request, _("Renewal request sent to the project administrators"))
                 else:
                     PrjRequest.objects.filter(**q_args).update(flowstatus = PSTATUS_RENEW_DISC)
@@ -241,11 +235,7 @@ class ProposedRenewForm(forms.SelfHandlingForm):
                 'username' : request.user.username,
                 'project' : request.user.tenant_name
             }
-            if is_admin:
-                notifyAdmin(USER_NEED_RENEW, noti_params, user_id=request.user.id,
-                            project_id=request.user.tenant_id,
-                            dst_project_id=request.user.tenant_id)
-            elif prj_mails:
+            if prj_mails:
                 notifyProject(prj_mails, USER_NEED_RENEW,
                               noti_params, user_id=request.user.id,
                               project_id=request.user.tenant_id,
