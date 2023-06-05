@@ -22,13 +22,13 @@ from django.core.management.base import CommandError
 
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import RegRequest
+from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import RSTATUS_DISABLING
 from openstack_auth_shib.models import RSTATUS_DISABLED
 from openstack_auth_shib.models import RSTATUS_REENABLING
-from openstack_auth_shib.models import RSTATUS_REMINDER
-from openstack_auth_shib.models import RSTATUS_REMINDACK
+from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 
 from horizon.management.commands.cronscript_utils import CloudVenetoCommand
 
@@ -40,19 +40,16 @@ class Command(CloudVenetoCommand):
         try:
             with transaction.atomic():
 
-                safe_states = [
-                    RSTATUS_DISABLING,
-                    RSTATUS_DISABLED,
-                    RSTATUS_REMINDER,
-                    RSTATUS_REMINDACK
-                ]
-                qset1 = RegRequest.objects.filter(flowstatus__in = safe_states)
+                qset1 = RegRequest.objects.all()
                 pend_orphans = set(qset1.values_list('registration', flat = True).distinct())
 
                 qset2 = Expiration.objects.all()
                 act_users = set(qset2.values_list('registration', flat = True).distinct())
 
-                new_orphans = Registration.objects.exclude(regid__in = pend_orphans | act_users)
+                qset3 = PrjRequest.objects.exclude(flowstatus = PSTATUS_RENEW_DISC)
+                pend_prjusr = set(qset3.values_list('registration', flat = True).distinct())
+
+                new_orphans = Registration.objects.exclude(regid__in = pend_orphans | act_users | pend_prjusr)
                 for item in new_orphans:
                     q_args = {
                         'registration' : item,
