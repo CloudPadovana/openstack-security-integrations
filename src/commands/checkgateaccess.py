@@ -70,7 +70,7 @@ class Command(CloudVenetoCommand):
                 '-oStrictHostKeyChecking=no',
                 '-oUserKnownHostsFile=/tmp/horizon_known_hosts',
                 "%s@%s" % (self.config.gate_user, self.config.gate_address),
-                remote_script, u_email
+                'sudo', remote_script, u_email
             ]
             ssh_proc = subprocess.run(cmd_args)
         except:
