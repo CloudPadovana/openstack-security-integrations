@@ -228,7 +228,7 @@ body: Your affiliation to the project {{ project }} is going to expire
 [deleted_users_summary]
 subject: Summary of the expired users
 body: The following project memberships have been deleted: 
-  {% for username, user_mail, project, is_last_admin in prjadmins %}
+  {% for username, user_mail, project, is_last_admin in summary %}
   User {{ username }} ({{ user_mail }}) from {{ project }} {% if is_last_admin %}(last administrator, replaced by Cloud Admin){% endif %}
   {% endfor %}
 
