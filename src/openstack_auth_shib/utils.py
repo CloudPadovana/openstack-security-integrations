@@ -545,6 +545,13 @@ def dispose_project(request, project_id):
 
     return True
 
+def unique_admin(username, prjname):
+    tmpl = PrjRole.objects.filter(project__projectname = prjname)
+    adm_list = tmpl.values_list('registration__username', flat = True).distinct()
+    if len(adm_list) != 1:
+        return False
+    return username in adm_list
+
 #
 # Workaround for unit_table reloading at runtime
 #

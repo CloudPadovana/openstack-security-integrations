@@ -39,6 +39,7 @@ from openstack_auth_shib.models import PSTATUS_RENEW_ATTEMPT
 from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 
 from openstack_auth_shib.utils import REQID_REGEX
+from openstack_auth_shib.utils import unique_admin
 
 from .utils import RegistrData
 from .utils import getProjectInfo
@@ -110,6 +111,8 @@ class MainView(tables.DataTableView):
                     rData.code = RegistrData.PRJADM_RENEW
                     rData.project = prjReq.project.projectname
                     rData.notes = prjReq.notes
+                    if unique_admin(prjReq.registration.username, prjReq.project.projectname):
+                        rData.notes += " (%s)" % _("Unique administrator")
                     requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
 
                 elif prjReq.project.projectid:
