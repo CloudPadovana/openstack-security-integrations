@@ -37,6 +37,9 @@ from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import RSTATUS_REMINDER
 from openstack_auth_shib.models import RSTATUS_REMINDACK
+from openstack_auth_shib.models import RSTATUS_DISABLING
+from openstack_auth_shib.models import RSTATUS_DISABLED
+from openstack_auth_shib.models import RSTATUS_REENABLING
 
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
@@ -135,6 +138,20 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                     registration = prj_req.registration,
                     flowstatus = RSTATUS_REMINDER
                 ).update(flowstatus = RSTATUS_REMINDACK)
+                
+                #
+                # Manage user on gate
+                #
+                RegRequest.objects.filter(
+                    registration = prj_req.registration,
+                    flowstatus = RSTATUS_DISABLING
+                ).delete()
+
+                RegRequest.objects.filter(
+                    registration = prj_req.registration,
+                    flowstatus = RSTATUS_DISABLED
+                ).update(flowstatus = RSTATUS_REENABLING)
+
                 #
                 # clear request
                 #

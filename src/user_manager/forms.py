@@ -244,22 +244,6 @@ class ReactivateForm(forms.SelfHandlingForm):
             })
         )
 
-    def manage_user_on_gate(self, reg_user):
-
-        q_args = {
-            'registration' : reg_user,
-            'flowstatus__in' : [ RSTATUS_DISABLING, RSTATUS_DISABLED ]
-        }
-        rreqs = RegRequest.objects.filter(**q_args)
-
-        if len(rreqs) == 0:
-            return
-
-        if rreqs[0].flowstatus == RSTATUS_DISABLING:
-            rreqs.delete()
-        else:
-            rreqs.update(flowstatus = RSTATUS_REENABLING)
-
     def handle(self, request, data):
 
         if not request.user.is_superuser:
@@ -267,9 +251,18 @@ class ReactivateForm(forms.SelfHandlingForm):
             return False
 
         if data['action'] == 'forced':
-            return self.handle_forced(request, data)
+            result = self.handle_forced(request, data)
         else:
-            return self.handle_forward(request, data)
+            result = self.handle_forward(request, data)
+
+        #
+        # Re-enable user on keystone
+        #
+        k_user = keystone_api.user_get(request, data['userid'])
+        if not k_user.enabled:
+            keystone_api.user_update(request, data['userid'], enabled=True)
+
+        return result
 
     def handle_forced(self, request, data):
         try:
@@ -289,11 +282,18 @@ class ReactivateForm(forms.SelfHandlingForm):
                     flowstatus = RSTATUS_REMINDER
                 ).update(flowstatus = RSTATUS_REMINDACK)
 
-                self.manage_user_on_gate(reg_user)
+                #
+                # Manage user on gate
+                #
+                RegRequest.objects.filter(
+                    registration = reg_user,
+                    flowstatus = RSTATUS_DISABLING
+                ).delete()
 
-                k_user = keystone_api.user_get(request, data['userid'])
-                if not k_user.enabled:
-                    keystone_api.user_update(request, data['userid'], enabled=True)
+                RegRequest.objects.filter(
+                    registration = reg_user,
+                    flowstatus = RSTATUS_DISABLED
+                ).update(flowstatus = RSTATUS_REENABLING)
 
         except:
             LOG.error("Generic failure", exc_info=True)
@@ -375,8 +375,6 @@ class ReactivateForm(forms.SelfHandlingForm):
                                       context=noti_params)
                     except:
                         LOG.error("Generic failure", exc_info=True)
-
-                self.manage_user_on_gate(reg_user)
 
         except:
             LOG.error("Generic failure", exc_info=True)
