@@ -242,6 +242,10 @@ def setup_new_project(request, project_id, project_name, data):
     prj_cname = re.sub(r'\s+', "-", project_name)
     flow_step = 0
 
+    ###########################################################################
+    # Quota
+    ###########################################################################
+
     try:
 
         cinder_params = dict()
@@ -259,6 +263,10 @@ def setup_new_project(request, project_id, project_name, data):
     except:
             LOG.error("Cannot setup project quota", exc_info=True)
             messages.error(request, _("Cannot setup project quota"))
+
+    ###########################################################################
+    # Host aggregation
+    ###########################################################################
 
     try:
 
@@ -286,6 +294,10 @@ def setup_new_project(request, project_id, project_name, data):
     except:
         LOG.error(err_msg, exc_info=True)
         messages.error(request, err_msg)
+
+    ###########################################################################
+    # Networking
+    ###########################################################################
 
     try:
 
@@ -330,64 +342,40 @@ def setup_new_project(request, project_id, project_name, data):
         LOG.error(err_msg, exc_info=True)
         messages.error(request, err_msg)
 
+    ###########################################################################
+    # Security groups and rules
+    ###########################################################################
+
     try:
-        subnet_cidr = data['%s-net' % unit_id]
-        def_sec_group = None
+        avail_sgroups = dict()
         for sg_item in neutron_api.security_group_list(request, tenant_id=project_id):
-            if sg_item['name'].lower() == 'default':
-                def_sec_group = sg_item['id']
-                LOG.info("Found default security group %s" % def_sec_group)
-                break
-        flow_step += 1
+            avail_sgroups[sg_item['name']] = sg_item['id']
+
+        sg_rules_table = getattr(settings, 'SG_RULES_TABLE', {})
 
         sg_client = neutron_api.SecurityGroupManager(request).client
+        for sg_name, sg_rules in sg_rules_table.items():
+            if not sg_name in avail_sgroups:
+                sg_params = {
+                    'name': sg_name,
+                    'description': 'Security Group %s for %s' % (sg_name, project_name),
+                    'tenant_id': project_id
+                }
+                raw_sgroup = sg_client.create_security_group({ 'security_group' : sg_params })
+                avail_sgroups[sg_name] = raw_sgroup.get('security_group')['id']
 
-        if not def_sec_group:
-            sg_params = {
-                'name': 'default',
-                'description': 'Default Security Group for ' + project_name,
-                'tenant_id': project_id
-            }
-            secgroup = sg_client.create_security_group({ 'security_group' : sg_params })
-            def_sec_group = SecurityGroup(secgroup.get('security_group'))
-        flow_step += 1
-
-        #
-        # Workaround: the tenant_id cannot be specified through high level API
-        #
-        port22_params = {
-            'security_group_id': def_sec_group,
-            'direction': 'ingress',
-            'ethertype': 'IPv4',
-            'protocol': 'tcp',
-            'port_range_min': 22,
-            'port_range_max': 22,
-            'remote_ip_prefix': "0.0.0.0/0",
-            'tenant_id' : project_id
-        }
-
-        icmp_params = {
-            'security_group_id': def_sec_group,
-            'direction': 'ingress',
-            'ethertype': 'IPv4',
-            'protocol': 'icmp',
-            'remote_ip_prefix': "0.0.0.0/0",
-            'tenant_id' : project_id
-        }
-
-        sg_client.create_security_group_rule({'security_group_rule': port22_params})
-
-        sg_client.create_security_group_rule({'security_group_rule': icmp_params})
-
+            for rule_item in sg_rules:
+                r_params = rule_item.copy()
+                r_params['security_group_id'] = avail_sgroups[sg_name]
+                r_params['tenant_id'] = project_id
+                sg_client.create_security_group_rule({ 'security_group_rule' : r_params })
     except:
-        if flow_step == 0:
-            err_msg = _("Cannot retrieve default security group")
-        elif flow_step == 1:
-            err_msg = _("Cannot create default security group")
-        else:
-            err_msg = _("Cannot insert basic rules")
-        LOG.error(err_msg, exc_info=True)
-        messages.error(request, err_msg)
+        LOG.error("Cannot initialized security groups", exc_info=True)
+        messages.error(request, _("Cannot initialized security groups"))
+
+    ###########################################################################
+    # Project tags
+    ###########################################################################
 
     try:
 
