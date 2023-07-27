@@ -103,6 +103,7 @@ class ConfigBin:
         self.gate_address = script_params.get('GATE_ADDRESS', None)
         self.ban_script = script_params.get('GATE_BAN_SCRIPT', None)
         self.allow_script = script_params.get('GATE_ALLOW_SCRIPT', None)
+        self.gate_dry_run = script_params.get('GATE_DRY_RUN', False)
 
 def build_contact_list():
     return getattr(settings, 'MANAGERS', None)

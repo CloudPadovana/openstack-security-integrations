@@ -64,6 +64,11 @@ class Command(CloudVenetoCommand):
             raise CommandError("Orphan schedule failed")
 
     def run_remote_script(self, remote_script, u_email):
+
+        if self.config.gate_dry_run:
+            LOG.info("Remote call to %s for %s" % (remote_script, u_email))
+            return True
+
         try:
             cmd_args = [
                 '/usr/bin/ssh', '-i', self.config.key_path,
@@ -74,7 +79,7 @@ class Command(CloudVenetoCommand):
             ]
             ssh_proc = subprocess.run(cmd_args)
         except:
-            LOG.error("Cannot disable user %s on gate" % orphan.registration.username, exc_info=True)
+            LOG.error("Cannot change user %s on gate" % orphan.registration.username, exc_info=True)
             return False
 
         return ssh_proc.returncode == 0
@@ -109,7 +114,7 @@ class Command(CloudVenetoCommand):
     def handle(self, *args, **options):
     
         super(Command, self).handle(options)
-        if not self.config.key_path or not self.config.gate_address:
+        if not self.config.gate_dry_run and (not self.config.key_path or not self.config.gate_address):
             return
 
         self.schedule_ban()
