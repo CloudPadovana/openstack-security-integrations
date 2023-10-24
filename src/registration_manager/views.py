@@ -37,12 +37,13 @@ from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PSTATUS_RENEW_ATTEMPT
 from openstack_auth_shib.models import PSTATUS_RENEW_DISC
+from openstack_auth_shib.models import PSTATUS_CHK_COMP
 
 from openstack_auth_shib.utils import REQID_REGEX
 from openstack_auth_shib.utils import unique_admin
+from openstack_auth_shib.utils import getProjectInfo
 
 from .utils import RegistrData
-from .utils import getProjectInfo
 from .tables import OperationTable
 from .forms import PreCheckForm
 from .forms import GrantAllForm
@@ -53,6 +54,8 @@ from .forms import NewProjectCheckForm
 from .forms import NewProjectRejectForm
 from .forms import RenewAdminForm
 from .forms import DetailsForm
+from .forms import RemainderAckForm
+from .forms import CompAckForm
 
 LOG = logging.getLogger(__name__)
 
@@ -85,35 +88,24 @@ class MainView(tables.DataTableView):
                 rData = RegistrData(registration = prjReq.registration)
                 curr_regid = prjReq.registration.regid
 
-                if prjReq.flowstatus == PSTATUS_RENEW_ATTEMPT:
+                if prjReq.flowstatus >= PSTATUS_CHK_COMP:
 
-                    rData.code = RegistrData.REN_ATTEMPT
                     rData.project = prjReq.project.projectname
                     rData.notes = prjReq.notes
                     requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
-
-                elif prjReq.flowstatus == PSTATUS_RENEW_DISC:
-
-                    rData.code = RegistrData.REN_DISC
-                    rData.project = prjReq.project.projectname
-                    rData.notes = prjReq.notes
-                    requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
-
-                elif prjReq.flowstatus == PSTATUS_RENEW_MEMB:
-
-                    rData.code = RegistrData.USR_RENEW
-                    rData.project = prjReq.project.projectname
-                    rData.notes = prjReq.notes
-                    requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
-
-                elif prjReq.flowstatus == PSTATUS_RENEW_ADMIN:
-
-                    rData.code = RegistrData.PRJADM_RENEW
-                    rData.project = prjReq.project.projectname
-                    rData.notes = prjReq.notes
-                    if unique_admin(prjReq.registration.username, prjReq.project.projectname):
-                        rData.notes += " (%s)" % _("Unique administrator")
-                    requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
+                    
+                    if prjReq.flowstatus == PSTATUS_CHK_COMP:
+                        rData.code = RegistrData.CHK_COMP
+                    elif prjReq.flowstatus == PSTATUS_RENEW_ATTEMPT:
+                        rData.code = RegistrData.REN_ATTEMPT
+                    elif prjReq.flowstatus == PSTATUS_RENEW_DISC:
+                        rData.code = RegistrData.REN_DISC
+                    elif prjReq.flowstatus == PSTATUS_RENEW_MEMB:
+                        rData.code = RegistrData.USR_RENEW
+                    elif prjReq.flowstatus == PSTATUS_RENEW_ADMIN:
+                        rData.code = RegistrData.PRJADM_RENEW
+                        if unique_admin(prjReq.registration.username, prjReq.project.projectname):
+                            rData.notes += " (%s)" % _("Unique administrator")
 
                 elif prjReq.project.projectid:
 
@@ -432,6 +424,47 @@ class DetailsView(forms.ModalFormView):
                 if len(ou_tuple) > 4 and ou_tuple[0] == dept_id:
                     return "%s <%s> (tel: %s)" % ou_tuple[2:]
         return None
+
+
+class RemainderAckView(forms.ModalFormView):
+    form_class = RemainderAckForm
+    template_name = 'idmanager/registration_manager/generic_ack.html'
+    success_url = reverse('horizon:idmanager:registration_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            self._object = self.kwargs['requestid']
+        return self._object
+
+    def get_initial(self):
+        return { 'requestid' : self.kwargs['requestid'] }
+
+    def get_context_data(self, **kwargs):
+        context = super(RemainderAckView, self).get_context_data(**kwargs)
+        context['form_action'] = reverse("horizon:idmanager:registration_manager:remainderack",
+                                         args=(self.get_object(),))
+        context['op_question'] = _('Do you confirm that the enrollment is completed?')
+        return context
+
+class CompAckView(forms.ModalFormView):
+    form_class = CompAckForm
+    template_name = 'idmanager/registration_manager/generic_ack.html'
+    success_url = reverse('horizon:idmanager:registration_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            self._object = self.kwargs['requestid']
+        return self._object
+
+    def get_initial(self):
+        return { 'requestid' : self.kwargs['requestid'] }
+
+    def get_context_data(self, **kwargs):
+        context = super(CompAckView, self).get_context_data(**kwargs)
+        context['form_action'] = reverse("horizon:idmanager:registration_manager:compack",
+                                         args=(self.get_object(),))
+        context['op_question'] = _('Do you confirm that the compliance check is fine?')
+        return context
 
 def get_project_details(requestid):
 

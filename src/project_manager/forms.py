@@ -38,6 +38,7 @@ from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PRJ_PUBLIC
 from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.models import PSTATUS_PENDING
+from openstack_auth_shib.models import PSTATUS_CHK_COMP
 from openstack_auth_shib.models import PRJ_COURSE
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PSTATUS_RENEW_DISC
@@ -46,10 +47,12 @@ from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import USER_NEED_RENEW
 from openstack_auth_shib.notifications import NEWPRJ_REQ_TYPE
 from openstack_auth_shib.notifications import MEMBER_REQUEST
+from openstack_auth_shib.notifications import COMP_CHECK_TYPE
 from openstack_auth_shib.utils import TAG_REGEX
 from openstack_auth_shib.utils import encode_course_info
 from openstack_auth_shib.utils import check_course_info
 from openstack_auth_shib.utils import PRJ_REGEX
+from openstack_auth_shib.utils import getProjectInfo
 
 LOG = logging.getLogger(__name__)
 
@@ -344,7 +347,9 @@ class SubscribeForm(forms.SelfHandlingForm):
 
     @sensitive_variables('data')
     def handle(self, request, data):
-    
+
+        noti_buffer = list()
+
         with transaction.atomic():
         
             registration = Registration.objects.filter(userid=request.user.id)[0]
@@ -362,12 +367,10 @@ class SubscribeForm(forms.SelfHandlingForm):
                     PRJ_PRIVATE if data['prjpriv'] else PRJ_PUBLIC,
                     True
                 ))
-
         
-            newprjlist = list()
-            exstprjlist = list()
             for prjitem in prjlist:
         
+                f_status = PSTATUS_PENDING
                 if prjitem[3]:
                     try:
 
@@ -377,7 +380,15 @@ class SubscribeForm(forms.SelfHandlingForm):
                             'status' : prjitem[2]
                         }
                         project = Project.objects.create(**prjArgs)
-                        newprjlist.append(project.projectname)
+
+                        noti_buffer.append({
+                            'cloud_level' : True,
+                            'action' : NEWPRJ_REQ_TYPE,
+                            'context' : {
+                                'username' : request.user.username,
+                                'project' : project.projectname
+                            }
+                        })
 
                     except IntegrityError:
                         messages.error(request, _("Project %s already exists") % prjitem[0])
@@ -387,45 +398,58 @@ class SubscribeForm(forms.SelfHandlingForm):
                 elif prjitem[0] in self.pendingProjects:
                     continue
                 else:
-                    project = Project.objects.get(projectname=prjitem[0])
-                    exstprjlist.append(project)
-                        
+                    project = Project.objects.get(projectname = prjitem[0])
+                    if getProjectInfo(request, project)['comp_required']:
+
+                        f_status = PSTATUS_CHK_COMP
+
+                        noti_buffer.append({
+                            'cloud_level' : True,
+                            'action' : COMP_CHECK_TYPE,
+                            'context' : {
+                                'username' : request.user.username,
+                                'project' : project.projectname
+                            }
+                        })
+                    else:
+
+                        admin_emails = list()
+                        for prj_role in PrjRole.objects.filter(project = project):
+                            for email_obj in EMail.objects.filter(registration = prj_role.registration):
+                                admin_emails.append(email_obj.email)
+
+                        noti_buffer.append({
+                            'cloud_level' : False,
+                            'action' : MEMBER_REQUEST,
+                            'admin_emails' : admin_emails,
+                            'context' : {
+                                'username' : request.user.username,
+                                'project' : project.projectname
+                            }
+                        })
+
                 reqArgs = {
                     'registration' : registration,
                     'project' : project,
-                    'flowstatus' : PSTATUS_PENDING,
+                    'flowstatus' : f_status,
                     'notes' : data['notes']
                 }                
                 reqPrj = PrjRequest(**reqArgs)
                 reqPrj.save()
 
-            #
-            # Send notification to cloud admins for project creation
-            #
-            for prj_name in newprjlist:
-                noti_params = {
-                    'username' : request.user.username,
-                    'project' : prj_name
-                }
-                notifyAdmin(request=self.request, action=NEWPRJ_REQ_TYPE, context=noti_params)
-
-            #
-            # Send notifications to project managers
-            #
-            for prj_item in exstprjlist:
-
-                admin_emails = list()
-                for prj_role in PrjRole.objects.filter(project=prj_item):
-                    for email_obj in EMail.objects.filter(registration=prj_role.registration):
-                        admin_emails.append(email_obj.email)
-
-                noti_params = {
-                    'username' : request.user.username,
-                    'project' : prj_item.projectname
-                }
-                notifyProject(request=request, rcpt=admin_emails, action=MEMBER_REQUEST, 
-                              context=noti_params)
-
+        for n_item in noti_buffer:
+            if n_item['cloud_level']:
+                #
+                # Send notification to cloud admins for project creation or compliance check
+                #
+                notifyAdmin(request=self.request, action=n_item['action'], context=n_item['context'])
+            else:
+                #
+                # Send notifications to project managers
+                #
+                notifyProject(request=self.request, rcpt=n_item['admin_emails'],
+                              action=n_item['action'], context=n_item['context'])
+                
         return True
 
 

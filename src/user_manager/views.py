@@ -31,6 +31,7 @@ from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import PSTATUS_PENDING
+from openstack_auth_shib.models import PSTATUS_CHK_COMP
 from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 
 from openstack_dashboard import api
@@ -141,6 +142,7 @@ class CheckOrphansView(tables.DataTableView):
     def get_data(self):
         result = list()
         with transaction.atomic():
+            # TODO improve queries
             qset1 = Expiration.objects.all()
             act_users = set(qset1.values_list('registration', flat = True).distinct())
 
@@ -154,7 +156,7 @@ class CheckOrphansView(tables.DataTableView):
 
                 q_args = {
                     'registration' : reg_item,
-                    'flowstatus' : PSTATUS_PENDING,
+                    'flowstatus__in' : [ PSTATUS_PENDING, PSTATUS_CHK_COMP ],
                 }                
 
                 result.append(OrphanData(

@@ -33,6 +33,10 @@ PSTATUS_REG = 0
 #
 PSTATUS_PENDING = 1
 #
+# Project request must be checked for compliance
+#
+PSTATUS_CHK_COMP = 2
+#
 # Subscription renewal to be handled by cloud admin first
 #
 PSTATUS_RENEW_ADMIN = 10

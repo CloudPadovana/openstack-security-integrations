@@ -44,6 +44,7 @@ from openstack_auth_shib.notifications import SUBSCR_FORCED_NO_TYPE
 from openstack_auth_shib.notifications import PRJ_CREATE_TYPE
 from openstack_auth_shib.notifications import PRJ_REJ_TYPE
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
+from openstack_auth_shib.notifications import MEMBER_REQUEST
 
 from openstack_auth_shib.models import UserMapping
 from openstack_auth_shib.models import RegRequest
@@ -56,6 +57,7 @@ from openstack_auth_shib.models import PrjRole
 
 from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import PSTATUS_PENDING
+from openstack_auth_shib.models import PSTATUS_CHK_COMP
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import RSTATUS_PENDING
@@ -848,6 +850,60 @@ class DetailsForm(forms.SelfHandlingForm):
     @sensitive_variables('data')
     def handle(self, request, data):
         return True
+
+class RemainderAckForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(RemainderAckForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['requestid'] = forms.CharField(widget=HiddenInput)
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+
+        with transaction.atomic():
+            usr_and_prj = REQID_REGEX.search(data['requestid'])
+            RegRequest.objects.filter(
+                registration__regid = int(usr_and_prj.group(1)),
+                flowstatus = RSTATUS_REMINDACK
+            ).delete()
+
+        return True
+
+class CompAckForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(CompAckForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['requestid'] = forms.CharField(widget=HiddenInput)
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+
+        admin_emails = list()
+
+        with transaction.atomic():
+            usr_and_prj = REQID_REGEX.search(data['requestid'])
+
+            project = Project.objects.get(projectname = usr_and_prj.group(2))
+            PrjRequest.objects.filter(
+                registration__regid = int(usr_and_prj.group(1)),
+                project = project,
+                flowstatus = PSTATUS_CHK_COMP
+            ).update(flowstatus = PSTATUS_PENDING)
+
+            for prj_role in PrjRole.objects.filter(project = project):
+                for email_obj in EMail.objects.filter(registration = prj_role.registration):
+                    admin_emails.append(email_obj.email)
+
+        notifyProject(request = request,
+                      rcpt = admin_emails,
+                      action = MEMBER_REQUEST,
+                      context = {'username' : request.user.username,
+                                'project' : project.projectname})
+        return True
+
+
 
 #
 # Fix for https://issues.infn.it/jira/browse/PDCL-690

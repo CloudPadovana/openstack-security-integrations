@@ -586,3 +586,31 @@ class AAIDBRouter:
             return db == AAIDBRouter.AAIDB_NAME
         return None
 
+
+def getProjectInfo(request, project):
+    result = { 'name' : project.projectname, 'comp_required' : False }
+
+    comp_rules = getattr(settings, 'COMPLIANCE_RULES', None)
+    if not comp_rules:
+        return result
+
+    try:
+        kprj_man = keystone_api.keystoneclient(request).projects
+        for item in comp_rules.get('organizations', []):
+            if ('O=' + item) in kprj_man.list_tags(project.projectid):
+                result['comp_required'] = True
+    except:
+        LOG.error("Registration error", exc_info=True)
+        result['err_msg'] = _("Cannot retrieve organization tag")
+
+    try:
+        for s_item in neutron_api.subnet_list(request, project_id = project.projectid):
+            for p_item in comp_rules.get('subnets', []):
+                if p_item in s_item.cidr:
+                    result['comp_required'] = True
+    except:
+        LOG.error("Registration error", exc_info=True)
+        result['err_msg'] = _("Cannot retrieve subnetwork")
+
+    return result
+

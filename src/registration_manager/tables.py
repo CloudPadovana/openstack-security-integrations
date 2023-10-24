@@ -22,10 +22,6 @@ from django.utils.translation import gettext as _
 
 from horizon import tables
 
-from openstack_auth_shib.models import RegRequest
-from openstack_auth_shib.models import RSTATUS_REMINDACK
-from openstack_auth_shib.utils import REQID_REGEX
-
 from .utils import RegistrData
 
 LOG = logging.getLogger(__name__)
@@ -119,23 +115,23 @@ class DetailsLink(tables.LinkAction):
     url = "horizon:idmanager:registration_manager:details"
     classes = ("ajax-modal", "btn-edit")
 
-class ReminderAck(tables.Action):
+class ReminderAck(tables.LinkAction):
     name = "reminder_ack"
     verbose_name = _("Done")
+    url = "horizon:idmanager:registration_manager:remainderack"
+    classes = ("ajax-modal", "btn-edit")
     
     def allowed(self, request, datum):
         return datum.code == RegistrData.REMINDER or datum.code == RegistrData.ORPHAN
 
-    def single(self, data_table, request, object_id):
-
-        with transaction.atomic():
-            req_data = REQID_REGEX.search(object_id)
-            RegRequest.objects.filter(
-                registration__regid = int(req_data.group(1)),
-                flowstatus = RSTATUS_REMINDACK
-            ).delete()
-
-        return shortcuts.redirect(reverse('horizon:idmanager:registration_manager:index'))
+class ChkCompAck(tables.LinkAction):
+    name = "chkcomp_ack"
+    verbose_name = _("Compliance ok")
+    url = "horizon:idmanager:registration_manager:compack"
+    classes = ("ajax-modal", "btn-edit")
+    
+    def allowed(self, request, datum):
+        return datum.code == RegistrData.CHK_COMP
 
 class OperationTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))
@@ -148,6 +144,7 @@ class OperationTable(tables.DataTable):
         name = "operation_table"
         verbose_name = _("Pending requests")
         row_actions = (PreCheckLink,
+                       ChkCompAck,
                        GrantAllLink,
                        RejectLink,
                        NewPrjLink,

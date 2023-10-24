@@ -234,3 +234,12 @@ body: The following project memberships have been deleted:
 
   Please, don't reply to this message
 
+[compliance_check]
+LOG: Compliance check required for {{ username }} and project {{ project }}
+subject: Compliance check required for {{ username }} and project {{ project }}
+body: The user {{ username }} requires the affiliation to the project {{ project }}.
+  Compliance to INFN rules is necessary.
+  
+  Please, don't reply to this message
+
+
