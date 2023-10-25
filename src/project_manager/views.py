@@ -63,11 +63,24 @@ class ExtPrjItem:
         self.enabled = prj_data.enabled
         self.tags = None
         self.status = PRJ_PRIVATE
-        self.expiraton = None
         self.managed = False
         self.isadmin = False
         self.handle_course = False
         self.flowstatus = PSTATUS_REG
+
+    def items(self):
+        return [
+            ('id', self.id),
+            ('name', self.name),
+            ('description', self.description),
+            ('enabled', self.enabled),
+            ('tags', self.tags),
+            ('status', self.status),
+            ('managed', self.managed),
+            ('isadmin', self.isadmin),
+            ('handle_course', self.handle_course),
+            ('flowstatus', self.flowstatus)
+        ]
 
 class IndexView(baseViews.IndexView):
     table_class = ProjectsTable

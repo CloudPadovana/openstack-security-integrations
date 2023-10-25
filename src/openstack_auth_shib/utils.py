@@ -183,7 +183,7 @@ def check_course_info(info_dict):
 # }
 #
 
-CIDR_PATTERN = re.compile("(\d+\.\d+)\.(\d+).0/\d+")
+CIDR_PATTERN = re.compile(r'([0-9]+\.[0-9]+)\.([0-9]+)\.0/[0-9]+')
 MAX_AVAIL = getattr(settings, 'MAX_PROPOSED_NETWORKS', 10)
 
 def get_avail_networks(request):
