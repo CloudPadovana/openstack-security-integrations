@@ -49,10 +49,16 @@ from openstack_auth_shib.notifications import NEWPRJ_REQ_TYPE
 from openstack_auth_shib.notifications import MEMBER_REQUEST
 from openstack_auth_shib.notifications import COMP_CHECK_TYPE
 from openstack_auth_shib.utils import TAG_REGEX
-from openstack_auth_shib.utils import encode_course_info
-from openstack_auth_shib.utils import check_course_info
 from openstack_auth_shib.utils import PRJ_REGEX
 from openstack_auth_shib.utils import getProjectInfo
+
+from .models import NEW_MODEL
+if NEW_MODEL:
+    from openstack_auth_shib.models import PrjAttribute
+    from openstack_auth_shib.utils import COURSE_ATT_MAP
+else:
+    from openstack_auth_shib.utils import encode_course_info
+    from openstack_auth_shib.utils import check_course_info
 
 LOG = logging.getLogger(__name__)
 
@@ -83,9 +89,30 @@ class CourseForm(forms.SelfHandlingForm):
 
     def clean(self):
         data = super(CourseForm, self).clean()
-        err_msg = check_course_info(data)
-        if err_msg:
-            raise ValidationError(err_msg)
+        if NEW_MODEL:
+            err_msg = check_course_info(data)
+            if err_msg:
+                raise ValidationError(err_msg)
+        else:
+            if request.user.tenant_id != data['projectid']:
+                raise ValidationError(_("Invalid project"))
+
+            if not 'notes' in data:
+                data['notes'] = ""
+
+            try:
+                data['org'] = 'unipd.it'
+                data['ou'] = 'other'
+
+                kclient = keystone_api.keystoneclient(request)
+                for p_tag in kclient.projects.list_tags(c_prj.projectid):
+                    if p_tag.startswith('OU='):
+                        data['ou'] = p_tag[3:]
+                    if p_tag.startswith('O='):
+                        data['org'] = p_tag[2:]                
+            except:
+                LOG.error("Missing organization or unit", exc_info=True)
+                raise ValidationError(_("Cannot retrieve data for course"))
         return data
 
     @sensitive_variables('data')
@@ -100,17 +127,32 @@ class CourseForm(forms.SelfHandlingForm):
                     messages.error(request, _("Operation not allowed"))
                     return False
 
-                kclient = keystone_api.keystoneclient(request)
-                for p_tag in kclient.projects.list_tags(c_prj.projectid):
-                    if p_tag.startswith('OU='):
-                        data['ou'] = p_tag[3:]
-                    if p_tag.startswith('O='):
-                        data['org'] = p_tag[2:]
+                if NEW_MODEL:
+                    c_info = PrjAttribute.objects.filter(project = c_prj, name__in = COURSE_ATT_MAP.keys())
 
-                new_descr = encode_course_info(data)
-                c_prj.description = new_descr
-                c_prj.status = PRJ_COURSE
-                c_prj.save()
+                    need_update = (len(c_info) == 0)
+                    for item in c_info:
+                        if item.value != data[COURSE_ATT_MAP[item.name]]:
+                            need_update = True
+                            break;
+
+                    if need_update:
+                        if len(c_info) > 0:
+                            c_info.delete()
+                        for k_item, v_item in COURSE_ATT_MAP.items():
+                            PrjAttribute(project = c_prj, name = k_item, value = data[v_item]).save()
+                else:
+                    kclient = keystone_api.keystoneclient(request)
+                    for p_tag in kclient.projects.list_tags(c_prj.projectid):
+                        if p_tag.startswith('OU='):
+                            data['ou'] = p_tag[3:]
+                        if p_tag.startswith('O='):
+                            data['org'] = p_tag[2:]
+
+                    new_descr = encode_course_info(data)
+                    c_prj.description = new_descr
+                    c_prj.status = PRJ_COURSE
+                    c_prj.save()
 
         except:
             LOG.error("Cannot edit course parameters", exc_info=True)

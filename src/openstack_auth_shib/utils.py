@@ -43,6 +43,10 @@ from .models import PSTATUS_PENDING
 from .models import PSTATUS_RENEW_MEMB
 from .models import PSTATUS_RENEW_ATTEMPT
 
+from .models import NEW_MODEL
+if NEW_MODEL:
+    from .models import PrjAttribute
+
 LOG = logging.getLogger(__name__)
 
 TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
@@ -124,41 +128,68 @@ def check_projectname(prjname, error_class):
         raise error_class(_('Bad character "%s" for project name.') % tmpm.group(0))
     return tmps
 
-#
-# Simple blob structure for course details
-#
-def parse_course_info(blob, default_name=""):
-    data = blob.split('|')
-    return {
-        'description' : data[0] if len(data) else _('Undefined'),
-        'name' : data[1] if len(data) > 1 else default_name,
-        'notes' : data[2] if len(data) > 2 else "",
-        'ou' : data[3] if len(data) > 3 else 'other',
-        'org' : data[4] if len(data) > 4 else 'unipd.it'
+if NEW_MODEL:
+    #
+    # Definitions and utilities for courses
+    #
+    ATT_COURSE_NAME = 1001
+    ATT_COURSE_DESC = 1002
+    ATT_COURSE_NOTE = 1003
+    ATT_COURSE_ORG = 1004
+    ATT_COURSE_OU = 1005
+
+    COURSE_ATT_MAP = {
+        ATT_COURSE_NAME : 'name',
+        ATT_COURSE_DESC : 'description',
+        ATT_COURSE_NOTE : 'notes',
+        ATT_COURSE_ORG : 'org',
+        ATT_COURSE_OU : 'ou'
     }
 
-def encode_course_info(info_dict, default_name=""):
-    return '%s|%s|%s|%s|%s' % (info_dict.get('description', _('Undefined')),
-                               info_dict.get('name', default_name),
-                               info_dict.get('notes', ""),
-                               info_dict.get('ou', 'other'),
-                               info_dict.get('org', 'unipd.it'))
+    def get_course_info(prj_name):
+        result = dict()
+        c_info = PrjAttribute.objects.filter(project__projectname = prj_name, name__in = COURSE_ATT_LIST)
+        for item in c_info:
+            result[COURSE_ATT_MAP[item.name]] = item.value
+        return result
 
-def check_course_info(info_dict):
-    for info_key, info_value in info_dict.items():
-        if not '|' in info_value:
-            continue
-        if info_key == 'name':
-            return _('Bad character "|" in the course name.')
-        if info_key == 'description':
-            return _('Bad character "|" in the course description.')
-        if info_key == 'notes':
-            return _('Bad character "|" in the course notes.')
-        if info_key == 'ou':
-            return _('Bad character "|" in the course department.')
-        if info_key == 'org':
-            return _('Bad character "|" in the course institution.')
-    return None
+else:
+    #
+    # Simple blob structure for course details
+    #
+    def parse_course_info(blob, default_name=""):
+        data = blob.split('|')
+        return {
+            'description' : data[0] if len(data) else _('Undefined'),
+            'name' : data[1] if len(data) > 1 else default_name,
+            'notes' : data[2] if len(data) > 2 else "",
+            'ou' : data[3] if len(data) > 3 else 'other',
+            'org' : data[4] if len(data) > 4 else 'unipd.it'
+        }
+
+    def encode_course_info(info_dict, default_name=""):
+        return '%s|%s|%s|%s|%s' % (info_dict.get('description', _('Undefined')),
+                                   info_dict.get('name', default_name),
+                                   info_dict.get('notes', ""),
+                                   info_dict.get('ou', 'other'),
+                                   info_dict.get('org', 'unipd.it'))
+
+    def check_course_info(info_dict):
+        for info_key, info_value in info_dict.items():
+            if not '|' in info_value:
+                continue
+            if info_key == 'name':
+                return _('Bad character "|" in the course name.')
+            if info_key == 'description':
+                return _('Bad character "|" in the course description.')
+            if info_key == 'notes':
+                return _('Bad character "|" in the course notes.')
+            if info_key == 'ou':
+                return _('Bad character "|" in the course department.')
+            if info_key == 'org':
+                return _('Bad character "|" in the course institution.')
+        return None
+
 #
 # Project post creation
 #

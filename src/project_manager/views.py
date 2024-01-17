@@ -47,8 +47,13 @@ from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.utils import ORG_TAG_FMT
-from openstack_auth_shib.utils import parse_course_info
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
+
+from .models import NEW_MODEL
+if NEW_MODEL:
+    from openstack_auth_shib.utils import get_course_info
+else:
+    from openstack_auth_shib.utils import parse_course_info
 
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -222,8 +227,11 @@ class CourseView(forms.ModalFormView):
         return context
 
     def get_initial(self):
-        course_info = parse_course_info(self.get_object().description,
-                                        self.get_object().projectname)
+        if NEW_MODEL:
+            course_info = get_course_info(self.get_object().projectname)
+        else:
+            course_info = parse_course_info(self.get_object().description,
+                                            self.get_object().projectname)
         course_info['projectid'] = self.get_object().projectid
         return course_info
 
@@ -241,8 +249,11 @@ class CourseDetailView(forms.ModalFormView):
 
         suffix = "/auth/course_" + urllib.parse.quote(self.get_object().projectname)
 
-        info_table = parse_course_info(self.get_object().description,
-                                       self.get_object().projectname)
+        if NEW_MODEL:
+            info_table = get_course_info(self.get_object().projectname)
+        else:
+            info_table = parse_course_info(self.get_object().description,
+                                           self.get_object().projectname)
 
         course_table = settings.HORIZON_CONFIG.get('course_for', {})
 
