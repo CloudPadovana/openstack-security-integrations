@@ -14,8 +14,6 @@
 #  under the License. 
 
 import logging
-from datetime import datetime
-from datetime import timezone
 
 from horizon import forms
 from horizon import exceptions
@@ -48,17 +46,15 @@ from openstack_auth_shib.notifications import SUBSCR_NO_TYPE
 from openstack_auth_shib.notifications import MEMBER_REMOVED
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
+from openstack_auth_shib.utils import get_year_list
+from openstack_auth_shib.utils import MAX_RENEW
+from openstack_auth_shib.utils import NOW
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
 from django.utils.translation import gettext as _
 
 LOG = logging.getLogger(__name__)
-
-try:
-    MAX_RENEW = int(getattr(settings, 'TENANT_MAX_RENEW', '4'))
-except:
-    MAX_RENEW = 4
 
 class ApproveSubscrForm(forms.SelfHandlingForm):
 
@@ -67,17 +63,14 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
 
         self.fields['regid'] = forms.CharField(widget=HiddenInput)
 
-        curr_year = datetime.now(timezone.utc).year
-        years_list = list(range(curr_year, curr_year + MAX_RENEW))
-
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
-            widget=SelectDateWidget(None, years_list)
+            widget=SelectDateWidget(None, get_year_list(MAX_RENEW))
         )
 
     def clean(self):
         data = super(ApproveSubscrForm, self).clean()
-        now = datetime.now(timezone.utc)
+        now = NOW()
         if data['expiration'].date() < now.date():
             raise ValidationError(_('Invalid expiration time.'))
         if data['expiration'].year > now.year + MAX_RENEW:
@@ -246,17 +239,14 @@ class RenewSubscrForm(forms.SelfHandlingForm):
 
         self.fields['regid'] = forms.CharField(widget=HiddenInput)
 
-        curr_year = datetime.now(timezone.utc).year
-        years_list = list(range(curr_year, curr_year + MAX_RENEW))
-
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
-            widget=SelectDateWidget(None, years_list)
+            widget=SelectDateWidget(None, get_year_list(MAX_RENEW))
         )
 
     def clean(self):
         data = super(RenewSubscrForm, self).clean()
-        now = datetime.now(timezone.utc)
+        now = NOW()
         if data['expiration'].date() < now.date():
             raise ValidationError(_('Invalid expiration time.'))
         if data['expiration'].year > now.year + MAX_RENEW:

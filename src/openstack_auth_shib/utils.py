@@ -18,6 +18,10 @@ import re
 import os
 import os.path
 
+from datetime import datetime
+from datetime import timezone
+from datetime import timedelta
+
 from django.conf import settings
 from django.db import transaction
 from django.urls import reverse_lazy
@@ -189,6 +193,33 @@ else:
             if info_key == 'org':
                 return _('Bad character "|" in the course institution.')
         return None
+
+#
+# Definitions and utilities for expiration date
+#
+
+def get_year_list(n_of_years = 25):
+    curr_year = datetime.now(timezone.utc).year
+    return list(range(curr_year, curr_year + n_of_years))
+
+def NOW():
+    return datetime.now(timezone.utc)
+
+def FROMNOW(days):
+    return datetime.now(timezone.utc) + timedelta(days)
+
+try:
+    MAX_RENEW = int(getattr(settings, 'TENANT_MAX_RENEW', '4'))
+except:
+    MAX_RENEW = 4
+
+ATT_PRJ_EXP = 2001
+ATT_PRJ_CPER = 2002
+
+PREG_ATT_MAP = {
+    ATT_PRJ_EXP : 'expiration',
+    ATT_PRJ_CPER : 'contactper'
+}
 
 #
 # Project post creation

@@ -15,8 +15,6 @@
 
 import logging
 
-from datetime import datetime, timedelta
-
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse_lazy as reverse
@@ -31,6 +29,7 @@ from openstack_auth_shib.models import PrjRequest
 
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.utils import FROMNOW
 
 from .tables import SubscriptionTable
 from .forms import ApproveSubscrForm
@@ -131,7 +130,7 @@ class ApproveView(AbstractProcessView):
 
     def get_initial(self):
         inidata = super(ApproveView, self).get_initial()
-        inidata['expiration'] = datetime.now() + timedelta(365)
+        inidata['expiration'] = FROMNOW(365)
         return inidata
 
 class RejectView(AbstractProcessView):
@@ -156,7 +155,7 @@ class RenewView(AbstractProcessView):
 
     def get_initial(self):
         inidata = super(RenewView, self).get_initial()
-        inidata['expiration'] = datetime.now() + timedelta(365)
+        inidata['expiration'] = FROMNOW(365)
         return inidata
 
 class DiscardView(AbstractProcessView):

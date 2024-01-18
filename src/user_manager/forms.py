@@ -14,7 +14,6 @@
 #  under the License. 
 
 import logging
-from datetime import datetime
 
 from django import http
 from django.db import transaction
@@ -54,15 +53,12 @@ from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import MEMBER_REQUEST
 
 from openstack_auth_shib.utils import get_prjman_ids
+from openstack_auth_shib.utils import get_year_list
 
 from openstack_dashboard.api import keystone as keystone_api
 from openstack_dashboard.dashboards.identity.users import forms as baseForms
 
 LOG = logging.getLogger(__name__)
-
-def get_year_list():
-    curr_year = datetime.now().year
-    return list(range(curr_year, curr_year+25))
 
 def get_default_role(request):
     DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)

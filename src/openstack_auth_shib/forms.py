@@ -45,6 +45,16 @@ from .models import PSTATUS_PENDING
 from .notifications import notifyAdmin, REGISTR_AVAIL_TYPE
 from .utils import get_ostack_attributes
 from .utils import check_projectname
+from .utils import get_year_list
+from .utils import MAX_RENEW
+from .utils import NOW
+from .utils import FROMNOW
+from .utils import PREG_ATT_MAP
+
+from .models import NEW_MODEL
+if NEW_MODEL:
+    from .models import PrjAttribute
+    from django.forms.widgets import SelectDateWidget
 
 LOG = logging.getLogger(__name__)
 
@@ -137,13 +147,10 @@ class RegistrForm(forms.SelfHandlingForm):
                 ('selprj', _('Select existing projects')),
                 ('newprj', _('Create new project'))
             ]
-            prjguest_name = settings.HORIZON_CONFIG.get('guest_project', "")
             avail_prjs = list()
 
             for prj_entry in Project.objects.exclude(status=PRJ_PRIVATE):
-                if prj_entry.projectname == prjguest_name:
-                    p_choices.append(('guestprj', _('Use guest project')))
-                elif prj_entry.projectid:
+                if prj_entry.projectid:
                     avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
 
             self.fields['prjaction'] = forms.ChoiceField(
@@ -176,13 +183,6 @@ class RegistrForm(forms.SelfHandlingForm):
                 })
             )
 
-            self.fields['prjpriv'] = forms.BooleanField(
-                label=_("Private project"),
-                required=False,
-                initial=False,
-                widget=forms.HiddenInput
-            )
-
             if dept_list:
                 self.fields['contactper'] = forms.CharField(
                     required=False,
@@ -198,6 +198,20 @@ class RegistrForm(forms.SelfHandlingForm):
                         'data-switch-on': 'actsource',
                         'data-actsource-newprj': _('Contact person')
                     })
+                )
+
+            if NEW_MODEL:
+                self.fields['expiration'] = forms.DateTimeField(
+                    label = _('Project expiration'),
+                    required = False,
+                    widget = SelectDateWidget(
+                        attrs = {
+                            'class': 'switched',
+                            'data-switch-on': 'actsource',
+                            'data-actsource-newprj': _('Project expiration')
+                        }, 
+                        years = get_year_list()),
+                    initial = FROMNOW(365)
                 )
 
             self.fields['selprj'] = forms.MultipleChoiceField(
@@ -364,6 +378,13 @@ class RegistrForm(forms.SelfHandlingForm):
                     data['contactper'] = tmpctc
                     break
 
+        if NEW_MODEL:
+            now = NOW()
+            if data['expiration'].date() < now.date():
+                raise ValidationError(_('Invalid expiration time.'))
+            if data['expiration'].year > now.year + MAX_RENEW:
+                raise ValidationError(_('Invalid expiration time.'))
+
         return data
 
     def _build_safe_redirect(self, request, location):
@@ -400,7 +421,7 @@ class RegistrForm(forms.SelfHandlingForm):
                 prjlist.append((
                     data['newprj'],
                     data['prjdescr'],
-                    PRJ_PRIVATE if data['prjpriv'] else PRJ_PUBLIC,
+                    PRJ_PUBLIC,
                     True
                 ))
 
@@ -463,14 +484,6 @@ class RegistrForm(forms.SelfHandlingForm):
                 
                     LOG.debug("Saved %s" % data['username'])
 
-                #
-                # empty list for guest prj
-                #
-                prjguest_name = settings.HORIZON_CONFIG.get('guest_project', None)
-                if len(prjlist) == 0 and prjguest_name \
-                    and Project.objects.filter(projectname=prjguest_name).count() > 0:
-                    prjlist.append((prjguest_name, "", PRJ_PUBLIC, False))
-
                 for prjitem in prjlist:
             
                     if prjitem[3]:
@@ -481,6 +494,11 @@ class RegistrForm(forms.SelfHandlingForm):
                             'status' : prjitem[2]
                         }
                         project = Project.objects.create(**prjArgs)
+
+                        if NEW_MODEL:
+                            for k_item, v_item in PREG_ATT_MAP.items():
+                                PrjAttribute(project = project, name = k_item,
+                                             value = str(data[v_item])).save()
 
                     else:
                         project = Project.objects.get(projectname=prjitem[0])

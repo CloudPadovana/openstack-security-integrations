@@ -51,11 +51,16 @@ from openstack_auth_shib.notifications import COMP_CHECK_TYPE
 from openstack_auth_shib.utils import TAG_REGEX
 from openstack_auth_shib.utils import PRJ_REGEX
 from openstack_auth_shib.utils import getProjectInfo
+from openstack_auth_shib.utils import get_year_list
+from openstack_auth_shib.utils import NOW
+from openstack_auth_shib.utils import FROMNOW
+from openstack_auth_shib.utils import PREG_ATT_MAP
 
 from .models import NEW_MODEL
 if NEW_MODEL:
     from openstack_auth_shib.models import PrjAttribute
     from openstack_auth_shib.utils import COURSE_ATT_MAP
+    from django.forms.widgets import SelectDateWidget
 else:
     from openstack_auth_shib.utils import encode_course_info
     from openstack_auth_shib.utils import check_course_info
@@ -294,66 +299,80 @@ class ProposedRenewForm(forms.SelfHandlingForm):
 
 class SubscribeForm(forms.SelfHandlingForm):
 
-    prjaction = forms.ChoiceField(
-        label=_('Project action'),
-        choices = [
-            ('newprj', _('Create new project')),
-        ],
-        widget=forms.Select(attrs={
-            'class': 'switchable',
-            'data-slug': 'actsource'
-        })
-    )
-    
-    newprj = forms.CharField(
-        label=_('Personal project'),
-        max_length=OS_SNAME_LEN,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'switched',
-            'data-switch-on': 'actsource',
-            'data-actsource-newprj': _('Project name')
-        })
-    )
-    prjdescr = forms.CharField(
-        label=_("Project description"),
-        required=False,
-        widget=forms.widgets.Textarea(attrs={
-            'class': 'switched',
-            'data-switch-on': 'actsource',
-            'data-actsource-newprj': _('Project description')
-        })
-    )
-    prjpriv = forms.BooleanField(
-        label=_("Private project"),
-        required=False,
-        initial=False,
-        widget=forms.HiddenInput
-    )
-    
-    selprj = forms.MultipleChoiceField(
-        label=_('Available projects'),
-        required=False,
-        widget=forms.SelectMultiple(attrs={
-            'class': 'switched',
-            'data-switch-on': 'actsource',
-            'data-actsource-selprj': _('Select existing project')
-        }),
-    )
-
-
-    notes = forms.CharField(
-        label=_('Notes'),
-        required=False,
-        widget=forms.widgets.Textarea()
-    )
-
     def __init__(self, *args, **kwargs):
         super(SubscribeForm, self).__init__(*args, **kwargs)
 
-        auth_prjs = [
-            pitem.name for pitem in self.request.user.authorized_tenants
-        ]
+        self.fields['prjaction'] = forms.ChoiceField(
+            label = _('Project action'),
+            choices = [ ('newprj', _('Create new project')), ],
+            widget = forms.Select(attrs = {
+                'class': 'switchable',
+                'data-slug': 'actsource'
+            })
+        )
+
+        self.fields['newprj'] = forms.CharField(
+            label = _('Personal project'),
+            max_length = OS_SNAME_LEN,
+            required = False,
+            widget = forms.TextInput(attrs = {
+                'class': 'switched',
+                'data-switch-on': 'actsource',
+                'data-actsource-newprj': _('Project name')
+            })
+        )
+
+        self.fields['prjdescr'] = forms.CharField(
+            label = _("Project description"),
+            required = False,
+            widget = forms.widgets.Textarea(attrs = {
+                'class': 'switched',
+                'data-switch-on': 'actsource',
+                'data-actsource-newprj': _('Project description')
+            })
+        )
+
+        self.fields['selprj'] = forms.MultipleChoiceField(
+            label = _('Available projects'),
+            required = False,
+            widget = forms.SelectMultiple(attrs = {
+                'class': 'switched',
+                'data-switch-on': 'actsource',
+                'data-actsource-selprj': _('Select existing project')
+            }),
+        )
+
+        if NEW_MODEL:
+            self.fields['expiration'] = forms.DateTimeField(
+                label = _('Project expiration'),
+                required = False,
+                widget = SelectDateWidget(
+                    attrs = {
+                        'class': 'switched',
+                        'data-switch-on': 'actsource',
+                        'data-actsource-newprj': _('Project expiration')
+                    }, 
+                    years = get_year_list()),
+                initial = FROMNOW(365)
+            )
+
+            self.fields['contactper'] = forms.CharField(
+                label=_('Contact person'),
+                required=False,
+                widget=forms.TextInput(attrs={
+                    'class': 'switched',
+                    'data-switch-on': 'actsource',
+                    'data-actsource-newprj': _('Contact person')
+                })
+            )
+
+        self.fields['notes'] = forms.CharField(
+            label = _('Notes'),
+            required = False,
+            widget = forms.widgets.Textarea()
+        )
+
+        auth_prjs = [ pitem.name for pitem in self.request.user.authorized_tenants ]
 
         pendPReq = PrjRequest.objects.filter(registration__userid=self.request.user.id)
         self.pendingProjects = [ prjreq.project.projectname for prjreq in pendPReq ]
@@ -385,6 +404,16 @@ class SubscribeForm(forms.SelfHandlingForm):
             if not data['selprj']:
                 raise ValidationError(_('Missing selected project.'))
 
+        if NEW_MODEL:
+            now = NOW()
+            if data['expiration'].date() < now.date():
+                raise ValidationError(_('Invalid expiration time.'))
+            if data['expiration'].year > now.year + MAX_RENEW:
+                raise ValidationError(_('Invalid expiration time.'))
+
+            if not 'contactper' in data:
+                data['contactper'] = ""
+
         return data
 
     @sensitive_variables('data')
@@ -406,7 +435,7 @@ class SubscribeForm(forms.SelfHandlingForm):
                 prjlist.append((
                     data['newprj'],
                     data['prjdescr'],
-                    PRJ_PRIVATE if data['prjpriv'] else PRJ_PUBLIC,
+                    PRJ_PUBLIC,
                     True
                 ))
         
@@ -422,6 +451,11 @@ class SubscribeForm(forms.SelfHandlingForm):
                             'status' : prjitem[2]
                         }
                         project = Project.objects.create(**prjArgs)
+
+                        if NEW_MODEL:
+                            for k_item, v_item in PREG_ATT_MAP.items():
+                                PrjAttribute(project = project, name = k_item,
+                                             value = str(data[v_item])).save()
 
                         noti_buffer.append({
                             'cloud_level' : True,
