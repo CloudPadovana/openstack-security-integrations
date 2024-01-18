@@ -49,7 +49,7 @@ from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.utils import ORG_TAG_FMT
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
-from .models import NEW_MODEL
+from openstack_auth_shib.models import NEW_MODEL
 if NEW_MODEL:
     from openstack_auth_shib.utils import get_course_info
 else:

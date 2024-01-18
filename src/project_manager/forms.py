@@ -56,7 +56,7 @@ from openstack_auth_shib.utils import NOW
 from openstack_auth_shib.utils import FROMNOW
 from openstack_auth_shib.utils import PREG_ATT_MAP
 
-from .models import NEW_MODEL
+from openstack_auth_shib.models import NEW_MODEL
 if NEW_MODEL:
     from openstack_auth_shib.models import PrjAttribute
     from openstack_auth_shib.utils import COURSE_ATT_MAP
@@ -95,11 +95,7 @@ class CourseForm(forms.SelfHandlingForm):
     def clean(self):
         data = super(CourseForm, self).clean()
         if NEW_MODEL:
-            err_msg = check_course_info(data)
-            if err_msg:
-                raise ValidationError(err_msg)
-        else:
-            if request.user.tenant_id != data['projectid']:
+            if self.request.user.tenant_id != data['projectid']:
                 raise ValidationError(_("Invalid project"))
 
             if not 'notes' in data:
@@ -109,7 +105,7 @@ class CourseForm(forms.SelfHandlingForm):
                 data['org'] = 'unipd.it'
                 data['ou'] = 'other'
 
-                kclient = keystone_api.keystoneclient(request)
+                kclient = keystone_api.keystoneclient(self.request)
                 for p_tag in kclient.projects.list_tags(c_prj.projectid):
                     if p_tag.startswith('OU='):
                         data['ou'] = p_tag[3:]
@@ -118,6 +114,10 @@ class CourseForm(forms.SelfHandlingForm):
             except:
                 LOG.error("Missing organization or unit", exc_info=True)
                 raise ValidationError(_("Cannot retrieve data for course"))
+        else:
+            err_msg = check_course_info(data)
+            if err_msg:
+                raise ValidationError(err_msg)
         return data
 
     @sensitive_variables('data')
