@@ -168,15 +168,9 @@ body: User {{ username }} requires access to project {{ project }}
 [user_expiring]
 LOG: Sent account expiration notice to {{ username }}
 subject: Affiliation to {{ project }} is going to expire
-body: The affiliation for {{ username }} to {{ project }} will expire in {{ days }} days.
-  Please contact the project administrators for a renewal
-  {% if contacts %}
-  Contacts:
-  {% for c_admin in contacts %}
-  * {{ c_admin }}
-  {% endfor %}
-  {% endif %}
-  
+body: Your affiliation to the project {{ project }} will expire in {{ days }} days.
+  If you wish to renew the affiliation please open the CloudVeneto dashboard in a browser and select the project: {{ project }}.
+
   Please, don't reply to this message
 
 [user_need_renew]
