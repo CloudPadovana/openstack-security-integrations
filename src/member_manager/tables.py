@@ -20,7 +20,7 @@ from django.db import transaction
 from django.conf import settings
 from django.urls import reverse_lazy as reverse
 from django.utils.translation import gettext_lazy as _
-from django.utils.translation import ungettext_lazy
+from django.utils.translation import ngettext_lazy
 
 from horizon import tables
 from horizon import messages
@@ -52,7 +52,7 @@ class DeleteMemberAction(tables.DeleteAction):
 
     @staticmethod
     def action_present(count):
-        return ungettext_lazy(
+        return ngettext_lazy(
             "Delete Member",
             "Delete Members",
             count
@@ -60,7 +60,7 @@ class DeleteMemberAction(tables.DeleteAction):
 
     @staticmethod
     def action_past(count):
-        return ungettext_lazy(
+        return ngettext_lazy(
             "Deleted Member",
             "Deleted Members",
             count
