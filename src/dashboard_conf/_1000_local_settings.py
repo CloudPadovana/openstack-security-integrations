@@ -1,7 +1,3 @@
-import warnings
-from django.utils.deprecation import RemovedInDjango40Warning
-warnings.simplefilter("ignore", category=RemovedInDjango40Warning)
-
 HORIZON_CONFIG['user_home'] = 'openstack_auth_shib.utils.get_user_home'
 
 AUTHENTICATION_URLS = ['openstack_auth_shib.urls']
