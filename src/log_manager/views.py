@@ -20,6 +20,7 @@
 import logging
 import datetime
 
+from django.db import transaction
 from django.urls import reverse
 from django.conf import settings
 from django.utils import timezone
@@ -33,6 +34,8 @@ from horizon.utils import memoized
 from openstack_dashboard import api
 
 from openstack_auth_shib.models import Log
+from openstack_auth_shib.models import Registration
+from openstack_auth_shib.models import Project
 from openstack_auth_shib.notifications import LOG_TYPE_EMAIL
 from .tables import MainTable
 
@@ -157,18 +160,46 @@ class MainView(tables.DataTableView):
         filters['timestamp__gte'] = start
         filters['timestamp__lte'] = end
 
-        values = Log.objects.filter(**filters)
-        for log in values:
-            if not log.user_name:
-                log.user_name = self.get_user_name(getattr(log, "user_id"))
-            if not log.project_name:
-                log.project_name = self.get_project_name(getattr(log, "project_id"))
+        with transaction.atomic():
+            try:
+                values = Log.objects.filter(**filters)
 
-            log.dst_user_name = self.get_user_name(getattr(log, "dst_user_id"))
-            log.dst_project_name = self.get_project_name(getattr(log, "dst_project_id"))
+                usr_set = set()
+                usr_table = dict()
+                prj_set = set()
+                prj_table = dict()
+                for log in values:
+                    u1 = getattr(log, "user_id")
+                    u2 = getattr(log, "dst_user_id")
+                    p1 = getattr(log, "project_id")
+                    p2 = getattr(log, "dst_project_id")
+                    if u1:
+                        usr_set.add(u1)
+                    if u2:
+                        usr_set.add(u2)
+                    if p1:
+                        prj_set.add(p1)
+                    if p2:
+                        prj_set.add(p2)
 
-            logs.append(log)
+                for u_item in Registration.objects.filter(userid__in = usr_set):
+                    usr_table[u_item.userid] = u_item.username
 
+                for p_item in Project.objects.filter(projectid__in = prj_set):
+                    prj_table[p_item.projectid] = p_item.projectname
+
+                for log in values:
+                    if not log.user_name:
+                        log.user_name = usr_table.get(getattr(log, "user_id"), None)
+                    if not log.project_name:
+                        log.project_name = prj_table.get(getattr(log, "project_id"), None)
+
+                    log.dst_user_name = usr_table.get(getattr(log, "dst_user_id"), None)
+                    log.dst_project_name = prj_table.get(getattr(log, "dst_project_id"))
+
+                    logs.append(log)
+            except Exception:
+                LOG.error("Log table error", exc_info=True)
         return logs
 
     def get_context_data(self, **kwargs):
