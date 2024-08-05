@@ -29,6 +29,9 @@ from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import Expiration
+from openstack_auth_shib.models import NEW_MODEL
+if NEW_MODEL:
+    from openstack_auth_shib.models import PrjAttribute
 
 from openstack_auth_shib.models import RSTATUS_PENDING
 from openstack_auth_shib.models import RSTATUS_REMINDACK
@@ -38,10 +41,10 @@ from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PSTATUS_RENEW_ATTEMPT
 from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 from openstack_auth_shib.models import PSTATUS_CHK_COMP
-
 from openstack_auth_shib.utils import REQID_REGEX
 from openstack_auth_shib.utils import unique_admin
 from openstack_auth_shib.utils import getProjectInfo
+from openstack_auth_shib.utils import ATT_PRJ_EXP
 
 from .utils import RegistrData
 from .tables import OperationTable
@@ -191,13 +194,13 @@ class GrantAllView(AbstractCheckView):
 
     def get_initial(self):
 
-        oldpname, oldpdescr = get_project_details(self.kwargs.get('requestid', ''))
+        oldpname, oldpdescr, exp_d = get_project_details(self.kwargs.get('requestid', ''))
 
         return {
             'regid' : self.get_object().registration.regid,
             'username' : self.get_object().registration.username,
             'extaccount' : self.get_object().externalid,
-            'expiration' : datetime.now() + timedelta(365),
+            'expiration' : exp_d if exp_d else datetime.now() + timedelta(365),
             'rename' : oldpname if oldpname else '' ,
             'newdescr' : oldpdescr if oldpdescr else ''
         }
@@ -273,13 +276,13 @@ class NewProjectView(forms.ModalFormView):
         
     def get_initial(self):
 
-        oldpname, oldpdescr = get_project_details(self.kwargs['requestid'])
+        oldpname, oldpdescr, exp_d = get_project_details(self.kwargs['requestid'])
 
         return { 
             'requestid' : self.kwargs['requestid'],
             'newname' : oldpname if oldpname else '',
             'newdescr' : oldpdescr if oldpdescr else '',
-            'expiration' : datetime.now() + timedelta(365)
+            'expiration' : exp_d if exp_d else datetime.now() + timedelta(365)
         }
 
 class RejectProjectView(forms.ModalFormView):
@@ -475,16 +478,27 @@ def get_project_details(requestid):
 
     if tmpm and tmpm.group(2):
 
-        try:
-            prj_req = PrjRequest.objects.filter(
-                registration__regid = int(tmpm.group(1)),
-                project__projectname = tmpm.group(2)
-            )[0]
-            return (prj_req.project.projectname, prj_req.project.description)
-        except Exception:
-            LOG.error("Registration error", exc_info=True)
+        with transaction.atomic():
+            try:
+                prj_obj = PrjRequest.objects.filter(
+                    registration__regid = int(tmpm.group(1)),
+                    project__projectname = tmpm.group(2)
+                )[0].project
 
-    return (None, None)
+                prj_exp = None
+                if NEW_MODEL:
+                    exp_items = PrjAttribute.objects.filter(
+                        project = prj_obj,
+                        name = ATT_PRJ_EXP
+                    )
+                    if len(exp_items):
+                        prj_exp = exp_items[0].value
+
+                return (prj_obj.projectname, prj_obj.description, prj_exp)
+            except Exception:
+                LOG.error("Registration error", exc_info=True)
+
+    return (None, None, None)
 
 
 
