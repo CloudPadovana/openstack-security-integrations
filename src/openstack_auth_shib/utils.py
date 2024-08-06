@@ -197,8 +197,12 @@ else:
 #
 # Definitions and utilities for expiration date
 #
+try:
+    YEARS_RANGE = int(getattr(settings, 'YEARS_RANGE', '10'))
+except:
+    YEARS_RANGE = 10
 
-def get_year_list(n_of_years = 25):
+def get_year_list(n_of_years = YEARS_RANGE):
     curr_year = datetime.now(timezone.utc).year
     return list(range(curr_year, curr_year + n_of_years))
 

@@ -18,7 +18,6 @@ import re
 import logging
 import string
 import secrets
-from datetime import datetime, timedelta
 
 from horizon import forms
 from horizon import messages
@@ -73,6 +72,8 @@ from openstack_auth_shib.utils import PRJ_REGEX
 from openstack_auth_shib.utils import REQID_REGEX
 from openstack_auth_shib.utils import setup_new_project
 from openstack_auth_shib.utils import add_unit_combos
+from openstack_auth_shib.utils import get_year_list
+from openstack_auth_shib.utils import FROMNOW
 
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -125,7 +126,7 @@ class PreCheckForm(forms.SelfHandlingForm):
         if 'extaccount' in init_values and init_values['extaccount']:
             self.fields['username'].widget = forms.TextInput(attrs={'readonly': 'readonly'})
         
-        self.expiration = datetime.now() + timedelta(365)
+        self.expiration = FROMNOW(365)
 
     def preprocess_prj(self, registr, data):
         pass
@@ -314,11 +315,10 @@ class GrantAllForm(PreCheckForm):
     def __init__(self, request, *args, **kwargs):
         super(GrantAllForm, self).__init__(request, *args, **kwargs)
 
-        curr_year = datetime.now().year            
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
             required=True,
-            widget=SelectDateWidget(None, list(range(curr_year, curr_year + 25)))
+            widget=SelectDateWidget(None, get_year_list())
         )
 
         self.fields['rename'] = forms.CharField(
@@ -437,12 +437,9 @@ class ForcedCheckForm(forms.SelfHandlingForm):
 
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
 
-        curr_year = datetime.now().year
-        years_list = list(range(curr_year, curr_year + 25))
-
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
-            widget=SelectDateWidget(None, years_list)
+            widget=SelectDateWidget(None, get_year_list())
         )
 
     @sensitive_variables('data')
@@ -602,12 +599,9 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
 
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
 
-        curr_year = datetime.now().year
-        years_list = list(range(curr_year, curr_year + 25))
-
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Administrator expiration date"),
-            widget=SelectDateWidget(None, years_list)
+            widget=SelectDateWidget(None, get_year_list())
         )
 
         add_unit_combos(self)
@@ -772,12 +766,9 @@ class RenewAdminForm(forms.SelfHandlingForm):
 
         self.fields['requestid'] = forms.CharField(widget=HiddenInput)
 
-        curr_year = datetime.now().year
-        years_list = list(range(curr_year, curr_year + 25))
-
         self.fields['expiration'] = forms.DateTimeField(
             label=_("Expiration date"),
-            widget=SelectDateWidget(None, years_list)
+            widget=SelectDateWidget(None, get_year_list())
         )
 
     @sensitive_variables('data')

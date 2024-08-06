@@ -55,6 +55,7 @@ from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import NOW
 from openstack_auth_shib.utils import FROMNOW
 from openstack_auth_shib.utils import PREG_ATT_MAP
+from openstack_auth_shib.utils import YEARS_RANGE
 
 from openstack_auth_shib.models import NEW_MODEL
 if NEW_MODEL:
@@ -408,7 +409,7 @@ class SubscribeForm(forms.SelfHandlingForm):
             now = NOW()
             if data['expiration'].date() < now.date():
                 raise ValidationError(_('Invalid expiration time.'))
-            if data['expiration'].year > now.year + MAX_RENEW:
+            if data['expiration'].year > now.year + YEARS_RANGE:
                 raise ValidationError(_('Invalid expiration time.'))
 
             if not 'contactper' in data:
