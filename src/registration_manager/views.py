@@ -200,9 +200,9 @@ class GrantAllView(AbstractCheckView):
             'regid' : self.get_object().registration.regid,
             'username' : self.get_object().registration.username,
             'extaccount' : self.get_object().externalid,
-            'expiration' : exp_d if exp_d else datetime.now() + timedelta(365),
-            'rename' : oldpname if oldpname else '' ,
-            'newdescr' : oldpdescr if oldpdescr else ''
+            'expiration' : exp_d,
+            'rename' : oldpname,
+            'newdescr' : oldpdescr
         }
 
 class RejectView(AbstractCheckView):
@@ -280,9 +280,9 @@ class NewProjectView(forms.ModalFormView):
 
         return { 
             'requestid' : self.kwargs['requestid'],
-            'newname' : oldpname if oldpname else '',
-            'newdescr' : oldpdescr if oldpdescr else '',
-            'expiration' : exp_d if exp_d else datetime.now() + timedelta(365)
+            'newname' : oldpname,
+            'newdescr' : oldpdescr,
+            'expiration' : exp_d
         }
 
 class RejectProjectView(forms.ModalFormView):
@@ -492,13 +492,15 @@ def get_project_details(requestid):
                         name = ATT_PRJ_EXP
                     )
                     if len(exp_items):
-                        prj_exp = exp_items[0].value
+                        prj_exp = datetime.fromisoformat(exp_items[0].value)
+                else:
+                    prj_exp = datetime.now() + timedelta(365)
 
                 return (prj_obj.projectname, prj_obj.description, prj_exp)
             except Exception:
                 LOG.error("Registration error", exc_info=True)
 
-    return (None, None, None)
+    return ('', '', datetime.now() + timedelta(365))
 
 
 
