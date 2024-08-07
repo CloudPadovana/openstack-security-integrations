@@ -345,8 +345,12 @@ class DetailsView(forms.ModalFormView):
     success_url = reverse('horizon:idmanager:registration_manager:index')
 
     def get_object(self):
-        if not hasattr(self, "_object"):
-            try:
+        if hasattr(self, "_object"):
+            return self._object
+
+        try:
+            with transaction.atomic():
+
                 tmpm = REQID_REGEX.search(self.kwargs['requestid'])
                 regid = int(tmpm.group(1))
                 prjname = tmpm.group(2) if tmpm.group(2) else None
@@ -406,10 +410,10 @@ class DetailsView(forms.ModalFormView):
 
                 self._object = tmpdict
 
-            except Exception:
-                LOG.error("Registration error", exc_info=True)
-                redirect = reverse("horizon:idmanager:registration_manager:index")
-                exceptions.handle(self.request, _('Unable to retrieve details.'), redirect=redirect)
+        except Exception:
+            LOG.error("Registration error", exc_info=True)
+            redirect = reverse("horizon:idmanager:registration_manager:index")
+            exceptions.handle(self.request, _('Unable to retrieve details.'), redirect=redirect)
 
         return self._object
 
@@ -478,8 +482,8 @@ def get_project_details(requestid):
 
     if tmpm and tmpm.group(2):
 
-        with transaction.atomic():
-            try:
+        try:
+            with transaction.atomic():
                 prj_obj = PrjRequest.objects.filter(
                     registration__regid = int(tmpm.group(1)),
                     project__projectname = tmpm.group(2)
@@ -497,8 +501,8 @@ def get_project_details(requestid):
                     prj_exp = datetime.now() + timedelta(365)
 
                 return (prj_obj.projectname, prj_obj.description, prj_exp)
-            except Exception:
-                LOG.error("Registration error", exc_info=True)
+        except Exception:
+            LOG.error("Registration error", exc_info=True)
 
     return ('', '', datetime.now() + timedelta(365))
 
