@@ -34,7 +34,6 @@ from .models import RegRequest
 from .models import PrjRequest
 from .models import UserMapping
 from .models import Expiration
-from .models import PRJ_PRIVATE
 from .models import PRJ_PUBLIC
 from .models import OS_LNAME_LEN
 from .models import OS_SNAME_LEN
@@ -54,6 +53,8 @@ from .utils import PREG_ATT_MAP
 from .models import NEW_MODEL
 if NEW_MODEL:
     from .models import PrjAttribute
+    from .utils import ATT_PRJ_CIDR
+    from .utils import ATT_PRJ_ORG
     from django.forms.widgets import SelectDateWidget
 
 LOG = logging.getLogger(__name__)
@@ -143,19 +144,12 @@ class RegistrForm(forms.SelfHandlingForm):
 
         else:
 
-            p_choices = [
-                ('selprj', _('Select existing projects')),
-                ('newprj', _('Create new project'))
-            ]
-            avail_prjs = list()
-
-            for prj_entry in Project.objects.exclude(status=PRJ_PRIVATE):
-                if prj_entry.projectid:
-                    avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
-
             self.fields['prjaction'] = forms.ChoiceField(
                 label=_('Project action'),
-                choices = p_choices,
+                choices = [
+                    ('selprj', _('Select existing projects')),
+                    ('newprj', _('Create new project'))
+                ],
                 widget=forms.Select(attrs={
                     'class': 'switchable',
                     'data-slug': 'actsource'
@@ -217,7 +211,7 @@ class RegistrForm(forms.SelfHandlingForm):
             self.fields['selprj'] = forms.MultipleChoiceField(
                 label=_('Available projects'),
                 required=False,
-                choices=avail_prjs,
+                choices=self._avail_prj_entries(),
                 widget=forms.SelectMultiple(attrs={
                     'class': 'switched',
                     'data-switch-on': 'actsource',
@@ -312,6 +306,32 @@ class RegistrForm(forms.SelfHandlingForm):
             initial='reject'
         )
 
+    def _avail_prj_entries(self):
+        avail_prjs = list()
+
+        with transaction.atomic():
+            if NEW_MODEL:
+                c_projects = set()
+                comp_rules = getattr(settings, 'COMPLIANCE_RULES', {})
+
+                cidr_list = comp_rules.get('subnets', [])
+                for p_item in PrjAttribute.objects.filter(name = ATT_PRJ_CIDR):
+                    if p_item.value in cidr_list:
+                        c_projects.add(p_item.project.projectname)
+
+                org_list = comp_rules.get('organizations', [])
+                for p_item in PrjAttribute.objects.filter(name = ATT_PRJ_ORG):
+                    if p_item.value in org_list:
+                        c_projects.add(p_item.project.projectname)
+
+            for prj_entry in Project.objects.filter(projectid__isnull = False):
+                prj_label = prj_entry.projectname
+                if prj_entry.projectname in c_projects:
+                    prj_label += " *"
+                avail_prjs.append((prj_entry.projectname, prj_label))
+
+        return avail_prjs
+        
 
     def clean(self):
         data = super(RegistrForm, self).clean()
