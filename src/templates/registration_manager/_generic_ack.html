@@ -35,6 +35,10 @@
 
 {% block modal-footer %}
     
+    <input type="button"
+           class="btn btn-primary pull-right"
+           onclick="location.href='{% url 'horizon:idmanager:registration_manager:index' %}'"
+           value="{% trans 'Cancel' %}"/> 
     <input id="okbtnid"
            class="btn btn-primary pull-right" 
            type="submit" 

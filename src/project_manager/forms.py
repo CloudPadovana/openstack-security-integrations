@@ -430,28 +430,20 @@ class SubscribeForm(forms.SelfHandlingForm):
             prjlist = list()
             if prj_action == 'selprj':
                 for project in data['selprj']:
-                    prjlist.append((project, "", PRJ_PUBLIC, False))
-            
+                    prjlist.append((project, "", False))
             elif prj_action == 'newprj':
-                prjlist.append((
-                    data['newprj'],
-                    data['prjdescr'],
-                    PRJ_PUBLIC,
-                    True
-                ))
+                prjlist.append((data['newprj'], data['prjdescr'], True))
         
-            for prjitem in prjlist:
+            for prj_name, prj_desc, to_create in prjlist:
         
                 f_status = PSTATUS_PENDING
-                if prjitem[3]:
+                if to_create:
                     try:
-
-                        prjArgs = {
-                            'projectname' : prjitem[0],
-                            'description' : prjitem[1],
-                            'status' : prjitem[2]
-                        }
-                        project = Project.objects.create(**prjArgs)
+                        project = Project.objects.create(
+                            projectname = prj_name,
+                            description = prj_desc,
+                            status = PRJ_PUBLIC
+                        )
 
                         if NEW_MODEL:
                             for k_item, v_item in PREG_ATT_MAP.items():
@@ -468,14 +460,14 @@ class SubscribeForm(forms.SelfHandlingForm):
                         })
 
                     except IntegrityError:
-                        messages.error(request, _("Project %s already exists") % prjitem[0])
-                        LOG.error("Cannot create project %s" % prjitem[0])
+                        messages.error(request, _("Project %s already exists") % prj_name)
+                        LOG.error("Cannot create project %s" % prj_name)
                         return False
                 
-                elif prjitem[0] in self.pendingProjects:
+                elif prj_name in self.pendingProjects:
                     continue
                 else:
-                    project = Project.objects.get(projectname = prjitem[0])
+                    project = Project.objects.get(projectname = prj_name)
                     if getProjectInfo(request, project)['comp_required']:
 
                         f_status = PSTATUS_CHK_COMP
