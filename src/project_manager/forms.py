@@ -61,6 +61,7 @@ from openstack_auth_shib.models import NEW_MODEL
 if NEW_MODEL:
     from openstack_auth_shib.models import PrjAttribute
     from openstack_auth_shib.utils import COURSE_ATT_MAP
+    from openstack_auth_shib.utils import ATT_PRJ_ORG
     from django.forms.widgets import SelectDateWidget
 else:
     from openstack_auth_shib.utils import encode_course_info
@@ -220,10 +221,23 @@ class EditTagsForm(forms.SelfHandlingForm):
     @sensitive_variables('data')
     def handle(self, request, data):
         try:
+            with transaction.atomic():
+                PrjAttribute.objects.filter(
+                    project__projectid = data['projectid'],
+                    name = ATT_PRJ_ORG
+                ).delete()
 
-            kclient = keystone_api.keystoneclient(request)
-            kclient.projects.update_tags(data['projectid'], [])
-            kclient.projects.update_tags(data['projectid'], data['ptags'])
+                for ptag in data['ptags']:
+                    if ptag.startswith('O='):
+                        PrjAttribute(
+                            project__projectid = data['projectid'],
+                            name = ATT_PRJ_ORG,
+                            value = ptag[2:]
+                        ).save()
+
+                kclient = keystone_api.keystoneclient(request)
+                kclient.projects.update_tags(data['projectid'], [])
+                kclient.projects.update_tags(data['projectid'], data['ptags'])
 
         except:
             LOG.error("Cannot edit tags", exc_info=True)
