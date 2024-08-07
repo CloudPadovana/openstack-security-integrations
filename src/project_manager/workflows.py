@@ -230,7 +230,13 @@ class ExtCreateProject(baseWorkflows.CreateProject):
 
         self._update_project_members(request, data, project.id)
         self._update_project_groups(request, data, project.id)
-        setup_new_project(request, project.id, project.name, data)
+        try:
+            with transaction.atomic():
+                setup_new_project(request, project.id, project.name, data)
+        except:
+            LOG.error("Cannot setup new project", exc_info=True)
+            messages.error(request, _("Cannot setup new project"))
+
         return True
 
 

@@ -225,6 +225,9 @@ PREG_ATT_MAP = {
     ATT_PRJ_CPER : 'contactper'
 }
 
+ATT_PRJ_CIDR = 2011
+ATT_PRJ_ORG = 2012
+
 #
 # Project post creation
 #
@@ -307,6 +310,8 @@ def setup_new_project(request, project_id, project_name, data):
     unit_data = cloud_table[unit_id]
     prj_cname = re.sub(r'\s+', "-", project_name)
     flow_step = 0
+    prj_subnet_cidr = None
+    prj_org = None
 
     ###########################################################################
     # Quota
@@ -382,6 +387,7 @@ def setup_new_project(request, project_id, project_name, data):
             'name' : "sub-%s-lan" % prj_cname
         }
         prj_sub = neutron_api.subnet_create(request, prj_net['id'], **net_args)
+        prj_subnet_cidr = prj_sub['cidr']
         flow_step += 1
 
         if 'lan_router' in unit_data:
@@ -458,6 +464,19 @@ def setup_new_project(request, project_id, project_name, data):
     except:
         LOG.error("Cannot add organization tags", exc_info=True)
         messages.error(request, _("Cannot add organization tags"))
+
+    ###########################################################################
+    # Project attributes in DB
+    ###########################################################################
+    if NEW_MODEL:
+        # no transactions here
+        prj_obj = Project.objects.get(project_name)
+        if prj_subnet_cidr:
+            PrjAttribute(project = prj_obj, name = ATT_PRJ_CIDR,
+                         value = prj_subnet_cidr).save()
+        if prj_org:
+            PrjAttribute(project = prj_obj, name = ATT_PRJ_ORG,
+                         value = prj_org).save()
 
 def add_unit_combos(newprjform):
 
@@ -658,6 +677,21 @@ def getProjectInfo(request, project):
 
     comp_rules = getattr(settings, 'COMPLIANCE_RULES', None)
     if not comp_rules:
+        return result
+
+    if NEW_MODEL:
+        # no transactions here
+        for attr in PrjAttribute.objects.filter(project = project):
+            if attr.name == ATT_PRJ_CIDR:
+                for o_item in comp_rules.get('organizations', []):
+                    if o_item == attr.value:
+                        result['comp_required'] = True
+                        return result
+            if attr.name == ATT_PRJ_ORG:
+                for n_item in comp_rules.get('subnets', []):
+                    if n_item == attr.value:
+                        result['comp_required'] = True
+                        return result
         return result
 
     try:
