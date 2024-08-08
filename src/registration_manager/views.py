@@ -398,11 +398,8 @@ class DetailsView(forms.ModalFormView):
                     tmpdict['phone'] = reg_item.phone
 
                 for prj_item in prj_list:
-                    if prj_item.projectid:
-                        tmpdict['memberof'].append(getProjectInfo(self.request, prj_item))
-                    else:
-                        tmpt = (prj_item.projectname, prj_item.description)
-                        tmpdict['newprojects'].append(tmpt)
+                    t_key = 'memberof' if prj_item.projectid else 'newprojects'
+                    tmpdict[t_key].append(getProjectInfo(self.request, prj_item))
 
                 self._object = tmpdict
 

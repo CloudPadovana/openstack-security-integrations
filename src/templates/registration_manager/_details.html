@@ -67,8 +67,12 @@
     {% if newprojects %}
     <h3>{% trans "Requests for project creation" %}:</h3>
     <ul>
-        {% for prjname, prjdescr in newprojects %}
-        <li>{{ prjname }}<br/>{{ prjdescr }}</li>
+        {% for prjitem in newprojects %}
+        <li>
+            {{ prjitem.name }}<br/>
+            {{ prjitem.descr }}
+            {% if prjitem.exp_date %}<br/> {% trans "Expiration" %} {{ prjitem.exp_date }}{% endif %}
+        </li>
         {% endfor %}
     </ul>
     {% endif %}

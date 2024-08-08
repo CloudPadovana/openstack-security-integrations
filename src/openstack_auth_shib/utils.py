@@ -673,7 +673,12 @@ class AAIDBRouter:
 
 
 def getProjectInfo(request, project):
-    result = { 'name' : project.projectname, 'comp_required' : False }
+    result = {
+        'name' : project.projectname,
+        'descr' : project.description,
+        'comp_required' : False,
+        'exp_date' : None
+    }
 
     comp_rules = getattr(settings, 'COMPLIANCE_RULES', None)
     if not comp_rules:
@@ -682,6 +687,7 @@ def getProjectInfo(request, project):
     if NEW_MODEL:
         # no transactions here
         for attr in PrjAttribute.objects.filter(project = project):
+
             if attr.name == ATT_PRJ_CIDR:
                 for o_item in comp_rules.get('organizations', []):
                     if o_item == attr.value:
@@ -692,6 +698,9 @@ def getProjectInfo(request, project):
                     if n_item == attr.value:
                         result['comp_required'] = True
                         return result
+
+            if attr.name == ATT_PRJ_EXP:
+                result['exp_date'] = datetime.fromisoformat(attr.value)
         return result
 
     try:
