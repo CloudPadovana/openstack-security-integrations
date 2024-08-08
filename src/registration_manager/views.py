@@ -35,7 +35,6 @@ if NEW_MODEL:
 
 from openstack_auth_shib.models import RSTATUS_PENDING
 from openstack_auth_shib.models import RSTATUS_REMINDACK
-from openstack_auth_shib.models import PRJ_PRIVATE
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PSTATUS_RENEW_ATTEMPT
@@ -128,8 +127,6 @@ class MainView(tables.DataTableView):
                         rData.code = RegistrData.EX_USR_NEW_PRJ
                     rData.project = prjReq.project.projectname
                     requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
-                    if prjReq.project.status == PRJ_PRIVATE:
-                        rData.project += " (%s)" % _("Private")
 
                 rData.requestid = requestid
                 
@@ -404,8 +401,7 @@ class DetailsView(forms.ModalFormView):
                     if prj_item.projectid:
                         tmpdict['memberof'].append(getProjectInfo(self.request, prj_item))
                     else:
-                        is_priv = prj_item.status == PRJ_PRIVATE
-                        tmpt = (prj_item.projectname, prj_item.description, is_priv)
+                        tmpt = (prj_item.projectname, prj_item.description)
                         tmpdict['newprojects'].append(tmpt)
 
                 self._object = tmpdict

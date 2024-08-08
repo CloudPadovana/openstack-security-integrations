@@ -67,8 +67,8 @@
     {% if newprojects %}
     <h3>{% trans "Requests for project creation" %}:</h3>
     <ul>
-        {% for prjname, prjdescr, is_priv in newprojects %}
-        <li>{{ prjname }}{% if is_priv %} ({% trans "Private" %}){% endif %}<br/>{{ prjdescr }}</li>
+        {% for prjname, prjdescr in newprojects %}
+        <li>{{ prjname }}<br/>{{ prjdescr }}</li>
         {% endfor %}
     </ul>
     {% endif %}
