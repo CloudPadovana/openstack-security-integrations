@@ -39,6 +39,10 @@ PSTATUS_PENDING = 1
 #
 PSTATUS_CHK_COMP = 2
 #
+# Project request for admin election
+#
+PSTATUS_ADM_ELECT = 5
+#
 # Subscription renewal to be handled by cloud admin first
 #
 PSTATUS_RENEW_ADMIN = 10

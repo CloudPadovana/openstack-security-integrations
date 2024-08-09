@@ -34,6 +34,9 @@ from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import PSTATUS_ADM_ELECT
+from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
@@ -114,10 +117,74 @@ class DeleteMemberAction(tables.DeleteAction):
             LOG.error("Grant revoke error", exc_info=True)
             messages.error(request, _('Unable to delete member from tenant.'))
 
+class ProposeAdminAction(tables.Action):
+    name = "proposeadminlink"
+    verbose_name = _("Propose admin")
+    
+    @staticmethod
+    def action_present(count):
+        return ngettext_lazy(
+            "Propose administrator",
+            "Propose administrators",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return ngettext_lazy(
+            "Proposed administrator",
+            "Proposed administrators",
+            count
+        )
+
+    def allowed(self, request, datum):
+        return not datum.is_t_admin
+
+    def single(self, data_table, request, obj_id):
+        try:
+            with transaction.atomic():
+                registration = Registration.objects.filter(userid = obj_id)[0]
+                project = Project.objects.get(request.user.tenant_name)
+                q_args = {
+                    'registration' : registration,
+                    'project' : project,
+                    'flowstatus__in' : range(PSTATUS_RENEW_MEMB, PSTATUS_RENEW_DISC + 1)
+                }  
+                if PrjRequest.objects.filter(**q_args).count() > 0:
+                    messages.error(request, _('Unable to propose the administrator: user is going to expire.'))
+
+                PrjRequest(
+                    registration = registration,
+                    project = project,
+                    flowstatus = PSTATUS_ADM_ELECT,
+                    notes = ""
+                ).save()
+                
+                # TODO missing notification to cloud admin
+        except:
+            LOG.error("Propose admin error", exc_info=True)
+            messages.error(request, _('Unable to propose an administrator.'))
+
 class DemoteUserAction(tables.Action):
     name = "demote_user"
     verbose_name = _("Demote user")
     
+    @staticmethod
+    def action_present(count):
+        return ngettext_lazy(
+            "Demote  administrator",
+            "Demote  administrators",
+            count
+        )
+
+    @staticmethod
+    def action_past(count):
+        return ngettext_lazy(
+            "Demoted  administrator",
+            "Demoted  administrators",
+            count
+        )
+
     def allowed(self, request, datum):
         return datum.is_t_admin and datum.num_of_admins > 1
 
@@ -213,6 +280,7 @@ class MemberTable(tables.DataTable):
         name = "member_table"
         verbose_name = _("Project members")
         row_actions = (
+            ProposeAdminAction,
             DemoteUserAction,
             ChangeExpAction,
             DeleteMemberAction,)
