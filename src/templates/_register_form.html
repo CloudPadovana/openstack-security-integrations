@@ -32,6 +32,15 @@
     <fieldset>
       {% include "horizon/common/_form_fields.html" %}
     </fieldset>
+    <div class="alert alert-info">
+        <p>{% trans "Available projects marked with * require INFN rules compliance" %}</p>
+        <p>
+            {% trans "For further details see the " %}
+            <a href="https://userguide.cloudveneto.it/en/latest/Registration.html#prerequisites-for-using-infn-resources">
+                {% trans "user guide" %}
+            </a>
+        </p>
+    </div>
   </div>
   <div class="right">
     <h3>{% trans "AUP" %}</h3>

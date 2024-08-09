@@ -215,7 +215,7 @@ class RegistrForm(forms.SelfHandlingForm):
                 widget=forms.SelectMultiple(attrs={
                     'class': 'switched',
                     'data-switch-on': 'actsource',
-                    'data-actsource-selprj': _('Select existing project')
+                    'data-actsource-selprj': _('Available projects')
                 }),
             )
 
@@ -325,9 +325,9 @@ class RegistrForm(forms.SelfHandlingForm):
                         c_projects.add(p_item.project.projectname)
 
             for prj_entry in Project.objects.filter(projectid__isnull = False):
-                prj_label = prj_entry.projectname
-                if prj_entry.projectname in c_projects:
-                    prj_label += " *"
+                prj_label = "* " if prj_entry.projectname in c_projects else "  "
+                prj_label += prj_entry.projectname
+
                 avail_prjs.append((prj_entry.projectname, prj_label))
 
         return avail_prjs
