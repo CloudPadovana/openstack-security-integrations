@@ -24,7 +24,7 @@ from django.utils.translation import ngettext_lazy
 
 from horizon import tables
 from horizon import messages
-from horizon.utils import functions as horizon_utils
+from horizon.utils import functions as utils
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
@@ -114,18 +114,21 @@ class DeleteMemberAction(tables.DeleteAction):
             LOG.error("Grant revoke error", exc_info=True)
             messages.error(request, _('Unable to delete member from tenant.'))
 
-class DemoteUserAction(tables.Action):
-    name = "demote_user"
-    verbose_name = _("Demote user")
+class ToggleRoleAction(tables.Action):
+    name = "toggle_role"
+    verbose_name = _("Toggle Role")
     
     def allowed(self, request, datum):
-        return datum.is_t_admin and datum.num_of_admins > 1
+        return not (datum.is_t_admin and datum.num_of_admins == 1)
 
     def single(self, data_table, request, obj_id):
         
         try:
-            if not TENANTADMIN_ROLE in [ r['name'] for r in request.user.roles ]:
-                raise Exception('Not authorized for demoting users')
+        
+            t_role_id = ''
+            for role in request.user.roles:
+                if role['name'] == TENANTADMIN_ROLE:
+                    t_role_id = get_admin_roleid(request)
             
             roles_obj = client_factory(request).roles
             arg_dict = {
@@ -140,42 +143,64 @@ class DemoteUserAction(tables.Action):
             admin_email = tmpres[0].email if tmpres else None
 
             datum = data_table.get_object_by_id(obj_id)
+            if datum.is_t_admin:
 
-            with transaction.atomic():
+                with transaction.atomic():
 
-                PrjRole.objects.filter(
-                    registration__userid=obj_id,
-                    project__projectname=request.user.tenant_name
-                ).delete()
+                    PrjRole.objects.filter(
+                        registration__userid=obj_id,
+                        project__projectname=request.user.tenant_name
+                    ).delete()
 
-                if datum.num_of_roles == 1:
-                    missing_default = True
-                    for item in roles_obj.list():
-                        if item.name == DEFAULT_ROLE:
-                            roles_obj.grant(item.id, **arg_dict)
-                            missing_default = False
-                    if missing_default:
-                        raise Exception('Cannot swith to member role')
+                    if datum.num_of_roles == 1:
+                        missing_default = True
+                        for item in roles_obj.list():
+                            if item.name == DEFAULT_ROLE:
+                                roles_obj.grant(item.id, **arg_dict)
+                                missing_default = False
+                        if missing_default:
+                            raise Exception('Cannot swith to member role')
 
-                roles_obj.revoke(get_admin_roleid(request), **arg_dict)
+                    roles_obj.revoke(t_role_id, **arg_dict)
 
-            noti_params = {
-                'admin_address' : admin_email,
-                'project' : request.user.tenant_name,
-                's_role' : _('Project manager'),
-                'd_role' : _('Project user')
-            }
-            notifyUser(request=request, rcpt=member_email, action=CHANGED_MEMBER_ROLE, context=noti_params,
-                       dst_project_id=request.user.project_id, dst_user_id=obj_id)
+                noti_params = {
+                    'admin_address' : admin_email,
+                    'project' : request.user.tenant_name,
+                    's_role' : _('Project manager'),
+                    'd_role' : _('Project user')
+                }
+                notifyUser(request=request, rcpt=member_email, action=CHANGED_MEMBER_ROLE, context=noti_params,
+                           dst_project_id=request.user.project_id, dst_user_id=obj_id)
+            
+            else:
+
+                with transaction.atomic():
+
+                    prjRole = PrjRole()
+                    prjRole.registration = Registration.objects.filter(userid=obj_id)[0]
+                    prjRole.project = Project.objects.get(projectname=request.user.tenant_name)
+                    prjRole.roleid = t_role_id
+                    prjRole.save()
+
+                    roles_obj.grant(t_role_id, **arg_dict)
+
+                noti_params = {
+                    'admin_address' : admin_email,
+                    'project' : request.user.tenant_name,
+                    's_role' : _('Project user'),
+                    'd_role' : _('Project manager')
+                }
+                notifyUser(request=request, rcpt=member_email, action=CHANGED_MEMBER_ROLE, context=noti_params,
+                           dst_project_id=request.user.project_id, dst_user_id=obj_id)
 
         except:
-            LOG.error("Demote user error", exc_info=True)
-            messages.error(request, _('Unable to demote the user.'))
+            LOG.error("Toggle role error", exc_info=True)
+            messages.error(request, _('Unable to toggle the role.'))
            
         if obj_id == request.user.id:
             response = shortcuts.redirect(reverse('logout'))
             msg = _("Roles changed. Please log in again to continue.")
-            horizon_utils.add_logout_reason(request, response, msg)
+            utils.add_logout_reason(request, response, msg)
             return response
             
         return shortcuts.redirect(reverse('horizon:idmanager:member_manager:index'))
@@ -212,10 +237,7 @@ class MemberTable(tables.DataTable):
     class Meta:
         name = "member_table"
         verbose_name = _("Project members")
-        row_actions = (
-            DemoteUserAction,
-            ChangeExpAction,
-            DeleteMemberAction,)
+        row_actions = (ToggleRoleAction, ChangeExpAction, DeleteMemberAction,)
         table_actions = (SendMessageAction,)
 
     def get_object_id(self, datum):
