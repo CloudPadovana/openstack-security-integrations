@@ -221,24 +221,34 @@ class EditTagsForm(forms.SelfHandlingForm):
     @sensitive_variables('data')
     def handle(self, request, data):
         try:
+            o_tag = None
+            for ptag in data['ptags']:
+                if ptag.startswith('O='):
+                    o_tag = ptag[2:]
+
+            if not NEW_MODEL or not o_tag:
+                kclient = keystone_api.keystoneclient(request)
+                kclient.projects.update_tags(data['projectid'], [])
+                kclient.projects.update_tags(data['projectid'], data['ptags'])
+                return True
+
             with transaction.atomic():
-                PrjAttribute.objects.filter(
+                n_up = PrjAttribute.objects.filter(
                     project__projectid = data['projectid'],
                     name = ATT_PRJ_ORG
-                ).delete()
+                ).update(value = o_tag)
 
-                for ptag in data['ptags']:
-                    if ptag.startswith('O='):
-                        PrjAttribute(
-                            project__projectid = data['projectid'],
-                            name = ATT_PRJ_ORG,
-                            value = ptag[2:]
-                        ).save()
+                if n_up == 0:
+                    c_prj = Project.objects.filter(projectid = data['projectid'])[0]
+                    PrjAttribute(
+                        project = c_prj,
+                        name = ATT_PRJ_ORG,
+                        value = o_tag
+                    ).save()
 
                 kclient = keystone_api.keystoneclient(request)
                 kclient.projects.update_tags(data['projectid'], [])
                 kclient.projects.update_tags(data['projectid'], data['ptags'])
-
         except:
             LOG.error("Cannot edit tags", exc_info=True)
             messages.error(request, _("Cannot edit tags"))

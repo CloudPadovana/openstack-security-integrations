@@ -688,12 +688,12 @@ def getProjectInfo(request, project):
         # no transactions here
         for attr in PrjAttribute.objects.filter(project = project):
 
-            if attr.name == ATT_PRJ_CIDR:
+            if attr.name == ATT_PRJ_ORG:
                 for o_item in comp_rules.get('organizations', []):
                     if o_item == attr.value:
                         result['comp_required'] = True
                         return result
-            if attr.name == ATT_PRJ_ORG:
+            if attr.name == ATT_PRJ_CIDR:
                 for n_item in comp_rules.get('subnets', []):
                     if n_item == attr.value:
                         result['comp_required'] = True
