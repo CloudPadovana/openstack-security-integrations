@@ -52,7 +52,7 @@ class RegistrData:
 
         self.requestid = kwargs.get('requestid',None)
         self.code = int(kwargs.get('code', '0'))
-        self.project = "-"
+        self.project = kwargs.get('projectname', '-')
         self.notes = None
         if 'registration' in kwargs:
             registration = kwargs['registration']
