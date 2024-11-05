@@ -39,6 +39,7 @@ from .models import OS_LNAME_LEN
 from .models import OS_SNAME_LEN
 from .models import PWD_LEN
 from .models import EMAIL_LEN
+from .models import DESCR_LEN
 from .models import PSTATUS_REG
 from .models import PSTATUS_PENDING
 from .notifications import notifyAdmin, REGISTR_AVAIL_TYPE
@@ -170,6 +171,7 @@ class RegistrForm(forms.SelfHandlingForm):
             self.fields['prjdescr'] = forms.CharField(
                 label=_("Project description"),
                 required=False,
+                max_length=DESCR_LEN,
                 widget=forms.widgets.Textarea(attrs={
                     'class': 'switched',
                     'data-switch-on': 'actsource',

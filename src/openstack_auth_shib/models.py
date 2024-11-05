@@ -86,6 +86,7 @@ OS_SNAME_LEN = 64
 EXT_ACCT_LEN = OS_LNAME_LEN
 EMAIL_LEN = 255
 PWD_LEN = 64
+DESCR_LEN = 500
 
 # Persistent data
 class Registration(models.Model):

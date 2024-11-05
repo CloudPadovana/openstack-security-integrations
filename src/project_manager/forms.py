@@ -30,6 +30,7 @@ from openstack_dashboard.api import keystone as keystone_api
 
 from openstack_auth_shib.models import OS_SNAME_LEN
 from openstack_auth_shib.models import OS_LNAME_LEN
+from openstack_auth_shib.models import DESCR_LEN
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
@@ -350,6 +351,7 @@ class SubscribeForm(forms.SelfHandlingForm):
         self.fields['prjdescr'] = forms.CharField(
             label = _("Project description"),
             required = False,
+            max_length = DESCR_LEN,
             widget = forms.widgets.Textarea(attrs = {
                 'class': 'switched',
                 'data-switch-on': 'actsource',
