@@ -220,11 +220,6 @@ except:
 ATT_PRJ_EXP = 2001
 ATT_PRJ_CPER = 2002
 
-PREG_ATT_MAP = {
-    ATT_PRJ_EXP : 'expiration',
-    ATT_PRJ_CPER : 'contactper'
-}
-
 ATT_PRJ_CIDR = 2011
 ATT_PRJ_ORG = 2012
 

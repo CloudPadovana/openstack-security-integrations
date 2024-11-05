@@ -55,7 +55,8 @@ from openstack_auth_shib.utils import getProjectInfo
 from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import NOW
 from openstack_auth_shib.utils import FROMNOW
-from openstack_auth_shib.utils import PREG_ATT_MAP
+from openstack_auth_shib.utils import ATT_PRJ_EXP
+from openstack_auth_shib.utils import ATT_PRJ_CPER
 from openstack_auth_shib.utils import YEARS_RANGE
 
 from openstack_auth_shib.models import NEW_MODEL
@@ -472,9 +473,10 @@ class SubscribeForm(forms.SelfHandlingForm):
                         )
 
                         if NEW_MODEL:
-                            for k_item, v_item in PREG_ATT_MAP.items():
-                                PrjAttribute(project = project, name = k_item,
-                                             value = str(data[v_item])).save()
+                            PrjAttribute(project = project, name = ATT_PRJ_EXP,
+                                         value = data['expiration'].isoformat()).save()
+                            PrjAttribute(project = project, name = ATT_PRJ_CPER,
+                                         value = data['contactper']).save()
 
                         noti_buffer.append({
                             'cloud_level' : True,
