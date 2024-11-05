@@ -35,6 +35,14 @@
     <dt>{% trans "Tags" %}</dt>
     <dd>{{ prj_tags }}</dd>
     {% endif %}
+    {% if expiration %}
+    <dt>{% trans "Expiration date" %}</dt>
+    <dd>{{ expiration }}</dd>
+    {% endif %}
+    {% if cper %}
+    <dt>{% trans "Contact person" %}</dt>
+    <dd>{{ cper }}</dd>
+    {% endif %}
   </dl>
 
   {% if admin_list %}

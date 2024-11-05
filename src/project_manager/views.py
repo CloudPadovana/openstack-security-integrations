@@ -52,6 +52,9 @@ from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.models import NEW_MODEL
 if NEW_MODEL:
     from openstack_auth_shib.utils import get_course_info
+    from openstack_auth_shib.utils import ATT_PRJ_EXP
+    from openstack_auth_shib.utils import ATT_PRJ_CPER
+    from openstack_auth_shib.models import PrjAttribute
 else:
     from openstack_auth_shib.utils import parse_course_info
 
@@ -205,7 +208,15 @@ class DetailProjectView(baseViews.DetailProjectView):
                     }
                     for x in EMail.objects.filter(registration__in = q_list)
                 ]
-            context['admin_list'] = admin_list
+                context['admin_list'] = admin_list
+
+                if NEW_MODEL:
+                     for attr in PrjAttribute.objects.filter(project__projectid = project.id):
+                        if attr.name == ATT_PRJ_EXP:
+                            context['expiration'] = attr.value
+                        elif attr.name == ATT_PRJ_CPER:
+                            context['cper'] = attr.value
+
         except:
             LOG.error("Cannot retrieve project details", exc_info=True)
 
