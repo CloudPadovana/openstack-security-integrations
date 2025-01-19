@@ -687,14 +687,13 @@ def getProjectInfo(request, project):
                 for o_item in comp_rules.get('organizations', []):
                     if o_item == attr.value:
                         result['comp_required'] = True
-                        return result
-            if attr.name == ATT_PRJ_CIDR:
-                for n_item in comp_rules.get('subnets', []):
-                    if n_item == attr.value:
-                        result['comp_required'] = True
-                        return result
 
-            if attr.name == ATT_PRJ_EXP:
+            elif attr.name == ATT_PRJ_CIDR:
+                for n_item in comp_rules.get('subnets', []):
+                    if attr.value.startswith(n_item):
+                        result['comp_required'] = True
+
+            elif attr.name == ATT_PRJ_EXP:
                 result['exp_date'] = datetime.fromisoformat(attr.value)
         return result
 
