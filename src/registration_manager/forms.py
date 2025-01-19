@@ -19,6 +19,8 @@ import logging
 import string
 import secrets
 
+from datetime import datetime
+
 from horizon import forms
 from horizon import messages
 
@@ -76,6 +78,7 @@ from openstack_auth_shib.utils import setup_new_project
 from openstack_auth_shib.utils import add_unit_combos
 from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import FROMNOW
+from openstack_auth_shib.utils import ATT_PRJ_EXP
 
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -813,6 +816,11 @@ class RenewAdminForm(forms.SelfHandlingForm):
                         project = role.project,
                         flowstatus = PSTATUS_RENEW_ADMIN
                     ).delete()
+
+                    PrjAttribute.objects.filter(
+                        project = role.project,
+                        name = ATT_PRJ_EXP
+                    ).update(value = datetime.isoformat(data['expiration']))
 
                 else:
                     Expiration.objects.update_expiration(
