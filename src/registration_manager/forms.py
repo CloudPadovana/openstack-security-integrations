@@ -53,6 +53,8 @@ from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRole
+if NEW_MODEL:
+    from openstack_auth_shib.models import PrjAttribute
 
 from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import PSTATUS_PENDING
@@ -775,54 +777,70 @@ class RenewAdminForm(forms.SelfHandlingForm):
     def handle(self, request, data):
 
         try:
-        
-            with transaction.atomic():
 
-                usr_and_prj = REQID_REGEX.search(data['requestid'])
-                regid = int(usr_and_prj.group(1))
+            u_infos = list()
+
+            usr_and_prj = REQID_REGEX.search(data['requestid'])
+            regid = int(usr_and_prj.group(1))
+            prjname = usr_and_prj.group(2)
+
+            with transaction.atomic():
 
                 prj_reqs = PrjRequest.objects.filter(
                     registration__regid = regid,
-                    project__projectname = usr_and_prj.group(2),
+                    project__projectname = ,
                     flowstatus__in = [ PSTATUS_RENEW_ADMIN, PSTATUS_RENEW_MEMB ]
                 )
                 
                 if len(prj_reqs) == 0:
                     return True
                 
-                Expiration.objects.update_expiration(
-                    registration__regid = regid,
-                    project__projectname = usr_and_prj.group(2),
-                    expdate=data['expiration']
-                )
-                
-                #
-                # Update the max expiration per user
-                #
-                user_reg = Registration.objects.get(regid=regid)
-                if data['expiration'] > user_reg.expdate:
-                    user_reg.expdate = data['expiration']
-                    user_reg.save()
+                # renew admin and forced-renew normal member
+                if NEW_MODEL and prj_reqs[0].flowstatus == PSTATUS_RENEW_ADMIN:
+                    # Renew all project admins
+                    for role in PrjRole.objects.filter(project__projectname = prjname):
+                        Expiration.objects.update_expiration(
+                            registration = role.registration,
+                            project = role.project,
+                            expdate=data['expiration']
+                        )
+                    tmpres = EMail.objects.filter(registration=role.registration)
+                    if len(tmpres) > 0:
+                        u_infos.append((role.registration.username, tmpres[0].email))
 
-                tmpres = EMail.objects.filter(registration=user_reg)
-                user_mail = tmpres[0].email if len(tmpres) > 0 else None
+                    PrjRequest.objects.filter(
+                        registration = role.registration,
+                        project = role.project,
+                        flowstatus = PSTATUS_RENEW_ADMIN
+                    ).delete()
 
-                #
-                # Clear requests
-                #
-                prj_reqs.delete()
+                else:
+                    Expiration.objects.update_expiration(
+                        registration__regid = regid,
+                        project__projectname = prjname,
+                        expdate=data['expiration']
+                    )
+
+                    tmpres = EMail.objects.filter(registration=user_reg)
+                    if len(tmpres) > 0:
+                        u_infos.append((user_reg.username, tmpres[0].email))
+                    #
+                    # Clear requests
+                    #
+                    prj_reqs.delete()
 
             #
             # send notification to the project admin
             #
-            noti_params = {
-                'username' : user_reg.username,
-                'project' : usr_and_prj.group(2),
-                'expiration' : data['expiration'].strftime("%d %B %Y")
-            }
+            for uname, email in u_infos:
+                noti_params = {
+                    'username' : uname,
+                    'project' : prjname,
+                    'expiration' : data['expiration'].strftime("%d %B %Y")
+                }
 
-            notifyUser(request=request, rcpt=user_mail, action=USER_RENEWED_TYPE,
-                       context=noti_params, dst_user_id=user_reg.userid)
+                notifyUser(request=request, rcpt=email, action=USER_RENEWED_TYPE,
+                           context=noti_params, dst_user_id=user_reg.userid)
 
         except:
             LOG.error("Cannot renew project admin", exc_info=True)
