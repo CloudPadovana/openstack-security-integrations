@@ -69,7 +69,7 @@ class ExtPrjItem:
         self.name = prj_data.name
         self.description = prj_data.description if prj_data.description else ""
         self.enabled = prj_data.enabled
-        self.tags = None
+        self.tags = set()
         self.status = PRJ_PRIVATE
         self.managed = False
         self.isadmin = False
@@ -129,15 +129,9 @@ class IndexView(baseViews.IndexView):
                     is_curr_admin = self.request.user.tenant_name == prjname
                     is_curr_admin = is_curr_admin and prj_table[prjname].isadmin
 
-                    show_tags = self.request.user.is_superuser and settings.HORIZON_CONFIG.get('show_tags', False)
-                    show_tags = show_tags or is_curr_admin
-
-                    if prj_item.projectid and show_tags:
+                    if prj_item.projectid and is_curr_admin:
                         prj_table[prjname].tags = set(kprj_man.list_tags(prj_item.projectid))
-                    else:
-                        prj_table[prjname].tags = set()
 
-                    if is_curr_admin:
                         for item in course_table.keys():
                             if (ORG_TAG_FMT % item) in prj_table[prjname].tags:
                                 prj_table[prjname].handle_course = True
