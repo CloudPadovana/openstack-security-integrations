@@ -220,11 +220,6 @@ except:
 ATT_PRJ_EXP = 2001
 ATT_PRJ_CPER = 2002
 
-PREG_ATT_MAP = {
-    ATT_PRJ_EXP : 'expiration',
-    ATT_PRJ_CPER : 'contactper'
-}
-
 ATT_PRJ_CIDR = 2011
 ATT_PRJ_ORG = 2012
 
@@ -688,18 +683,17 @@ def getProjectInfo(request, project):
         # no transactions here
         for attr in PrjAttribute.objects.filter(project = project):
 
-            if attr.name == ATT_PRJ_CIDR:
+            if attr.name == ATT_PRJ_ORG:
                 for o_item in comp_rules.get('organizations', []):
                     if o_item == attr.value:
                         result['comp_required'] = True
-                        return result
-            if attr.name == ATT_PRJ_ORG:
-                for n_item in comp_rules.get('subnets', []):
-                    if n_item == attr.value:
-                        result['comp_required'] = True
-                        return result
 
-            if attr.name == ATT_PRJ_EXP:
+            elif attr.name == ATT_PRJ_CIDR:
+                for n_item in comp_rules.get('subnets', []):
+                    if attr.value.startswith(n_item):
+                        result['comp_required'] = True
+
+            elif attr.name == ATT_PRJ_EXP:
                 result['exp_date'] = datetime.fromisoformat(attr.value)
         return result
 

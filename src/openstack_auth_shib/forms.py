@@ -39,6 +39,7 @@ from .models import OS_LNAME_LEN
 from .models import OS_SNAME_LEN
 from .models import PWD_LEN
 from .models import EMAIL_LEN
+from .models import DESCR_LEN
 from .models import PSTATUS_REG
 from .models import PSTATUS_PENDING
 from .notifications import notifyAdmin, REGISTR_AVAIL_TYPE
@@ -48,7 +49,8 @@ from .utils import get_year_list
 from .utils import MAX_RENEW
 from .utils import NOW
 from .utils import FROMNOW
-from .utils import PREG_ATT_MAP
+from .utils import ATT_PRJ_EXP
+from .utils import ATT_PRJ_CPER
 
 from .models import NEW_MODEL
 if NEW_MODEL:
@@ -170,6 +172,7 @@ class RegistrForm(forms.SelfHandlingForm):
             self.fields['prjdescr'] = forms.CharField(
                 label=_("Project description"),
                 required=False,
+                max_length=DESCR_LEN,
                 widget=forms.widgets.Textarea(attrs={
                     'class': 'switched',
                     'data-switch-on': 'actsource',
@@ -516,9 +519,10 @@ class RegistrForm(forms.SelfHandlingForm):
                         project = Project.objects.create(**prjArgs)
 
                         if NEW_MODEL:
-                            for k_item, v_item in PREG_ATT_MAP.items():
-                                PrjAttribute(project = project, name = k_item,
-                                             value = str(data[v_item])).save()
+                            PrjAttribute(project = project, name = ATT_PRJ_EXP,
+                                         value = data['expiration'].isoformat()).save()
+                            PrjAttribute(project = project, name = ATT_PRJ_CPER,
+                                         value = data['contactper']).save()
 
                     else:
                         project = Project.objects.get(projectname=prjitem[0])

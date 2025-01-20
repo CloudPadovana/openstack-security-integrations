@@ -69,7 +69,6 @@ class MainView(tables.DataTableView):
     def get_data(self):
     
         reqTable = dict()
-        
         with transaction.atomic():
         
             regid_pending = set()
@@ -87,15 +86,18 @@ class MainView(tables.DataTableView):
 
             for prjReq in PrjRequest.objects.all():
 
-                rData = RegistrData(registration = prjReq.registration)
                 curr_regid = prjReq.registration.regid
+
+                rData = RegistrData(
+                    registration = prjReq.registration,
+                    projectname = prjReq.project.projectname,
+                    requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
+                )
 
                 if prjReq.flowstatus >= PSTATUS_CHK_COMP:
 
-                    rData.project = prjReq.project.projectname
-                    rData.notes = prjReq.notes
-                    requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
-                    
+                    rData.notes = prjReq.notes if prjReq.flowstatus != PSTATUS_CHK_COMP else None
+
                     if prjReq.flowstatus == PSTATUS_CHK_COMP:
                         rData.code = RegistrData.CHK_COMP
                     elif prjReq.flowstatus == PSTATUS_RENEW_ATTEMPT:
@@ -113,11 +115,8 @@ class MainView(tables.DataTableView):
 
                     if curr_regid in regid_pending:
                         rData.code = RegistrData.NEW_USR_EX_PRJ
-                        requestid = "%d:" % curr_regid
                     else:
                         rData.code = RegistrData.EX_USR_EX_PRJ
-                        rData.project = prjReq.project.projectname
-                        requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
 
                 else:
 
@@ -125,13 +124,9 @@ class MainView(tables.DataTableView):
                         rData.code = RegistrData.NEW_USR_NEW_PRJ
                     else:
                         rData.code = RegistrData.EX_USR_NEW_PRJ
-                    rData.project = prjReq.project.projectname
-                    requestid = "%d:%s" % (curr_regid, prjReq.project.projectname)
 
-                rData.requestid = requestid
-                
-                if not requestid in reqTable:
-                    reqTable[requestid] = rData
+                if not rData.requestid in reqTable:
+                    reqTable[rData.requestid] = rData
 
         result = list(reqTable.values())
         result.sort()
@@ -468,9 +463,6 @@ class CompAckView(forms.ModalFormView):
 
 def get_project_details(requestid):
 
-    #
-    # TODO investigate: called twice
-    #
     tmpm = REQID_REGEX.search(requestid)
 
     if tmpm and tmpm.group(2):

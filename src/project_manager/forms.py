@@ -30,6 +30,7 @@ from openstack_dashboard.api import keystone as keystone_api
 
 from openstack_auth_shib.models import OS_SNAME_LEN
 from openstack_auth_shib.models import OS_LNAME_LEN
+from openstack_auth_shib.models import DESCR_LEN
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
@@ -54,7 +55,8 @@ from openstack_auth_shib.utils import getProjectInfo
 from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import NOW
 from openstack_auth_shib.utils import FROMNOW
-from openstack_auth_shib.utils import PREG_ATT_MAP
+from openstack_auth_shib.utils import ATT_PRJ_EXP
+from openstack_auth_shib.utils import ATT_PRJ_CPER
 from openstack_auth_shib.utils import YEARS_RANGE
 
 from openstack_auth_shib.models import NEW_MODEL
@@ -221,24 +223,34 @@ class EditTagsForm(forms.SelfHandlingForm):
     @sensitive_variables('data')
     def handle(self, request, data):
         try:
+            o_tag = None
+            for ptag in data['ptags']:
+                if ptag.startswith('O='):
+                    o_tag = ptag[2:]
+
+            if not NEW_MODEL or not o_tag:
+                kclient = keystone_api.keystoneclient(request)
+                kclient.projects.update_tags(data['projectid'], [])
+                kclient.projects.update_tags(data['projectid'], data['ptags'])
+                return True
+
             with transaction.atomic():
-                PrjAttribute.objects.filter(
+                n_up = PrjAttribute.objects.filter(
                     project__projectid = data['projectid'],
                     name = ATT_PRJ_ORG
-                ).delete()
+                ).update(value = o_tag)
 
-                for ptag in data['ptags']:
-                    if ptag.startswith('O='):
-                        PrjAttribute(
-                            project__projectid = data['projectid'],
-                            name = ATT_PRJ_ORG,
-                            value = ptag[2:]
-                        ).save()
+                if n_up == 0:
+                    c_prj = Project.objects.filter(projectid = data['projectid'])[0]
+                    PrjAttribute(
+                        project = c_prj,
+                        name = ATT_PRJ_ORG,
+                        value = o_tag
+                    ).save()
 
                 kclient = keystone_api.keystoneclient(request)
                 kclient.projects.update_tags(data['projectid'], [])
                 kclient.projects.update_tags(data['projectid'], data['ptags'])
-
         except:
             LOG.error("Cannot edit tags", exc_info=True)
             messages.error(request, _("Cannot edit tags"))
@@ -340,6 +352,7 @@ class SubscribeForm(forms.SelfHandlingForm):
         self.fields['prjdescr'] = forms.CharField(
             label = _("Project description"),
             required = False,
+            max_length = DESCR_LEN,
             widget = forms.widgets.Textarea(attrs = {
                 'class': 'switched',
                 'data-switch-on': 'actsource',
@@ -460,9 +473,10 @@ class SubscribeForm(forms.SelfHandlingForm):
                         )
 
                         if NEW_MODEL:
-                            for k_item, v_item in PREG_ATT_MAP.items():
-                                PrjAttribute(project = project, name = k_item,
-                                             value = str(data[v_item])).save()
+                            PrjAttribute(project = project, name = ATT_PRJ_EXP,
+                                         value = data['expiration'].isoformat()).save()
+                            PrjAttribute(project = project, name = ATT_PRJ_CPER,
+                                         value = data['contactper']).save()
 
                         noti_buffer.append({
                             'cloud_level' : True,
