@@ -208,14 +208,6 @@ def get_prj_status(data):
         return _("Course")
     return _("Private")
 
-def get_prj_tags(data):
-    if not data.tags:
-        return '-'
-    tmps = data.tags.pop()
-    for ptag in data.tags:
-        tmps = tmps + "," + ptag
-    return tmps
-
 class ReqRenewLink(tables.Action):
     name = "reqrenew"
     verbose_name = _("Need Renew")
@@ -240,7 +232,6 @@ class ReqRenewLink(tables.Action):
 
 
 class ProjectsTable(baseTables.TenantsTable):
-    tags = tables.Column(get_prj_tags, verbose_name=_('Tags'))
     status = tables.Column(get_prj_status, verbose_name=_('Status'))
     expiration = tables.Column('expiration', verbose_name=_('Expiration date'))
 
@@ -257,8 +248,6 @@ class ProjectsTable(baseTables.TenantsTable):
 
         # patch for columns removal
         del(self.columns['domain_name'])
-        if not request.user.is_superuser or not settings.HORIZON_CONFIG.get('show_tags', False):
-            del(self.columns['tags'])
         if request.user.is_superuser:
             del(self.columns['expiration'])
         # end of patch
