@@ -55,6 +55,7 @@ from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRole
+from openstack_auth_shib.models import NEW_MODEL
 if NEW_MODEL:
     from openstack_auth_shib.models import PrjAttribute
 
@@ -791,7 +792,7 @@ class RenewAdminForm(forms.SelfHandlingForm):
 
                 prj_reqs = PrjRequest.objects.filter(
                     registration__regid = regid,
-                    project__projectname = ,
+                    project__projectname = prjname,
                     flowstatus__in = [ PSTATUS_RENEW_ADMIN, PSTATUS_RENEW_MEMB ]
                 )
                 
@@ -809,7 +810,8 @@ class RenewAdminForm(forms.SelfHandlingForm):
                         )
                     tmpres = EMail.objects.filter(registration=role.registration)
                     if len(tmpres) > 0:
-                        u_infos.append((role.registration.username, tmpres[0].email))
+                        u_infos.append((role.registration.username, role.registration.userid,
+                                        tmpres[0].email))
 
                     PrjRequest.objects.filter(
                         registration = role.registration,
@@ -829,9 +831,10 @@ class RenewAdminForm(forms.SelfHandlingForm):
                         expdate=data['expiration']
                     )
 
+                    user_reg = prj_reqs[0].registration
                     tmpres = EMail.objects.filter(registration=user_reg)
                     if len(tmpres) > 0:
-                        u_infos.append((user_reg.username, tmpres[0].email))
+                        u_infos.append((user_reg.username, user_reg.userid, tmpres[0].email))
                     #
                     # Clear requests
                     #
@@ -840,7 +843,7 @@ class RenewAdminForm(forms.SelfHandlingForm):
             #
             # send notification to the project admin
             #
-            for uname, email in u_infos:
+            for uname, uid, email in u_infos:
                 noti_params = {
                     'username' : uname,
                     'project' : prjname,
@@ -848,7 +851,7 @@ class RenewAdminForm(forms.SelfHandlingForm):
                 }
 
                 notifyUser(request=request, rcpt=email, action=USER_RENEWED_TYPE,
-                           context=noti_params, dst_user_id=user_reg.userid)
+                           context=noti_params, dst_user_id=uid)
 
         except:
             LOG.error("Cannot renew project admin", exc_info=True)
