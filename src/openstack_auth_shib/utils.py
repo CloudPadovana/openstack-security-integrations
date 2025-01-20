@@ -447,7 +447,8 @@ def setup_new_project(request, project_id, project_name, data):
     try:
 
         new_tags = list()
-        new_tags.append(ORG_TAG_FMT % unit_data.get('organization', 'other'))
+        prj_org = unit_data.get('organization', 'other')
+        new_tags.append(ORG_TAG_FMT % prj_org)
 
         for ou_id in data.get('%s-ou' % unit_id, []):
             if ou_id.strip():
