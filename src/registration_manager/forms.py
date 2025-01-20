@@ -814,7 +814,6 @@ class RenewAdminForm(forms.SelfHandlingForm):
                                         tmpres[0].email))
 
                     PrjRequest.objects.filter(
-                        registration = role.registration,
                         project = role.project,
                         flowstatus = PSTATUS_RENEW_ADMIN
                     ).delete()
