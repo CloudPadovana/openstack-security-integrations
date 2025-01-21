@@ -960,6 +960,17 @@ class PromoteAdminForm(forms.SelfHandlingForm):
             if tmpl:
                 user_email = tmpl[0]
 
+            if NEW_MODEL:
+                tmpl = PrjAttribute.objects.filter(
+                    project = project,
+                    name = ATT_PRJ_EXP
+                )
+                if len(tmpl) > 0:
+                    Expiration.objects.filter(
+                        registration = registration,
+                        project = project,
+                    ).update(expdate = datetime.fromisoformat(tmpl[0]))
+
             prj_reqs.delete()
 
             keystone_api.add_tenant_user_role(request,
