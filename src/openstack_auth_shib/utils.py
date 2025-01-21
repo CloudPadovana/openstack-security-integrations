@@ -466,7 +466,7 @@ def setup_new_project(request, project_id, project_name, data):
     ###########################################################################
     if NEW_MODEL:
         # no transactions here
-        prj_obj = Project.objects.get(project_name)
+        prj_obj = Project.objects.get(projectname = project_name)
         if prj_subnet_cidr:
             PrjAttribute(project = prj_obj, name = ATT_PRJ_CIDR,
                          value = prj_subnet_cidr).save()

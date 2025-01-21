@@ -46,6 +46,7 @@ from openstack_auth_shib.notifications import PRJ_CREATE_TYPE
 from openstack_auth_shib.notifications import PRJ_REJ_TYPE
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 from openstack_auth_shib.notifications import MEMBER_REQUEST
+from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
 
 from openstack_auth_shib.models import UserMapping
 from openstack_auth_shib.models import RegRequest
@@ -62,6 +63,7 @@ if NEW_MODEL:
 from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_CHK_COMP
+from openstack_auth_shib.models import PSTATUS_ADM_ELECT
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import RSTATUS_PENDING
@@ -80,6 +82,7 @@ from openstack_auth_shib.utils import add_unit_combos
 from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import FROMNOW
 from openstack_auth_shib.utils import ATT_PRJ_EXP
+from openstack_auth_shib.utils import get_admin_roleid
 
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -922,7 +925,58 @@ class CompAckForm(forms.SelfHandlingForm):
                                 'project' : project.projectname})
         return True
 
+class PromoteAdminForm(forms.SelfHandlingForm):
 
+    def __init__(self, request, *args, **kwargs):
+        super(PromoteAdminForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['requestid'] = forms.CharField(widget=HiddenInput)
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+        usr_and_prj = REQID_REGEX.search(data['requestid'])
+        t_admin_roleid = get_admin_roleid(request)
+        user_email = None
+        noti_params = dict()
+
+        with transaction.atomic():
+            prj_reqs = PrjRequest.objects.filter(
+                registration__regid = int(usr_and_prj.group(1)),
+                project__projectname = usr_and_prj.group(2),
+                flowstatus = PSTATUS_ADM_ELECT
+            )
+            if len(prj_reqs) == 0:
+                return False
+
+            registration = prj_reqs[0].registration
+            project = prj_reqs[0].project
+            PrjRole(
+                registration = registration,
+                project = project,
+                roleid = t_admin_roleid
+            ).save()
+            
+            tmpl = EMail.objects.filter(registration = registration)
+            if tmpl:
+                user_email = tmpl[0]
+
+            prj_reqs.delete()
+
+            keystone_api.add_tenant_user_role(request,
+                role = t_admin_roleid,
+                project = project.projectid,
+                user = registration.userid
+            )
+
+            noti_params['username'] = registration.username
+            noti_params['project'] = project.projectname
+            noti_params['s_role'] = _("member")
+            noti_params['d_role'] = _("project administrator")
+
+        if user_email:
+            notifyUser(request = request, rcpt = user_email, action = CHANGED_MEMBER_ROLE,
+                        context = noti_params)
+        return True
 
 #
 # Fix for https://issues.infn.it/jira/browse/PDCL-690

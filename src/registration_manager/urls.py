@@ -26,6 +26,8 @@ urlpatterns = [
         name='remainderack'),
     url(r'^(?P<requestid>[^/]+)/compack/$', views.CompAckView.as_view(), 
         name='compack'),
+    url(r'^(?P<requestid>[^/]+)/promoteadmin/$', views.PromoteAdminView.as_view(), 
+        name='promoteadmin'),
     url(r'^(?P<requestid>[^/]+)/forcedapprove/$', views.ForcedApproveView.as_view(), 
         name='forcedapprove'),
     url(r'^(?P<requestid>[^/]+)/forcedreject/$', views.ForcedRejectView.as_view(), 

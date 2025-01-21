@@ -133,6 +133,15 @@ class ChkCompAck(tables.LinkAction):
     def allowed(self, request, datum):
         return datum.code == RegistrData.CHK_COMP
 
+class PromoteAdminLink(tables.LinkAction):
+    name = "promoteadminlink"
+    verbose_name = _("Promote Admin")
+    url = "horizon:idmanager:registration_manager:promoteadmin"
+    classes = ("ajax-modal", "btn-edit")
+    
+    def allowed(self, request, datum):
+        return datum.code == RegistrData.PRO_ADMIN
+
 class OperationTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))
     fullname = tables.Column('fullname', verbose_name=_('Full name'))
@@ -145,6 +154,7 @@ class OperationTable(tables.DataTable):
         verbose_name = _("Pending requests")
         row_actions = (PreCheckLink,
                        ChkCompAck,
+                       PromoteAdminLink,
                        GrantAllLink,
                        RejectLink,
                        NewPrjLink,

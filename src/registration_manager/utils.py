@@ -32,6 +32,7 @@ class RegistrData:
     REN_ATTEMPT = 9
     REN_DISC = 10
     CHK_COMP = 11
+    PRO_ADMIN = 12
 
     DESCRARRAY = [
         _('Unknown operation'),
@@ -45,7 +46,8 @@ class RegistrData:
         _('Registered user is orphan'),
         _('Renewal waiting for user'),
         _('User is not interested in renewal'),
-        _('Compliance check required')
+        _('Compliance check required'),
+        _('User requires promotion to admin')
     ]
 
     def __init__(self, **kwargs):

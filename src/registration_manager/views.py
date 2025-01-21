@@ -40,6 +40,7 @@ from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PSTATUS_RENEW_ATTEMPT
 from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 from openstack_auth_shib.models import PSTATUS_CHK_COMP
+from openstack_auth_shib.models import PSTATUS_ADM_ELECT
 from openstack_auth_shib.utils import REQID_REGEX
 from openstack_auth_shib.utils import unique_admin
 from openstack_auth_shib.utils import getProjectInfo
@@ -58,6 +59,7 @@ from .forms import RenewAdminForm
 from .forms import DetailsForm
 from .forms import RemainderAckForm
 from .forms import CompAckForm
+from .forms import PromoteAdminForm
 
 LOG = logging.getLogger(__name__)
 
@@ -100,6 +102,8 @@ class MainView(tables.DataTableView):
 
                     if prjReq.flowstatus == PSTATUS_CHK_COMP:
                         rData.code = RegistrData.CHK_COMP
+                    elif prjReq.flowstatus == PSTATUS_ADM_ELECT:
+                        rData.code = RegistrData.PRO_ADMIN
                     elif prjReq.flowstatus == PSTATUS_RENEW_ATTEMPT:
                         rData.code = RegistrData.REN_ATTEMPT
                     elif prjReq.flowstatus == PSTATUS_RENEW_DISC:
@@ -459,6 +463,26 @@ class CompAckView(forms.ModalFormView):
         context['form_action'] = reverse("horizon:idmanager:registration_manager:compack",
                                          args=(self.get_object(),))
         context['op_question'] = _('Do you confirm that the compliance check is fine?')
+        return context
+
+class PromoteAdminView(forms.ModalFormView):
+    form_class = PromoteAdminForm
+    template_name = 'idmanager/registration_manager/generic_ack.html'
+    success_url = reverse('horizon:idmanager:registration_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            self._object = self.kwargs['requestid']
+        return self._object
+
+    def get_initial(self):
+        return { 'requestid' : self.kwargs['requestid'] }
+
+    def get_context_data(self, **kwargs):
+        context = super(PromoteAdminView, self).get_context_data(**kwargs)
+        context['form_action'] = reverse("horizon:idmanager:registration_manager:promoteadmin",
+                                         args=(self.get_object(),))
+        context['op_question'] = _('Do you confirm user promotion to admin?')
         return context
 
 def get_project_details(requestid):

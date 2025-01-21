@@ -144,7 +144,7 @@ class ProposeAdminAction(tables.Action):
         try:
             with transaction.atomic():
                 registration = Registration.objects.filter(userid = obj_id)[0]
-                project = Project.objects.get(request.user.tenant_name)
+                project = Project.objects.get(projectname = request.user.tenant_name)
                 q_args = {
                     'registration' : registration,
                     'project' : project,
