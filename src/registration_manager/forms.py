@@ -969,7 +969,7 @@ class PromoteAdminForm(forms.SelfHandlingForm):
                     Expiration.objects.filter(
                         registration = registration,
                         project = project,
-                    ).update(expdate = datetime.fromisoformat(tmpl[0]))
+                    ).update(expdate = datetime.fromisoformat(tmpl[0].value))
 
             prj_reqs.delete()
 

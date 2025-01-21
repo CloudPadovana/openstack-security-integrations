@@ -313,8 +313,8 @@ class RegistrForm(forms.SelfHandlingForm):
         avail_prjs = list()
 
         with transaction.atomic():
+            c_projects = set()
             if NEW_MODEL:
-                c_projects = set()
                 comp_rules = getattr(settings, 'COMPLIANCE_RULES', {})
 
                 cidr_list = comp_rules.get('subnets', [])
