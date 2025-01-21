@@ -26,6 +26,7 @@ from horizon import tables
 from horizon import messages
 from horizon.utils import functions as horizon_utils
 
+# TODO use keystone api wrappers
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
 from openstack_auth_shib.models import Registration

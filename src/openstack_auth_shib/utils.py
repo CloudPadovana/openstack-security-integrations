@@ -56,6 +56,9 @@ LOG = logging.getLogger(__name__)
 TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
 TENANTADMIN_ROLEID = getattr(settings, 'TENANTADMIN_ROLE_ID', None)
 
+DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
+DEFAULT_ROLE_ID = getattr(settings, 'DEFAULT_ROLE_ID', None)
+
 PRJ_REGEX = re.compile(r'[^a-zA-Z0-9-_ \.]')
 REQID_REGEX = re.compile(r'^([0-9]+):([a-zA-Z0-9-_ \.]*)$')
 
@@ -66,29 +69,28 @@ TAG_REGEX = re.compile(r'([a-zA-Z0-9-_]+)=([^\s,/]+)$')
 def get_admin_roleid(request):
     global TENANTADMIN_ROLEID
     if TENANTADMIN_ROLEID == None:
-        for role in keystone_api.keystoneclient(request).roles.list():
+        for role in keystone_api.role_list(request):
             if role.name == TENANTADMIN_ROLE:
                 TENANTADMIN_ROLEID = role.id
+    if TENANTADMIN_ROLEID == None:
+        raise Exception("Missing tenant admin role id")
     return TENANTADMIN_ROLEID
 
+def get_default_roleid(request):
+    global DEFAULT_ROLE
+    if DEFAULT_ROLE_ID == None:
+        for role in keystone_api.role_list(request):
+            if role.name == DEFAULT_ROLE:
+                DEFAULT_ROLE_ID = role.id
+    if DEFAULT_ROLE_ID == None:
+        raise Exception("Missing default role id")
+    return DEFAULT_ROLE_ID
 
-def get_prjman_ids(request, project_id):
-    result = list()
-
-    #kclient = keystone_api.keystoneclient(request, admin=True)
-    #tntadm_role_id = get_admin_roleid(request)
-
-    #url = '/role_assignments?scope.project.id=%s&role.id=%s'
-    #resp, body = kclient.get(url % (project_id, tntadm_role_id))
-
-    #for item in body['role_assignments']:
-    #    result.append(item['user']['id'])
-
-    for item in PrjRole.objects.filter(project__projectid = project_id):
-        if item.registration.userid:
-            result.append(item.registration.userid)
-
-    return result
+def parse_requestid(requestid):
+    usr_and_prj = REQID_REGEX.search(requestid)
+    if not usr_and_prj:
+        raise Exception("Wrong format for request id")
+    return (int(usr_and_prj.group(1)), usr_and_prj.group(2))
 
 def get_user_home(user):
 

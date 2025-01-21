@@ -52,7 +52,6 @@ from openstack_auth_shib.notifications import SUBSCR_FORCED_OK_TYPE
 from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import MEMBER_REQUEST
 
-from openstack_auth_shib.utils import get_prjman_ids
 from openstack_auth_shib.utils import get_year_list
 
 from openstack_dashboard.api import keystone as keystone_api
@@ -315,8 +314,12 @@ class ReactivateForm(forms.SelfHandlingForm):
                 tmpres = EMail.objects.filter(registration__userid=data['userid'])
                 user_email = tmpres[0].email if tmpres else None
 
-                m_userids = get_prjman_ids(request, prj_item.projectid)
-                tmpres = EMail.objects.filter(registration__userid__in=m_userids)
+                m_userids = [
+                    x.userid for x in PrjRole.objects.filter(
+                        registration__userid__isnull = False,
+                        project__projectid = prj_item.projectid)
+                ]
+                tmpres = EMail.objects.filter(registration__userid__in = m_userids)
                 m_emails = [ x.email for x in tmpres ]
 
                 noti_params = {

@@ -26,9 +26,9 @@ from openstack_dashboard.dashboards.identity.users import tables as baseTables
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import Expiration
+from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import USER_PURGED_TYPE
-from openstack_auth_shib.utils import get_prjman_ids
 
 from horizon import messages
 
@@ -49,7 +49,11 @@ class DeleteUsersAction(baseTables.DeleteUsersAction):
             critic_prjs = list()
             for e_item in Expiration.objects.filter(registration__userid=obj_id):
 
-                prj_man_ids = get_prjman_ids(request, e_item.project.projectid)
+                prj_man_ids = [ 
+                    x.userid for x in PrjRole.objects.filter(
+                        registration__userid__isnull = False,
+                        project__projectid = e_item.project.projectid)
+                ]
 
                 if len(prj_man_ids) == 1 and prj_man_ids[0] == obj_id:
                     critic_prjs.append(e_item.project.projectname)

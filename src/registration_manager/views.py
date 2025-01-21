@@ -41,9 +41,9 @@ from openstack_auth_shib.models import PSTATUS_RENEW_ATTEMPT
 from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 from openstack_auth_shib.models import PSTATUS_CHK_COMP
 from openstack_auth_shib.models import PSTATUS_ADM_ELECT
-from openstack_auth_shib.utils import REQID_REGEX
 from openstack_auth_shib.utils import unique_admin
 from openstack_auth_shib.utils import getProjectInfo
+from openstack_auth_shib.utils import parse_requestid
 from openstack_auth_shib.utils import ATT_PRJ_EXP
 
 from .utils import RegistrData
@@ -141,8 +141,7 @@ class AbstractCheckView(forms.ModalFormView):
     def get_object(self):
         if not hasattr(self, "_object"):
             try:
-                tmpm = REQID_REGEX.search(self.kwargs['requestid'])
-                regid = int(tmpm.group(1))
+                regid, prjname = parse_requestid(self.kwargs['requestid'])
                 
                 tmplist = RegRequest.objects.filter(registration__regid=regid, flowstatus=RSTATUS_PENDING)
                 if len(tmplist):
@@ -347,9 +346,7 @@ class DetailsView(forms.ModalFormView):
         try:
             with transaction.atomic():
 
-                tmpm = REQID_REGEX.search(self.kwargs['requestid'])
-                regid = int(tmpm.group(1))
-                prjname = tmpm.group(2) if tmpm.group(2) else None
+                regid, prjname = parse_requestid(self.kwargs['requestid'])
 
                 tmpdict = dict()
                 tmpdict['requestid'] = self.kwargs['requestid']
@@ -487,15 +484,15 @@ class PromoteAdminView(forms.ModalFormView):
 
 def get_project_details(requestid):
 
-    tmpm = REQID_REGEX.search(requestid)
+    regid, prjname = parse_requestid(requestid)
 
-    if tmpm and tmpm.group(2):
+    if prjname:
 
         try:
             with transaction.atomic():
                 prj_obj = PrjRequest.objects.filter(
-                    registration__regid = int(tmpm.group(1)),
-                    project__projectname = tmpm.group(2)
+                    registration__regid = regid,
+                    project__projectname = prjname
                 )[0].project
 
                 prj_exp = None

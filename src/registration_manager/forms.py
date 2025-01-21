@@ -73,16 +73,16 @@ from openstack_auth_shib.models import RSTATUS_REMINDACK
 from openstack_auth_shib.models import OS_LNAME_LEN
 from openstack_auth_shib.models import OS_SNAME_LEN
 from openstack_auth_shib.models import PWD_LEN
-from openstack_auth_shib.utils import get_prjman_ids
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import PRJ_REGEX
-from openstack_auth_shib.utils import REQID_REGEX
 from openstack_auth_shib.utils import setup_new_project
 from openstack_auth_shib.utils import add_unit_combos
 from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import FROMNOW
 from openstack_auth_shib.utils import ATT_PRJ_EXP
 from openstack_auth_shib.utils import get_admin_roleid
+from openstack_auth_shib.utils import get_default_roleid
+from openstack_auth_shib.utils import parse_requestid
 
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -92,32 +92,6 @@ def generate_pwd():
     alphabet = string.ascii_letters + string.digits
     return ''.join(secrets.choice(alphabet) for i in range(PWD_LEN))
     
-def check_and_get_roleids(request):
-    tenantadmin_roleid = None
-    default_roleid = None
-    
-    DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
-    
-    for role in keystone_api.role_list(request):
-        if role.name == TENANTADMIN_ROLE:
-            tenantadmin_roleid = role.id
-        elif role.name == DEFAULT_ROLE:
-            default_roleid = role.id
-    
-    if not tenantadmin_roleid:
-        #
-        # Creation of project-manager role if necessary
-        #
-        tenantadmin_roleid = keystone_api.role_create(request, TENANTADMIN_ROLE)
-        if not tenantadmin_roleid:
-            raise Exception("Cannot retrieve tenant admin role id")
-    
-    if not default_roleid:
-        raise Exception("Cannot retrieve default role id")
-    
-    return (tenantadmin_roleid, default_roleid)
-
-
 class PreCheckForm(forms.SelfHandlingForm):
 
     def __init__(self, request, *args, **kwargs):
@@ -160,8 +134,7 @@ class PreCheckForm(forms.SelfHandlingForm):
             return False
         
         try:
-                
-            tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
+            tenantadmin_roleid = get_admin_roleid(request)
 
             with transaction.atomic():
 
@@ -274,7 +247,11 @@ class PreCheckForm(forms.SelfHandlingForm):
                 #
                 for p_item in prjReqList.filter(flowstatus=PSTATUS_PENDING):
                 
-                    m_userids = get_prjman_ids(request, p_item.project.projectid)
+                    m_userids = [
+                        x.userid for x in PrjRole.objects.filter(
+                            registration__userid__isnull = False,
+                            project = p_item.project)
+                    ]
                     tmpres = EMail.objects.filter(registration__userid__in=m_userids)
                     m_emails = [ x.email for x in tmpres ]                    
 
@@ -455,15 +432,15 @@ class ForcedCheckForm(forms.SelfHandlingForm):
     def handle(self, request, data):
     
         try:
-            tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
-            usr_and_prj = REQID_REGEX.search(data['requestid'])
+            tenantadmin_roleid = get_admin_roleid(request)
+            default_roleid = get_default_roleid(request)
+            regid, prjname = parse_requestid(data['requestid'])
 
             with transaction.atomic():
-                q_args = {
-                    'registration__regid' : int(usr_and_prj.group(1)),
-                    'project__projectname' : usr_and_prj.group(2)
-                }
-                prj_req = PrjRequest.objects.filter(**q_args)[0]
+                prj_req = PrjRequest.objects.filter(
+                    registration__regid = regid,
+                    project__projectname = prjname
+                )[0]
                 
                 #
                 # Insert expiration date per tenant
@@ -501,7 +478,11 @@ class ForcedCheckForm(forms.SelfHandlingForm):
             tmpres = EMail.objects.filter(registration__userid=user_id)
             user_email = tmpres[0].email if tmpres else None
             
-            m_userids = get_prjman_ids(request, project_id)
+            m_userids =  [
+                x.userid for x in PrjRole.objects.filter(
+                    registration__userid__isnull = False,
+                    project__projectid = project_id)
+            ]
             tmpres = EMail.objects.filter(registration__userid__in=m_userids)
             m_emails = [ x.email for x in tmpres ]
 
@@ -540,16 +521,13 @@ class ForcedRejectForm(forms.SelfHandlingForm):
     def handle(self, request, data):
     
         try:
-            tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
-            usr_and_prj = REQID_REGEX.search(data['requestid'])
+            regid, prjname = parse_requestid(data['requestid'])
 
             with transaction.atomic():
-                q_args = {
-                    'registration__regid' : int(usr_and_prj.group(1)),
-                    'project__projectname' : usr_and_prj.group(2)
-                }
-                prj_req = PrjRequest.objects.filter(**q_args)[0]
-                
+                prj_req = PrjRequest.objects.filter(
+                    registration__regid = regid,
+                    project__projectname = prjname
+                )[0]
 
                 project_name = prj_req.project.projectname
                 project_id = prj_req.project.projectid
@@ -567,7 +545,12 @@ class ForcedRejectForm(forms.SelfHandlingForm):
             tmpres = EMail.objects.filter(registration__userid=user_id)
             user_email = tmpres[0].email if tmpres else None
             
-            m_userids = get_prjman_ids(request, project_id)
+            m_userids =  [
+                x.userid for x in PrjRole.objects.filter(
+                    registration__userid__isnull = False,
+                    project__projectid = project_id)
+            ]
+            
             tmpres = EMail.objects.filter(registration__userid__in=m_userids)
             m_emails = [ x.email for x in tmpres ]
 
@@ -628,15 +611,12 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
     def handle(self, request, data):
     
         try:
-
-            tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
-            usr_and_prj = REQID_REGEX.search(data['requestid'])
+            tenantadmin_roleid = get_admin_roleid(request)
+            regid, prjname = parse_requestid(data['requestid'])
 
             with transaction.atomic():
 
-                regid, prjname = chk_repl_project(int(usr_and_prj.group(1)),
-                                                  usr_and_prj.group(2), data['newname'],
-                                                  None, data['newdescr'])
+                regid, prjname = chk_repl_project(regid, prjname, data['newname'], None, data['newdescr'])
 
                 #
                 # Creation of new tenant
@@ -723,20 +703,17 @@ class NewProjectRejectForm(forms.SelfHandlingForm):
     def handle(self, request, data):
     
         try:
-
-            tenantadmin_roleid, default_roleid = check_and_get_roleids(request)
-            usr_and_prj = REQID_REGEX.search(data['requestid'])
+            regid, prjname = parse_requestid(data['requestid'])
 
             with transaction.atomic():
 
                 #
                 # Creation of new tenant
                 #
-                q_args = {
-                    'registration__regid' : int(usr_and_prj.group(1)),
-                    'project__projectname' : usr_and_prj.group(2)
-                }
-                prj_req = PrjRequest.objects.filter(**q_args)[0]
+                prj_req = PrjRequest.objects.filter(
+                    registration__regid = regid,
+                    project__projectname = prjname
+                )[0]
                 
                 project_name = prj_req.project.projectname
                 user_id = prj_req.registration.userid
@@ -786,10 +763,7 @@ class RenewAdminForm(forms.SelfHandlingForm):
         try:
 
             u_infos = list()
-
-            usr_and_prj = REQID_REGEX.search(data['requestid'])
-            regid = int(usr_and_prj.group(1))
-            prjname = usr_and_prj.group(2)
+            regid, prjname = parse_requestid(data['requestid'])
 
             with transaction.atomic():
 
@@ -883,10 +857,11 @@ class RemainderAckForm(forms.SelfHandlingForm):
     @sensitive_variables('data')
     def handle(self, request, data):
 
+        regid, prjname = parse_requestid(data['requestid'])
+
         with transaction.atomic():
-            usr_and_prj = REQID_REGEX.search(data['requestid'])
             RegRequest.objects.filter(
-                registration__regid = int(usr_and_prj.group(1)),
+                registration__regid = regid,
                 flowstatus = RSTATUS_REMINDACK
             ).delete()
 
@@ -905,11 +880,11 @@ class CompAckForm(forms.SelfHandlingForm):
         admin_emails = list()
 
         with transaction.atomic():
-            usr_and_prj = REQID_REGEX.search(data['requestid'])
+            regid, prjname = parse_requestid(data['requestid'])
 
-            project = Project.objects.get(projectname = usr_and_prj.group(2))
+            project = Project.objects.get(projectname = prjname)
             PrjRequest.objects.filter(
-                registration__regid = int(usr_and_prj.group(1)),
+                registration__regid = regid,
                 project = project,
                 flowstatus = PSTATUS_CHK_COMP
             ).update(flowstatus = PSTATUS_PENDING)
@@ -934,15 +909,15 @@ class PromoteAdminForm(forms.SelfHandlingForm):
 
     @sensitive_variables('data')
     def handle(self, request, data):
-        usr_and_prj = REQID_REGEX.search(data['requestid'])
+        regid, prjname = parse_requestid(data['requestid'])
         t_admin_roleid = get_admin_roleid(request)
         user_email = None
         noti_params = dict()
 
         with transaction.atomic():
             prj_reqs = PrjRequest.objects.filter(
-                registration__regid = int(usr_and_prj.group(1)),
-                project__projectname = usr_and_prj.group(2),
+                registration__regid = regid,
+                project__projectname = prjname,
                 flowstatus = PSTATUS_ADM_ELECT
             )
             if len(prj_reqs) == 0:
