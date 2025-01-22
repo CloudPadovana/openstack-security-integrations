@@ -80,8 +80,8 @@ from openstack_auth_shib.utils import add_unit_combos
 from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import FROMNOW
 from openstack_auth_shib.utils import ATT_PRJ_EXP
-from openstack_auth_shib.utils import get_admin_roleid
-from openstack_auth_shib.utils import get_default_roleid
+from openstack_auth_shib.utils import TENANTADMIN_ROLEID
+from openstack_auth_shib.utils import DEFAULT_ROLEID
 from openstack_auth_shib.utils import parse_requestid
 
 from openstack_dashboard.api import keystone as keystone_api
@@ -134,8 +134,6 @@ class PreCheckForm(forms.SelfHandlingForm):
             return False
         
         try:
-            tenantadmin_roleid = get_admin_roleid(request)
-
             with transaction.atomic():
 
                 registration = Registration.objects.get(regid=int(data['regid']))
@@ -236,11 +234,11 @@ class PreCheckForm(forms.SelfHandlingForm):
                     prjRole = PrjRole()
                     prjRole.registration = registration
                     prjRole.project = prj_item
-                    prjRole.roleid = tenantadmin_roleid
+                    prjRole.roleid = TENANTADMIN_ROLEID
                     prjRole.save()
 
                     keystone_api.add_tenant_user_role(request, prj_item.projectid,
-                                            registration.userid, tenantadmin_roleid)
+                                            registration.userid, TENANTADMIN_ROLEID)
 
                 #
                 # Send notifications to project administrators and users
@@ -432,8 +430,6 @@ class ForcedCheckForm(forms.SelfHandlingForm):
     def handle(self, request, data):
     
         try:
-            tenantadmin_roleid = get_admin_roleid(request)
-            default_roleid = get_default_roleid(request)
             regid, prjname = parse_requestid(data['requestid'])
 
             with transaction.atomic():
@@ -457,7 +453,7 @@ class ForcedCheckForm(forms.SelfHandlingForm):
                 user_id = prj_req.registration.userid
                 
                 keystone_api.add_tenant_user_role(request, project_id,
-                                                user_id, default_roleid)
+                                                user_id, DEFAULT_ROLEID)
 
                 #
                 # Enable reminder for cloud admin
@@ -611,7 +607,6 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
     def handle(self, request, data):
     
         try:
-            tenantadmin_roleid = get_admin_roleid(request)
             regid, prjname = parse_requestid(data['requestid'])
 
             with transaction.atomic():
@@ -641,11 +636,11 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 prjRole = PrjRole()
                 prjRole.registration = prj_req.registration
                 prjRole.project = prj_req.project
-                prjRole.roleid = tenantadmin_roleid
+                prjRole.roleid = TENANTADMIN_ROLEID
                 prjRole.save()
 
                 keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
-                                                user_id, tenantadmin_roleid)
+                                                user_id, TENANTADMIN_ROLEID)
 
 
                 #
@@ -910,7 +905,6 @@ class PromoteAdminForm(forms.SelfHandlingForm):
     @sensitive_variables('data')
     def handle(self, request, data):
         regid, prjname = parse_requestid(data['requestid'])
-        t_admin_roleid = get_admin_roleid(request)
         user_email = None
         noti_params = dict()
 
@@ -928,7 +922,7 @@ class PromoteAdminForm(forms.SelfHandlingForm):
             PrjRole(
                 registration = registration,
                 project = project,
-                roleid = t_admin_roleid
+                roleid = TENANTADMIN_ROLEID
             ).save()
             
             tmpl = EMail.objects.filter(registration = registration)
@@ -949,7 +943,7 @@ class PromoteAdminForm(forms.SelfHandlingForm):
             prj_reqs.delete()
 
             keystone_api.add_tenant_user_role(request,
-                role = t_admin_roleid,
+                role = TENANTADMIN_ROLEID,
                 project = project.projectid,
                 user = registration.userid
             )

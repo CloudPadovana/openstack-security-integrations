@@ -53,11 +53,11 @@ if NEW_MODEL:
 
 LOG = logging.getLogger(__name__)
 
-TENANTADMIN_ROLE = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
-TENANTADMIN_ROLEID = getattr(settings, 'TENANTADMIN_ROLE_ID', None)
+TENANTADMIN_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_TENANTADMIN_ROLE', 'project_manager')
+TENANTADMIN_ROLEID = getattr(settings, 'OPENSTACK_KEYSTONE_TENANTADMIN_ROLE_ID', None)
 
-DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
-DEFAULT_ROLE_ID = getattr(settings, 'DEFAULT_ROLE_ID', None)
+DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', 'member')
+DEFAULT_ROLEID = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE_ID', None)
 
 PRJ_REGEX = re.compile(r'[^a-zA-Z0-9-_ \.]')
 REQID_REGEX = re.compile(r'^([0-9]+):([a-zA-Z0-9-_ \.]*)$')
@@ -65,26 +65,6 @@ REQID_REGEX = re.compile(r'^([0-9]+):([a-zA-Z0-9-_ \.]*)$')
 ORG_TAG_FMT = "O=%s"
 OU_TAG_FMT = "OU=%s"
 TAG_REGEX = re.compile(r'([a-zA-Z0-9-_]+)=([^\s,/]+)$')
-
-def get_admin_roleid(request):
-    global TENANTADMIN_ROLEID
-    if TENANTADMIN_ROLEID == None:
-        for role in keystone_api.role_list(request):
-            if role.name == TENANTADMIN_ROLE:
-                TENANTADMIN_ROLEID = role.id
-    if TENANTADMIN_ROLEID == None:
-        raise Exception("Missing tenant admin role id")
-    return TENANTADMIN_ROLEID
-
-def get_default_roleid(request):
-    global DEFAULT_ROLE
-    if DEFAULT_ROLE_ID == None:
-        for role in keystone_api.role_list(request):
-            if role.name == DEFAULT_ROLE:
-                DEFAULT_ROLE_ID = role.id
-    if DEFAULT_ROLE_ID == None:
-        raise Exception("Missing default role id")
-    return DEFAULT_ROLE_ID
 
 def parse_requestid(requestid):
     usr_and_prj = REQID_REGEX.search(requestid)
