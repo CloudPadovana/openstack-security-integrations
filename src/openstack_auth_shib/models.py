@@ -17,9 +17,10 @@ from datetime import datetime
 from datetime import timezone as tzone
 
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
 
-NEW_MODEL = False
+NEW_MODEL = getattr(settings, 'NEW_MODEL', False)
 
 # Used bit mask for project status
 PRJ_PRIVATE = 0
