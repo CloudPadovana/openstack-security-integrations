@@ -18,6 +18,8 @@ from openstack_dashboard.dashboards.idmanager.member_manager import views
 
 urlpatterns = [
     url(r'^(?P<userid>[^/]+)/modifyexp/$', views.ModifyExpView.as_view(), name='modifyexp'),
+    url(r'^(?P<userid>[^/]+)/demote/$', views.DemoteUserView.as_view(), name='demote'),
+    url(r'^(?P<userid>[^/]+)/proposeadmin/$', views.ProposeAdminView.as_view(), name='proposeadmin'),
     url(r'^sendmsg/$', views.SendMsgView.as_view(), name='sendmsg'),
     url(r'^$', views.IndexView.as_view(), name='index')
 ]

@@ -24,18 +24,15 @@ from django.utils.translation import ngettext_lazy
 
 from horizon import tables
 from horizon import messages
-from horizon.utils import functions as horizon_utils
+#from horizon.utils import functions as horizon_utils
 
 # TODO use keystone api wrappers
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
-from openstack_auth_shib.models import Registration
-from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import PrjRequest
-from openstack_auth_shib.models import PSTATUS_ADM_ELECT
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 
@@ -43,12 +40,8 @@ from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import MEMBER_REMOVED
 from openstack_auth_shib.notifications import MEMBER_REMOVED_ADM
-from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
-from openstack_auth_shib.utils import TENANTADMIN_ROLE
-from openstack_auth_shib.utils import get_admin_roleid
 
 LOG = logging.getLogger(__name__)
-DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', '')
 
 class DeleteMemberAction(tables.DeleteAction):
     data_type_singular = _("Member")
@@ -118,135 +111,23 @@ class DeleteMemberAction(tables.DeleteAction):
             LOG.error("Grant revoke error", exc_info=True)
             messages.error(request, _('Unable to delete member from tenant.'))
 
-class ProposeAdminAction(tables.Action):
+class ProposeAdminAction(tables.LinkAction):
     name = "proposeadminlink"
     verbose_name = _("Propose admin")
-    
-    @staticmethod
-    def action_present(count):
-        return ngettext_lazy(
-            "Propose administrator",
-            "Propose administrators",
-            count
-        )
-
-    @staticmethod
-    def action_past(count):
-        return ngettext_lazy(
-            "Proposed administrator",
-            "Proposed administrators",
-            count
-        )
+    url = "horizon:idmanager:member_manager:proposeadmin"
+    classes = ("ajax-modal", "btn-edit")
 
     def allowed(self, request, datum):
         return not datum.is_t_admin
 
-    def single(self, data_table, request, obj_id):
-        try:
-            with transaction.atomic():
-                registration = Registration.objects.filter(userid = obj_id)[0]
-                project = Project.objects.get(projectname = request.user.tenant_name)
-                q_args = {
-                    'registration' : registration,
-                    'project' : project,
-                    'flowstatus__in' : range(PSTATUS_RENEW_MEMB, PSTATUS_RENEW_DISC + 1)
-                }  
-                if PrjRequest.objects.filter(**q_args).count() > 0:
-                    messages.error(request, _('Unable to propose the administrator: user is going to expire.'))
-
-                PrjRequest(
-                    registration = registration,
-                    project = project,
-                    flowstatus = PSTATUS_ADM_ELECT,
-                    notes = ""
-                ).save()
-                
-                # TODO missing notification to cloud admin
-        except:
-            LOG.error("Propose admin error", exc_info=True)
-            messages.error(request, _('Unable to propose an administrator.'))
-
-class DemoteUserAction(tables.Action):
+class DemoteUserAction(tables.LinkAction):
     name = "demote_user"
     verbose_name = _("Demote user")
-    
-    @staticmethod
-    def action_present(count):
-        return ngettext_lazy(
-            "Demote  administrator",
-            "Demote  administrators",
-            count
-        )
-
-    @staticmethod
-    def action_past(count):
-        return ngettext_lazy(
-            "Demoted  administrator",
-            "Demoted  administrators",
-            count
-        )
+    url = "horizon:idmanager:member_manager:demote"
+    classes = ("ajax-modal", "btn-edit")
 
     def allowed(self, request, datum):
         return datum.is_t_admin and datum.num_of_admins > 1
-
-    def single(self, data_table, request, obj_id):
-        
-        try:
-            if not TENANTADMIN_ROLE in [ r['name'] for r in request.user.roles ]:
-                raise Exception('Not authorized for demoting users')
-            
-            roles_obj = client_factory(request).roles
-            arg_dict = {
-                'project' : request.user.tenant_id,
-                'user' : obj_id
-            }
-            
-            tmpres = EMail.objects.filter(registration__userid=obj_id)
-            member_email = tmpres[0].email if tmpres else None
-
-            tmpres = EMail.objects.filter(registration__userid=request.user.id)
-            admin_email = tmpres[0].email if tmpres else None
-
-            datum = data_table.get_object_by_id(obj_id)
-
-            with transaction.atomic():
-
-                PrjRole.objects.filter(
-                    registration__userid=obj_id,
-                    project__projectname=request.user.tenant_name
-                ).delete()
-
-                if datum.num_of_roles == 1:
-                    missing_default = True
-                    for item in roles_obj.list():
-                        if item.name == DEFAULT_ROLE:
-                            roles_obj.grant(item.id, **arg_dict)
-                            missing_default = False
-                    if missing_default:
-                        raise Exception('Cannot swith to member role')
-
-                roles_obj.revoke(get_admin_roleid(request), **arg_dict)
-
-            noti_params = {
-                'admin_address' : admin_email,
-                'project' : request.user.tenant_name,
-                's_role' : _('Project manager'),
-                'd_role' : _('Project user')
-            }
-            notifyUser(request=request, rcpt=member_email, action=CHANGED_MEMBER_ROLE, context=noti_params,
-                       dst_project_id=request.user.project_id, dst_user_id=obj_id)
-
-        except:
-            LOG.error("Demote user error", exc_info=True)
-            messages.error(request, _('Unable to demote the user.'))
-           
-        if obj_id == request.user.id:
-            response = shortcuts.redirect(reverse('logout'))
-            msg = _("Roles changed. Please log in again to continue.")
-            horizon_utils.add_logout_reason(request, response, msg)
-            return response
-            
-        return shortcuts.redirect(reverse('horizon:idmanager:member_manager:index'))
 
 class ChangeExpAction(tables.LinkAction):
     name = "change_expiration"

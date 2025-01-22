@@ -29,15 +29,27 @@ from django.views.decorators.debug import sensitive_variables
 from horizon import forms
 from horizon import exceptions
 
+from openstack_auth_shib.models import Registration
+from openstack_auth_shib.models import Project
+from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import PSTATUS_RENEW_DISC
+from openstack_auth_shib.models import PSTATUS_ADM_ELECT
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 from openstack_auth_shib.notifications import GENERIC_MESSAGE
+from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
+from openstack_auth_shib.utils import DEFAULT_ROLEID
+from openstack_auth_shib.utils import TENANTADMIN_ROLE
+from openstack_auth_shib.utils import TENANTADMIN_ROLEID
+
+# TODO use keystone api wrappers
+from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
 LOG = logging.getLogger(__name__)
 
@@ -117,7 +129,105 @@ class ModifyExpForm(forms.SelfHandlingForm):
                     LOG.error("Cannot notify %s" % user_name, exc_info=True)
 
         except:
-            exceptions.handle(request)
+            LOG.error("Error changing expiration date", exc_info=True)
+            messages.error(request, _("Cannot change expiration date"))
+            return False
+        return True
+
+class DemoteUserForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(DemoteUserForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['userid'] = forms.CharField(widget=HiddenInput)
+
+    def clean(self):
+        if not TENANTADMIN_ROLE in [ r['name'] for r in self.request.user.roles ]:
+            raise ValidationError(_("Not authorized for demoting users"))
+
+        return super(DemoteUserForm, self).clean()
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+        try:
+            with transaction.atomic():
+                registration = Registration.objects.get(userid = data['userid'])
+
+                tmpres = EMail.objects.filter(registration__userid = data['userid'])
+                member_email = tmpres[0].email if tmpres else None
+
+                tmpres = EMail.objects.filter(registration__userid = request.user.id)
+                admin_email = tmpres[0].email if tmpres else None
+
+                PrjRole.objects.filter(
+                    registration = registration,
+                    project__projectname = request.user.tenant_name
+                ).delete()
+
+                roles_obj = client_factory(request).roles
+
+                missing_default = True
+                for r_item in roles_obj.list():
+                    if r_item.name == DEFAULT_ROLEID:
+                        missing_default = False
+
+                if missing_default:
+                    roles_obj.grant(DEFAULT_ROLEID,
+                        project = request.user.tenant_id, user = data['userid'])
+
+                roles_obj.revoke(TENANTADMIN_ROLEID,
+                    project = request.user.tenant_id, user = data['userid'])                    
+
+            noti_params = {
+                'admin_address' : admin_email,
+                'project' : request.user.tenant_name,
+                's_role' : _('Project manager'),
+                'd_role' : _('Project user')
+            }
+            notifyUser(request = request, rcpt = member_email,
+                       action = CHANGED_MEMBER_ROLE, context = noti_params,
+                       dst_project_id = request.user.project_id,
+                       dst_user_id = data['userid'])
+        except:
+            LOG.error("Error demoting user", exc_info=True)
+            messages.error(request, _("Cannot demote user"))
+            return False
+        return True
+
+class ProposeAdminForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(ProposeAdminForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['userid'] = forms.CharField(widget=HiddenInput)
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+        try:
+            with transaction.atomic():
+
+                registration = Registration.objects.get(userid = data['userid'])
+                project = Project.objects.get(projectname = request.user.tenant_name)
+                q_args = {
+                    'registration' : registration,
+                    'project' : project,
+                    'flowstatus__in' : range(PSTATUS_RENEW_MEMB, PSTATUS_RENEW_DISC + 1)
+                }  
+                if PrjRequest.objects.filter(**q_args).count() > 0:
+                    messages.error(request, _('Unable to propose the administrator: user is going to expire.'))
+                    return False
+
+                PrjRequest(
+                    registration = registration,
+                    project = project,
+                    flowstatus = PSTATUS_ADM_ELECT,
+                    notes = ""
+                ).save()
+                
+                # TODO missing notification to cloud admin
+        except:
+            LOG.error("Error proposing admin", exc_info=True)
+            messages.error(request, _("Cannot propose administrator"))
             return False
         return True
 

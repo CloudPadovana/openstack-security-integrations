@@ -26,11 +26,12 @@ from horizon import forms
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 from openstack_auth_shib.models import Expiration
-from openstack_auth_shib.utils import TENANTADMIN_ROLE
-from openstack_auth_shib.utils import get_admin_roleid
+from openstack_auth_shib.utils import TENANTADMIN_ROLEID
 
 from .tables import MemberTable
 from .forms import ModifyExpForm
+from .forms import DemoteUserForm
+from .forms import ProposeAdminForm
 from .forms import SendMsgForm
 
 LOG = logging.getLogger(__name__)
@@ -55,11 +56,6 @@ class IndexView(tables.DataTableView):
     def get_data(self):
     
         try:
-            t_role_id = ''
-            for role in self.request.user.roles:
-                if role['name'] == TENANTADMIN_ROLE:
-                    t_role_id = get_admin_roleid(self.request)
-        
             role_assign_obj = client_factory(self.request).role_assignments
             member_id_dict = dict()
             number_of_admins = 0
@@ -67,7 +63,7 @@ class IndexView(tables.DataTableView):
                 if not r_item.user['id'] in member_id_dict:
                     member_id_dict[r_item.user['id']] = [False, 0, 0]
                     
-                if r_item.role['id'] == t_role_id:
+                if r_item.role['id'] == TENANTADMIN_ROLEID:
                     member_id_dict[r_item.user['id']][0] = True
                     number_of_admins +=1
                     
@@ -112,6 +108,46 @@ class ModifyExpView(forms.ModalFormView):
         if not hasattr(self, "_object"):
             self._object = self.kwargs['userid']
         return self._object
+
+class DemoteUserView(forms.ModalFormView):
+    form_class = DemoteUserForm
+    template_name = 'idmanager/member_manager/generic_ack.html'
+    success_url = reverse('horizon:idmanager:member_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            self._object = self.kwargs['userid']
+        return self._object
+
+    def get_initial(self):
+        return { 'userid' : self.kwargs['userid'] }
+
+    def get_context_data(self, **kwargs):
+        context = super(DemoteUserView, self).get_context_data(**kwargs)
+        context['form_action'] = reverse("horizon:idmanager:member_manager:demote",
+                                         args=(self.get_object(),))
+        context['op_question'] = _('Do you confirm user demotion to normal member?')
+        return context
+
+class ProposeAdminView(forms.ModalFormView):
+    form_class = ProposeAdminForm
+    template_name = 'idmanager/member_manager/generic_ack.html'
+    success_url = reverse('horizon:idmanager:member_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            self._object = self.kwargs['userid']
+        return self._object
+
+    def get_initial(self):
+        return { 'userid' : self.kwargs['userid'] }
+
+    def get_context_data(self, **kwargs):
+        context = super(ProposeAdminView, self).get_context_data(**kwargs)
+        context['form_action'] = reverse("horizon:idmanager:member_manager:proposeadmin",
+                                         args=(self.get_object(),))
+        context['op_question'] = _('Send promotion request to the cloud administrators?')
+        return context
 
 class SendMsgView(forms.ModalFormView):
     form_class = SendMsgForm
