@@ -18,6 +18,7 @@ import logging
 from django import http
 from django.db import transaction
 from django.conf import settings
+from django.forms import ValidationError
 from django.forms.widgets import HiddenInput
 from django.forms.widgets import SelectDateWidget
 from django.utils.translation import gettext as _
@@ -67,7 +68,6 @@ def get_default_role(request):
 
 class RenewExpForm(forms.SelfHandlingForm):
 
-
     def __init__(self, request, *args, **kwargs):
 
         super(RenewExpForm, self).__init__(request, *args, **kwargs)
@@ -78,23 +78,28 @@ class RenewExpForm(forms.SelfHandlingForm):
         )
         
         for item in kwargs['initial']:
-            if item.startswith('prj_'):
+            if item.startswith('n_prj_'):
                 self.fields[item] = forms.DateTimeField(
-                    label="%s %s" % (_("Project"), item[4:]),
-                    widget=SelectDateWidget(None, get_year_list())
+                    label = "%s %s" % (_("Project"), item[6:]),
+                    widget = SelectDateWidget(None, get_year_list())
                 )
+            elif item.startswith('a_prj_'):
+                self.fields[item] = forms.DateTimeField(
+                    label = "%s %s" % (_("Managed project"), item[6:]),
+                    widget = SelectDateWidget(None, get_year_list()),
+                    disabled = True
+                )
+
+    def clean(self):
+        if not self.request.user.is_superuser:
+            raise ValidationError(_("Operation not authorized"))
+
+        return super(RenewExpForm, self).clean()
 
     def handle(self, request, data):
 
         mail_table = dict()
-        exp_table = dict()
-        for d_item in data:
-            if d_item.startswith('prj_'):
-                exp_table[d_item[4:]] = data[d_item]
-
-        if not request.user.is_superuser:
-            messages.error(_("Operation not authorized"))
-            return False
+        exp_table = { x[6:] : data[x] for x in data if x.startswith('n_prj_') }
 
         with transaction.atomic():
 
@@ -149,13 +154,15 @@ class UpdateUserForm(baseForms.UpdateUserForm):
     def __init__(self, request, *args, **kwargs):
         super(UpdateUserForm, self).__init__(request, *args, **kwargs)
 
+    def clean(self):
+        if not self.request.user.is_superuser:
+            raise ValidationError(_("Operation not authorized"))
+
+        return super(UpdateUserForm, self).clean()
+
     def handle(self, request, data):
 
         user_id = data['id']
-
-        if not request.user.is_superuser:
-            messages.error(_("Operation not authorized"))
-            return False
 
         result = True
         try:
@@ -239,11 +246,13 @@ class ReactivateForm(forms.SelfHandlingForm):
             })
         )
 
-    def handle(self, request, data):
+    def clean(self):
+        if not self.request.user.is_superuser:
+            raise ValidationError(_("Operation not authorized"))
 
-        if not request.user.is_superuser:
-            messages.error(_("Operation not authorized"))
-            return False
+        return super(ReactivateForm, self).clean()
+
+    def handle(self, request, data):
 
         if data['action'] == 'forced':
             result = self.handle_forced(request, data)

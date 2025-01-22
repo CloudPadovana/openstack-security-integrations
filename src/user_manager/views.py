@@ -30,6 +30,7 @@ from openstack_dashboard.dashboards.identity.users import views as baseViews
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_CHK_COMP
 from openstack_auth_shib.models import PSTATUS_RENEW_DISC
@@ -71,18 +72,30 @@ class RenewView(forms.ModalFormView):
     success_url = reverse('horizon:idmanager:user_manager:index')
 
     def get_object(self):
-        if not hasattr(self, "_object"):
-            try:
+        if hasattr(self, "_object"):
+            return self._object
 
-                self._object = Expiration.objects.filter(registration__userid=self.kwargs['user_id'])
+        try:
+            with transaction.atomic():
+                self._object = list()
+                adm_prjs = set(x.project.projectname for x in 
+                    PrjRole.objects.filter(registration__userid = self.kwargs['user_id']))
 
-            except Exception:
-                LOG.error("Renew error", exc_info=True)
-                redirect = reverse('horizon:idmanager:user_manager:index')
-                exceptions.handle(self.request, _('Unable to renew user.'),
-                                  redirect=redirect)
+                for item in Expiration.objects.filter(registration__userid = self.kwargs['user_id']):
+                    tmpt = (
+                        item.project.projectname,
+                        item.expdate,
+                        item.project.projectname in adm_prjs
+                    )
+                    self._object.append(tmpt)
 
-        return self._object
+            return self._object
+
+        except Exception:
+            LOG.error("Renew error", exc_info=True)
+            redirect = reverse('horizon:idmanager:user_manager:index')
+            exceptions.handle(self.request, _('Unable to renew user.'),
+                              redirect=redirect)
 
     def get_context_data(self, **kwargs):
         context = super(RenewView, self).get_context_data(**kwargs)
@@ -94,8 +107,11 @@ class RenewView(forms.ModalFormView):
         result = dict()
         result['userid'] = self.kwargs['user_id']
         
-        for exp_item in self.get_object():
-            result['prj_%s' % exp_item.project.projectname] = exp_item.expdate
+        for prjname, expdate, isadmin in self.get_object():
+            if isadmin:
+                result['a_prj_%s' % prjname] = expdate
+            else:
+                result['n_prj_%s' % prjname] = expdate
 
         return result
 
