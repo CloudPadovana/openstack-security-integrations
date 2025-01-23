@@ -99,27 +99,14 @@ class CourseForm(forms.SelfHandlingForm):
 
     def clean(self):
         data = super(CourseForm, self).clean()
-        if NEW_MODEL:
-            if self.request.user.tenant_id != data['projectid']:
-                raise ValidationError(_("Invalid project"))
 
-            if not 'notes' in data:
-                data['notes'] = ""
+        if self.request.user.tenant_id != data['projectid']:
+            raise ValidationError(_("Invalid project"))
 
-            try:
-                data['org'] = 'unipd.it'
-                data['ou'] = 'other'
+        if not 'notes' in data:
+            data['notes'] = ""
 
-                kclient = keystone_api.keystoneclient(self.request)
-                for p_tag in kclient.projects.list_tags(data['projectid']):
-                    if p_tag.startswith('OU='):
-                        data['ou'] = p_tag[3:]
-                    if p_tag.startswith('O='):
-                        data['org'] = p_tag[2:]                
-            except:
-                LOG.error("Missing organization or unit", exc_info=True)
-                raise ValidationError(_("Cannot retrieve data for course"))
-        else:
+        if not NEW_MODEL:
             err_msg = check_course_info(data)
             if err_msg:
                 raise ValidationError(err_msg)
