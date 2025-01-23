@@ -121,21 +121,22 @@ if NEW_MODEL:
     ATT_COURSE_NAME = 1001
     ATT_COURSE_DESC = 1002
     ATT_COURSE_NOTE = 1003
-    ATT_COURSE_ORG = 1004
-    ATT_COURSE_OU = 1005
 
     COURSE_ATT_MAP = {
         ATT_COURSE_NAME : 'name',
         ATT_COURSE_DESC : 'description',
         ATT_COURSE_NOTE : 'notes',
-        ATT_COURSE_ORG : 'org',
-        ATT_COURSE_OU : 'ou'
     }
 
     def get_course_info(prj_name):
-        return { COURSE_ATT_MAP[x.name] : x.value for x in 
+        result =  { COURSE_ATT_MAP[x.name] : x.value for x in 
                     PrjAttribute.objects.filter(project__projectname = prj_name,
                                                 name__in = COURSE_ATT_MAP.keys()) }
+        tmpo = PrjAttribute.objects.filter(project__projectname = prj_name,
+                                           name = ATT_PRJ_ORG)
+        if len(tmpo) > 0:
+            result['org'] = tmpo[0].value
+        return result
 else:
     #
     # Simple blob structure for course details
