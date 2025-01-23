@@ -201,6 +201,7 @@ ATT_PRJ_CPER = 2002
 
 ATT_PRJ_CIDR = 2011
 ATT_PRJ_ORG = 2012
+ATT_PRJ_OU = 2013
 
 #
 # Project post creation
@@ -286,6 +287,7 @@ def setup_new_project(request, project_id, project_name, data):
     flow_step = 0
     prj_subnet_cidr = None
     prj_org = None
+    prj_ou_list = None
 
     ###########################################################################
     # Quota
@@ -429,9 +431,10 @@ def setup_new_project(request, project_id, project_name, data):
         prj_org = unit_data.get('organization', 'other')
         new_tags.append(ORG_TAG_FMT % prj_org)
 
-        for ou_id in data.get('%s-ou' % unit_id, []):
-            if ou_id.strip():
-                new_tags.append(OU_TAG_FMT % ou_id.strip())
+        prj_ou_list = [ x.strip() for x in data.get('%s-ou' % unit_id, []) ]
+
+        for ou_id in prj_ou_list:
+            new_tags.append(OU_TAG_FMT % ou_id)
 
         kclient = keystone_api.keystoneclient(request)
         kclient.projects.update_tags(project_id, new_tags)
@@ -452,6 +455,10 @@ def setup_new_project(request, project_id, project_name, data):
         if prj_org:
             PrjAttribute(project = prj_obj, name = ATT_PRJ_ORG,
                          value = prj_org).save()
+        if prj_ou_list:
+            for ou_id in prj_ou_list:
+                PrjAttribute(project = prj_obj, name = ATT_PRJ_OU,
+                             value = ou_id).save()
 
 def add_unit_combos(newprjform):
 

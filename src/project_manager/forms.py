@@ -64,6 +64,7 @@ if NEW_MODEL:
     from openstack_auth_shib.models import PrjAttribute
     from openstack_auth_shib.utils import COURSE_ATT_MAP
     from openstack_auth_shib.utils import ATT_PRJ_ORG
+    from openstack_auth_shib.utils import ATT_PRJ_OU
     from django.forms.widgets import SelectDateWidget
 else:
     from openstack_auth_shib.utils import encode_course_info
@@ -202,7 +203,7 @@ class EditTagsForm(forms.SelfHandlingForm):
     def clean(self):
         data = super(EditTagsForm, self).clean()
 
-        new_list = list()
+        data['ptags'] = list()
         for item in data['taglist'].split(','):
             tmps = item.strip()
             if len(tmps) > 255:
@@ -210,13 +211,7 @@ class EditTagsForm(forms.SelfHandlingForm):
             tmpm = TAG_REGEX.search(tmps)
             if not tmpm:
                 raise ValidationError(_('Bad format for tag %s') % tmps)
-            if tmps.startswith('ou='):
-                new_list.append(tmps.replace('ou=', 'OU='))
-            elif tmps.startswith('o='):
-                new_list.append(tmps.replace('o=', 'O='))
-            else:
-                new_list.append(tmps)
-        data['ptags'] = new_list
+            data['ptags'].append(tmps)
 
         return data
 
@@ -224,9 +219,12 @@ class EditTagsForm(forms.SelfHandlingForm):
     def handle(self, request, data):
         try:
             o_tag = None
+            ou_list_tag = list()
             for ptag in data['ptags']:
-                if ptag.startswith('O='):
+                if ptag.upper().startswith('O='):
                     o_tag = ptag[2:]
+                if ptag.upper().startswith('OU='):
+                    ou_list_tag.append(ptag[3:])
 
             if not NEW_MODEL or not o_tag:
                 kclient = keystone_api.keystoneclient(request)
@@ -235,18 +233,17 @@ class EditTagsForm(forms.SelfHandlingForm):
                 return True
 
             with transaction.atomic():
-                n_up = PrjAttribute.objects.filter(
-                    project__projectid = data['projectid'],
-                    name = ATT_PRJ_ORG
-                ).update(value = o_tag)
+                c_prj = Project.objects.filter(projectid = data['projectid'])[0]
 
-                if n_up == 0:
-                    c_prj = Project.objects.filter(projectid = data['projectid'])[0]
-                    PrjAttribute(
-                        project = c_prj,
-                        name = ATT_PRJ_ORG,
-                        value = o_tag
-                    ).save()
+                PrjAttribute.objects.filter(
+                    project = c_prj,
+                    name__in = [ ATT_PRJ_ORG, ATT_PRJ_OU ]
+                ).delete()
+
+                if o_tag:
+                    PrjAttribute(project = c_prj, name = ATT_PRJ_ORG, value = o_tag).save()
+                for ou_item in ou_list_tag:
+                    PrjAttribute(project = c_prj, name = ATT_PRJ_OU, value = ou_item).save()
 
                 kclient = keystone_api.keystoneclient(request)
                 kclient.projects.update_tags(data['projectid'], [])
