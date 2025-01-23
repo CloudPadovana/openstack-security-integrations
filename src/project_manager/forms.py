@@ -110,7 +110,7 @@ class CourseForm(forms.SelfHandlingForm):
                 data['ou'] = 'other'
 
                 kclient = keystone_api.keystoneclient(self.request)
-                for p_tag in kclient.projects.list_tags(c_prj.projectid):
+                for p_tag in kclient.projects.list_tags(data['projectid']):
                     if p_tag.startswith('OU='):
                         data['ou'] = p_tag[3:]
                     if p_tag.startswith('O='):
@@ -160,8 +160,8 @@ class CourseForm(forms.SelfHandlingForm):
 
                     new_descr = encode_course_info(data)
                     c_prj.description = new_descr
-                    c_prj.status = PRJ_COURSE
-                    c_prj.save()
+                c_prj.status = PRJ_COURSE
+                c_prj.save()
 
         except:
             LOG.error("Cannot edit course parameters", exc_info=True)
