@@ -47,7 +47,11 @@ class Command(CloudVenetoCommand):
                 for project in Project.objects.filter(projectid__isnull = False):
                     cnt = 0
                     admins = [ x.registration for x in PrjRole.objects.filter(project = project) ]
+                    if len(admins) == 0:
+                        continue
                     p_exp = Expiration.objects.filter(registration__in = admins).aggregate(Max('expdate'))
+                    if not p_exp:
+                        continue
                     if PrjAttribute.objects.filter(project = project, name = ATT_PRJ_EXP).count() == 0:
                         PrjAttribute(project = project, name = ATT_PRJ_EXP,
                                      value = p_exp['expdate__max'].isoformat()).save()
