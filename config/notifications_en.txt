@@ -236,4 +236,11 @@ body: The user {{ username }} requires the affiliation to the project {{ project
   
   Please, don't reply to this message
 
+[promotion_rejected]
+LOG: Promotion rejected for {{ username }} within project {{ project }}
+subject: Promotion rejected for {{ username }} in project {{ project }}
+body: The promotion of the user {{ username }} as administrator of the project {{ project }} has been rejected by Cloud Administrators.
+  
+  Please, don't reply to this message
+
 

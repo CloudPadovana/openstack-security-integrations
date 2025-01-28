@@ -142,6 +142,15 @@ class PromoteAdminLink(tables.LinkAction):
     def allowed(self, request, datum):
         return datum.code == RegistrData.PRO_ADMIN
 
+class RejectPromotionLink(tables.LinkAction):
+    name = "rejectpromotionlink"
+    verbose_name = _("Reject Promotion")
+    url = "horizon:idmanager:registration_manager:rejectpromotion"
+    classes = ("ajax-modal", "btn-edit")
+    
+    def allowed(self, request, datum):
+        return datum.code == RegistrData.PRO_ADMIN
+
 class OperationTable(tables.DataTable):
     username = tables.Column('username', verbose_name=_('User name'))
     fullname = tables.Column('fullname', verbose_name=_('Full name'))
@@ -155,6 +164,7 @@ class OperationTable(tables.DataTable):
         row_actions = (PreCheckLink,
                        ChkCompAck,
                        PromoteAdminLink,
+                       RejectPromotionLink,
                        GrantAllLink,
                        RejectLink,
                        NewPrjLink,

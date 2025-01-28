@@ -28,6 +28,8 @@ urlpatterns = [
         name='compack'),
     url(r'^(?P<requestid>[^/]+)/promoteadmin/$', views.PromoteAdminView.as_view(), 
         name='promoteadmin'),
+    url(r'^(?P<requestid>[^/]+)/rejectpromotion/$', views.RejectPromotionView.as_view(), 
+        name='rejectpromotion'),
     url(r'^(?P<requestid>[^/]+)/forcedapprove/$', views.ForcedApproveView.as_view(), 
         name='forcedapprove'),
     url(r'^(?P<requestid>[^/]+)/forcedreject/$', views.ForcedRejectView.as_view(), 

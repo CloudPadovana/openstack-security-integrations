@@ -47,6 +47,7 @@ from openstack_auth_shib.notifications import PRJ_REJ_TYPE
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 from openstack_auth_shib.notifications import MEMBER_REQUEST
 from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
+from openstack_auth_shib.notifications import PROMO_REJECTED
 
 from openstack_auth_shib.models import UserMapping
 from openstack_auth_shib.models import RegRequest
@@ -957,6 +958,40 @@ class PromoteAdminForm(forms.SelfHandlingForm):
             notifyUser(request = request, rcpt = user_email, action = CHANGED_MEMBER_ROLE,
                         context = noti_params)
         return True
+
+
+class RejectPromotionForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(RejectPromotionForm, self).__init__(request, *args, **kwargs)
+
+        self.fields['requestid'] = forms.CharField(widget=HiddenInput)
+
+    @sensitive_variables('data')
+    def handle(self, request, data):
+        regid, prjname = parse_requestid(data['requestid'])
+
+        admin_emails = None
+        with transaction.atomic():
+            prj_reqs = PrjRequest.objects.filter(
+                registration__regid = regid,
+                project__projectname = prjname,
+                flowstatus = PSTATUS_ADM_ELECT
+            )
+            if len(prj_reqs) == 0:
+                return False
+
+            prj_admins = [ x.registration for x in 
+                            PrjRole.objects.filter(project = prj_reqs[0].project) ]
+            admin_emails = [ x.email for x in
+                            EMail.objects.filter(registration__in = prj_admins) ]
+            prj_reqs.delete()
+
+            notifyProject(request = request,
+                          rcpt = admin_emails,
+                          action = PROMO_REJECTED,
+                          context = {'username' : request.user.username,
+                                    'project' : prj_reqs[0].project.projectname})
 
 #
 # Fix for https://issues.infn.it/jira/browse/PDCL-690
