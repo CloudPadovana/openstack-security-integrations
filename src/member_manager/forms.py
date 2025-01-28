@@ -225,10 +225,10 @@ class ProposeAdminForm(forms.SelfHandlingForm):
                 banned_status = [ x.flowstatus for x in PrjRequest.objects.filter(**q_args) ]
                 if PSTATUS_ADM_ELECT in banned_status:
                     messages.error(request, _('Promotion has already been sent.'))
-                    return False
+                    return True
                 if len(banned_status) > 0:
                     messages.error(request, _('Unable to propose the administrator: user is going to expire.'))
-                    return False
+                    return True
 
                 PrjRequest(
                     registration = registration,
