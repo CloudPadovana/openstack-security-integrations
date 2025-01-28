@@ -981,8 +981,10 @@ class RejectPromotionForm(forms.SelfHandlingForm):
             if len(prj_reqs) == 0:
                 return False
 
+            curr_usr = prj_reqs[0].registration
+            curr_prj = prj_reqs[0].project
             prj_admins = [ x.registration for x in 
-                            PrjRole.objects.filter(project = prj_reqs[0].project) ]
+                            PrjRole.objects.filter(project = curr_prj) ]
             admin_emails = [ x.email for x in
                             EMail.objects.filter(registration__in = prj_admins) ]
             prj_reqs.delete()
@@ -990,8 +992,8 @@ class RejectPromotionForm(forms.SelfHandlingForm):
             notifyProject(request = request,
                           rcpt = admin_emails,
                           action = PROMO_REJECTED,
-                          context = {'username' : request.user.username,
-                                    'project' : prj_reqs[0].project.projectname})
+                          context = {'username' : curr_usr.username,
+                                    'project' : curr_prj.projectname})
 
 #
 # Fix for https://issues.infn.it/jira/browse/PDCL-690

@@ -36,7 +36,9 @@ from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import PrjRole
+from openstack_auth_shib.models import PSTATUS_ADM_ELECT
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import PSTATUS_RENEW_ATTEMPT
 from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 from openstack_auth_shib.models import PSTATUS_ADM_ELECT
 from openstack_auth_shib.notifications import notifyUser
@@ -44,6 +46,7 @@ from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 from openstack_auth_shib.notifications import GENERIC_MESSAGE
 from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
+from openstack_auth_shib.notifications import PROMO_AVAIL
 from openstack_auth_shib.utils import DEFAULT_ROLEID
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import TENANTADMIN_ROLEID
@@ -211,9 +214,18 @@ class ProposeAdminForm(forms.SelfHandlingForm):
                 q_args = {
                     'registration' : registration,
                     'project' : project,
-                    'flowstatus__in' : range(PSTATUS_RENEW_MEMB, PSTATUS_RENEW_DISC + 1)
-                }  
-                if PrjRequest.objects.filter(**q_args).count() > 0:
+                    'flowstatus__in' : [
+                        PSTATUS_ADM_ELECT,
+                        PSTATUS_RENEW_MEMB,
+                        PSTATUS_RENEW_ATTEMPT,
+                        PSTATUS_RENEW_DISC
+                    ])
+                }
+                banned_status = [ x.flowstatus for x in PrjRequest.objects.filter(**q_args) ]
+                if PSTATUS_ADM_ELECT in banned_status:
+                    messages.error(request, _('Promotion has already been sent.'))
+                    return False
+                if banned_reqs.count() > 0:
                     messages.error(request, _('Unable to propose the administrator: user is going to expire.'))
                     return False
 
@@ -224,7 +236,12 @@ class ProposeAdminForm(forms.SelfHandlingForm):
                     notes = ""
                 ).save()
                 
-                # TODO missing notification to cloud admin
+                noti_params = {
+                    'username' : registration.username,
+                    'project' : project.projectname
+                }
+                notifyAdmin(request = request, action = PROMO_AVAIL, context = noti_params)
+
         except:
             LOG.error("Error proposing admin", exc_info=True)
             messages.error(request, _("Cannot propose administrator"))

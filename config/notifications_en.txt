@@ -236,6 +236,14 @@ body: The user {{ username }} requires the affiliation to the project {{ project
   
   Please, don't reply to this message
 
+[proposed_promotion]
+LOG: Proposed promotion for {{ username }} within project {{ project }}
+subject: Proposed promotion for {{ username }} within project {{ project }}
+body: A proposed promotion is avaliable for user {{ username }} as administrator of the project {{ project }}.
+  
+  Please, don't reply to this message
+
+
 [promotion_rejected]
 LOG: Promotion rejected for {{ username }} within project {{ project }}
 subject: Promotion rejected for {{ username }} in project {{ project }}

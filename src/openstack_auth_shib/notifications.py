@@ -67,6 +67,7 @@ GENERIC_MESSAGE = 'generic_message'
 PROPOSED_RENEWAL = 'proposed_renewal'
 DEL_USERS_SUMMARY = 'deleted_users_summary'
 COMP_CHECK_TYPE = 'compliance_check'
+PROMO_AVAIL = 'proposed_promotion'
 PROMO_REJECTED = 'promotion_rejected'
 
 # DO NOT CHANGE the LOG_TYPE_* constants
