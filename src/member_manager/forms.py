@@ -28,6 +28,7 @@ from django.views.decorators.debug import sensitive_variables
 
 from horizon import forms
 from horizon import exceptions
+from horizon import messages
 
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
@@ -219,13 +220,13 @@ class ProposeAdminForm(forms.SelfHandlingForm):
                         PSTATUS_RENEW_MEMB,
                         PSTATUS_RENEW_ATTEMPT,
                         PSTATUS_RENEW_DISC
-                    ])
+                    ]
                 }
                 banned_status = [ x.flowstatus for x in PrjRequest.objects.filter(**q_args) ]
                 if PSTATUS_ADM_ELECT in banned_status:
                     messages.error(request, _('Promotion has already been sent.'))
                     return False
-                if banned_reqs.count() > 0:
+                if len(banned_status) > 0:
                     messages.error(request, _('Unable to propose the administrator: user is going to expire.'))
                     return False
 
