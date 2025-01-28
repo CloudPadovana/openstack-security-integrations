@@ -994,6 +994,7 @@ class RejectPromotionForm(forms.SelfHandlingForm):
                           action = PROMO_REJECTED,
                           context = {'username' : curr_usr.username,
                                     'project' : curr_prj.projectname})
+        return True
 
 #
 # Fix for https://issues.infn.it/jira/browse/PDCL-690
