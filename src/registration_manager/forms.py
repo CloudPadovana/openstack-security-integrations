@@ -247,7 +247,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                 for p_item in prjReqList.filter(flowstatus=PSTATUS_PENDING):
                 
                     m_userids = [
-                        x.userid for x in PrjRole.objects.filter(
+                        x.registration.userid for x in PrjRole.objects.filter(
                             registration__userid__isnull = False,
                             project = p_item.project)
                     ]
