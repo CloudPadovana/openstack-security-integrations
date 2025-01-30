@@ -54,17 +54,12 @@ from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import MEMBER_REQUEST
 
 from openstack_auth_shib.utils import get_year_list
+from openstack_auth_shib.utils import DEFAULT_ROLEID
 
 from openstack_dashboard.api import keystone as keystone_api
 from openstack_dashboard.dashboards.identity.users import forms as baseForms
 
 LOG = logging.getLogger(__name__)
-
-def get_default_role(request):
-    DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', None)
-    for role in keystone_api.role_list(request):
-        if role.name == DEFAULT_ROLE:
-            return role.id
 
 class RenewExpForm(forms.SelfHandlingForm):
 
@@ -313,9 +308,8 @@ class ReactivateForm(forms.SelfHandlingForm):
                         expdate = data['expdate']
                     )
 
-                    keystone_api.add_tenant_user_role(
-                        request, prj_item.projectid,
-                        data['userid'], get_default_role(request))
+                    keystone_api.add_tenant_user_role(request, prj_item.projectid,
+                                                      data['userid'], DEFAULT_ROLEID)
 
                 #
                 # send notification to project managers and users
