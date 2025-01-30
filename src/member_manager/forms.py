@@ -52,7 +52,6 @@ from openstack_auth_shib.utils import DEFAULT_ROLEID
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import TENANTADMIN_ROLEID
 
-# TODO use keystone api wrappers
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
 LOG = logging.getLogger(__name__)
@@ -169,10 +168,12 @@ class DemoteUserForm(forms.SelfHandlingForm):
                 ).delete()
 
                 roles_obj = client_factory(request).roles
+                role_assign_obj = client_factory(request).role_assignments
 
                 missing_default = True
-                for r_item in roles_obj.list():
-                    if r_item.name == DEFAULT_ROLEID:
+                for r_item in role_assign_obj.list(project = request.user.tenant_id,
+                                                   user = data['userid']):
+                    if r_item.role['id'] == DEFAULT_ROLEID:
                         missing_default = False
 
                 if missing_default:

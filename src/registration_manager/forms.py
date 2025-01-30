@@ -241,6 +241,8 @@ class PreCheckForm(forms.SelfHandlingForm):
                     keystone_api.add_tenant_user_role(request, prj_item.projectid,
                                             registration.userid, TENANTADMIN_ROLEID)
 
+                    keystone_api.add_tenant_user_role(request, prj_item.projectid,
+                                            registration.userid, DEFAULT_ROLEID)
                 #
                 # Send notifications to project administrators and users
                 #
@@ -631,6 +633,8 @@ class NewProjectCheckForm(forms.SelfHandlingForm):
                 prj_req.project.save()
                 LOG.info("Created tenant %s" % project_name)
                 
+                keystone_api.add_tenant_user_role(request, prj_req.project.projectid,
+                                                user_id, DEFAULT_ROLEID)
                 #
                 # The new user is the project manager of its tenant
                 #
@@ -943,11 +947,8 @@ class PromoteAdminForm(forms.SelfHandlingForm):
 
             prj_reqs.delete()
 
-            keystone_api.add_tenant_user_role(request,
-                role = TENANTADMIN_ROLEID,
-                project = project.projectid,
-                user = registration.userid
-            )
+            keystone_api.add_tenant_user_role(request, project.projectid,
+                                              registration.userid, TENANTADMIN_ROLEID)
 
             noti_params['username'] = registration.username
             noti_params['project'] = project.projectname

@@ -46,6 +46,7 @@ from openstack_auth_shib.notifications import SUBSCR_NO_TYPE
 from openstack_auth_shib.notifications import MEMBER_REMOVED
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
+from openstack_auth_shib.utils import DEFAULT_ROLEID
 from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import MAX_RENEW
 from openstack_auth_shib.utils import NOW
@@ -112,18 +113,9 @@ class ApproveSubscrForm(forms.SelfHandlingForm):
                 )
 
                 roles_obj = client_factory(request).roles
-                arg_dict = {
-                    'project' : prj_req.project.projectid,
-                    'user' : prj_req.registration.userid
-                }
-                
-                missing_default = True
-                for item in roles_obj.list():
-                    if item.name == default_role:
-                        roles_obj.grant(item.id, **arg_dict)
-                        missing_default = False
-                if missing_default:
-                    raise Exception("Default role is undefined")
+                roles_obj.grant(DEFAULT_ROLEID,
+                                project = prj_req.project.projectid,
+                                user = prj_req.registration.userid)
                 #
                 # Enable reminder for cloud admin
                 #
