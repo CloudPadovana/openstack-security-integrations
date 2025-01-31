@@ -34,6 +34,7 @@ from .models import RegRequest
 from .models import PrjRequest
 from .models import UserMapping
 from .models import Expiration
+from .models import PRJ_PRIVATE
 from .models import PRJ_PUBLIC
 from .models import OS_LNAME_LEN
 from .models import OS_SNAME_LEN
@@ -315,6 +316,7 @@ class RegistrForm(forms.SelfHandlingForm):
         with transaction.atomic():
             c_projects = set()
             if NEW_MODEL:
+                # TODO use utils.getProjectInfo (cleanup code required)
                 comp_rules = getattr(settings, 'COMPLIANCE_RULES', {})
 
                 cidr_list = comp_rules.get('subnets', [])
@@ -327,7 +329,11 @@ class RegistrForm(forms.SelfHandlingForm):
                     if p_item.value in org_list:
                         c_projects.add(p_item.project.projectname)
 
-            for prj_entry in Project.objects.filter(projectid__isnull = False):
+            q_args = {
+                'projectid__isnull' : False,
+                'status__gt' : PRJ_PRIVATE
+            }
+            for prj_entry in Project.objects.filter(**q_args):
                 prj_label = "* " if prj_entry.projectname in c_projects else "  "
                 prj_label += prj_entry.projectname
 
