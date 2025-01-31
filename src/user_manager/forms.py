@@ -44,6 +44,7 @@ from openstack_auth_shib.models import RSTATUS_REMINDACK
 from openstack_auth_shib.models import RSTATUS_DISABLING
 from openstack_auth_shib.models import RSTATUS_DISABLED
 from openstack_auth_shib.models import RSTATUS_REENABLING
+from openstack_auth_shib.models import PRJ_PRIVATE
 
 from openstack_auth_shib.notifications import notifyProject
 from openstack_auth_shib.notifications import notifyUser
@@ -206,7 +207,7 @@ class ReactivateForm(forms.SelfHandlingForm):
         )
 
         avail_prjs = list()
-        for prj_entry in Project.objects.all():
+        for prj_entry in Project.objects.exclude(status = PRJ_PRIVATE):
             avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
         self.fields['projects'].choices = avail_prjs
 
