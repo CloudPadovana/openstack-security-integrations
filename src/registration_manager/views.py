@@ -361,7 +361,6 @@ class DetailsView(forms.ModalFormView):
                 if len(tmpres):
                     reg_item = tmpres[0].registration
                     tmpdict['extaccount'] = tmpres[0].externalid
-                    tmpdict['contact'] = tmpres[0].contactper
                     tmpdict['email'] = tmpres[0].email
                     tmpdict['notes'] = tmpres[0].notes
 
@@ -384,15 +383,10 @@ class DetailsView(forms.ModalFormView):
                     tmpem = EMail.objects.filter(registration__regid=regid)
                     tmpdict['email'] = tmpem[0].email if len(tmpem) else "-"
                     tmpdict['notes'] = prj_req.notes
-                    tmpctc = self._getContact(reg_item.organization)
-                    if tmpctc:
-                        tmpdict['contact'] = tmpctc
 
                 if reg_item:
                     tmpdict['username'] = reg_item.username
                     tmpdict['fullname'] = reg_item.givenname + " " + reg_item.sn
-                    tmpdict['organization'] = reg_item.organization
-                    tmpdict['phone'] = reg_item.phone
 
                 for prj_item in prj_list:
                     t_key = 'memberof' if prj_item.projectid else 'newprojects'
@@ -414,14 +408,6 @@ class DetailsView(forms.ModalFormView):
         context = super(DetailsView, self).get_context_data(**kwargs)
         context.update(self.get_object())
         return context
-
-    def _getContact(self, dept_id):
-        for o_name, o_data in settings.HORIZON_CONFIG.get('organization', {}).items():
-            for ou_tuple in o_data:
-                if len(ou_tuple) > 4 and ou_tuple[0] == dept_id:
-                    return "%s <%s> (tel: %s)" % ou_tuple[2:]
-        return None
-
 
 class RemainderAckView(forms.ModalFormView):
     form_class = RemainderAckForm

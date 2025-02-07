@@ -35,12 +35,7 @@
     <ul>
         <li>{% trans "Username" %}: {{ username }}</li>
         <li>{% trans "Fullname" %}: {{ fullname }}</li>
-        <li>{% trans "Home institution" %}: {{ organization }}</li>
-        {% if HORIZON_CONFIG.phone_regex %}
-        <li>{% trans "Phone" %}: {{ phone }}</li>
-        {% endif %}
         {% if extaccount %}<li>{% trans "External Identity" %}: {{ extaccount }}</li>{% endif %}
-        {% if contact %}<li>{% trans "Contact" %}: {{ contact }}</li>{% endif%}
         {% if email %}<li>{% trans "Email address" %}: <a href="mailto:{{ emailaddr }}">{{ email }}</a></li>{% endif%}
     </ul>
     
@@ -58,6 +53,7 @@
         {% for prjitem in memberof %}
         <li>
             {{ prjitem.name }}{% if prjitem.comp_required %} ({% trans "Compliance required" %}){% endif %}
+            {% if prjitem.dept_man %}<br/>{{ prjitem.dept_man }}{% endif %}
             {% if prjitem.err_msg %}<br/>{{ prjitem.err_msg }}{% endif %}
         </li>
         {% endfor %}
@@ -69,9 +65,10 @@
     <ul>
         {% for prjitem in newprojects %}
         <li>
-            {{ prjitem.name }}<br/>
-            {{ prjitem.descr }}
-            {% if prjitem.exp_date %}<br/> {% trans "Expiration" %} {{ prjitem.exp_date }}{% endif %}
+            {{ prjitem.name }}<br/>{{ prjitem.descr }}
+            {% if prjitem.contactper %}<br/>{% trans "Contact person:" %} {{ prjitem.contactper }}{% endif %}
+            {% if prjitem.dept_man %}<br/>{{ prjitem.dept_man }}{% endif %}
+            {% if prjitem.exp_date %}<br/>{% trans "Expiration" %} {{ prjitem.exp_date }}{% endif %}
         </li>
         {% endfor %}
     </ul>

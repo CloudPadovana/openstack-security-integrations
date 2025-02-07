@@ -660,7 +660,11 @@ def getProjectInfo(request, project):
         'name' : project.projectname,
         'descr' : project.description,
         'comp_required' : False,
-        'exp_date' : None
+        'exp_date' : None,
+        'org' : '',
+        'ou' : '',
+        'contactper' : '',
+        'dept_man' : ''
     }
 
     comp_rules = getattr(settings, 'COMPLIANCE_RULES', None)
@@ -672,9 +676,16 @@ def getProjectInfo(request, project):
         for attr in PrjAttribute.objects.filter(project = project):
 
             if attr.name == ATT_PRJ_ORG:
+                result['org'] = attr.value
                 for o_item in comp_rules.get('organizations', []):
                     if o_item == attr.value:
                         result['comp_required'] = True
+
+            elif attr.name == ATT_PRJ_OU:
+                result['ou'] = attr.value
+
+            elif attr.name == ATT_PRJ_CPER:
+                result['contactper'] = attr.value
 
             elif attr.name == ATT_PRJ_CIDR:
                 for n_item in comp_rules.get('subnets', []):
@@ -683,6 +694,12 @@ def getProjectInfo(request, project):
 
             elif attr.name == ATT_PRJ_EXP:
                 result['exp_date'] = datetime.fromisoformat(attr.value)
+
+        if result['org'] and result['ou']:
+            o_data = settings.HORIZON_CONFIG.get('organization', {}).get(result['org'], [])
+            for ou_tuple in o_data:
+                if len(ou_tuple) > 4 and ou_tuple[0] == result['ou']:
+                    result['dept_man'] = "(%s) %s <%s>" % ou_tuple[1 : 4]
         return result
 
     try:
