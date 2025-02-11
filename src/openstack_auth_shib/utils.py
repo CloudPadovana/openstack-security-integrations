@@ -454,12 +454,18 @@ def setup_new_project(request, project_id, project_name, data):
             PrjAttribute(project = prj_obj, name = ATT_PRJ_CIDR,
                          value = prj_subnet_cidr).save()
         if prj_org:
-            PrjAttribute(project = prj_obj, name = ATT_PRJ_ORG,
-                         value = prj_org).save()
-        if prj_ou_list:
-            for ou_id in prj_ou_list:
-                PrjAttribute(project = prj_obj, name = ATT_PRJ_OU,
-                             value = ou_id).save()
+            stored_org = PrjAttribute.objects.filter(project = prj_obj, name = ATT_PRJ_ORG)
+            if len(stored_org) > 0:
+                stored_org.update(value = prj_org)
+            else:
+                PrjAttribute(project = prj_obj, name = ATT_PRJ_ORG, value = prj_org).save()
+
+        for ou_id in prj_ou_list:
+            stored_ou = PrjAttribute.objects.filter(project = prj_obj, name = ATT_PRJ_OU)
+            if len(stored_ou) > 0:
+                stored_ou.update(value = ou_id)
+            else:
+                PrjAttribute(project = prj_obj, name = ATT_PRJ_OU, value = ou_id).save()
 
 def add_unit_combos(newprjform):
 
