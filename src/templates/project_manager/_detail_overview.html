@@ -43,6 +43,14 @@
     <dt>{% trans "Contact person" %}</dt>
     <dd>{{ cper }}</dd>
     {% endif %}
+    {% if organization %}
+    <dt>{% trans "Home institution" %}</dt>
+    <dd>{{ organization }}</dd>
+    {% endif %}
+    {% if org_unit %}
+    <dt>{% trans "Unit or department" %}</dt>
+    <dd>{{ org_unit }}</dd>
+    {% endif %}
   </dl>
 
   {% if admin_list %}

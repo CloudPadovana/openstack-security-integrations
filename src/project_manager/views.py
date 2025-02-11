@@ -54,6 +54,8 @@ if NEW_MODEL:
     from openstack_auth_shib.utils import get_course_info
     from openstack_auth_shib.utils import ATT_PRJ_EXP
     from openstack_auth_shib.utils import ATT_PRJ_CPER
+    from openstack_auth_shib.utils import ATT_PRJ_ORG
+    from openstack_auth_shib.utils import ATT_PRJ_OU
     from openstack_auth_shib.models import PrjAttribute
 else:
     from openstack_auth_shib.utils import parse_course_info
@@ -210,6 +212,10 @@ class DetailProjectView(baseViews.DetailProjectView):
                             context['expiration'] = attr.value
                         elif attr.name == ATT_PRJ_CPER:
                             context['cper'] = attr.value
+                        elif attr.name == ATT_PRJ_ORG:
+                            context['organization'] = attr.value
+                        elif attr.name == ATT_PRJ_OU:
+                            context['org_unit'] = attr.value
 
         except:
             LOG.error("Cannot retrieve project details", exc_info=True)
