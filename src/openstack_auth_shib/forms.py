@@ -133,7 +133,12 @@ class RegistrForm(forms.SelfHandlingForm):
         #################################################################################
 
         org_table = settings.HORIZON_CONFIG.get('organization', {})
-        dept_list = org_table.get(initial.get('organization', ''), None)
+        org_combo = [ ('-','-') ]
+        ou_combo = [ ('-','-') ]
+        for org_name, ou_list in org_table.items():
+            org_combo.append((org_name, org_name))
+            for ou_data in ou_list:
+                ou_combo.append((ou_data[0], ou_data[0]))
 
         if 'selprj' in initial:
 
@@ -172,18 +177,11 @@ class RegistrForm(forms.SelfHandlingForm):
                 widget=forms.widgets.Textarea()
             )
 
-            if dept_list:
-                self.fields['contactper'] = forms.CharField(
-                    required=False,
-                    widget=forms.HiddenInput,
-                    initial='unknown'
-                )
-            else:
-                self.fields['contactper'] = forms.CharField(
-                    label=_('Contact person'),
-                    required=False,
-                    widget=forms.TextInput()
-                )
+            self.fields['contactper'] = forms.CharField(
+                label=_('Project supervisor or reference'),
+                required=False,
+                widget=forms.TextInput()
+            )
 
             if NEW_MODEL:
                 self.fields['expiration'] = forms.DateTimeField(
@@ -201,15 +199,15 @@ class RegistrForm(forms.SelfHandlingForm):
             )
 
             self.fields['organization'] = forms.ChoiceField(
-                label = _('Home institution'),
+                label = _('Home institution for project'),
                 required = False,
-                choices = [ (x, x) for x in org_table.keys() ]
+                choices = org_combo
             )
 
             self.fields['org_unit'] = forms.ChoiceField(
-                label = _('Unit or department'),
+                label = _('Unit or department for project'),
                 required = False,
-                choices = []
+                choices = ou_combo
             )
 
         self.fields['notes'] = forms.CharField(
@@ -365,7 +363,7 @@ class RegistrForm(forms.SelfHandlingForm):
                         'givenname' : data['givenname'],
                         'sn' : data['sn'],
                         'organization' : data['organization'],
-                        'phone' : data['phone'],
+                        'phone' : '0000',
                         'domain' : domain
                     }
                     registration = Registration(**queryArgs)

@@ -68,6 +68,9 @@
       {% if form.fields.prjdescr %}
         {% include 'horizon/common/_form_field.html' with field=form.prjdescr %}
       {% endif %}
+      {% if form.fields.expiration %}
+        {% include 'horizon/common/_form_field.html' with field=form.expiration %}
+      {% endif %}
       {% if form.fields.contactper and not form.contactper.is_hidden %}
         {% include 'horizon/common/_form_field.html' with field=form.contactper %}
       {% endif %}
@@ -116,6 +119,7 @@
 
     {# https://stackoverflow.com/questions/66663533/changing-values-of-a-combobox-in-javascript #}
     var orgData = [
+      { org: '-', ouList: [ '-' ] },
     {% for orgName, orgUnits in org_table.items %}
       { org: '{{ orgName }}', ouList: [ {% for ouItem in orgUnits %}'{{ ouItem }}',{% endfor %}] },
     {% endfor %}
