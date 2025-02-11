@@ -52,6 +52,8 @@ from .utils import NOW
 from .utils import FROMNOW
 from .utils import ATT_PRJ_EXP
 from .utils import ATT_PRJ_CPER
+from .utils import ATT_PRJ_ORG
+from .utils import ATT_PRJ_OU
 
 from .models import NEW_MODEL
 if NEW_MODEL:
@@ -153,32 +155,21 @@ class RegistrForm(forms.SelfHandlingForm):
                     ('selprj', _('Select existing projects')),
                     ('newprj', _('Create new project'))
                 ],
-                widget=forms.Select(attrs={
-                    'class': 'switchable',
-                    'data-slug': 'actsource'
-                })
+                widget=forms.Select()
             )
 
             self.fields['newprj'] = forms.CharField(
                 label=_('Project name'),
                 max_length=OS_SNAME_LEN,
                 required=False,
-                widget=forms.TextInput(attrs={
-                    'class': 'switched',
-                    'data-switch-on': 'actsource',
-                    'data-actsource-newprj': _('Project name')
-                })
+                widget=forms.TextInput()
             )
 
             self.fields['prjdescr'] = forms.CharField(
                 label=_("Project description"),
                 required=False,
                 max_length=DESCR_LEN,
-                widget=forms.widgets.Textarea(attrs={
-                    'class': 'switched',
-                    'data-switch-on': 'actsource',
-                    'data-actsource-newprj': _('Project description')
-                })
+                widget=forms.widgets.Textarea()
             )
 
             if dept_list:
@@ -191,24 +182,14 @@ class RegistrForm(forms.SelfHandlingForm):
                 self.fields['contactper'] = forms.CharField(
                     label=_('Contact person'),
                     required=False,
-                    widget=forms.TextInput(attrs={
-                        'class': 'switched',
-                        'data-switch-on': 'actsource',
-                        'data-actsource-newprj': _('Contact person')
-                    })
+                    widget=forms.TextInput()
                 )
 
             if NEW_MODEL:
                 self.fields['expiration'] = forms.DateTimeField(
                     label = _('Project expiration'),
                     required = False,
-                    widget = SelectDateWidget(
-                        attrs = {
-                            'class': 'switched',
-                            'data-switch-on': 'actsource',
-                            'data-actsource-newprj': _('Project expiration')
-                        }, 
-                        years = get_year_list()),
+                    widget = SelectDateWidget(years = get_year_list()),
                     initial = FROMNOW(365)
                 )
 
@@ -216,89 +197,21 @@ class RegistrForm(forms.SelfHandlingForm):
                 label=_('Available projects'),
                 required=False,
                 choices=self._avail_prj_entries(),
-                widget=forms.SelectMultiple(attrs={
-                    'class': 'switched',
-                    'data-switch-on': 'actsource',
-                    'data-actsource-selprj': _('Available projects')
-                }),
+                widget=forms.SelectMultiple(),
             )
 
-        #################################################################################
-        # Other Fields
-        #################################################################################
-
-        if 'organization' in initial:
-
-            self.fields['organization'] = forms.CharField(required=True,  widget=forms.HiddenInput)
-
-            if dept_list:
-
-                self.fields['org_unit'] = forms.ChoiceField(
-                    label=_('Unit or department'),
-                    required=True,
-                    choices=[ x[:2] for x in dept_list ]
-                )
-
-        else:
-
-            #
-            # Workaround: hex string is required by the selector index
-            #
-            all_orgs = list((bytes(x, 'utf8').hex(), x) for x in org_table.keys())
-            all_orgs.append(('other', _('Other organization')))
-
-            self.fields['encoded_org'] = forms.ChoiceField(
-                label=_('Home institution'),
-                required=True,
-                choices=all_orgs,
-                widget=forms.Select(attrs={
-                    'class': 'switchable',
-                    'data-slug': 'orgwidget'
-                })
+            self.fields['organization'] = forms.ChoiceField(
+                label = _('Home institution'),
+                required = False,
+                choices = [ (x, x) for x in org_table.keys() ]
             )
 
-            self.fields['custom_org'] = forms.CharField(
-                label=_('Enter institution'),
-                required=False,
-                widget=forms.widgets.TextInput(attrs={
-                    'class': 'switched',
-                    'data-switch-on': 'orgwidget',
-                    'data-orgwidget-other': _('Enter institution')
-                })
+            self.fields['org_unit'] = forms.ChoiceField(
+                label = _('Unit or department'),
+                required = False,
+                choices = []
             )
 
-            for org_id, ou_list in org_table.items():
-
-                enc_org_id = bytes(org_id, 'utf8').hex()
-
-                if not ou_list:
-                    continue
-
-                self.fields['org_unit_%s' % enc_org_id] = forms.ChoiceField(
-                    label=_('Unit or department'),
-                    required=True,
-                    choices=[ x[:2] for x in ou_list ],
-                    widget=forms.Select(attrs={
-                        'class': 'switched',
-                        'data-switch-on': 'orgwidget',
-                        'data-orgwidget-%s' % enc_org_id: _('Unit or department')
-                    })
-                )
-
-        # In case use regex: '^\s*\+*[0-9]+[0-9\s.]+\s*$'
-        if 'phone_regex' in settings.HORIZON_CONFIG:
-            self.fields['phone'] = forms.RegexField(
-                label=_('Phone number'),
-                required=True,
-                regex=settings.HORIZON_CONFIG['phone_regex'],
-                error_messages={'invalid': _("Wrong phone format")}
-            )
-        else:
-            self.fields['phone'] = forms.CharField(
-                widget=forms.HiddenInput,
-                initial='00000000'
-            )
-    
         self.fields['notes'] = forms.CharField(
             label=_('Notes'),
             required=False,
@@ -365,47 +278,6 @@ class RegistrForm(forms.SelfHandlingForm):
         if '@' in data['username'] or ':' in data['username']:
             if data.get('federated', 'false') == 'false':
                 raise ValidationError(_("Invalid characters in user name (@:)"))
-
-        dept_id = None
-        curr_dept_list = None
-
-        cust_org = data.get('custom_org', '').strip()
-        if cust_org:
-            tmpm = ORG_REGEX.search(cust_org)
-            if tmpm:
-                raise ValidationError(_('Bad character "%s" for institution.') % tmpm.group(0))
-            data['organization'] = cust_org
-
-        elif 'encoded_org' in data:
-
-            try:
-                enc_org_id = data['encoded_org'].strip()
-                org_id = bytes.fromhex(enc_org_id).decode('utf8')
-
-                curr_dept_list = org_table.get(org_id, [])
-                dept_id = data.get('org_unit_%s' % enc_org_id, None)
-                data['organization'] = dept_id if dept_id else org_id
-
-            except:
-                LOG.error("Generic failure", exc_info=True)
-                raise ValidationError(_('Cannot retrieve institution.'))
-
-        elif 'org_unit' in data:
-            curr_dept_list = org_table.get(data['organization'], [])
-            dept_id = data['org_unit'].strip()
-            data['organization'] = dept_id
-
-        if curr_dept_list:
-            for item in curr_dept_list:
-                if item[0] != dept_id:
-                    continue
-                tmpctc = data.get('contactper', '').strip()
-                if tmpctc:
-                    tmpctc += '; '
-                if len(item) > 4 and item[2] and item[3] and item[4]:
-                    tmpctc += "%s <%s> (tel: %s)" % item[2:]
-                    data['contactper'] = tmpctc
-                    break
 
         if NEW_MODEL:
             now = NOW()
@@ -529,6 +401,10 @@ class RegistrForm(forms.SelfHandlingForm):
                                          value = data['expiration'].isoformat()).save()
                             PrjAttribute(project = project, name = ATT_PRJ_CPER,
                                          value = data['contactper']).save()
+                            PrjAttribute(project = project, name = ATT_PRJ_ORG,
+                                         value = data['organization']).save()
+                            PrjAttribute(project = project, name = ATT_PRJ_OU,
+                                         value = data['org_unit']).save()
 
                     else:
                         project = Project.objects.get(projectname=prjitem[0])

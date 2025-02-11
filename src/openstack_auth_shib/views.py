@@ -214,6 +214,12 @@ class RegistrView(forms.ModalFormView):
             context['form_action_url'] = '%s/auth/register/' % self.attributes.root_url
         else:
             context['form_action_url'] = '/dashboard/auth/register/'
+
+        org_table = dict()
+        for orgName, orgData in settings.HORIZON_CONFIG.get('organization', {}).items():
+            org_table[orgName ] = [ x[0] for x in orgData ]
+        context['org_table'] = org_table
+
         return context
 
     def get(self, request, *args, **kwargs):

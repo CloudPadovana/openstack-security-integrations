@@ -30,17 +30,58 @@
 {% block modal-body %}
   <div class="left">
     <fieldset>
-      {% include "horizon/common/_form_fields.html" %}
+      {% include 'horizon/common/_form_errors.html' with form=form %}
+
+      {% include 'horizon/common/_form_field.html' with field=form.username %}
+      {% include 'horizon/common/_form_field.html' with field=form.givenname %}
+      {% include 'horizon/common/_form_field.html' with field=form.sn %}
+      {% if form.fields.pwd %}
+        {% include 'horizon/common/_form_field.html' with field=form.pwd %}
+      {% endif %}
+      {% if form.fields.repwd %}
+        {% include 'horizon/common/_form_field.html' with field=form.repwd %}
+      {% endif %}
+      {% include 'horizon/common/_form_field.html' with field=form.email %}
+      {% if not form.prjaction.is_hidden %}
+        {% include 'horizon/common/_form_field.html' with field=form.prjaction %}
+      {% endif %}
+
+      <div id="selprjdiv" style="display: block;">
+      {% if not form.selprj.is_hidden %}
+        {% include 'horizon/common/_form_field.html' with field=form.selprj %}
+        <div class="alert alert-info">
+            <p>{% trans "Available projects marked with * require INFN rules compliance" %}</p>
+            <p>
+                {% trans "For further details see the " %}
+                <a href="https://userguide.cloudveneto.it/en/latest/Registration.html#prerequisites-for-using-infn-resources">
+                    {% trans "user guide" %}
+                </a>
+            </p>
+        </div>
+      {% endif %}
+      </div>
+
+       <div id="newprjdiv" style="display: none;">
+      {% if form.fields.newprj %}
+        {% include 'horizon/common/_form_field.html' with field=form.newprj %}
+      {% endif %}
+      {% if form.fields.prjdescr %}
+        {% include 'horizon/common/_form_field.html' with field=form.prjdescr %}
+      {% endif %}
+      {% if form.fields.contactper and not form.contactper.is_hidden %}
+        {% include 'horizon/common/_form_field.html' with field=form.contactper %}
+      {% endif %}
+      {% if form.fields.organization %}
+        {% include 'horizon/common/_form_field.html' with field=form.organization %}
+      {% endif %}
+      {% if form.fields.org_unit %}
+        {% include 'horizon/common/_form_field.html' with field=form.org_unit %}
+      {% endif %}
+      </div>
+
+      {% include 'horizon/common/_form_field.html' with field=form.notes %}
+
     </fieldset>
-    <div class="alert alert-info">
-        <p>{% trans "Available projects marked with * require INFN rules compliance" %}</p>
-        <p>
-            {% trans "For further details see the " %}
-            <a href="https://userguide.cloudveneto.it/en/latest/Registration.html#prerequisites-for-using-infn-resources">
-                {% trans "user guide" %}
-            </a>
-        </p>
-    </div>
   </div>
   <div class="right">
     <h3>{% trans "AUP" %}</h3>
@@ -67,13 +108,44 @@
 
 {% block modal-js %}
   <script type="text/javascript">
-      function acceptAUP() {
-          document.getElementById('id_aupok').value = 'accept';
-          document.getElementById('chk_aup_div').style.display='none';
-          document.getElementById('reg_btn_id').disabled=false;
-     }
+    function acceptAUP() {
+        document.getElementById('id_aupok').value = 'accept';
+        document.getElementById('chk_aup_div').style.display='none';
+        document.getElementById('reg_btn_id').disabled=false;
+    }
+
+    {# https://stackoverflow.com/questions/66663533/changing-values-of-a-combobox-in-javascript #}
+    var orgData = [
+    {% for orgName, orgUnits in org_table.items %}
+      { org: '{{ orgName }}', ouList: [ {% for ouItem in orgUnits %}'{{ ouItem }}',{% endfor %}] },
+    {% endfor %}
+    ]
+    const getOrgUnits = function(selectedOrg) {
+      const target = orgData.find(d => d.org === selectedOrg);
+      return target ? target.ouList : [];
+    }
+    const changeOrgUnits = function(orgUnits) {
+      let html = ''
+      for (let i in orgUnits) {
+        html += '<option value="' + orgUnits[i] + '">' + orgUnits[i] + '</option>'
+        document.querySelector('#id_org_unit').innerHTML = html;
+      }
+    }
+    document.querySelector('#id_organization').addEventListener('change', (event) => {
+      const orgUnits = getOrgUnits(event.target.value);
+      changeOrgUnits(orgUnits);
+    });
+
+    document.querySelector('#id_prjaction').addEventListener('change', (event) => {
+      if (event.target.value === 'selprj') {
+        document.getElementById('selprjdiv').style.display='block';
+        document.getElementById('newprjdiv').style.display='none';
+      } else {
+        document.getElementById('selprjdiv').style.display='none';
+        document.getElementById('newprjdiv').style.display='block';
+      }
+    });
   </script>
 {% endblock %}
-
 
 
