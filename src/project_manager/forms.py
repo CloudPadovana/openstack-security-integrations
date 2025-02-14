@@ -56,7 +56,10 @@ from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import NOW
 from openstack_auth_shib.utils import FROMNOW
 from openstack_auth_shib.utils import ATT_PRJ_EXP
+from openstack_auth_shib.utils import ATT_PRJ_CIDR
 from openstack_auth_shib.utils import ATT_PRJ_CPER
+from openstack_auth_shib.utils import ATT_PRJ_ORG
+from openstack_auth_shib.utils import ATT_PRJ_OU
 from openstack_auth_shib.utils import YEARS_RANGE
 
 from openstack_auth_shib.models import NEW_MODEL
@@ -316,66 +319,61 @@ class SubscribeForm(forms.SelfHandlingForm):
         self.fields['prjaction'] = forms.ChoiceField(
             label = _('Project action'),
             choices = [ ('newprj', _('Create new project')), ],
-            widget = forms.Select(attrs = {
-                'class': 'switchable',
-                'data-slug': 'actsource'
-            })
+            widget = forms.Select()
         )
 
         self.fields['newprj'] = forms.CharField(
             label = _('Personal project'),
             max_length = OS_SNAME_LEN,
             required = False,
-            widget = forms.TextInput(attrs = {
-                'class': 'switched',
-                'data-switch-on': 'actsource',
-                'data-actsource-newprj': _('Project name')
-            })
+            widget = forms.TextInput()
         )
 
         self.fields['prjdescr'] = forms.CharField(
             label = _("Project description"),
             required = False,
             max_length = DESCR_LEN,
-            widget = forms.widgets.Textarea(attrs = {
-                'class': 'switched',
-                'data-switch-on': 'actsource',
-                'data-actsource-newprj': _('Project description')
-            })
+            widget = forms.widgets.Textarea()
         )
 
         self.fields['selprj'] = forms.MultipleChoiceField(
             label = _('Available projects'),
             required = False,
-            widget = forms.SelectMultiple(attrs = {
-                'class': 'switched',
-                'data-switch-on': 'actsource',
-                'data-actsource-selprj': _('Select existing project')
-            }),
+            widget = forms.SelectMultiple(),
         )
 
         if NEW_MODEL:
+            org_table = settings.HORIZON_CONFIG.get('organization', {})
+            org_combo = [ ('-','-') ]
+            ou_combo = [ ('-','-') ]
+            for org_name, ou_list in org_table.items():
+                org_combo.append((org_name, org_name))
+                for ou_data in ou_list:
+                    ou_combo.append((ou_data[0], ou_data[0]))
+
             self.fields['expiration'] = forms.DateTimeField(
                 label = _('Project expiration'),
                 required = False,
-                widget = SelectDateWidget(
-                    attrs = {
-                        'class': 'switched',
-                        'data-switch-on': 'actsource',
-                        'data-actsource-newprj': _('Project expiration')
-                    }, 
-                    years = get_year_list()),
+                widget = SelectDateWidget(years = get_year_list()),
                 initial = FROMNOW(365)
             )
 
             self.fields['contactper'] = forms.CharField(
                 label=_('Contact person'),
                 required=False,
-                widget=forms.TextInput(attrs={
-                    'class': 'switched',
-                    'data-switch-on': 'actsource',
-                    'data-actsource-newprj': _('Contact person')
-                })
+                widget=forms.TextInput()
+            )
+
+            self.fields['organization'] = forms.ChoiceField(
+                label = _('Home institution for project'),
+                required = False,
+                choices = org_combo
+            )
+
+            self.fields['org_unit'] = forms.ChoiceField(
+                label = _('Unit or department for project'),
+                required = False,
+                choices = ou_combo
             )
 
         self.fields['notes'] = forms.CharField(
@@ -384,24 +382,46 @@ class SubscribeForm(forms.SelfHandlingForm):
             widget = forms.widgets.Textarea()
         )
 
-        auth_prjs = [ pitem.name for pitem in self.request.user.authorized_tenants ]
-
-        pendPReq = PrjRequest.objects.filter(registration__userid=self.request.user.id)
-        self.pendingProjects = [ prjreq.project.projectname for prjreq in pendPReq ]
-        excl_prjs = auth_prjs + self.pendingProjects
-
-        prj_list = Project.objects.exclude(projectname__in=excl_prjs)
-        prj_list = prj_list.filter(status__in=[PRJ_PUBLIC, PRJ_COURSE], projectid__isnull=False)
-
-        prjEntries = [
-            (prj_entry.projectname, prj_entry.projectname) for prj_entry in prj_list
-        ]
+        prjEntries = self._avail_prj_entries()
         if len(prjEntries):
             self.fields['selprj'].choices = prjEntries
             self.fields['prjaction'].choices = [
                 ('selprj', _('Select existing projects')),
                 ('newprj', _('Create new project'))
             ]
+
+    def _avail_prj_entries(self):
+        with transaction.atomic():
+            auth_prjs = [ pitem.name for pitem in self.request.user.authorized_tenants ]
+
+            pendPReq = PrjRequest.objects.filter(registration__userid=self.request.user.id)
+            self.pendingProjects = [ prjreq.project.projectname for prjreq in pendPReq ]
+            excl_prjs = auth_prjs + self.pendingProjects
+
+            prj_list = Project.objects.exclude(projectname__in=excl_prjs)
+            prj_list = prj_list.filter(status__in=[PRJ_PUBLIC, PRJ_COURSE], projectid__isnull=False)
+
+            c_projects = set()
+            if NEW_MODEL:
+                # TODO use utils.getProjectInfo (cleanup code required)
+                comp_rules = getattr(settings, 'COMPLIANCE_RULES', {})
+
+                cidr_list = comp_rules.get('subnets', [])
+                for p_item in PrjAttribute.objects.filter(name = ATT_PRJ_CIDR):
+                    if p_item.value in cidr_list:
+                        c_projects.add(p_item.project.projectname)
+
+                org_list = comp_rules.get('organizations', [])
+                for p_item in PrjAttribute.objects.filter(name = ATT_PRJ_ORG):
+                    if p_item.value in org_list:
+                        c_projects.add(p_item.project.projectname)
+
+            prj_combo = list()
+            for prj_entry in prj_list:
+                prj_label = "* " if prj_entry.projectname in c_projects else "  "
+                prj_label += prj_entry.projectname
+                prj_combo.append((prj_entry.projectname, prj_label))
+            return prj_combo
 
     def clean(self):
         data = super(SubscribeForm, self).clean()
@@ -461,6 +481,10 @@ class SubscribeForm(forms.SelfHandlingForm):
                                          value = data['expiration'].isoformat()).save()
                             PrjAttribute(project = project, name = ATT_PRJ_CPER,
                                          value = data['contactper']).save()
+                            PrjAttribute(project = project, name = ATT_PRJ_ORG,
+                                         value = data['organization']).save()
+                            PrjAttribute(project = project, name = ATT_PRJ_OU,
+                                         value = data['org_unit']).save()
 
                         noti_buffer.append({
                             'cloud_level' : True,

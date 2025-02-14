@@ -326,3 +326,13 @@ class SubscribeView(forms.ModalFormView):
     template_name = 'idmanager/project_manager/prj_request.html'
     success_url = reverse_lazy('horizon:idmanager:project_manager:index')
 
+    def get_context_data(self, **kwargs):
+        context = super(SubscribeView, self).get_context_data(**kwargs)
+
+        org_table = dict()
+        for orgName, orgData in settings.HORIZON_CONFIG.get('organization', {}).items():
+            org_table[orgName ] = [ x[0] for x in orgData ]
+        context['org_table'] = org_table
+
+        return context
+
