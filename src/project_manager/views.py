@@ -134,9 +134,16 @@ class IndexView(baseViews.IndexView):
                     if prj_item.projectid and is_curr_admin:
                         prj_table[prjname].tags = set(kprj_man.list_tags(prj_item.projectid))
 
-                        for item in course_table.keys():
-                            if (ORG_TAG_FMT % item) in prj_table[prjname].tags:
-                                prj_table[prjname].handle_course = True
+                        if NEW_MODEL:
+                            prj_table[prjname].handle_course = PrjAttribute.objects.filter(
+                                project = prj_item,
+                                name = ATT_PRJ_ORG,
+                                value__in = course_table.keys()
+                            ).count() > 0
+                        else:
+                            for item in course_table.keys():
+                                if (ORG_TAG_FMT % item) in prj_table[prjname].tags:
+                                    prj_table[prjname].handle_course = True
 
                 if not self.request.user.is_superuser:
                     preq_list = PrjRequest.objects.filter(
