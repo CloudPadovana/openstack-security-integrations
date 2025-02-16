@@ -323,7 +323,7 @@ class SubscribeForm(forms.SelfHandlingForm):
         )
 
         self.fields['newprj'] = forms.CharField(
-            label = _('Personal project'),
+            label = _('Project name'),
             max_length = OS_SNAME_LEN,
             required = False,
             widget = forms.TextInput()
