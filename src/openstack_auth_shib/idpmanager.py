@@ -30,6 +30,10 @@ class Federated_Account:
     mapping_table = getattr(settings, 'WEBSSO_IDP_MAPPING', {})
     rule_table = getattr(settings, 'WEBSSO_IDP_RULES', {})
 
+    idp_equiv = getattr(settings, 'IDP_EQUIV', {
+        'studenti.unipd.it' : 'unipd.it'
+    })
+
     def __init__(self, request):
 
         self.root_url = request.META['SCRIPT_NAME']
@@ -40,7 +44,8 @@ class Federated_Account:
 
             self.username = request.META['REMOTE_USER']
             idx = request.META['REMOTE_USER'].find('@')
-            self.provider = request.META['REMOTE_USER'][idx+1:] if idx > 0 else 'Unknown'
+            tmp_prov = request.META['REMOTE_USER'][idx+1:] if idx > 0 else 'Unknown'
+            self.provider = Federated_Account.idp_equiv.get(tmp_prov, tmp_prov)
 
         elif 'OIDC-iss' in request.META:
             self.username = None
