@@ -245,10 +245,10 @@ class RegistrForm(forms.SelfHandlingForm):
                 'status__gt' : PRJ_PRIVATE
             }
             for prj_entry in Project.objects.filter(**q_args):
-                prj_label = "* " if prj_entry.projectname in c_projects else "  "
-                prj_label += prj_entry.projectname
+                id_prefix = "c_" if prj_entry.projectname in c_projects else "f_"
+                prj_label = prj_entry.projectname
 
-                avail_prjs.append((prj_entry.projectname, prj_label))
+                avail_prjs.append((id_prefix + prj_label, prj_label))
 
         return avail_prjs
         
@@ -283,6 +283,8 @@ class RegistrForm(forms.SelfHandlingForm):
                 raise ValidationError(_('Invalid expiration time.'))
             if data['expiration'].year > now.year + MAX_RENEW:
                 raise ValidationError(_('Invalid expiration time.'))
+
+        data['selprj'] = [ x[2:] for x in data['selprj']]
 
         return data
 

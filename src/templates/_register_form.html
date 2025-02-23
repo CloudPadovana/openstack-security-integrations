@@ -49,8 +49,8 @@
       <div id="selprjdiv" style="display: block;">
       {% if not form.selprj.is_hidden %}
         {% include 'horizon/common/_form_field.html' with field=form.selprj %}
-        <div class="alert alert-info">
-            <p>{% trans "Available projects marked with * require INFN rules compliance" %}</p>
+        <div id="prjcompldiv" class="alert alert-info" style="display: none;">
+            <p>{% trans "The selected project requires INFN rules compliance" %}</p>
             <p>
                 {% trans "For further details see the " %}
                 <a href="https://userguide.cloudveneto.it/en/latest/Registration.html#prerequisites-for-using-infn-resources">
@@ -148,6 +148,14 @@
         document.getElementById('selprjdiv').style.display='none';
         document.getElementById('newprjdiv').style.display='block';
       }
+    });
+
+    document.querySelector('#id_selprj').addEventListener('change', (event) => {
+        if (event.target.value.slice(0, 2) === 'c_') {
+            document.getElementById('prjcompldiv').style.display='block';
+        } else {
+            document.getElementById('prjcompldiv').style.display='none';
+        }
     });
   </script>
 {% endblock %}
