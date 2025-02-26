@@ -50,7 +50,7 @@ class DeleteUsersAction(baseTables.DeleteUsersAction):
             for e_item in Expiration.objects.filter(registration__userid=obj_id):
 
                 prj_man_ids = [ 
-                    x.userid for x in PrjRole.objects.filter(
+                    x.registration.userid for x in PrjRole.objects.filter(
                         registration__userid__isnull = False,
                         project__projectid = e_item.project.projectid)
                 ]
