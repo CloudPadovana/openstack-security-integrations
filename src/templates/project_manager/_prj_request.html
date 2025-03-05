@@ -32,15 +32,6 @@
     {% include 'horizon/common/_form_field.html' with field=form.prjaction %}
     <div id="selprjdiv" style="display: block;">
       {% include 'horizon/common/_form_field.html' with field=form.selprj %}
-      <div class="alert alert-info">
-          <p>{% trans "Available projects marked with * require INFN rules compliance" %}</p>
-          <p>
-              {% trans "For further details see the " %}
-              <a href="https://userguide.cloudveneto.it/en/latest/Registration.html#prerequisites-for-using-infn-resources">
-                  {% trans "user guide" %}
-              </a>
-          </p>
-      </div>
     </div>
 
      <div id="newprjdiv" style="display: none;">
@@ -70,6 +61,15 @@
 <div class="right">
     <h3>{% trans "Description:" %}</h3>
     <p>{% trans "From here you can submit a request for a project." %}</p>
+    <div id="prjcompldiv" class="alert alert-info" style="display: none;">
+        <p>{% trans "The selected project requires INFN rules compliance" %}</p>
+        <p>
+            {% trans "For further details see the " %}
+            <a href="https://userguide.cloudveneto.it/en/latest/Registration.html#prerequisites-for-using-infn-resources">
+                {% trans "user guide" %}
+            </a>
+        </p>
+    </div>
 </div>
 {% endblock %}
 
@@ -114,6 +114,15 @@
         document.getElementById('newprjdiv').style.display='block';
       }
     });
+
+    document.querySelector('#id_selprj').addEventListener('change', (event) => {
+        if (event.target.value.slice(0, 2) === 'c_') {
+            document.getElementById('prjcompldiv').style.display='block';
+        } else {
+            document.getElementById('prjcompldiv').style.display='none';
+        }
+    });
+
   </script>
 {% endblock %}
 
