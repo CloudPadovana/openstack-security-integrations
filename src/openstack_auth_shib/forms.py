@@ -64,7 +64,8 @@ if NEW_MODEL:
 
 LOG = logging.getLogger(__name__)
 
-ORG_REGEX = re.compile(r'[^a-zA-Z0-9-_\.]')
+MARK_COMP_ON = 'c:'
+MARK_COMP_OFF = 'f:'
 
 class RegistrForm(forms.SelfHandlingForm):
 
@@ -245,10 +246,12 @@ class RegistrForm(forms.SelfHandlingForm):
                 'status__gt' : PRJ_PRIVATE
             }
             for prj_entry in Project.objects.filter(**q_args):
-                id_prefix = "c_" if prj_entry.projectname in c_projects else "f_"
                 prj_label = prj_entry.projectname
 
-                avail_prjs.append((id_prefix + prj_label, prj_label))
+                if prj_entry.projectname in c_projects:
+                    avail_prjs.append((MARK_COMP_ON + prj_label, prj_label))
+                else:
+                    avail_prjs.append((MARK_COMP_OFF + prj_label, prj_label))
 
         return avail_prjs
         

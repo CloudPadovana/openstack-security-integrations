@@ -418,9 +418,12 @@ class SubscribeForm(forms.SelfHandlingForm):
 
             prj_combo = list()
             for prj_entry in prj_list:
-                id_prefix = "c_" if prj_entry.projectname in c_projects else "f_"
                 prj_label = prj_entry.projectname
-                prj_combo.append((id_prefix, prj_label))
+
+                if prj_entry.projectname in c_projects:
+                    prj_combo.append((MARK_COMP_ON + prj_label, prj_label))
+                else:
+                    prj_combo.append((MARK_COMP_OFF + prj_label, prj_label))
             return prj_combo
 
     def clean(self):
