@@ -47,7 +47,7 @@
       {% endif %}
 
       <div id="selprjdiv" style="display: block;">
-      {% if not form.selprj.is_hidden %}
+      {% if form.fields.selprj and not form.selprj.is_hidden %}
         {% include 'horizon/common/_form_field.html' with field=form.selprj %}
         <div id="prjcompldiv" class="alert alert-info" style="display: none;">
             <p>{% trans "The selected project requires INFN rules compliance" %}</p>

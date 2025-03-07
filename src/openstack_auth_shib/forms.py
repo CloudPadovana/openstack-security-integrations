@@ -141,15 +141,17 @@ class RegistrForm(forms.SelfHandlingForm):
             for ou_data in ou_list:
                 ou_combo.append((ou_data[0], ou_data[0]))
 
-        if 'selprj' in initial:
+        if 'projectname' in request.GET or 'selcourse' in request.POST:
 
             self.fields['prjaction'] = forms.CharField(
-                label=_('Project action'),
-                widget=forms.HiddenInput
+                label = _('Project action'),
+                initial = 'selprj',
+                widget = forms.HiddenInput
             )
 
-            self.fields['selprj'] = forms.CharField(
-                label=_('Available projects'),
+            self.fields['selcourse'] = forms.CharField(
+                label = "Selected course",
+                initial = request.GET.get('projectname', ''),
                 widget=forms.HiddenInput
             )
 
@@ -263,11 +265,16 @@ class RegistrForm(forms.SelfHandlingForm):
         LOG.debug("Registration posted data: %s" % str(data))
         
         if data['prjaction'] == 'newprj':
+
             data['newprj'] = check_projectname(data['newprj'], ValidationError)
+
         elif data['prjaction'] == 'selprj':
-            if not data['selprj']:
-                raise ValidationError(_('Missing selected project.'))
-        elif data['prjaction'] != 'guestprj':
+            if not 'selprj' in data:
+                tmpc = data.get('selcourse', None)
+                if not tmpc:
+                    raise ValidationError(_('Missing selected project.'))
+                data['selprj'] = [ tmpc ]
+        else:
             raise ValidationError(_('Wrong project parameter.'))
         
         if data.get('aupok', 'reject') != 'accept':
@@ -280,15 +287,22 @@ class RegistrForm(forms.SelfHandlingForm):
             if data.get('federated', 'false') == 'false':
                 raise ValidationError(_("Invalid characters in user name (@:)"))
 
-        if NEW_MODEL:
+        if NEW_MODEL and 'expiration' in data:
             now = NOW()
             if data['expiration'].date() < now.date():
                 raise ValidationError(_('Invalid expiration time.'))
             if data['expiration'].year > now.year + MAX_RENEW:
                 raise ValidationError(_('Invalid expiration time.'))
 
-        data['selprj'] = [ x[2:] for x in data['selprj']]
+        p_list = list()
+        for item in data['selprj']:
+            if item.startswith(MARK_COMP_ON) or item.startswith(MARK_COMP_OFF):
+                p_list.append(item[2:])
+            else:
+                p_list.append(item)
+        data['selprj'] = p_list
 
+        LOG.debug("New posted data: %s" % str(data))
         return data
 
     def _build_safe_redirect(self, request, location):
@@ -367,7 +381,7 @@ class RegistrForm(forms.SelfHandlingForm):
                         'username' : data['username'],
                         'givenname' : data['givenname'],
                         'sn' : data['sn'],
-                        'organization' : data['organization'],
+                        'organization' : data.get('organization', ''),
                         'phone' : '0000',
                         'domain' : domain
                     }
@@ -378,7 +392,7 @@ class RegistrForm(forms.SelfHandlingForm):
                         'registration' : registration,
                         'password' : pwd,
                         'email' : data['email'],
-                        'contactper' : data['contactper'],
+                        'contactper' : data.get('contactper', ''),
                         'notes' : data['notes']
                     }
                     if is_fed_account:
@@ -427,7 +441,7 @@ class RegistrForm(forms.SelfHandlingForm):
                 'projects': list(p[0] for p in prjlist),
                 'project_creation': (prj_action == 'newprj'),
                 'notes' : data['notes'],
-                'contactper' : data['contactper']
+                'contactper' : data.get('contactper', '')
             }
             notifyAdmin(request=self.request, action=REGISTR_AVAIL_TYPE, context=noti_params)
 
