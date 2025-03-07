@@ -307,7 +307,7 @@ class RegistrForm(forms.SelfHandlingForm):
 
     def _build_safe_redirect(self, request, location):
         safe_loc = get_logout_url(request, location)
-        if safe_loc:
+        if safe_loc and settings.HORIZON_CONFIG.get('enable_slo', False):
             response = shortcuts.redirect(safe_loc)
             response = postproc_logout(request, response)
         else:
