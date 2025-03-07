@@ -478,7 +478,7 @@ class ForcedCheckForm(forms.SelfHandlingForm):
             user_email = tmpres[0].email if tmpres else None
             
             m_userids =  [
-                x.userid for x in PrjRole.objects.filter(
+                x.registration.userid for x in PrjRole.objects.filter(
                     registration__userid__isnull = False,
                     project__projectid = project_id)
             ]
