@@ -75,6 +75,9 @@ else:
 
 LOG = logging.getLogger(__name__)
 
+MARK_COMP_ON = 'c:'
+MARK_COMP_OFF = 'f:'
+
 class CourseForm(forms.SelfHandlingForm):
 
     def __init__(self, request, *args, **kwargs):
