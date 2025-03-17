@@ -127,7 +127,7 @@ class DemoteUserAction(tables.LinkAction):
     classes = ("ajax-modal", "btn-edit")
 
     def allowed(self, request, datum):
-        return datum.is_t_admin and datum.num_of_admins > 1
+        return datum.is_t_admin and datum.num_of_admins > 1 and datum.userid != request.user.id
 
 class ChangeExpAction(tables.LinkAction):
     name = "change_expiration"
