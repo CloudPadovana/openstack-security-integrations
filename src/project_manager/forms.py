@@ -452,6 +452,14 @@ class SubscribeForm(forms.SelfHandlingForm):
             if not 'contactper' in data:
                 data['contactper'] = ""
 
+        p_list = list()
+        for item in data['selprj']:
+            if item.startswith(MARK_COMP_ON) or item.startswith(MARK_COMP_OFF):
+                p_list.append(item[2:])
+            else:
+                p_list.append(item)
+        data['selprj'] = p_list
+
         return data
 
     @sensitive_variables('data')
