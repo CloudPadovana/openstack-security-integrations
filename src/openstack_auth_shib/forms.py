@@ -189,7 +189,7 @@ class RegistrForm(forms.SelfHandlingForm):
             if NEW_MODEL:
                 self.fields['expiration'] = forms.DateTimeField(
                     label = _('Project expiration'),
-                    required = False,
+                    required = True,
                     widget = SelectDateWidget(years = get_year_list()),
                     initial = FROMNOW(365)
                 )
@@ -289,10 +289,9 @@ class RegistrForm(forms.SelfHandlingForm):
 
         if NEW_MODEL and 'expiration' in data:
             now = NOW()
-            if data['expiration'].date() < now.date():
-                raise ValidationError(_('Invalid expiration time.'))
-            if data['expiration'].year > now.year + MAX_RENEW:
-                raise ValidationError(_('Invalid expiration time.'))
+            if data['expiration'].date() < now.date() \
+                or data['expiration'].year > now.year + MAX_RENEW:
+                raise ValidationError(_('Invalid expiration date.'))
 
         p_list = list()
         for item in data['selprj']:

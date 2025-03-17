@@ -71,19 +71,18 @@ class ModifyExpForm(forms.SelfHandlingForm):
         curr_year = datetime.now(timezone.utc).year
         years_list = list(range(curr_year, curr_year + MAX_RENEW))           
         self.fields['expiration'] = forms.DateTimeField(
-            label=_("Expiration date"),
-            required=True,
-            widget=SelectDateWidget(None, years_list)
+            label = _("Expiration date"),
+            required = True,
+            widget = SelectDateWidget(years = years_list)
         )
 
     def clean(self):
         data = super(ModifyExpForm, self).clean()
 
         now = datetime.now(timezone.utc)
-        if data['expiration'].date() < now.date():
-            raise ValidationError(_('Invalid expiration time.'))
-        if data['expiration'].year > now.year + MAX_RENEW:
-            raise ValidationError(_('Invalid expiration time.'))
+        if not 'expiration' in data or data['expiration'].date() < now.date() \
+            or data['expiration'].year > now.year + MAX_RENEW:
+            raise ValidationError(_('Invalid expiration date.'))
 
         if data['userid'] == self.request.user.id:
             raise ValidationError(_('Invalid operation.'))

@@ -356,7 +356,7 @@ class SubscribeForm(forms.SelfHandlingForm):
 
             self.fields['expiration'] = forms.DateTimeField(
                 label = _('Project expiration'),
-                required = False,
+                required = True,
                 widget = SelectDateWidget(years = get_year_list()),
                 initial = FROMNOW(365)
             )
@@ -444,10 +444,9 @@ class SubscribeForm(forms.SelfHandlingForm):
 
         if NEW_MODEL:
             now = NOW()
-            if data['expiration'].date() < now.date():
-                raise ValidationError(_('Invalid expiration time.'))
-            if data['expiration'].year > now.year + YEARS_RANGE:
-                raise ValidationError(_('Invalid expiration time.'))
+            if not 'expiration' in data or data['expiration'].date() < now.date() \
+                or data['expiration'].year > now.year + YEARS_RANGE:
+                raise ValidationError(_('Invalid expiration date.'))
 
             if not 'contactper' in data:
                 data['contactper'] = ""
