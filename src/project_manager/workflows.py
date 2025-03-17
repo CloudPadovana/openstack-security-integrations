@@ -41,13 +41,16 @@ from openstack_auth_shib.models import RSTATUS_REMINDER
 from openstack_auth_shib.models import RSTATUS_REMINDACK
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import NEW_MODEL
+if NEW_MODEL:
+    from openstack_auth_shib.models import PrjAttribute
 
 from openstack_auth_shib.utils import check_projectname
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import setup_new_project
 from openstack_auth_shib.utils import add_unit_combos
 from openstack_auth_shib.utils import get_unit_table
-
+from openstack_auth_shib.utils import ATT_PRJ_EXP
 
 from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
@@ -346,6 +349,12 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
             #
             # Delete and re-create the project admin cache
             #
+            prj_exp = None
+            if NEW_MODEL:
+                tmpexp = PrjAttribute.objects.filter(project = self.this_project, name = ATT_PRJ_EXP)
+                if len(tmpexp) > 0:
+                    prj_exp = datetime.fromisoformat(tmpexp[0].value)
+
             PrjRole.objects.filter(project=self.this_project).delete()
             for item in Registration.objects.filter(userid__in=prjadm_ids):
                 new_prjrole = PrjRole()
@@ -354,6 +363,12 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
                 new_prjrole.roleid = prjrole_id
                 new_prjrole.save()
                 LOG.debug("Re-created prj admin: %s" % item.username)
+
+                if prj_exp:
+                    Expiration.objects.update_expiration(
+                        registration = item,
+                        project = self.this_project,
+                        expdate = prj_exp)
 
             result = super(ExtUpdateProject, self)._update_project_members(request, data, project_id)
 
