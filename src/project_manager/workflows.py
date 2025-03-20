@@ -21,6 +21,7 @@ from django.db import transaction
 from django.db import IntegrityError
 from django.conf import settings
 from django.forms import ValidationError
+from django.forms.widgets import SelectDateWidget
 from django.utils.translation import gettext_lazy as _
 
 from horizon import forms
@@ -50,6 +51,10 @@ from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import setup_new_project
 from openstack_auth_shib.utils import add_unit_combos
 from openstack_auth_shib.utils import get_unit_table
+from openstack_auth_shib.utils import get_year_list
+from openstack_auth_shib.utils import MAX_RENEW
+from openstack_auth_shib.utils import NOW
+from openstack_auth_shib.utils import FROMNOW
 from openstack_auth_shib.utils import ATT_PRJ_EXP
 
 from openstack_auth_shib.notifications import notifyUser
@@ -91,10 +96,27 @@ class CustomProjectInfoAction(workflows.Action):
 
     def __init__(self, request, *args, **kwargs):
         super(CustomProjectInfoAction, self).__init__(request, *args, **kwargs)
+
+        self.fields['expiration'] = forms.DateTimeField(
+            label = _('Project expiration'),
+            required = True,
+            widget = SelectDateWidget(years = get_year_list()),
+            initial = FROMNOW(365)
+        )
+
         add_unit_combos(self)
+
+    def clean(self):
+        cleaned_data = super(CustomProjectInfoAction, self).clean()
+        now = NOW()
+        if cleaned_data['expiration'].date() < now.date() \
+            or cleaned_data['expiration'].year > now.year + MAX_RENEW:
+            raise ValidationError(_('Invalid expiration date.'))
+        return cleaned_data
 
     class Meta(object):
         name = _("Cloud Veneto setup")
+        slug = 'custom_project_info'
         help_text = _("Custom parameters for Cloud Veneto")
     
 class CustomProjectInfo(workflows.Step):
@@ -105,28 +127,23 @@ class CustomProjectInfo(workflows.Step):
         super(CustomProjectInfo, self).__init__(workflow)
         unit_table = get_unit_table()
 
+        contrib_list = [ 'expiration' ]
         if len(unit_table) > 0:
-            contrib_list = [ 'unit' ]
+            contrib_list.append('unit')
             for unit_id in unit_table:
                 contrib_list.append("%s-net" % unit_id)
                 contrib_list.append("%s-ou" % unit_id)
-            self.contributes = tuple(contrib_list)
+        self.contributes = tuple(contrib_list)
 
 class ExtCreateProject(baseWorkflows.CreateProject):
     success_url = "horizon:idmanager:project_manager:index"
     
     def __init__(self, request=None, context_seed=None, entry_point=None, *args, **kwargs):
 
-        unit_table = get_unit_table()
-        if len(unit_table) > 0:
-            self.default_steps = (ExtCreateProjectInfo,
-                                  baseWorkflows.UpdateProjectMembers,
-                                  baseWorkflows.UpdateProjectGroups,
-                                  CustomProjectInfo)
-        else:
-            self.default_steps = (ExtCreateProjectInfo,
-                                  baseWorkflows.UpdateProjectMembers,
-                                  baseWorkflows.UpdateProjectGroups)
+        self.default_steps = (ExtCreateProjectInfo,
+                              baseWorkflows.UpdateProjectMembers,
+                              baseWorkflows.UpdateProjectGroups,
+                              CustomProjectInfo)
 
         workflows.Workflow.__init__(self, request=request,
                                             context_seed=context_seed,
@@ -176,9 +193,12 @@ class ExtCreateProject(baseWorkflows.CreateProject):
                 for user_id in data[field_name]:
                     member_ids.add(user_id)
 
+            if NEW_MODEL:
+                PrjAttribute(project = self.this_project, name = ATT_PRJ_EXP,
+                             value = data['expiration'].isoformat()).save()
 
             #
-            # Import expiration per tenant, use per-user expiration date as a fall back
+            # Member expiration equals to project expiration
             # Create the project admin cache
             #
             for u_item in Registration.objects.filter(userid__in=member_ids):
@@ -186,7 +206,7 @@ class ExtCreateProject(baseWorkflows.CreateProject):
                 Expiration.objects.create_expiration(
                     registration = u_item,
                     project = self.this_project,
-                    expdate = u_item.expdate
+                    expdate = data['expiration']
                 )
 
                 if u_item.userid in prjadm_ids:
