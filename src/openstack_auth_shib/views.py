@@ -213,9 +213,23 @@ class RegistrView(forms.ModalFormView):
 
         if self.attributes:
 
-            if UserMapping.objects.filter(globaluser=self.attributes.username).count() \
-                and not 'projectname' in request.GET:
-                return alreay_registered(self.request)
+            i_list = [ self.attributes.username ]
+            if self.attributes.altname:
+                i_list.append(self.attributes.altname)
+
+            for item in UserMapping.objects.filter(globaluser__in = i_list):
+                if item.globaluser == self.attributes.username and not 'projectname' in request.GET:
+
+                    return alreay_registered(self.request)
+
+                if item.globaluser == self.attributes.altname:
+                    tempDict = {
+                        'error_header' : _("Registration error"),
+                        'error_text' : _("Identity mismatch, please contact the cloud support"),
+                        'redirect_url' : '/dashboard',
+                        'redirect_label' : _("Home")
+                    }
+                    return shortcuts.render(request, 'aai_error.html', tempDict)
 
             if RegRequest.objects.filter(externalid=self.attributes.username).count():
                 return dup_login(self.request)

@@ -37,6 +37,10 @@ class Federated_Account:
     def __init__(self, request):
 
         self.root_url = request.META['SCRIPT_NAME']
+        self.username = None
+        self.idpid = None
+        self.provider = None
+        self.altname = None
 
         if 'Shib-Identity-Provider' in request.META:
 
@@ -47,15 +51,17 @@ class Federated_Account:
             tmp_prov = request.META['REMOTE_USER'][idx+1:] if idx > 0 else 'Unknown'
             self.provider = Federated_Account.idp_equiv.get(tmp_prov, tmp_prov)
 
+            if 'persistent-id' in request.META:
+                t_list = request.META['persistent-id'].split(';')
+                for item in t_list:
+                    t_tuple = item.split('!')
+                    if len(t_tuple) == 3:
+                        self.altname = t_tuple[2]
+                        break
+
         elif 'OIDC-iss' in request.META:
-            self.username = None
             self.idpid = request.META['OIDC-iss']
             self.provider = request.META.get('OIDC-organisation_name', 'Unknown')
-            self.username = None
-        else:
-            self.username = None
-            self.idpid = None
-            self.provider = None
 
         if self.idpid and not self.username:
             step1 = list(x for x in Federated_Account.entity_table.items()
