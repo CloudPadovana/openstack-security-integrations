@@ -17,6 +17,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from django.db import transaction
+from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse_lazy as reverse
 
@@ -47,6 +48,16 @@ LOG = logging.getLogger(__name__)
 class IndexView(baseViews.IndexView):
     table_class = UsersTable
     template_name = 'idmanager/user_manager/index.html'
+
+    def get_data(self):
+        all_users = super(IndexView, self).get_data()
+        if not getattr(settings, 'SHOW_MANAGED_USERS', True):
+            return all_users
+
+        u_set = set()
+        for item in Expiration.objects.all():
+            u_set.add(item.registration.userid)
+        return [ x for x in all_users if x.id in u_set ]
 
 class UpdateView(baseViews.UpdateView):
     template_name = 'idmanager/user_manager/update.html'
