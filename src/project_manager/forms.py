@@ -34,6 +34,7 @@ from openstack_auth_shib.models import DESCR_LEN
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
 from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import PrjAttribute
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PRJ_PUBLIC
@@ -51,27 +52,19 @@ from openstack_auth_shib.notifications import MEMBER_REQUEST
 from openstack_auth_shib.notifications import COMP_CHECK_TYPE
 from openstack_auth_shib.utils import TAG_REGEX
 from openstack_auth_shib.utils import PRJ_REGEX
+from openstack_auth_shib.utils import check_compliance
 from openstack_auth_shib.utils import getProjectInfo
 from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import NOW
 from openstack_auth_shib.utils import FROMNOW
 from openstack_auth_shib.utils import ATT_PRJ_EXP
-from openstack_auth_shib.utils import ATT_PRJ_CIDR
 from openstack_auth_shib.utils import ATT_PRJ_CPER
 from openstack_auth_shib.utils import ATT_PRJ_ORG
 from openstack_auth_shib.utils import ATT_PRJ_OU
 from openstack_auth_shib.utils import YEARS_RANGE
+from openstack_auth_shib.utils import COURSE_ATT_MAP
 
-from openstack_auth_shib.models import NEW_MODEL
-if NEW_MODEL:
-    from openstack_auth_shib.models import PrjAttribute
-    from openstack_auth_shib.utils import COURSE_ATT_MAP
-    from openstack_auth_shib.utils import ATT_PRJ_ORG
-    from openstack_auth_shib.utils import ATT_PRJ_OU
-    from django.forms.widgets import SelectDateWidget
-else:
-    from openstack_auth_shib.utils import encode_course_info
-    from openstack_auth_shib.utils import check_course_info
+from django.forms.widgets import SelectDateWidget
 
 LOG = logging.getLogger(__name__)
 
@@ -112,10 +105,6 @@ class CourseForm(forms.SelfHandlingForm):
         if not 'notes' in data:
             data['notes'] = ""
 
-        if not NEW_MODEL:
-            err_msg = check_course_info(data)
-            if err_msg:
-                raise ValidationError(err_msg)
         return data
 
     @sensitive_variables('data')
@@ -130,30 +119,19 @@ class CourseForm(forms.SelfHandlingForm):
                     messages.error(request, _("Operation not allowed"))
                     return False
 
-                if NEW_MODEL:
-                    c_info = PrjAttribute.objects.filter(project = c_prj, name__in = COURSE_ATT_MAP.keys())
+                c_info = PrjAttribute.objects.filter(project = c_prj, name__in = COURSE_ATT_MAP.keys())
 
-                    need_update = (len(c_info) == 0)
-                    for item in c_info:
-                        if item.value != data[COURSE_ATT_MAP[item.name]]:
-                            need_update = True
-                            break;
+                need_update = (len(c_info) == 0)
+                for item in c_info:
+                    if item.value != data[COURSE_ATT_MAP[item.name]]:
+                        need_update = True
+                        break;
 
-                    if need_update:
-                        if len(c_info) > 0:
-                            c_info.delete()
-                        for k_item, v_item in COURSE_ATT_MAP.items():
-                            PrjAttribute(project = c_prj, name = k_item, value = data[v_item]).save()
-                else:
-                    kclient = keystone_api.keystoneclient(request)
-                    for p_tag in kclient.projects.list_tags(c_prj.projectid):
-                        if p_tag.startswith('OU='):
-                            data['ou'] = p_tag[3:]
-                        if p_tag.startswith('O='):
-                            data['org'] = p_tag[2:]
-
-                    new_descr = encode_course_info(data)
-                    c_prj.description = new_descr
+                if need_update:
+                    if len(c_info) > 0:
+                        c_info.delete()
+                    for k_item, v_item in COURSE_ATT_MAP.items():
+                        PrjAttribute(project = c_prj, name = k_item, value = data[v_item]).save()
                 c_prj.status = PRJ_COURSE
                 c_prj.save()
 
@@ -219,7 +197,7 @@ class EditTagsForm(forms.SelfHandlingForm):
                 if ptag.upper().startswith('OU='):
                     ou_list_tag.append(ptag[3:])
 
-            if not NEW_MODEL or not o_tag:
+            if not o_tag:
                 kclient = keystone_api.keystoneclient(request)
                 kclient.projects.update_tags(data['projectid'], [])
                 kclient.projects.update_tags(data['projectid'], data['ptags'])
@@ -345,39 +323,38 @@ class SubscribeForm(forms.SelfHandlingForm):
             widget = forms.SelectMultiple(),
         )
 
-        if NEW_MODEL:
-            org_table = settings.HORIZON_CONFIG.get('organization', {})
-            org_combo = [ ('-','-') ]
-            ou_combo = [ ('-','-') ]
-            for org_name, ou_list in org_table.items():
-                org_combo.append((org_name, org_name))
-                for ou_data in ou_list:
-                    ou_combo.append((ou_data[0], ou_data[0]))
+        org_table = settings.HORIZON_CONFIG.get('organization', {})
+        org_combo = [ ('-','-') ]
+        ou_combo = [ ('-','-') ]
+        for org_name, ou_list in org_table.items():
+            org_combo.append((org_name, org_name))
+            for ou_data in ou_list:
+                ou_combo.append((ou_data[0], ou_data[0]))
 
-            self.fields['expiration'] = forms.DateTimeField(
-                label = _('Project expiration'),
-                required = True,
-                widget = SelectDateWidget(years = get_year_list()),
-                initial = FROMNOW(365)
-            )
+        self.fields['expiration'] = forms.DateTimeField(
+            label = _('Project expiration'),
+            required = True,
+            widget = SelectDateWidget(years = get_year_list()),
+            initial = FROMNOW(365)
+        )
 
-            self.fields['contactper'] = forms.CharField(
-                label=_('Contact person'),
-                required=False,
-                widget=forms.TextInput()
-            )
+        self.fields['contactper'] = forms.CharField(
+            label=_('Contact person'),
+            required=False,
+            widget=forms.TextInput()
+        )
 
-            self.fields['organization'] = forms.ChoiceField(
-                label = _('Home institution for project'),
-                required = False,
-                choices = org_combo
-            )
+        self.fields['organization'] = forms.ChoiceField(
+            label = _('Home institution for project'),
+            required = False,
+            choices = org_combo
+        )
 
-            self.fields['org_unit'] = forms.ChoiceField(
-                label = _('Unit or department for project'),
-                required = False,
-                choices = ou_combo
-            )
+        self.fields['org_unit'] = forms.ChoiceField(
+            label = _('Unit or department for project'),
+            required = False,
+            choices = ou_combo
+        )
 
         self.fields['notes'] = forms.CharField(
             label = _('Notes'),
@@ -394,6 +371,8 @@ class SubscribeForm(forms.SelfHandlingForm):
             ]
 
     def _avail_prj_entries(self):
+        prj_combo = list()
+
         with transaction.atomic():
             auth_prjs = [ pitem.name for pitem in self.request.user.authorized_tenants ]
 
@@ -404,30 +383,14 @@ class SubscribeForm(forms.SelfHandlingForm):
             prj_list = Project.objects.exclude(projectname__in=excl_prjs)
             prj_list = prj_list.filter(status__in=[PRJ_PUBLIC, PRJ_COURSE], projectid__isnull=False)
 
-            c_projects = set()
-            if NEW_MODEL:
-                # TODO use utils.getProjectInfo (cleanup code required)
-                comp_rules = getattr(settings, 'COMPLIANCE_RULES', {})
-
-                cidr_list = comp_rules.get('subnets', [])
-                for p_item in PrjAttribute.objects.filter(name = ATT_PRJ_CIDR):
-                    if p_item.value in cidr_list:
-                        c_projects.add(p_item.project.projectname)
-
-                org_list = comp_rules.get('organizations', [])
-                for p_item in PrjAttribute.objects.filter(name = ATT_PRJ_ORG):
-                    if p_item.value in org_list:
-                        c_projects.add(p_item.project.projectname)
-
-            prj_combo = list()
-            for prj_entry in prj_list:
+            for prj_entry, c_flag in check_compliance(prj_list):
                 prj_label = prj_entry.projectname
-
-                if prj_entry.projectname in c_projects:
+                if c_flag:
                     prj_combo.append((MARK_COMP_ON + prj_label, prj_label))
                 else:
                     prj_combo.append((MARK_COMP_OFF + prj_label, prj_label))
-            return prj_combo
+
+        return prj_combo
 
     def clean(self):
         data = super(SubscribeForm, self).clean()
@@ -442,14 +405,13 @@ class SubscribeForm(forms.SelfHandlingForm):
             if not data['selprj']:
                 raise ValidationError(_('Missing selected project.'))
 
-        if NEW_MODEL:
-            now = NOW()
-            if not 'expiration' in data or data['expiration'].date() < now.date() \
-                or data['expiration'].year > now.year + YEARS_RANGE:
-                raise ValidationError(_('Invalid expiration date.'))
+        now = NOW()
+        if not 'expiration' in data or data['expiration'].date() < now.date() \
+            or data['expiration'].year > now.year + YEARS_RANGE:
+            raise ValidationError(_('Invalid expiration date.'))
 
-            if not 'contactper' in data:
-                data['contactper'] = ""
+        if not 'contactper' in data:
+            data['contactper'] = ""
 
         p_list = list()
         for item in data['selprj']:
@@ -489,15 +451,14 @@ class SubscribeForm(forms.SelfHandlingForm):
                             status = PRJ_PUBLIC
                         )
 
-                        if NEW_MODEL:
-                            PrjAttribute(project = project, name = ATT_PRJ_EXP,
-                                         value = data['expiration'].isoformat()).save()
-                            PrjAttribute(project = project, name = ATT_PRJ_CPER,
-                                         value = data['contactper']).save()
-                            PrjAttribute(project = project, name = ATT_PRJ_ORG,
-                                         value = data['organization']).save()
-                            PrjAttribute(project = project, name = ATT_PRJ_OU,
-                                         value = data['org_unit']).save()
+                        PrjAttribute(project = project, name = ATT_PRJ_EXP,
+                                     value = data['expiration'].isoformat()).save()
+                        PrjAttribute(project = project, name = ATT_PRJ_CPER,
+                                     value = data['contactper']).save()
+                        PrjAttribute(project = project, name = ATT_PRJ_ORG,
+                                     value = data['organization']).save()
+                        PrjAttribute(project = project, name = ATT_PRJ_OU,
+                                     value = data['org_unit']).save()
 
                         noti_buffer.append({
                             'cloud_level' : True,

@@ -42,9 +42,7 @@ from openstack_auth_shib.models import RSTATUS_REMINDER
 from openstack_auth_shib.models import RSTATUS_REMINDACK
 from openstack_auth_shib.models import PSTATUS_RENEW_ADMIN
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
-from openstack_auth_shib.models import NEW_MODEL
-if NEW_MODEL:
-    from openstack_auth_shib.models import PrjAttribute
+from openstack_auth_shib.models import PrjAttribute
 
 from openstack_auth_shib.utils import check_projectname
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
@@ -193,9 +191,8 @@ class ExtCreateProject(baseWorkflows.CreateProject):
                 for user_id in data[field_name]:
                     member_ids.add(user_id)
 
-            if NEW_MODEL:
-                PrjAttribute(project = self.this_project, name = ATT_PRJ_EXP,
-                             value = data['expiration'].isoformat()).save()
+            PrjAttribute(project = self.this_project, name = ATT_PRJ_EXP,
+                         value = data['expiration'].isoformat()).save()
 
             #
             # Member expiration equals to project expiration
@@ -370,10 +367,9 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
             # Delete and re-create the project admin cache
             #
             prj_exp = None
-            if NEW_MODEL:
-                tmpexp = PrjAttribute.objects.filter(project = self.this_project, name = ATT_PRJ_EXP)
-                if len(tmpexp) > 0:
-                    prj_exp = datetime.fromisoformat(tmpexp[0].value)
+            tmpexp = PrjAttribute.objects.filter(project = self.this_project, name = ATT_PRJ_EXP)
+            if len(tmpexp) > 0:
+                prj_exp = datetime.fromisoformat(tmpexp[0].value)
 
             PrjRole.objects.filter(project=self.this_project).delete()
             for item in Registration.objects.filter(userid__in=prjadm_ids):

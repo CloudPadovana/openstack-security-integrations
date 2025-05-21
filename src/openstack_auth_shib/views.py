@@ -53,12 +53,7 @@ from .models import PRJ_COURSE
 from .forms import RegistrForm
 from .idpmanager import Federated_Account
 from .idpmanager import checkFederationSetup
-
-from .models import NEW_MODEL
-if NEW_MODEL:
-    from .utils import get_course_info
-else:
-    from .utils import parse_course_info
+from .utils import get_course_info
 
 LOG = logging.getLogger(__name__)
 AUTHZCOOKIE = "keystoneidpid"
@@ -357,10 +352,7 @@ def course(request, project_name):
         }
         return shortcuts.render(request, 'aai_error.html', tempDict)
 
-    if NEW_MODEL:
-        info_table = get_course_info(project[0].projectname)
-    else:
-        info_table = parse_course_info(project[0].description)
+    info_table = get_course_info(project[0].projectname)
 
     idpref = course_table.get(info_table['org'], None)
     if not idpref:

@@ -57,9 +57,7 @@ from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRole
-from openstack_auth_shib.models import NEW_MODEL
-if NEW_MODEL:
-    from openstack_auth_shib.models import PrjAttribute
+from openstack_auth_shib.models import PrjAttribute
 
 from openstack_auth_shib.models import PSTATUS_REG
 from openstack_auth_shib.models import PSTATUS_PENDING
@@ -777,7 +775,7 @@ class RenewAdminForm(forms.SelfHandlingForm):
                     return True
                 
                 # renew admin and forced-renew normal member
-                if NEW_MODEL and prj_reqs[0].flowstatus == PSTATUS_RENEW_ADMIN:
+                if prj_reqs[0].flowstatus == PSTATUS_RENEW_ADMIN:
                     # Renew all project admins
                     for role in PrjRole.objects.filter(project__projectname = prjname):
                         Expiration.objects.update_expiration(
@@ -934,16 +932,15 @@ class PromoteAdminForm(forms.SelfHandlingForm):
             if tmpl:
                 user_email = tmpl[0]
 
-            if NEW_MODEL:
-                tmpl = PrjAttribute.objects.filter(
+            tmpl = PrjAttribute.objects.filter(
+                project = project,
+                name = ATT_PRJ_EXP
+            )
+            if len(tmpl) > 0:
+                Expiration.objects.filter(
+                    registration = registration,
                     project = project,
-                    name = ATT_PRJ_EXP
-                )
-                if len(tmpl) > 0:
-                    Expiration.objects.filter(
-                        registration = registration,
-                        project = project,
-                    ).update(expdate = datetime.fromisoformat(tmpl[0].value))
+                ).update(expdate = datetime.fromisoformat(tmpl[0].value))
 
             prj_reqs.delete()
 

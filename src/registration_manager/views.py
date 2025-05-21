@@ -29,9 +29,7 @@ from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import Expiration
-from openstack_auth_shib.models import NEW_MODEL
-if NEW_MODEL:
-    from openstack_auth_shib.models import PrjAttribute
+from openstack_auth_shib.models import PrjAttribute
 
 from openstack_auth_shib.models import RSTATUS_PENDING
 from openstack_auth_shib.models import RSTATUS_REMINDACK
@@ -502,14 +500,12 @@ def get_project_details(requestid):
                     project__projectname = prjname
                 )[0].project
 
-                prj_exp = None
-                if NEW_MODEL:
-                    exp_items = PrjAttribute.objects.filter(
-                        project = prj_obj,
-                        name = ATT_PRJ_EXP
-                    )
-                    if len(exp_items):
-                        prj_exp = datetime.fromisoformat(exp_items[0].value)
+                exp_items = PrjAttribute.objects.filter(
+                    project = prj_obj,
+                    name = ATT_PRJ_EXP
+                )
+                if len(exp_items):
+                    prj_exp = datetime.fromisoformat(exp_items[0].value)
                 else:
                     prj_exp = datetime.now() + timedelta(365)
 

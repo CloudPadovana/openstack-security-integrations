@@ -32,6 +32,7 @@ from .models import Registration
 from .models import Project
 from .models import RegRequest
 from .models import PrjRequest
+from .models import PrjAttribute
 from .models import UserMapping
 from .models import Expiration
 from .models import PRJ_PRIVATE
@@ -45,22 +46,18 @@ from .models import PSTATUS_REG
 from .models import PSTATUS_PENDING
 from .notifications import notifyAdmin, REGISTR_AVAIL_TYPE
 from .utils import get_ostack_attributes
+from .utils import check_compliance
 from .utils import check_projectname
 from .utils import get_year_list
 from .utils import MAX_RENEW
 from .utils import NOW
 from .utils import FROMNOW
-from .utils import ATT_PRJ_EXP
 from .utils import ATT_PRJ_CPER
+from .utils import ATT_PRJ_EXP
 from .utils import ATT_PRJ_ORG
 from .utils import ATT_PRJ_OU
 
-from .models import NEW_MODEL
-if NEW_MODEL:
-    from .models import PrjAttribute
-    from .utils import ATT_PRJ_CIDR
-    from .utils import ATT_PRJ_ORG
-    from django.forms.widgets import SelectDateWidget
+from django.forms.widgets import SelectDateWidget
 
 LOG = logging.getLogger(__name__)
 
@@ -186,13 +183,12 @@ class RegistrForm(forms.SelfHandlingForm):
                 widget=forms.TextInput()
             )
 
-            if NEW_MODEL:
-                self.fields['expiration'] = forms.DateTimeField(
-                    label = _('Project expiration'),
-                    required = True,
-                    widget = SelectDateWidget(years = get_year_list()),
-                    initial = FROMNOW(365)
-                )
+            self.fields['expiration'] = forms.DateTimeField(
+                label = _('Project expiration'),
+                required = True,
+                widget = SelectDateWidget(years = get_year_list()),
+                initial = FROMNOW(365)
+            )
 
             self.fields['selprj'] = forms.MultipleChoiceField(
                 label=_('Available projects'),
@@ -228,29 +224,11 @@ class RegistrForm(forms.SelfHandlingForm):
         avail_prjs = list()
 
         with transaction.atomic():
-            c_projects = set()
-            if NEW_MODEL:
-                # TODO use utils.getProjectInfo (cleanup code required)
-                comp_rules = getattr(settings, 'COMPLIANCE_RULES', {})
+            prj_list = Project.objects.filter(projectid__isnull = False, status__gt = PRJ_PRIVATE)
 
-                cidr_list = comp_rules.get('subnets', [])
-                for p_item in PrjAttribute.objects.filter(name = ATT_PRJ_CIDR):
-                    if p_item.value in cidr_list:
-                        c_projects.add(p_item.project.projectname)
-
-                org_list = comp_rules.get('organizations', [])
-                for p_item in PrjAttribute.objects.filter(name = ATT_PRJ_ORG):
-                    if p_item.value in org_list:
-                        c_projects.add(p_item.project.projectname)
-
-            q_args = {
-                'projectid__isnull' : False,
-                'status__gt' : PRJ_PRIVATE
-            }
-            for prj_entry in Project.objects.filter(**q_args):
+            for prj_entry, c_flag in check_compliance(prj_list):
                 prj_label = prj_entry.projectname
-
-                if prj_entry.projectname in c_projects:
+                if c_flag:
                     avail_prjs.append((MARK_COMP_ON + prj_label, prj_label))
                 else:
                     avail_prjs.append((MARK_COMP_OFF + prj_label, prj_label))
@@ -287,7 +265,7 @@ class RegistrForm(forms.SelfHandlingForm):
             if data.get('federated', 'false') == 'false':
                 raise ValidationError(_("Invalid characters in user name (@:)"))
 
-        if NEW_MODEL and 'expiration' in data:
+        if 'expiration' in data:
             now = NOW()
             if data['expiration'].date() < now.date() \
                 or data['expiration'].year > now.year + MAX_RENEW:
@@ -412,19 +390,18 @@ class RegistrForm(forms.SelfHandlingForm):
                         }
                         project = Project.objects.create(**prjArgs)
 
-                        if NEW_MODEL:
-                            PrjAttribute(project = project, name = ATT_PRJ_EXP,
-                                         value = data['expiration'].isoformat()).save()
-                            PrjAttribute(project = project, name = ATT_PRJ_CPER,
-                                         value = data['contactper']).save()
-                            PrjAttribute(project = project, name = ATT_PRJ_ORG,
-                                         value = data['organization']).save()
-                            PrjAttribute(project = project, name = ATT_PRJ_OU,
-                                         value = data['org_unit']).save()
+                        PrjAttribute(project = project, name = ATT_PRJ_EXP,
+                                     value = data['expiration'].isoformat()).save()
+                        PrjAttribute(project = project, name = ATT_PRJ_CPER,
+                                     value = data['contactper']).save()
+                        PrjAttribute(project = project, name = ATT_PRJ_ORG,
+                                     value = data['organization']).save()
+                        PrjAttribute(project = project, name = ATT_PRJ_OU,
+                                     value = data['org_unit']).save()
 
                     else:
                         project = Project.objects.get(projectname=prjitem[0])
-            
+
                     reqArgs = {
                         'registration' : registration,
                         'project' : project,

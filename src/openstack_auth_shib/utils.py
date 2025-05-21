@@ -47,9 +47,7 @@ from .models import PSTATUS_PENDING
 from .models import PSTATUS_RENEW_MEMB
 from .models import PSTATUS_RENEW_ATTEMPT
 
-from .models import NEW_MODEL
-if NEW_MODEL:
-    from .models import PrjAttribute
+from .models import PrjAttribute
 
 LOG = logging.getLogger(__name__)
 
@@ -114,65 +112,28 @@ def check_projectname(prjname, error_class):
         raise error_class(_('Bad character "%s" for project name.') % tmpm.group(0))
     return tmps
 
-if NEW_MODEL:
-    #
-    # Definitions and utilities for courses
-    #
-    ATT_COURSE_NAME = 1001
-    ATT_COURSE_DESC = 1002
-    ATT_COURSE_NOTE = 1003
+#
+# Definitions and utilities for courses
+#
+ATT_COURSE_NAME = 1001
+ATT_COURSE_DESC = 1002
+ATT_COURSE_NOTE = 1003
 
-    COURSE_ATT_MAP = {
-        ATT_COURSE_NAME : 'name',
-        ATT_COURSE_DESC : 'description',
-        ATT_COURSE_NOTE : 'notes',
-    }
+COURSE_ATT_MAP = {
+    ATT_COURSE_NAME : 'name',
+    ATT_COURSE_DESC : 'description',
+    ATT_COURSE_NOTE : 'notes',
+}
 
-    def get_course_info(prj_name):
-        result =  { COURSE_ATT_MAP[x.name] : x.value for x in 
-                    PrjAttribute.objects.filter(project__projectname = prj_name,
-                                                name__in = COURSE_ATT_MAP.keys()) }
-        tmpo = PrjAttribute.objects.filter(project__projectname = prj_name,
-                                           name = ATT_PRJ_ORG)
-        if len(tmpo) > 0:
-            result['org'] = tmpo[0].value
-        return result
-else:
-    #
-    # Simple blob structure for course details
-    #
-    def parse_course_info(blob, default_name=""):
-        data = blob.split('|')
-        return {
-            'description' : data[0] if len(data) else _('Undefined'),
-            'name' : data[1] if len(data) > 1 else default_name,
-            'notes' : data[2] if len(data) > 2 else "",
-            'ou' : data[3] if len(data) > 3 else 'other',
-            'org' : data[4] if len(data) > 4 else 'unipd.it'
-        }
-
-    def encode_course_info(info_dict, default_name=""):
-        return '%s|%s|%s|%s|%s' % (info_dict.get('description', _('Undefined')),
-                                   info_dict.get('name', default_name),
-                                   info_dict.get('notes', ""),
-                                   info_dict.get('ou', 'other'),
-                                   info_dict.get('org', 'unipd.it'))
-
-    def check_course_info(info_dict):
-        for info_key, info_value in info_dict.items():
-            if not '|' in info_value:
-                continue
-            if info_key == 'name':
-                return _('Bad character "|" in the course name.')
-            if info_key == 'description':
-                return _('Bad character "|" in the course description.')
-            if info_key == 'notes':
-                return _('Bad character "|" in the course notes.')
-            if info_key == 'ou':
-                return _('Bad character "|" in the course department.')
-            if info_key == 'org':
-                return _('Bad character "|" in the course institution.')
-        return None
+def get_course_info(prj_name):
+    result =  { COURSE_ATT_MAP[x.name] : x.value for x in 
+                PrjAttribute.objects.filter(project__projectname = prj_name,
+                                            name__in = COURSE_ATT_MAP.keys()) }
+    tmpo = PrjAttribute.objects.filter(project__projectname = prj_name,
+                                       name = ATT_PRJ_ORG)
+    if len(tmpo) > 0:
+        result['org'] = tmpo[0].value
+    return result
 
 #
 # Definitions and utilities for expiration date
@@ -447,25 +408,24 @@ def setup_new_project(request, project_id, project_name, data):
     ###########################################################################
     # Project attributes in DB
     ###########################################################################
-    if NEW_MODEL:
-        # no transactions here
-        prj_obj = Project.objects.get(projectname = project_name)
-        if prj_subnet_cidr:
-            PrjAttribute(project = prj_obj, name = ATT_PRJ_CIDR,
-                         value = prj_subnet_cidr).save()
-        if prj_org:
-            stored_org = PrjAttribute.objects.filter(project = prj_obj, name = ATT_PRJ_ORG)
-            if len(stored_org) > 0:
-                stored_org.update(value = prj_org)
-            else:
-                PrjAttribute(project = prj_obj, name = ATT_PRJ_ORG, value = prj_org).save()
+    # no transactions here
+    prj_obj = Project.objects.get(projectname = project_name)
+    if prj_subnet_cidr:
+        PrjAttribute(project = prj_obj, name = ATT_PRJ_CIDR,
+                     value = prj_subnet_cidr).save()
+    if prj_org:
+        stored_org = PrjAttribute.objects.filter(project = prj_obj, name = ATT_PRJ_ORG)
+        if len(stored_org) > 0:
+            stored_org.update(value = prj_org)
+        else:
+            PrjAttribute(project = prj_obj, name = ATT_PRJ_ORG, value = prj_org).save()
 
-        for ou_id in prj_ou_list:
-            stored_ou = PrjAttribute.objects.filter(project = prj_obj, name = ATT_PRJ_OU)
-            if len(stored_ou) > 0:
-                stored_ou.update(value = ou_id)
-            else:
-                PrjAttribute(project = prj_obj, name = ATT_PRJ_OU, value = ou_id).save()
+    for ou_id in prj_ou_list:
+        stored_ou = PrjAttribute.objects.filter(project = prj_obj, name = ATT_PRJ_OU)
+        if len(stored_ou) > 0:
+            stored_ou.update(value = ou_id)
+        else:
+            PrjAttribute(project = prj_obj, name = ATT_PRJ_OU, value = ou_id).save()
 
 def add_unit_combos(newprjform):
 
@@ -677,54 +637,52 @@ def getProjectInfo(request, project):
     if not comp_rules:
         return result
 
-    if NEW_MODEL:
-        # no transactions here
-        for attr in PrjAttribute.objects.filter(project = project):
+    # no transactions here
+    for attr in PrjAttribute.objects.filter(project = project):
 
-            if attr.name == ATT_PRJ_ORG:
-                result['org'] = attr.value
-                for o_item in comp_rules.get('organizations', []):
-                    if o_item == attr.value:
-                        result['comp_required'] = True
-
-            elif attr.name == ATT_PRJ_OU:
-                result['ou'] = attr.value
-
-            elif attr.name == ATT_PRJ_CPER:
-                result['contactper'] = attr.value
-
-            elif attr.name == ATT_PRJ_CIDR:
-                for n_item in comp_rules.get('subnets', []):
-                    if attr.value.startswith(n_item):
-                        result['comp_required'] = True
-
-            elif attr.name == ATT_PRJ_EXP:
-                result['exp_date'] = datetime.fromisoformat(attr.value)
-
-        if result['org'] and result['ou']:
-            o_data = settings.HORIZON_CONFIG.get('organization', {}).get(result['org'], [])
-            for ou_tuple in o_data:
-                if len(ou_tuple) > 4 and ou_tuple[0] == result['ou']:
-                    result['dept_man'] = "(%s) %s <%s>" % ou_tuple[1 : 4]
-        return result
-
-    try:
-        kprj_man = keystone_api.keystoneclient(request).projects
-        for item in comp_rules.get('organizations', []):
-            if ('O=' + item) in kprj_man.list_tags(project.projectid):
-                result['comp_required'] = True
-    except:
-        LOG.error("Registration error", exc_info=True)
-        result['err_msg'] = _("Cannot retrieve organization tag")
-
-    try:
-        for s_item in neutron_api.subnet_list(request, project_id = project.projectid):
-            for p_item in comp_rules.get('subnets', []):
-                if p_item in s_item.cidr:
+        if attr.name == ATT_PRJ_ORG:
+            result['org'] = attr.value
+            for o_item in comp_rules.get('organizations', []):
+                if o_item == attr.value:
                     result['comp_required'] = True
-    except:
-        LOG.error("Registration error", exc_info=True)
-        result['err_msg'] = _("Cannot retrieve subnetwork")
 
+        elif attr.name == ATT_PRJ_OU:
+            result['ou'] = attr.value
+
+        elif attr.name == ATT_PRJ_CPER:
+            result['contactper'] = attr.value
+
+        elif attr.name == ATT_PRJ_CIDR:
+            for n_item in comp_rules.get('subnets', []):
+                if attr.value.startswith(n_item):
+                    result['comp_required'] = True
+
+        elif attr.name == ATT_PRJ_EXP:
+            result['exp_date'] = datetime.fromisoformat(attr.value)
+
+    if result['org'] and result['ou']:
+        o_data = settings.HORIZON_CONFIG.get('organization', {}).get(result['org'], [])
+        for ou_tuple in o_data:
+            if len(ou_tuple) > 4 and ou_tuple[0] == result['ou']:
+                result['dept_man'] = "(%s) %s <%s>" % ou_tuple[1 : 4]
     return result
+
+def check_compliance(prj_list):
+    # no transactions here
+    comp_rules = getattr(settings, 'COMPLIANCE_RULES', {})
+    cidr_list = comp_rules.get('subnets', [])
+    org_list = comp_rules.get('organizations', [])
+
+    c_projects = set()
+    for p_item in PrjAttribute.objects.filter(project = prj_list):
+        if p_item.name == ATT_PRJ_CIDR and p_item.value in cidr_list:
+            c_projects.add(p_item.project.projectname)
+        if p_item.name == ATT_PRJ_ORG and p_item.value in org_list:
+            c_projects.add(p_item.project.projectname)
+
+    result = list()
+    for p_item in prj_list:
+        result.append((p_item, prj.projectname in c_projects))
+    return result
+
 

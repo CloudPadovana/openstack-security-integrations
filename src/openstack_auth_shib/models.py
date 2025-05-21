@@ -17,10 +17,7 @@ from datetime import datetime
 from datetime import timezone as tzone
 
 from django.db import models
-from django.conf import settings
 from django.utils import timezone
-
-NEW_MODEL = getattr(settings, 'NEW_MODEL', True)
 
 # Used bit mask for project status
 PRJ_PRIVATE = 0
@@ -245,11 +242,10 @@ class PrjRole(models.Model):
     roleid = models.CharField(max_length=OS_ID_LEN, null=False)
     status = models.IntegerField(default=0)
 
-if NEW_MODEL:
-    class PrjAttribute(models.Model):
-        project = models.ForeignKey(Project, on_delete=models.CASCADE)
-        name = models.IntegerField(default=0)
-        value = models.TextField()
+class PrjAttribute(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    name = models.IntegerField(default=0)
+    value = models.TextField()
 
 #Temporary data
 class RegRequest(models.Model):

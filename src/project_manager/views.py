@@ -49,16 +49,12 @@ from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.utils import ORG_TAG_FMT
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 
-from openstack_auth_shib.models import NEW_MODEL
-if NEW_MODEL:
-    from openstack_auth_shib.utils import get_course_info
-    from openstack_auth_shib.utils import ATT_PRJ_EXP
-    from openstack_auth_shib.utils import ATT_PRJ_CPER
-    from openstack_auth_shib.utils import ATT_PRJ_ORG
-    from openstack_auth_shib.utils import ATT_PRJ_OU
-    from openstack_auth_shib.models import PrjAttribute
-else:
-    from openstack_auth_shib.utils import parse_course_info
+from openstack_auth_shib.utils import get_course_info
+from openstack_auth_shib.utils import ATT_PRJ_EXP
+from openstack_auth_shib.utils import ATT_PRJ_CPER
+from openstack_auth_shib.utils import ATT_PRJ_ORG
+from openstack_auth_shib.utils import ATT_PRJ_OU
+from openstack_auth_shib.models import PrjAttribute
 
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -134,16 +130,11 @@ class IndexView(baseViews.IndexView):
                     if prj_item.projectid and is_curr_admin:
                         prj_table[prjname].tags = set(kprj_man.list_tags(prj_item.projectid))
 
-                        if NEW_MODEL:
-                            prj_table[prjname].handle_course = PrjAttribute.objects.filter(
-                                project = prj_item,
-                                name = ATT_PRJ_ORG,
-                                value__in = course_table.keys()
-                            ).count() > 0
-                        else:
-                            for item in course_table.keys():
-                                if (ORG_TAG_FMT % item) in prj_table[prjname].tags:
-                                    prj_table[prjname].handle_course = True
+                        prj_table[prjname].handle_course = PrjAttribute.objects.filter(
+                            project = prj_item,
+                            name = ATT_PRJ_ORG,
+                            value__in = course_table.keys()
+                        ).count() > 0
 
                 if not self.request.user.is_superuser:
                     preq_list = PrjRequest.objects.filter(
@@ -213,16 +204,15 @@ class DetailProjectView(baseViews.DetailProjectView):
                 ]
                 context['admin_list'] = admin_list
 
-                if NEW_MODEL:
-                     for attr in PrjAttribute.objects.filter(project__projectid = project.id):
-                        if attr.name == ATT_PRJ_EXP:
-                            context['expiration'] = attr.value
-                        elif attr.name == ATT_PRJ_CPER:
-                            context['cper'] = attr.value
-                        elif attr.name == ATT_PRJ_ORG:
-                            context['organization'] = attr.value
-                        elif attr.name == ATT_PRJ_OU:
-                            context['org_unit'] = attr.value
+                for attr in PrjAttribute.objects.filter(project__projectid = project.id):
+                    if attr.name == ATT_PRJ_EXP:
+                        context['expiration'] = attr.value
+                    elif attr.name == ATT_PRJ_CPER:
+                        context['cper'] = attr.value
+                    elif attr.name == ATT_PRJ_ORG:
+                        context['organization'] = attr.value
+                    elif attr.name == ATT_PRJ_OU:
+                        context['org_unit'] = attr.value
 
         except:
             LOG.error("Cannot retrieve project details", exc_info=True)
@@ -245,11 +235,7 @@ class CourseView(forms.ModalFormView):
         return context
 
     def get_initial(self):
-        if NEW_MODEL:
-            course_info = get_course_info(self.get_object().projectname)
-        else:
-            course_info = parse_course_info(self.get_object().description,
-                                            self.get_object().projectname)
+        course_info = get_course_info(self.get_object().projectname)
         course_info['projectid'] = self.get_object().projectid
         return course_info
 
@@ -267,11 +253,7 @@ class CourseDetailView(forms.ModalFormView):
 
         suffix = "/auth/course_" + urllib.parse.quote(self.get_object().projectname)
 
-        if NEW_MODEL:
-            info_table = get_course_info(self.get_object().projectname)
-        else:
-            info_table = parse_course_info(self.get_object().description,
-                                           self.get_object().projectname)
+        info_table = get_course_info(self.get_object().projectname)
 
         course_table = settings.HORIZON_CONFIG.get('course_for', {})
 
