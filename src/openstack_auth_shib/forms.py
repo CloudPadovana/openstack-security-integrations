@@ -45,7 +45,6 @@ from .models import DESCR_LEN
 from .models import PSTATUS_REG
 from .models import PSTATUS_PENDING
 from .notifications import notifyAdmin, REGISTR_AVAIL_TYPE
-from .utils import get_ostack_attributes
 from .utils import check_compliance
 from .utils import check_projectname
 from .utils import get_year_list
@@ -300,8 +299,6 @@ class RegistrForm(forms.SelfHandlingForm):
 
     @sensitive_variables('data')
     def handle(self, request, data):
-
-        domain, auth_url = get_ostack_attributes(request)
         
         try:
             pwd = data.get('pwd', None)
@@ -360,7 +357,7 @@ class RegistrForm(forms.SelfHandlingForm):
                         'sn' : data['sn'],
                         'organization' : data.get('organization', ''),
                         'phone' : '0000',
-                        'domain' : domain
+                        'domain' : settings.get('OPENSTACK_KEYSTONE_DEFAULT_DOMAIN', 'Default')
                     }
                     registration = Registration(**queryArgs)
                     registration.save()
