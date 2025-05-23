@@ -251,6 +251,8 @@ class RegistrForm(forms.SelfHandlingForm):
                 if not tmpc:
                     raise ValidationError(_('Missing selected project.'))
                 data['selprj'] = [ tmpc ]
+            elif len(data['selprj']) == 0:
+                raise ValidationError(_('No project selected.'))
         else:
             raise ValidationError(_('Wrong project parameter.'))
         
