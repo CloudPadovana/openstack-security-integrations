@@ -49,7 +49,6 @@ from openstack_auth_shib.notifications import MEMBER_REQUEST
 from openstack_auth_shib.notifications import CHANGED_MEMBER_ROLE
 from openstack_auth_shib.notifications import PROMO_REJECTED
 
-from openstack_auth_shib.models import UserMapping
 from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Project
@@ -151,17 +150,6 @@ class PreCheckForm(forms.SelfHandlingForm):
                 user_email = reg_request.email
 
                 #
-                # Mapping of external accounts
-                #
-                is_local = True
-                if reg_request.externalid:
-                    mapping = UserMapping(globaluser=reg_request.externalid,
-                                    registration=reg_request.registration)
-                    mapping.save()
-                    is_local = False
-                    LOG.info("Registered external account %s" % reg_request.externalid)
-                    
-                #
                 # Forward request to project administrators
                 #
                 q_args = {
@@ -199,7 +187,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                 #
                 if not registration.userid:
                     
-                    if is_local:
+                    if not reg_request.externalid:
                         registration.username = data['username']
 
                     kuser = keystone_api.user_create(request, 

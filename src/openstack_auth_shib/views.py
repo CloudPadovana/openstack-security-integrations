@@ -44,7 +44,7 @@ from openstack_dashboard.api import keystone as keystone_api
 
 from horizon import forms
 
-from .models import UserMapping
+from .models import Registration
 from .models import RegRequest
 from .models import PrjRequest
 from .models import Project
@@ -207,8 +207,8 @@ class RegistrView(forms.ModalFormView):
             self.attributes = Federated_Account(self.request)
 
         if self.attributes:
-            u_mapped = UserMapping.objects.filter(globaluser = self.attributes.username).count() > 0
-            if u_mapped and not 'projectname' in request.GET:
+            ucond = Registration.objects.filter(username = self.attributes.username).count() > 0
+            if ucond and not 'projectname' in request.GET:
                 tempDict = {
                     'error_header' : _("Registration error"),
                     'error_text' : _("Your account has already been registered"),
@@ -360,13 +360,13 @@ def authzchk(request):
     idp_tag = request.GET.get('idp_tag', None)
     try:
         if attributes:
-            umap = UserMapping.objects.filter(globaluser = attributes.username)
+            umap = Registration.objects.filter(username = attributes.username)
             if idp_tag and len(umap) == 0:
                 idpdata = settings.HORIZON_CONFIG['identity_providers'][idp_tag]
                 tmpresp = django_http.HttpResponseRedirect(idpdata['path'])
             elif len(umap) > 0:
                 e_msg = None
-                q_args = { 'registration' : umap[0].registration }
+                q_args = { 'registration' : umap[0] }
                 pend_req = PrjRequest.objects.filter(**q_args)
                 if len(pend_req):
                     e_msg = _("User is waiting for affiliation to %s")

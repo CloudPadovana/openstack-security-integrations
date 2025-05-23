@@ -33,7 +33,6 @@ from .models import Project
 from .models import RegRequest
 from .models import PrjRequest
 from .models import PrjAttribute
-from .models import UserMapping
 from .models import Expiration
 from .models import PRJ_PRIVATE
 from .models import PRJ_PUBLIC
@@ -329,8 +328,8 @@ class RegistrForm(forms.SelfHandlingForm):
                 # test for course account
                 registration = None
                 if is_fed_account:
-                    tmpm = UserMapping.objects.filter(globaluser=data['username'])
-                    registration = tmpm[0].registration if len(tmpm) > 0 else None
+                    tmpm = Registration.objects.filter(username = data['username'])
+                    registration = tmpm[0] if len(tmpm) > 0 else None
             
                 if registration:
 
