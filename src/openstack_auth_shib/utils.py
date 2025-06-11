@@ -683,4 +683,14 @@ def check_compliance(prj_list):
         result.append((p_item, prj.projectname in c_projects))
     return result
 
+ID_REGEX_TABLE = {
+    'infn.it' : re.compile(r'^[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+@infn\.it'),
+    'unipd.it' : re.compile(r'^[0-9]+@unipd.it'),
+    'studenti.unipd.it' : re.compile(r'^[0-9]+@studenti.unipd.it')
+}
+def isRawID(uid):
+    for label, u_regex in ID_REGEX_TABLE.items():
+        if u_regex.search(uid) != None:
+            return True
+    return False
 

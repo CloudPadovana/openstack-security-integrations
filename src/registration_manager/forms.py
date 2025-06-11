@@ -81,6 +81,7 @@ from openstack_auth_shib.utils import ATT_PRJ_EXP
 from openstack_auth_shib.utils import TENANTADMIN_ROLEID
 from openstack_auth_shib.utils import DEFAULT_ROLEID
 from openstack_auth_shib.utils import parse_requestid
+from openstack_auth_shib.utils import isRawID
 
 from openstack_dashboard.api import keystone as keystone_api
 
@@ -104,7 +105,9 @@ class PreCheckForm(forms.SelfHandlingForm):
         )
 
         init_values = kwargs['initial'] if 'initial' in kwargs else dict()
-        if 'extaccount' in init_values and init_values['extaccount']:
+        ro_cond = 'extaccount' in init_values and init_values['extaccount']
+        ro_cond = ro_cond and not isRawID(init_values['extaccount'])
+        if ro_cond:
             self.fields['username'].widget = forms.TextInput(attrs={'readonly': 'readonly'})
         
         self.expiration = FROMNOW(365)
