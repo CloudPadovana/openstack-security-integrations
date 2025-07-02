@@ -672,15 +672,15 @@ def check_compliance(prj_list):
     org_list = comp_rules.get('organizations', [])
 
     c_projects = set()
-    for p_item in PrjAttribute.objects.filter(project = prj_list):
+    for p_item in PrjAttribute.objects.filter(project__in = prj_list):
         if p_item.name == ATT_PRJ_CIDR and p_item.value in cidr_list:
             c_projects.add(p_item.project.projectname)
         if p_item.name == ATT_PRJ_ORG and p_item.value in org_list:
             c_projects.add(p_item.project.projectname)
 
     result = list()
-    for p_item in prj_list:
-        result.append((p_item, prj.projectname in c_projects))
+    for prj in prj_list:
+        result.append((prj, prj.projectname in c_projects))
     return result
 
 ID_REGEX_TABLE = {
