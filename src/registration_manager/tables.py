@@ -89,7 +89,7 @@ class ForceRejLink(tables.LinkAction):
     classes = ("ajax-modal", "btn-edit")
     
     def allowed(self, request, datum):
-        return datum.code == RegistrData.EX_USR_EX_PRJ
+        return datum.code == RegistrData.EX_USR_EX_PRJ or datum.code == RegistrData.CHK_COMP
 
 class RenewAdminLink(tables.LinkAction):
     name = "renewadminlink"
