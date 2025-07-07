@@ -358,7 +358,7 @@ class RegistrForm(forms.SelfHandlingForm):
                         'sn' : data['sn'],
                         'organization' : data.get('organization', ''),
                         'phone' : '0000',
-                        'domain' : settings.get('OPENSTACK_KEYSTONE_DEFAULT_DOMAIN', 'Default')
+                        'domain' : getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN', 'Default')
                     }
                     registration = Registration(**queryArgs)
                     registration.save()
