@@ -190,7 +190,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                 #
                 if not registration.userid:
                     
-                    if not reg_request.externalid:
+                    if not reg_request.externalid or isRawID(registration.username):
                         registration.username = data['username']
 
                     kuser = keystone_api.user_create(request, 
