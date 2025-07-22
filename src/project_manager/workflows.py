@@ -490,6 +490,14 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
                     ).save()
                 old_rules.delete()
 
+                old_attrs = PrjAttribute.objects.filter(project = self.this_project)
+                for item in old_attrs:
+                    PrjAttribute(
+                        project = newpr,
+                        name = item.name,
+                        value = item.value
+                    ).save()
+
                 self.this_project.delete()
                 self.this_project = newpr
             
