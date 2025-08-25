@@ -425,6 +425,10 @@ def setup_new_project(request, project_id, project_name, data):
         else:
             PrjAttribute(project = prj_obj, name = ATT_PRJ_OU, value = ou_id).save()
 
+    if 'expiration' in data:
+        ex_items = PrjAttribute.objects.filter(project = prj_obj, name = ATT_PRJ_EXP)
+        ex_items.update(value = data['expiration'].isoformat())
+
 def add_unit_combos(newprjform):
 
     unit_table = get_unit_table()
