@@ -112,9 +112,6 @@ class PreCheckForm(forms.SelfHandlingForm):
         
         self.expiration = FROMNOW(365)
 
-    def preprocess_prj(self, registr, data):
-        pass
-
     def post_reminder(self, registration, email):
         regReq = RegRequest(
             registration = registration,
@@ -124,6 +121,15 @@ class PreCheckForm(forms.SelfHandlingForm):
         )
         regReq.save()
 
+    def process_tenants(self, request, prjReqList, data):
+        #
+        # Forward request to project administrators
+        #
+        prjReqList.filter(
+            project__projectid__isnull = False,
+            flowstatus = PSTATUS_REG
+        ).update(flowstatus = PSTATUS_PENDING)
+        
     def clean(self):
         return super(PreCheckForm, self).clean()
 
@@ -144,47 +150,12 @@ class PreCheckForm(forms.SelfHandlingForm):
                     flowstatus=RSTATUS_PENDING
                 )[0]
                     
-                prjReqList = PrjRequest.objects.filter(registration=registration)
-
                 password = reg_request.password
                 if not password:
                     password = generate_pwd()
                 
                 user_email = reg_request.email
 
-                #
-                # Forward request to project administrators
-                #
-                q_args = {
-                    'project__projectid__isnull' : False,
-                    'flowstatus' : PSTATUS_REG
-                }
-                prjReqList.filter(**q_args).update(flowstatus=PSTATUS_PENDING)
-
-                #
-                # Creation of new tenants
-                #
-
-                self.preprocess_prj(registration, data)
-
-                new_prj_list = list()
-
-                p_reqs = prjReqList.filter(
-                    project__projectid__isnull = True,
-                    flowstatus = PSTATUS_REG
-                )
-                if len(p_reqs):
-                    newreq_prj = p_reqs[0].project
-                    kprj = keystone_api.tenant_create(request, newreq_prj.projectname,
-                                                        newreq_prj.description, True)
-                    newreq_prj.projectid = kprj.id
-                    newreq_prj.save()
-                    new_prj_list.append(newreq_prj)
-
-                    setup_new_project(request, kprj.id, newreq_prj.projectname, data)
-
-                    LOG.info("Created tenant %s" % newreq_prj.projectname)
-                
                 #
                 # User creation
                 #
@@ -209,29 +180,9 @@ class PreCheckForm(forms.SelfHandlingForm):
                     mail_obj.email = user_email
                     mail_obj.save()
 
-                #
-                # The new user is the project manager of its tenant
-                # register the expiration date per tenant
-                #
-                for prj_item in new_prj_list:
+                prjReqList = PrjRequest.objects.filter(registration = registration)
+                self.process_tenants(request, prjReqList, data)
 
-                    expiration = Expiration.objects.create_expiration(
-                        registration = registration,
-                        project = prj_item,
-                        expdate = self.expiration
-                    )
-
-                    prjRole = PrjRole()
-                    prjRole.registration = registration
-                    prjRole.project = prj_item
-                    prjRole.roleid = TENANTADMIN_ROLEID
-                    prjRole.save()
-
-                    keystone_api.add_tenant_user_role(request, prj_item.projectid,
-                                            registration.userid, TENANTADMIN_ROLEID)
-
-                    keystone_api.add_tenant_user_role(request, prj_item.projectid,
-                                            registration.userid, DEFAULT_ROLEID)
                 #
                 # Send notifications to project administrators and users
                 #
@@ -310,19 +261,57 @@ class GrantAllForm(PreCheckForm):
 
         add_unit_combos(self)
 
-    def preprocess_prj(self, registration, data):
+    def process_tenants(self, request, prjReqList, data):
+        #
+        # Creation of new tenants
+        #
 
-        p_reqs = PrjRequest.objects.filter(
-            registration=registration,
+        new_prj_list = list()
+
+        p_reqs = prjReqList.filter(
             project__projectid__isnull = True,
             flowstatus = PSTATUS_REG
         )
-        if len(p_reqs):
-            # Assume there's only one request pending
-            chk_repl_project(registration.regid,
-                             p_reqs[0].project.projectname, data['rename'],
-                             p_reqs[0].project.description, data['newdescr'])
 
+        for r_item in p_reqs:
+            newreq_prj = r_item.project
+
+            chk_repl_project(r_item.registration.regid,
+                             newreq_prj.projectname, data['rename'],
+                             newreq_prj.description, data['newdescr'])
+
+            kprj = keystone_api.tenant_create(request, newreq_prj.projectname,
+                                                newreq_prj.description, True)
+            newreq_prj.projectid = kprj.id
+            newreq_prj.save()
+            new_prj_list.append(newreq_prj)
+
+            setup_new_project(request, kprj.id, newreq_prj.projectname, data)
+
+            LOG.info("Created tenant %s" % newreq_prj.projectname)
+
+            #
+            # The new user is the project manager of its tenant
+            # register the expiration date per tenant
+            #
+            expiration = Expiration.objects.create_expiration(
+                registration = r_item.registration,
+                project = newreq_prj,
+                expdate = self.expiration
+            )
+
+            prjRole = PrjRole()
+            prjRole.registration = r_item.registration
+            prjRole.project = newreq_prj
+            prjRole.roleid = TENANTADMIN_ROLEID
+            prjRole.save()
+
+            keystone_api.add_tenant_user_role(request, newreq_prj.projectid,
+                                    r_item.registration.userid, TENANTADMIN_ROLEID)
+
+            keystone_api.add_tenant_user_role(request, newreq_prj.projectid,
+                                    r_item.registration.userid, DEFAULT_ROLEID)
+                
     def post_reminder(self, registration, email):
         pass
 
