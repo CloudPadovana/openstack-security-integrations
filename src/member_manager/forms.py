@@ -273,7 +273,8 @@ class SendMsgForm(forms.SelfHandlingForm):
                 noti_params = {
                     'username' : self.request.user.username,
                     'project' : self.request.user.tenant_name,
-                    'message' : data['message']
+                    'message' : data['message'],
+                    'use_bcc' : True
                 }
                 notifyUser(request=request, rcpt=e_addresses, action=GENERIC_MESSAGE,
                            context=noti_params, dst_user_id=self.request.user.id)

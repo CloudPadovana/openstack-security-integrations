@@ -164,7 +164,7 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
     if rcpt == MANAGERS_RCPT:
         notifyManagers(subject, body)
     else:
-        notify(rcpt, subject, body)
+        notify(rcpt, subject, body, context.get('use_bcc', False))
 
     if request is not None:
         MESSAGES.info(request, "Notification sent.")
@@ -250,7 +250,7 @@ def load_templates():
 
     TEMPLATE_LOCK.release()
 
-def notify(recpt, subject, body):
+def notify(recpt, subject, body, usebcc = False):
     
     if not recpt:
         LOG.error('Missing recipients')
@@ -261,8 +261,11 @@ def notify(recpt, subject, body):
             "subject" : subject,
             "body" : body,
             "from_email" : settings.SERVER_EMAIL,
-            "to" : recpt if isinstance(recpt, list) else [ str(recpt) ]
         }
+        if usebcc:
+            m_args['bcc'] = recpt if isinstance(recpt, list) else [ str(recpt) ]
+        else:
+            m_args['to'] = recpt if isinstance(recpt, list) else [ str(recpt) ]
 
         replyto = getattr(settings, 'REPLYTO', None)
         if replyto:
