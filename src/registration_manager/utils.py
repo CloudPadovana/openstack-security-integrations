@@ -61,12 +61,10 @@ class RegistrData:
             self.username = registration.username
             self.fullname = registration.givenname + " " + registration.sn
             self.organization = registration.organization
-            self.phone = registration.phone
         else:
             self.username = None
             self.fullname = None
             self.organization = None
-            self.phone = None
 
     def __lt__(self, other):
         return self.username < other.username or (self.username == other.username and self.project < other.project)
