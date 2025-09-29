@@ -27,6 +27,8 @@ from django.db import transaction
 from django.urls import reverse_lazy
 from django.utils.translation import gettext as _
 
+from django.core.exceptions import ValidationError
+
 from horizon import forms
 from horizon import get_dashboard
 from horizon import get_default_dashboard
@@ -695,4 +697,52 @@ def isRawID(uid):
         if u_regex.search(uid) != None:
             return True
     return False
+
+#
+# Custom Password Validator
+#
+class CloudVenetoPwdValidator:
+    def __init__(self, min_length = 10):
+        self.min_length = min_length
+        self.symbols = "[~!@#$%^&*()_+{}\":;'[]"
+
+    def validate(self, password, user = None):
+        capitals = [ char for char in password if char.isupper() ]
+        digits = [ char for char in password if char.isdigit() ]
+        symbols = [ char for char in password if char in self.symbols ]
+
+        if len(password) < self.min_length:
+            raise ValidationError(
+                _("This password must contain at least %(min_length)d characters."),
+                code = "password_too_short",
+                params = { "min_length" : self.min_length },
+            )
+
+        if len(capitals) < 1:
+            raise ValidationError(
+                _("This password must contain at least %(min_length)d capital letters."),
+                code = 'password_too_short',
+                params={'min_length': 1},
+            )
+
+        if len(digits) < 1:
+            raise ValidationError(
+                _("This password must contain at least %(min_length)d digits."),
+                code = 'password_too_short',
+                params={'min_length': 1},
+            )
+
+        if len(symbols) < 1:
+            raise ValidationError(
+                _("This password must contain at least %(min_length)d symbols."),
+                code = 'password_too_short',
+                params = {'min_length': 1},
+            )
+
+
+    def get_help_text(self):
+        msg = "Your password must contain at least %(min_length)d characters. "
+        msg += "One capital letter, one digit and one symbol (%(symb)s) are required."
+        return _( msg % { "min_length": self.min_length , "symb" : self.symbols })
+
 

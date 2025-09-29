@@ -29,3 +29,10 @@ HORIZON_CONFIG['course_for'] = {}
 
 HORIZON_CONFIG['new_splash'] = False
 
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "openstack_auth_shib.utils.CloudVenetoPwdValidator",
+        "OPTIONS": { "min_length": 10, },
+    }
+]
+

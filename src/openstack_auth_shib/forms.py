@@ -21,6 +21,7 @@ from horizon.utils import validators
 
 from django import shortcuts
 from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
 from django.forms import ValidationError
 from django.utils.translation import gettext as _
 from django.views.decorators.debug import sensitive_variables
@@ -260,6 +261,7 @@ class RegistrForm(forms.SelfHandlingForm):
             
         if 'pwd' in data and data['pwd'] != data.get('repwd', None):
                 raise ValidationError(_('Passwords do not match.'))
+        validate_password(data['pwd'])
 
         if '@' in data['username'] or ':' in data['username']:
             if data.get('federated', 'false') == 'false':

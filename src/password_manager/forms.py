@@ -14,6 +14,7 @@
 #  under the License. 
 
 #from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
 from django.forms import ValidationError
 from django import http
 from django.utils.translation import gettext_lazy as _
@@ -49,6 +50,7 @@ class PasswordForm(forms.SelfHandlingForm):
         if 'new_password' in data:
             if data['new_password'] != data.get('confirm_password', None):
                 raise ValidationError(_('Passwords do not match.'))
+        validate_password(data['new_password'])
         return data
 
     @sensitive_variables('data')
