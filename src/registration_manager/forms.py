@@ -17,7 +17,6 @@ import sys
 import re
 import logging
 import string
-import secrets
 
 from datetime import datetime
 
@@ -76,6 +75,8 @@ from openstack_auth_shib.utils import PRJ_REGEX
 from openstack_auth_shib.utils import setup_new_project
 from openstack_auth_shib.utils import add_unit_combos
 from openstack_auth_shib.utils import get_year_list
+from openstack_auth_shib.utils import generate_pwd
+from openstack_auth_shib.utils import decode_password
 from openstack_auth_shib.utils import FROMNOW
 from openstack_auth_shib.utils import ATT_PRJ_EXP
 from openstack_auth_shib.utils import TENANTADMIN_ROLEID
@@ -87,10 +88,6 @@ from openstack_dashboard.api import keystone as keystone_api
 
 LOG = logging.getLogger(__name__)
 
-def generate_pwd():
-    alphabet = string.ascii_letters + string.digits
-    return ''.join(secrets.choice(alphabet) for i in range(PWD_LEN))
-    
 class PreCheckForm(forms.SelfHandlingForm):
 
     def __init__(self, request, *args, **kwargs):
@@ -150,7 +147,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                     flowstatus=RSTATUS_PENDING
                 )[0]
                     
-                password = reg_request.password
+                password = decode_password(reg_request.password)
                 if not password:
                     password = generate_pwd()
                 

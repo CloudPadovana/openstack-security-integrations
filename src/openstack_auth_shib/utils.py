@@ -745,4 +745,28 @@ class CloudVenetoPwdValidator:
         msg += "One capital letter, one digit and one symbol (%(symb)s) are required."
         return _( msg % { "min_length": self.min_length , "symb" : self.symbols })
 
+#
+# Password codec
+# fernet key generated with Fernet.generate_key().decode()
+#
+from cryptography.fernet import Fernet
+import secrets
+
+def encode_password(pwd):
+    f_key = getattr(settings, "PASSWORD_FERNET_KEY", None)
+    if f_key and pwd:
+        fpwd = Fernet(f_key.encode()).encrypt(pwd.encode())
+        return fpwd.decode()
+    return pwd
+
+def decode_password(pwd):
+    f_key = getattr(settings, "PASSWORD_FERNET_KEY", None)
+    if f_key and pwd:
+        fpwd = Fernet(f_key.encode()).decrypt(pwd.encode())
+        return fpwd.decode()
+    return pwd
+
+def generate_pwd():
+    alphabet = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(alphabet) for i in range(PWD_LEN))
 

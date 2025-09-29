@@ -48,6 +48,7 @@ from .notifications import notifyAdmin, REGISTR_AVAIL_TYPE
 from .utils import check_compliance
 from .utils import check_projectname
 from .utils import get_year_list
+from .utils import encode_password
 from .utils import MAX_RENEW
 from .utils import NOW
 from .utils import FROMNOW
@@ -304,7 +305,7 @@ class RegistrForm(forms.SelfHandlingForm):
     def handle(self, request, data):
         
         try:
-            pwd = data.get('pwd', None)
+            pwd = 
             
             prj_action = data['prjaction']
             prjlist = list()
@@ -367,7 +368,7 @@ class RegistrForm(forms.SelfHandlingForm):
 
                     regArgs = {
                         'registration' : registration,
-                        'password' : pwd,
+                        'password' : encode_password(data.get('pwd', None)),
                         'email' : data['email'],
                         'contactper' : data.get('contactper', ''),
                         'notes' : data['notes']
