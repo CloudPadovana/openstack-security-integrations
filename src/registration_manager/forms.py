@@ -857,9 +857,10 @@ class CompAckForm(forms.SelfHandlingForm):
         with transaction.atomic():
             regid, prjname = parse_requestid(data['requestid'])
 
+            c_user = Registration.objects.get(regid = regid)
             project = Project.objects.get(projectname = prjname)
             PrjRequest.objects.filter(
-                registration__regid = regid,
+                registration = c_user,
                 project = project,
                 flowstatus = PSTATUS_CHK_COMP
             ).update(flowstatus = PSTATUS_PENDING)
@@ -871,7 +872,7 @@ class CompAckForm(forms.SelfHandlingForm):
         notifyProject(request = request,
                       rcpt = admin_emails,
                       action = MEMBER_REQUEST,
-                      context = {'username' : request.user.username,
+                      context = {'username' : c_user.username,
                                 'project' : project.projectname})
         return True
 
