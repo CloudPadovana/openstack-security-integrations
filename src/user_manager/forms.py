@@ -201,7 +201,7 @@ class ReactivateForm(forms.SelfHandlingForm):
         self.fields['projects'] = forms.MultipleChoiceField(
             label=_('Available projects'),
             required=True,
-            widget=forms.Select()
+            widget=forms.SelectMultiple()
         )
 
         avail_prjs = list()
