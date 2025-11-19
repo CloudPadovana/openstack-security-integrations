@@ -226,7 +226,7 @@ class ReactivateForm(forms.SelfHandlingForm):
 
         self.fields['expdate'] = forms.DateTimeField(
             label=_("Expiration date"),
-            widget=SelectDateWidget(get_year_list())
+            widget=SelectDateWidget(None, get_year_list())
         )
 
         self.fields['notes'] = forms.CharField(
