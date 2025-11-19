@@ -24,9 +24,33 @@
 
 {% block modal-header %}{% trans "Re-activate User" %}{% endblock %}
 
-{% block modal-body-right %}
-  <h3>{% trans "Description:" %}</h3>
-  <p>{% trans "From here you can re-activate an orphan user." %}</p>
+{% block modal-body %}
+  <div class="row">
+    <div class="col-sm-6">
+      <fieldset>
+        {% include 'horizon/common/_form_errors.html' with form=form %}
+
+        {% include 'horizon/common/_form_field.html' with field=form.projects %}
+        {% include 'horizon/common/_form_field.html' with field=form.action %}
+        <div id="actforcediv" style="display: none;">
+          {% include 'horizon/common/_form_field.html' with field=form.expdate %}
+        </div>
+        <div id="actforwardiv" style="display: block;">
+          {% include 'horizon/common/_form_field.html' with field=form.notes %}
+        </div>
+      </fieldset>
+    </div>
+    <div class="col-sm-6">
+      <h3>{% trans "Description:" %}</h3>
+      <p>{% trans "From here you can re-activate an orphan user." %}</p>
+      <div id="prjcompldiv" class="alert alert-info" style="display: none;">
+        <p>{% trans "Check INFN rules compliance for current user" %}</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block modal-js %}
   <script type="text/javascript">
     if (typeof horizon.user !== 'undefined') {
       horizon.user.init();
@@ -35,6 +59,23 @@
         horizon.user.init();
       });
     }
+
+    document.querySelector('#id_action').addEventListener('change', (event) => {
+      if (event.target.value === 'forward') {
+        document.getElementById('actforcediv').style.display='none';
+        document.getElementById('actforwardiv').style.display='block';
+      } else {
+        document.getElementById('actforcediv').style.display='block';
+        document.getElementById('actforwardiv').style.display='none';
+      }
+    });
+
+    document.querySelector('#id_projects').addEventListener('change', (event) => {
+        if (event.target.value.slice(0, 2) === 'c:') {
+            document.getElementById('prjcompldiv').style.display='block';
+        } else {
+            document.getElementById('prjcompldiv').style.display='none';
+        }
+    });
   </script>
 {% endblock %}
-

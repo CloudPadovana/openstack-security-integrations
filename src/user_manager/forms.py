@@ -53,6 +53,7 @@ from openstack_auth_shib.notifications import SUBSCR_FORCED_OK_TYPE
 from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import MEMBER_REQUEST
 
+from openstack_auth_shib.utils import check_compliance
 from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import DEFAULT_ROLEID
 
@@ -60,6 +61,9 @@ from openstack_dashboard.api import keystone as keystone_api
 from openstack_dashboard.dashboards.identity.users import forms as baseForms
 
 LOG = logging.getLogger(__name__)
+
+MARK_COMP_ON = 'c:'
+MARK_COMP_OFF = 'f:'
 
 class RenewExpForm(forms.SelfHandlingForm):
 
@@ -197,12 +201,18 @@ class ReactivateForm(forms.SelfHandlingForm):
         self.fields['projects'] = forms.MultipleChoiceField(
             label=_('Available projects'),
             required=True,
-            widget=forms.SelectMultiple(attrs={'class': 'switched'})
+            widget=forms.Select()
         )
 
         avail_prjs = list()
-        for prj_entry in Project.objects.exclude(status = PRJ_PRIVATE):
-            avail_prjs.append((prj_entry.projectname, prj_entry.projectname))
+        prj_list = Project.objects.filter(projectid__isnull = False, status__gt = PRJ_PRIVATE)
+
+        for prj_entry, c_flag in check_compliance(prj_list):
+                prj_label = prj_entry.projectname
+                if c_flag:
+                    avail_prjs.append((MARK_COMP_ON + prj_label, prj_label))
+                else:
+                    avail_prjs.append((MARK_COMP_OFF + prj_label, prj_label))  
         self.fields['projects'].choices = avail_prjs
 
         self.fields['action'] = forms.ChoiceField(
@@ -211,34 +221,31 @@ class ReactivateForm(forms.SelfHandlingForm):
                 ('forward', _('Forward to project admin')),
                 ('forced', _('Forced reactivation'))
             ],
-            widget=forms.Select(attrs={
-                'class': 'switchable',
-                'data-slug': 'actsource'
-            })
+            widget=forms.Select()
         )
 
         self.fields['expdate'] = forms.DateTimeField(
             label=_("Expiration date"),
-            widget=SelectDateWidget({
-                'class': 'switched',
-                'data-switch-on': 'actsource',
-                'data-actsource-forced': _("Expiration date")
-            }, get_year_list())
+            widget=SelectDateWidget(get_year_list())
         )
 
         self.fields['notes'] = forms.CharField(
             label=_('Notes'),
             required=False,
-            widget=forms.widgets.Textarea(attrs = {
-                'class': 'switched',
-                'data-switch-on': 'actsource',
-                'data-actsource-forward': _("Notes")
-            })
+            widget=forms.widgets.Textarea()
         )
 
     def clean(self):
         if not self.request.user.is_superuser:
             raise ValidationError(_("Operation not authorized"))
+
+        p_list = list()
+        for item in data['projects']:
+            if item.startswith(MARK_COMP_ON) or item.startswith(MARK_COMP_OFF):
+                p_list.append(item[2:])
+            else:
+                p_list.append(item)
+        data['projects'] = p_list
 
         return super(ReactivateForm, self).clean()
 
