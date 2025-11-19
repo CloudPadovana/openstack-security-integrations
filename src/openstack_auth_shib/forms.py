@@ -305,8 +305,6 @@ class RegistrForm(forms.SelfHandlingForm):
     def handle(self, request, data):
         
         try:
-            pwd = 
-            
             prj_action = data['prjaction']
             prjlist = list()
             if prj_action == 'selprj':
