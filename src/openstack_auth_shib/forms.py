@@ -44,6 +44,7 @@ from .models import EMAIL_LEN
 from .models import DESCR_LEN
 from .models import PSTATUS_REG
 from .models import PSTATUS_PENDING
+from .models import RSTATUS_REMINDER
 from .notifications import notifyAdmin, REGISTR_AVAIL_TYPE
 from .utils import check_compliance
 from .utils import check_projectname
@@ -326,57 +327,47 @@ class RegistrForm(forms.SelfHandlingForm):
                 is_fed_account = data.get('federated', 'false') == 'true'
                 prj_flowstatus = PSTATUS_REG
 
-                # test for course account
-                registration = None
-                if is_fed_account:
-                    tmpm = Registration.objects.filter(username = data['username'])
-                    registration = tmpm[0] if len(tmpm) > 0 else None
+                tmpm = Registration.objects.filter(username = data['username'])
+                registration = tmpm[0] if len(tmpm) > 0 else None
             
                 if registration:
 
-                    q_args = {
-                        'registration' : registration,
-                        'project__projectname__in' : [ x[0] for x in prjlist ]
-                    }
-                    if Expiration.objects.filter(**q_args).count() > 0:
-                        return self._build_safe_redirect(request, 
-                                                '/dashboard/auth/already_subscribed/')
+                    prj_num = PrjRequest.objects.filter(registration = registration).count()
+                    req_num = RegRequest.objects.filter(
+                        registration = registration,
+                        flowstatus = RSTATUS_REMINDER
+                    ).count()
 
-                    if PrjRequest.objects.filter(**q_args).count() > 0:
-                        return self._build_safe_redirect(request, 
-                                                '/dashboard/auth/dup_login/')
-
-                    prj_flowstatus = PSTATUS_PENDING
+                    if req_num > 0 and prj_num == 0:
+                        # Orphan user never activated
+                        RegRequest.objects.filter(registration = registration).delete()
+                    elif prj_num > 0:
+                        return self._build_safe_redirect(request, '/dashboard/auth/dup_login/')
+                    else:
+                        return self._build_safe_redirect(request, '/dashboard/auth/name_exists/')
 
                 else:
-
-                    if RegRequest.objects.filter(externalid=data['username']).count():
-                        raise ValidationError("Request already sent")
-
-                    queryArgs = {
-                        'username' : data['username'],
-                        'givenname' : data['givenname'],
-                        'sn' : data['sn'],
-                        'organization' : data.get('organization', ''),
-                        'phone' : '0000',
-                        'domain' : getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN', 'Default')
-                    }
-                    registration = Registration(**queryArgs)
+                    registration = Registration(
+                        username = data['username'],
+                        givenname = data['givenname'],
+                        sn = data['sn'],
+                        organization = data.get('organization', ''),
+                        phone = '0000',
+                        domain = 'Default'
+                    )
                     registration.save()
 
-                    regArgs = {
-                        'registration' : registration,
-                        'password' : encode_password(data.get('pwd', None)),
-                        'email' : data['email'],
-                        'contactper' : data.get('contactper', ''),
-                        'notes' : data['notes']
-                    }
-                    if is_fed_account:
-                        regArgs['externalid'] = data['username']
-                    regReq = RegRequest(**regArgs)
-                    regReq.save()
+                regReq = RegRequest(
+                    registration = registration,
+                    password = encode_password(data.get('pwd', None)),
+                    email = data['email'],
+                    contactper = data.get('contactper', ''),
+                    notes = data['notes'],
+                    externalid = data['username'] if is_fed_account else None
+                )
+                regReq.save()
                 
-                    LOG.debug("Saved %s" % data['username'])
+                LOG.debug("Saved %s" % data['username'])
 
                 for prjitem in prjlist:
             
@@ -424,10 +415,6 @@ class RegistrForm(forms.SelfHandlingForm):
             # It is necessary to get out of the protected area
             return self._build_safe_redirect(request, '/dashboard/auth/reg_done/')
         
-        except ValidationError:
-        
-            return self._build_safe_redirect(request, '/dashboard/auth/dup_login/')
-            
         except IntegrityError:
         
             return self._build_safe_redirect(request, '/dashboard/auth/name_exists/')
