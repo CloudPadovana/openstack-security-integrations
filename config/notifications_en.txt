@@ -223,6 +223,7 @@ body: Your affiliation to the project {{ project }} is going to expire
 LOG: Renewal for {{ username }} discarded from {{ project }} by {{ log.user_name }}
 subject: Renewal rejected for project {{ project }}
 body: The renewal for the project {{ project }} has been rejected.
+  {% if notes %}{{ notes }}{% endif %}
   For further information please contact {{ admin_address }}
   
   Please, don't reply to this message
