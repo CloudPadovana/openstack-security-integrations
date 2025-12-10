@@ -219,6 +219,14 @@ body: Your affiliation to the project {{ project }} is going to expire
   
   Please, don't reply to this message
 
+[renewal_discarded]
+LOG: Renewal for {{ username }} discarded from {{ project }} by {{ log.user_name }}
+subject: Renewal rejected for project {{ project }}
+body: The renewal for the project {{ project }} has been rejected.
+  For further information please contact {{ admin_address }}
+  
+  Please, don't reply to this message
+
 [deleted_users_summary]
 subject: Summary of the expired users
 body: The following project memberships have been deleted: 

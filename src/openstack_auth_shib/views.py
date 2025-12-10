@@ -207,18 +207,30 @@ class RegistrView(forms.ModalFormView):
             self.attributes = Federated_Account(self.request)
 
         if self.attributes:
-            ucond = Registration.objects.filter(username = self.attributes.username).count() > 0
-            if ucond and not 'projectname' in request.GET:
-                tempDict = {
-                    'error_header' : _("Registration error"),
-                    'error_text' : _("Your account has already been registered"),
-                    'redirect_url' : '/dashboard',
-                    'redirect_label' : _("Home")
-                }
-                return shortcuts.render(request, 'aai_error.html', tempDict)
-
             if RegRequest.objects.filter(externalid=self.attributes.username).count():
                 return dup_login(self.request)
+
+            if not 'projectname' in request.GET:
+                # Standard workflow (no courses)
+                return super(RegistrView, self).get(request, args, kwargs)
+
+            # Course workflow
+            tmpr = Registration.objects.filter(username = self.attributes.username)
+            if len(tmpr) > 0:
+                registration = tmpr[0]  #username is unique
+                if registration.userid:
+                    # user already registered, asking for more courses
+                    # TODO handle as a subscription request
+                    pass
+
+#            if ucond and not 'projectname' in request.GET:
+#                tempDict = {
+#                    'error_header' : _("Registration error"),
+#                    'error_text' : _("Your account has already been registered"),
+#                    'redirect_url' : '/dashboard',
+#                    'redirect_label' : _("Home")
+#                }
+#                return shortcuts.render(request, 'aai_error.html', tempDict)
 
         return super(RegistrView, self).get(request, args, kwargs)
 

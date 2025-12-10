@@ -31,8 +31,8 @@ from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
-from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
+from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 from openstack_auth_shib.models import RSTATUS_REMINDER
 from openstack_auth_shib.models import RSTATUS_REMINDACK
 from openstack_auth_shib.models import RSTATUS_DISABLING
@@ -43,8 +43,8 @@ from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import SUBSCR_OK_TYPE
 from openstack_auth_shib.notifications import SUBSCR_NO_TYPE
-from openstack_auth_shib.notifications import MEMBER_REMOVED
 from openstack_auth_shib.notifications import USER_RENEWED_TYPE
+from openstack_auth_shib.notifications import RENEWAL_DISCARDED
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import DEFAULT_ROLEID
 from openstack_auth_shib.utils import get_year_list
@@ -317,71 +317,45 @@ class DiscSubscrForm(forms.SelfHandlingForm):
     def handle(self, request, data):
 
         try:
-        
+
             with transaction.atomic():
 
-                curr_prjname = self.request.user.tenant_name
-                q_args = {
-                    'registration__regid' : int(data['regid']),
-                    'project__projectname' : curr_prjname,
-                    'flowstatus' : PSTATUS_RENEW_MEMB
-                }                
-                prj_reqs = PrjRequest.objects.filter(**q_args)
-                
-                if len(prj_reqs) == 0:
+                curr_prjname = request.user.tenant_name
+                member = Registration.objects.get(regid = int(data['regid']))
+
+                updated = PrjRequest.objects.filter(
+                    registration = member,
+                    project__projectname = curr_prjname,
+                    flowstatus = PSTATUS_RENEW_MEMB
+                ).update(flowstatus = PSTATUS_RENEW_DISC)
+
+                if updated == 0:
                     return True
 
-                user_id = prj_reqs[0].registration.userid
+                #
+                # Send notification to the user
+                #
+                tmpres = EMail.objects.filter(registration = member)
+                member_email = tmpres[0].email if tmpres else None
 
-                #
-                # Clear requests
-                #
-                prj_reqs.delete()
-                q_args = {
-                    'registration__regid' : int(data['regid']),
-                    'project__projectname' : curr_prjname
-                }                
-                Expiration.objects.delete_expiration(**q_args)
-                PrjRole.objects.filter(**q_args).delete()
+                tmpres = EMail.objects.filter(registration__userid=request.user.id)
+                admin_email = tmpres[0].email if tmpres else None
 
-                #
-                # Remove member from project
-                #
-                roles_obj = client_factory(request).roles
-                role_assign_obj = client_factory(request).role_assignments
-        
-                arg_dict = {
-                    'project' : request.user.tenant_id,
-                    'user' : user_id
+                noti_params = {
+                    'username' : member.username,
+                    'admin_address' : admin_email,
+                    'project' : curr_prjname,
+                    'notes' : data['reason']
                 }
-                for r_item in role_assign_obj.list(**arg_dict):
-                    roles_obj.revoke(r_item.role['id'], **arg_dict)
-        
 
-            #
-            # Send notification to the user
-            #
-            tmpres = EMail.objects.filter(registration__regid=int(data['regid']))
-            member_email = tmpres[0].email if tmpres else None
-            member_name = tmpres[0].registration.username if member_email else 'unknown'
+                notifyUser(request = request, rcpt = member_email, action = RENEWAL_DISCARDED,
+                           context = noti_params, dst_user_id = member.userid)
 
-            tmpres = EMail.objects.filter(registration__userid=request.user.id)
-            admin_email = tmpres[0].email if tmpres else None
-
-            noti_params = {
-                'username' : member_name,
-                'admin_address' : admin_email,
-                'project' : request.user.tenant_name,
-                'notes' : data['reason']
-            }
-            notifyUser(request=self.request, rcpt=member_email, action=MEMBER_REMOVED, context=noti_params,
-                       dst_user_id=user_id)
-                
         except:
             LOG.error("Cannot renew user", exc_info=True)
             exceptions.handle(request)
             return False
-        
+
         return True
 
 

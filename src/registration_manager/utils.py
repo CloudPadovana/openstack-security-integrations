@@ -45,7 +45,7 @@ class RegistrData:
         _('User requires post registration actions'),
         _('Registered user is orphan'),
         _('Renewal waiting for user'),
-        _('User is not interested in renewal'),
+        _('Renewal discarded or not necessary'),
         _('Compliance check required'),
         _('User requires promotion to admin')
     ]
