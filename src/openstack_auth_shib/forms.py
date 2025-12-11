@@ -343,7 +343,7 @@ class RegistrForm(forms.SelfHandlingForm):
                             return self._build_safe_redirect(request, 'dup_login')
                         
                         if rr_item.flowstatus == RSTATUS_REMINDER:
-                            if Expiration.objects.filter(registration = registration).count() == 0:
+                            if PrjRequest.objects.filter(registration = registration).count() == 0:
                                 # Orphan user never activated, reset registration request
                                 rr_item.password = encode_password(data.get('pwd', None))
                                 rr_item.email = data['email']
