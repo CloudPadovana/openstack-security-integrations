@@ -44,6 +44,7 @@ from .models import EMAIL_LEN
 from .models import DESCR_LEN
 from .models import PSTATUS_REG
 from .models import PSTATUS_PENDING
+from .models import RSTATUS_PENDING
 from .models import RSTATUS_REMINDER
 from .notifications import notifyAdmin, REGISTR_AVAIL_TYPE
 from .utils import check_compliance
@@ -286,7 +287,11 @@ class RegistrForm(forms.SelfHandlingForm):
         LOG.debug("New posted data: %s" % str(data))
         return data
 
-    def _build_safe_redirect(self, request, location):
+    def _build_safe_redirect(self, request, page):
+        # Don't user reverse_lazy
+        # It is necessary to get out of the protected area
+
+        location = '/dashboard/auth/%s/' % page
         safe_loc = get_logout_url(request, location)
         if safe_loc and settings.HORIZON_CONFIG.get('enable_slo', False):
             response = shortcuts.redirect(safe_loc)
@@ -325,28 +330,35 @@ class RegistrForm(forms.SelfHandlingForm):
             with transaction.atomic():
 
                 is_fed_account = data.get('federated', 'false') == 'true'
-                prj_flowstatus = PSTATUS_REG
+                first_req = False
 
                 tmpm = Registration.objects.filter(username = data['username'])
                 registration = tmpm[0] if len(tmpm) > 0 else None
             
                 if registration:
 
-                    prj_num = PrjRequest.objects.filter(registration = registration).count()
-                    req_num = RegRequest.objects.filter(
-                        registration = registration,
-                        flowstatus = RSTATUS_REMINDER
-                    ).count()
+                    for rr_item in RegRequest.objects.filter(registration = registration):
 
-                    if req_num > 0 and prj_num == 0:
-                        # Orphan user never activated
-                        RegRequest.objects.filter(registration = registration).delete()
-                    elif prj_num > 0:
-                        return self._build_safe_redirect(request, '/dashboard/auth/dup_login/')
-                    else:
-                        return self._build_safe_redirect(request, '/dashboard/auth/name_exists/')
+                        if rr_item.flowstatus == RSTATUS_PENDING:
+                            return self._build_safe_redirect(request, 'dup_login')
+                        
+                        if rr_item.flowstatus == RSTATUS_REMINDER:
+                            if Expiration.objects.filter(registration = registration).count() == 0:
+                                # Orphan user never activated, reset registration request
+                                rr_item.password = encode_password(data.get('pwd', None))
+                                rr_item.email = data['email']
+                                rr_item.contactper = data.get('contactper', '')
+                                rr_item.notes = data['notes']
+                                rr_item.flowstatus = RSTATUS_PENDING
+                                rr_item.save()
+                                first_req = True
+                            else:
+                                return self._build_safe_redirect(request, 'dup_login')
+                        else:
+                            return self._build_safe_redirect(request, 'name_exists')
 
                 else:
+                    # Usual registration flow
                     registration = Registration(
                         username = data['username'],
                         givenname = data['givenname'],
@@ -357,28 +369,32 @@ class RegistrForm(forms.SelfHandlingForm):
                     )
                     registration.save()
 
-                regReq = RegRequest(
-                    registration = registration,
-                    password = encode_password(data.get('pwd', None)),
-                    email = data['email'],
-                    contactper = data.get('contactper', ''),
-                    notes = data['notes'],
-                    externalid = data['username'] if is_fed_account else None
-                )
-                regReq.save()
-                
-                LOG.debug("Saved %s" % data['username'])
+                    regReq = RegRequest(
+                        registration = registration,
+                        password = encode_password(data.get('pwd', None)),
+                        email = data['email'],
+                        contactper = data.get('contactper', ''),
+                        notes = data['notes'],
+                        externalid = data['username'] if is_fed_account else None
+                    )
+                    regReq.save()
+                    first_req = True
+                    
+                    LOG.debug("Saved %s" % data['username'])
+
+                # Membership handled only with first registration or courses
+                if not (first_req or 'selcourse' in data):
+                    return self._build_safe_redirect(request, 'reg_failure')
 
                 for prjitem in prjlist:
             
                     if prjitem[3]:
 
-                        prjArgs = {
-                            'projectname' : prjitem[0],
-                            'description' : prjitem[1],
-                            'status' : prjitem[2]
-                        }
-                        project = Project.objects.create(**prjArgs)
+                        project = Project.objects.create(
+                            projectname = prjitem[0],
+                            description = prjitem[1],
+                            status = prjitem[2]
+                        )
 
                         PrjAttribute(project = project, name = ATT_PRJ_EXP,
                                      value = data['expiration'].isoformat()).save()
@@ -392,15 +408,12 @@ class RegistrForm(forms.SelfHandlingForm):
                     else:
                         project = Project.objects.get(projectname=prjitem[0])
 
-                    reqArgs = {
-                        'registration' : registration,
-                        'project' : project,
-                        'flowstatus': prj_flowstatus,
-                        'notes' : data['notes']
-                    }
-                    
-                    reqPrj = PrjRequest(**reqArgs)
-                    reqPrj.save()
+                    reqPrj = PrjRequest.objects.create(
+                        registration = registration,
+                        project = project,
+                        flowstatus = PSTATUS_REG,
+                        notes = data['notes']
+                    )
 
             noti_params = {
                 'username': data['username'],
@@ -411,18 +424,16 @@ class RegistrForm(forms.SelfHandlingForm):
             }
             notifyAdmin(request=self.request, action=REGISTR_AVAIL_TYPE, context=noti_params)
 
-            # Don't user reverse_lazy
-            # It is necessary to get out of the protected area
-            return self._build_safe_redirect(request, '/dashboard/auth/reg_done/')
+            return self._build_safe_redirect(request, 'reg_done')
         
         except IntegrityError:
         
-            return self._build_safe_redirect(request, '/dashboard/auth/name_exists/')
+            return self._build_safe_redirect(request, 'name_exists')
 
         except:
         
             LOG.error("Generic failure", exc_info=True)
 
-        return self._build_safe_redirect(request, '/dashboard/auth/reg_failure/')
+        return self._build_safe_redirect(request, 'reg_failure')
 
 
