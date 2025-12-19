@@ -285,13 +285,6 @@ class ExtUpdateProjectInfo(baseWorkflows.UpdateProjectInfo):
     action_class = ExtUpdateProjectInfoAction
     template_name = "idmanager/project_manager/_common_horizontal_form.html"
 
-
-
-
-
-
-
-
 class ProjectExpChangeAction(workflows.Action):
 
     def __init__(self, request, *args, **kwargs):
@@ -324,22 +317,6 @@ class ProjectExpChange(workflows.Step):
     def __init__(self, workflow):
         super(ProjectExpChange, self).__init__(workflow)
         self.contributes = ('expiration',)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class ExtUpdateProject(baseWorkflows.UpdateProject):
@@ -579,6 +556,11 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
             if res:
                 prj_members = [ x.registration for x in Expiration.objects.filter(project = self.this_project) ]
                 noti_list = EMail.objects.filter(registration__in = prj_members)
+
+                PrjRequest.objects.filter(
+                    project = self.this_project,
+                    flowstatus = PSTATUS_RENEW_ADMIN
+                ).delete()
 
             if not super(ExtUpdateProject, self).handle(request, data):
                 raise IntegrityError('Cannot complete update on Keystone')
