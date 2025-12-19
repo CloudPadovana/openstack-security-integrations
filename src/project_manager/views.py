@@ -16,6 +16,8 @@
 import logging
 import urllib.parse
 
+from datetime import datetime
+
 from django.db import transaction
 from django.conf import settings
 from django.urls import reverse
@@ -165,6 +167,15 @@ class IndexView(baseViews.IndexView):
 
 class UpdateProjectView(baseViews.UpdateProjectView):
     workflow_class = ExtUpdateProject
+
+    def get_initial(self):
+        initial = super(UpdateProjectView, self).get_initial()
+        
+        tmpexp = PrjAttribute.objects.filter(project__projectid = initial['project_id'], name = ATT_PRJ_EXP)
+        if len(tmpexp) > 0:
+            initial['expiration'] = datetime.fromisoformat(tmpexp[0].value)
+
+        return initial
 
 class CreateProjectView(baseViews.CreateProjectView):
     workflow_class = ExtCreateProject

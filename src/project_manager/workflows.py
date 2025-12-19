@@ -549,18 +549,19 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
             #
             # Expiration update
             #
-            res = PrjAttribute.objects.filter(
+            if PrjAttribute.objects.filter(
                 project = self.this_project,
                 name = ATT_PRJ_EXP
-            ).update(value = data['expiration'].isoformat())
-            if res:
+            ).update(value = data['expiration'].isoformat()) > 0:
+
                 prj_members = [ x.registration for x in Expiration.objects.filter(project = self.this_project) ]
                 noti_list = EMail.objects.filter(registration__in = prj_members)
 
-                PrjRequest.objects.filter(
-                    project = self.this_project,
-                    flowstatus = PSTATUS_RENEW_ADMIN
-                ).delete()
+                if data['expiration'] > self.initial['expiration']:
+                    PrjRequest.objects.filter(
+                        project = self.this_project,
+                        flowstatus = PSTATUS_RENEW_ADMIN
+                    ).delete()
 
             if not super(ExtUpdateProject, self).handle(request, data):
                 raise IntegrityError('Cannot complete update on Keystone')
