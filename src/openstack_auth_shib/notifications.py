@@ -70,6 +70,7 @@ DEL_USERS_SUMMARY = 'deleted_users_summary'
 COMP_CHECK_TYPE = 'compliance_check'
 PROMO_AVAIL = 'proposed_promotion'
 PROMO_REJECTED = 'promotion_rejected'
+PRJ_NEWEXP = 'project_newexpiration'
 
 # DO NOT CHANGE the LOG_TYPE_* constants
 LOG_TYPE_EMAIL = '__EMAIL__'

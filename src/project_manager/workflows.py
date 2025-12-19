@@ -60,6 +60,7 @@ from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import MEMBER_FORCED_ADD
 from openstack_auth_shib.notifications import MEMBER_FORCED_RM
 from openstack_auth_shib.notifications import NEWPRJ_BY_ADM
+from openstack_auth_shib.notifications import PRJ_NEWEXP
 
 LOG = logging.getLogger(__name__)
 #
@@ -67,6 +68,10 @@ LOG = logging.getLogger(__name__)
 #
 baseWorkflows.INDEX_URL = "horizon:idmanager:project_manager:index"
 baseWorkflows.ADD_USER_URL = "horizon:idmanager:project_manager:create_user"
+
+###############################################################################
+# Project creation
+###############################################################################
 
 class ExtCreateProjectInfoAction(baseWorkflows.CreateProjectInfoAction):
 
@@ -260,6 +265,10 @@ class ExtCreateProject(baseWorkflows.CreateProject):
         return True
 
 
+###############################################################################
+# Project modification
+###############################################################################
+
 class ExtUpdateProjectInfoAction(baseWorkflows.UpdateProjectInfoAction):
 
     def clean(self):
@@ -276,6 +285,63 @@ class ExtUpdateProjectInfo(baseWorkflows.UpdateProjectInfo):
     action_class = ExtUpdateProjectInfoAction
     template_name = "idmanager/project_manager/_common_horizontal_form.html"
 
+
+
+
+
+
+
+
+class ProjectExpChangeAction(workflows.Action):
+
+    def __init__(self, request, *args, **kwargs):
+        super(ProjectExpChangeAction, self).__init__(request, *args, **kwargs)
+
+        self.fields['expiration'] = forms.DateTimeField(
+            label = _('Project expiration'),
+            required = True,
+            widget = SelectDateWidget(years = get_year_list()),
+            initial = FROMNOW(365)
+        )
+
+    def clean(self):
+        cleaned_data = super(ProjectExpChangeAction, self).clean()
+        now = NOW()
+        if cleaned_data['expiration'].date() < now.date() \
+            or cleaned_data['expiration'].year > now.year + MAX_RENEW:
+            raise ValidationError(_('Invalid expiration date.'))
+        return cleaned_data
+
+    class Meta(object):
+        name = _("Project expiration")
+        slug = 'project_exp_renew'
+        help_text = _("Modify the project expiration")
+    
+class ProjectExpChange(workflows.Step):
+    action_class = ProjectExpChangeAction
+    template_name = baseWorkflows.COMMON_HORIZONTAL_TEMPLATE
+
+    def __init__(self, workflow):
+        super(ProjectExpChange, self).__init__(workflow)
+        self.contributes = ('expiration',)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ExtUpdateProject(baseWorkflows.UpdateProject):
     success_url = "horizon:idmanager:project_manager:index"
     
@@ -283,7 +349,8 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
 
         self.default_steps = (ExtUpdateProjectInfo,
                               baseWorkflows.UpdateProjectMembers,
-                              baseWorkflows.UpdateProjectGroups)
+                              baseWorkflows.UpdateProjectGroups,
+                              ProjectExpChange)
 
         workflows.Workflow.__init__(self,request=request,
                                             context_seed=context_seed,
@@ -433,6 +500,7 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
         new_name=data['name']
         new_desc = data['description']
         project_id = data['project_id']
+        noti_list = None
 
         with transaction.atomic():
 
@@ -500,10 +568,34 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
 
                 self.this_project.delete()
                 self.this_project = newpr
-            
+
+            #
+            # Expiration update
+            #
+            res = PrjAttribute.objects.filter(
+                project = self.this_project,
+                name = ATT_PRJ_EXP
+            ).update(value = data['expiration'].isoformat())
+            if res:
+                prj_members = [ x.registration for x in Expiration.objects.filter(project = self.this_project) ]
+                noti_list = EMail.objects.filter(registration__in = prj_members)
+
             if not super(ExtUpdateProject, self).handle(request, data):
                 raise IntegrityError('Cannot complete update on Keystone')
 
+        if noti_list:
+            noti_params = {
+                'project' : self.this_project.projectname,
+                'expiration' : data['expiration'].isoformat()
+            }
+            for e_item in noti_list:
+                notifyUser(
+                    request = request,
+                    rcpt = e_item.email,
+                    action = PRJ_NEWEXP,
+                    context = noti_params,
+                    dst_project_id = self.this_project.projectid,
+                    dst_user_id = e_item.registration.userid)
         return True
 
 

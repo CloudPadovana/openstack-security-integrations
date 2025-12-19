@@ -260,4 +260,12 @@ body: The promotion of the user {{ username }} as administrator of the project {
   
   Please, don't reply to this message
 
+[project_newexpiration]
+LOG: New expiration for project {{ project }}
+subject: New expiration for project {{ project }}
+body: The expiration for project {{ project }} has been update.
+  The new expiration is {{ expiration }}.
+  
+  Please, don't reply to this message
+
 
