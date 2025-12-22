@@ -31,10 +31,14 @@ from openstack_dashboard.dashboards.identity.users import views as baseViews
 from openstack_auth_shib.models import Registration
 from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import PrjRequest
+from openstack_auth_shib.models import RegRequest
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_CHK_COMP
 from openstack_auth_shib.models import PSTATUS_RENEW_DISC
+from openstack_auth_shib.models import RSTATUS_DISABLING
+from openstack_auth_shib.models import RSTATUS_DISABLED
+from openstack_auth_shib.models import RSTATUS_REENABLING
 
 from openstack_dashboard import api
 
@@ -155,11 +159,12 @@ class ChangePasswordView(baseViews.ChangePasswordView):
                               redirect=redirect)
 
 class OrphanData:
-    def __init__(self, uid, uname, full_name, expdate, pending):
+    def __init__(self, uid, uname, full_name, expdate, flowstatus, pending):
         self.id = uid
         self.name = uname
         self.fullname = full_name
         self.expdate = expdate
+        self.flowstatus = flowstatus
         self.pending = pending
 
 class CheckOrphansView(tables.DataTableView):
@@ -181,17 +186,37 @@ class CheckOrphansView(tables.DataTableView):
                 if not reg_item.userid:
                     continue
 
-                q_args = {
-                    'registration' : reg_item,
-                    'flowstatus__in' : [ PSTATUS_PENDING, PSTATUS_CHK_COMP ],
-                }                
+                tmpfs = RegRequest.objects.filter(registration = reg_item)
+                if len(tmpfs) == 0:
+                    fstatus = _("No actions scheduled on gate")
+                else:
+                    if tmpfs[0].flowstatus == RSTATUS_DISABLING:
+                        fstatus = _("Scheduled disabling action on gate")
+                    elif tmpfs[0].flowstatus == RSTATUS_DISABLED:
+                        fstatus = _("Disabled on gate")
+                    elif tmpfs[0].flowstatus == RSTATUS_REENABLING:
+                        fstatus = _("Waiting for re-enabling action on gate")
+                    else:
+                        fstatus = _("Unexpected status")
+
+                    #
+                    # Notes are used to store information aboud VMs and volumes
+                    #
+                    if tmpfs[0].notes != '-':
+                        fstatus += "; " + _("Resources still used")
+
+                reactivate_pending = PrjRequest.objects.filter(
+                    registration = reg_item,
+                    flowstatus__in = [ PSTATUS_PENDING, PSTATUS_CHK_COMP ]
+                ).count() > 0
 
                 result.append(OrphanData(
                     reg_item.userid,
                     reg_item.username,
                     reg_item.givenname + " " + reg_item.sn,
-                    reg_item.expdate,
-                    PrjRequest.objects.filter(**q_args).count() > 0
+                    reg_item.expdate.date().isoformat(),
+                    fstatus,
+                    reactivate_pending
                 ))
         return result
 

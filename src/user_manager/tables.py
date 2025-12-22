@@ -140,6 +140,7 @@ class OrphanTable(tables.DataTable):
     name = tables.Column('name', verbose_name=_('User name'))
     fullname = tables.Column('fullname', verbose_name=_('Full name'))
     expdate = tables.Column('expdate', verbose_name=_('Expiration Date'))
+    flowstatus = tables.Column('flowstatus', verbose_name=_('Status'))
 
     class Meta:
         name = "orphan_table"
