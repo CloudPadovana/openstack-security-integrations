@@ -83,9 +83,6 @@ ATT_PRJ_CIDR = 2011
 ATT_PRJ_ORG = 2012
 ATT_PRJ_OU = 2013
 
-ATT_PRJ_VM = 2020
-ATT_PRJ_VOL = 2021
-
 CIDR_PATTERN = re.compile(r'([0-9]+\.[0-9]+)\.([0-9]+)\.0/[0-9]+')
 MAX_AVAIL = getattr(settings, 'MAX_PROPOSED_NETWORKS', 10)
 

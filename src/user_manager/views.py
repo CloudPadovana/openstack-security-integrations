@@ -199,12 +199,6 @@ class CheckOrphansView(tables.DataTableView):
                     else:
                         fstatus = _("Unexpected status")
 
-                    #
-                    # Notes are used to store information aboud VMs and volumes
-                    #
-                    if tmpfs[0].notes != '-':
-                        fstatus += "; " + _("Resources still used")
-
                 reactivate_pending = PrjRequest.objects.filter(
                     registration = reg_item,
                     flowstatus__in = [ PSTATUS_PENDING, PSTATUS_CHK_COMP ]
