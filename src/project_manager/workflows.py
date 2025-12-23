@@ -48,7 +48,6 @@ from openstack_auth_shib.utils import check_projectname
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import setup_new_project
 from openstack_auth_shib.utils import add_unit_combos
-from openstack_auth_shib.utils import get_unit_table
 from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import MAX_RENEW
 from openstack_auth_shib.utils import NOW
@@ -128,7 +127,7 @@ class CustomProjectInfo(workflows.Step):
 
     def __init__(self, workflow):
         super(CustomProjectInfo, self).__init__(workflow)
-        unit_table = get_unit_table()
+        unit_table = getattr(settings, 'UNIT_TABLE', {})
 
         contrib_list = [ 'expiration' ]
         if len(unit_table) > 0:

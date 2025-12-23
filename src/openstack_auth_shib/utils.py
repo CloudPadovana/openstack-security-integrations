@@ -19,8 +19,6 @@ import os
 import os.path
 
 from datetime import datetime
-from datetime import timezone
-from datetime import timedelta
 
 from django.conf import settings
 from django.db import transaction
@@ -51,26 +49,25 @@ from .models import PSTATUS_RENEW_ATTEMPT
 
 from .models import PrjAttribute
 
+from .definitions import *
+
 LOG = logging.getLogger(__name__)
-
-TENANTADMIN_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_TENANTADMIN_ROLE', 'project_manager')
-TENANTADMIN_ROLEID = getattr(settings, 'OPENSTACK_KEYSTONE_TENANTADMIN_ROLE_ID', None)
-
-DEFAULT_ROLE = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE', 'member')
-DEFAULT_ROLEID = getattr(settings, 'OPENSTACK_KEYSTONE_DEFAULT_ROLE_ID', None)
-
-PRJ_REGEX = re.compile(r'[^a-zA-Z0-9-_ \.]')
-REQID_REGEX = re.compile(r'^([0-9]+):([a-zA-Z0-9-_ \.]*)$')
-
-ORG_TAG_FMT = "O=%s"
-OU_TAG_FMT = "OU=%s"
-TAG_REGEX = re.compile(r'([a-zA-Z0-9-_]+)=([^\s,/]+)$')
 
 def parse_requestid(requestid):
     usr_and_prj = REQID_REGEX.search(requestid)
     if not usr_and_prj:
         raise Exception("Wrong format for request id")
     return (int(usr_and_prj.group(1)), usr_and_prj.group(2))
+
+def get_course_info(prj_name):
+    result =  { COURSE_ATT_MAP[x.name] : x.value for x in 
+                PrjAttribute.objects.filter(project__projectname = prj_name,
+                                            name__in = COURSE_ATT_MAP.keys()) }
+    tmpo = PrjAttribute.objects.filter(project__projectname = prj_name,
+                                       name = ATT_PRJ_ORG)
+    if len(tmpo) > 0:
+        result['org'] = tmpo[0].value
+    return result
 
 def get_user_home(user):
 
@@ -110,59 +107,6 @@ def check_projectname(prjname, error_class):
     return tmps
 
 #
-# Definitions and utilities for courses
-#
-ATT_COURSE_NAME = 1001
-ATT_COURSE_DESC = 1002
-ATT_COURSE_NOTE = 1003
-
-COURSE_ATT_MAP = {
-    ATT_COURSE_NAME : 'name',
-    ATT_COURSE_DESC : 'description',
-    ATT_COURSE_NOTE : 'notes',
-}
-
-def get_course_info(prj_name):
-    result =  { COURSE_ATT_MAP[x.name] : x.value for x in 
-                PrjAttribute.objects.filter(project__projectname = prj_name,
-                                            name__in = COURSE_ATT_MAP.keys()) }
-    tmpo = PrjAttribute.objects.filter(project__projectname = prj_name,
-                                       name = ATT_PRJ_ORG)
-    if len(tmpo) > 0:
-        result['org'] = tmpo[0].value
-    return result
-
-#
-# Definitions and utilities for expiration date
-#
-try:
-    YEARS_RANGE = int(getattr(settings, 'YEARS_RANGE', '10'))
-except:
-    YEARS_RANGE = 10
-
-def get_year_list(n_of_years = YEARS_RANGE):
-    curr_year = datetime.now(timezone.utc).year
-    return list(range(curr_year, curr_year + n_of_years))
-
-def NOW():
-    return datetime.now(timezone.utc)
-
-def FROMNOW(days):
-    return datetime.now(timezone.utc) + timedelta(days)
-
-try:
-    MAX_RENEW = int(getattr(settings, 'TENANT_MAX_RENEW', '4'))
-except:
-    MAX_RENEW = 4
-
-ATT_PRJ_EXP = 2001
-ATT_PRJ_CPER = 2002
-
-ATT_PRJ_CIDR = 2011
-ATT_PRJ_ORG = 2012
-ATT_PRJ_OU = 2013
-
-#
 # Project post creation
 #
 
@@ -185,9 +129,6 @@ ATT_PRJ_OU = 2013
 #     "nameservers" : <list of dns ip>,
 # }
 #
-
-CIDR_PATTERN = re.compile(r'([0-9]+\.[0-9]+)\.([0-9]+)\.0/[0-9]+')
-MAX_AVAIL = getattr(settings, 'MAX_PROPOSED_NETWORKS', 10)
 
 def get_avail_networks(request):
 
@@ -240,7 +181,7 @@ def setup_new_project(request, project_id, project_name, data):
 
     unit_id = data.get('unit', None)
 
-    cloud_table = get_unit_table()
+    cloud_table = getattr(settings, 'UNIT_TABLE', {})
     if not unit_id or not unit_id in cloud_table:
         return
 
@@ -433,7 +374,7 @@ def setup_new_project(request, project_id, project_name, data):
 
 def add_unit_combos(newprjform):
 
-    unit_table = get_unit_table()
+    unit_table = getattr(settings, 'UNIT_TABLE', {})
     org_table = settings.HORIZON_CONFIG.get('organization', {})
 
     if len(unit_table) > 0:
@@ -578,26 +519,6 @@ def unique_admin(username, prjname):
         return False
     return username in adm_list
 
-#
-# Workaround for unit_table reloading at runtime
-#
-def get_unit_table():
-
-    unit_filename = os.environ.get("CLOUDVENETO_UNITTABLE", 
-                                   "/etc/openstack-dashboard/unit_table.py")
-    try:
-
-        if os.path.exists(unit_filename):
-            with open(unit_filename) as f:
-                exec(f.read())
-            return UNIT_TABLE
-
-    except Exception:
-        LOG.error("Cannot exec unit table script", exc_info=True)
-
-    return getattr(settings, 'UNIT_TABLE', {})
-
-
 class AAIDBRouter:
 
     AAIDB_NAME = 'cloudvenetoaai'
@@ -688,15 +609,6 @@ def check_compliance(prj_list):
     for prj in prj_list:
         result.append((prj, prj.projectname in c_projects))
     return result
-
-ID_REGEX_TABLE = {
-    'infn.it' : re.compile(r'^[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+@infn\.it')
-}
-def isRawID(uid):
-    for label, u_regex in ID_REGEX_TABLE.items():
-        if u_regex.search(uid) != None:
-            return True
-    return False
 
 #
 # Custom Password Validator
