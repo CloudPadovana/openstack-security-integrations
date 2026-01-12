@@ -497,16 +497,20 @@ class ForcedRejectForm(forms.SelfHandlingForm):
         try:
             regid, prjname = parse_requestid(data['requestid'])
 
+            noti_params = { 'notes' : data['reason'] }
+
             with transaction.atomic():
                 prj_req = PrjRequest.objects.filter(
                     registration__regid = regid,
-                    project__projectname = prjname
+                    project__projectname = prjname,
+                    flowstatus__in = [ PSTATUS_PENDING, PSTATUS_CHK_COMP ]
                 )[0]
 
-                project_name = prj_req.project.projectname
-                project_id = prj_req.project.projectid
-                user_name = prj_req.registration.username
-                user_id = prj_req.registration.userid
+                noti_params['project'] = prj_req.project.projectname
+                noti_params['project_id'] = prj_req.project.projectid
+                noti_params['username'] = prj_req.registration.username
+                noti_params['user_id'] = prj_req.registration.userid
+                noti_params['flowstatus'] = prj_req.flowstatus
                 
                 #
                 # clear request
@@ -514,34 +518,35 @@ class ForcedRejectForm(forms.SelfHandlingForm):
                 prj_req.delete()
 
             #
-            # send notification to project managers and users
+            # send notification to users
             #
-            tmpres = EMail.objects.filter(registration__userid=user_id)
+            tmpres = EMail.objects.filter(registration__userid = noti_params['user_id'])
             user_email = tmpres[0].email if tmpres else None
+
+            notifyUser(request = self.request, rcpt = user_email, action = SUBSCR_NO_TYPE,
+                       context = noti_params, dst_project_id = noti_params['project_id'],
+                       dst_user_id = noti_params['user_id'])
             
-            m_userids =  [
-                x.registration.userid for x in PrjRole.objects.filter(
+            #
+            # send notification to project managers if necessary
+            #
+            if noti_params['flowstatus'] == PSTATUS_PENDING:
+                admins = PrjRole.objects.filter(
                     registration__userid__isnull = False,
-                    project__projectid = project_id)
-            ]
-            
-            tmpres = EMail.objects.filter(registration__userid__in=m_userids)
-            m_emails = [ x.email for x in tmpres ]
+                    project__projectname = 'ARES'
+                ).values_list('registration__userid', flat = True)
 
-            noti_params = {
-                'username' : user_name,
-                'project' : project_name,
-                'notes' : data['reason']
-            }
+                m_emails = EMail.objects.filter(
+                    registration__userid__in = admins
+                ).values_list('email', flat = True)
 
-            notifyProject(request=self.request, rcpt=m_emails, action=SUBSCR_FORCED_NO_TYPE, context=noti_params,
-                          dst_project_id=project_id)
-            notifyUser(request=self.request, rcpt=user_email, action=SUBSCR_NO_TYPE, context=noti_params,
-                       dst_project_id=project_id, dst_user_id=user_id)
-                
+                notifyProject(request = self.request, rcpt = list(m_emails),
+                              action = SUBSCR_FORCED_NO_TYPE, context = noti_params,
+                              dst_project_id = noti_params['project_id'])
+
         except:
-            LOG.error("Error forced-checking request", exc_info=True)
-            messages.error(request, _("Cannot forced check request"))
+            LOG.error("Error forced-rejecting request", exc_info=True)
+            messages.error(request, _("Cannot forced reject request"))
             return False
 
         return True
