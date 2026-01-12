@@ -517,29 +517,36 @@ class ForcedRejectForm(forms.SelfHandlingForm):
                 #
                 prj_req.delete()
 
+                #
+                # prepare notification to users
+                #
+                tmpres = EMail.objects.filter(registration__userid = noti_params['user_id'])
+                user_email = tmpres[0].email if tmpres else None
+
+                #
+                # prepare notification to project managers if necessary
+                #
+                if noti_params['flowstatus'] == PSTATUS_PENDING:
+                    admins = PrjRole.objects.filter(
+                        registration__userid__isnull = False,
+                        project__projectname = 'ARES'
+                    ).values_list('registration__userid', flat = True)
+
+                    m_emails = EMail.objects.filter(
+                        registration__userid__in = admins
+                    ).values_list('email', flat = True)
+
             #
             # send notification to users
             #
-            tmpres = EMail.objects.filter(registration__userid = noti_params['user_id'])
-            user_email = tmpres[0].email if tmpres else None
-
             notifyUser(request = self.request, rcpt = user_email, action = SUBSCR_NO_TYPE,
                        context = noti_params, dst_project_id = noti_params['project_id'],
                        dst_user_id = noti_params['user_id'])
-            
+                
             #
-            # send notification to project managers if necessary
+            # prepare notification to project managers if necessary
             #
             if noti_params['flowstatus'] == PSTATUS_PENDING:
-                admins = PrjRole.objects.filter(
-                    registration__userid__isnull = False,
-                    project__projectname = 'ARES'
-                ).values_list('registration__userid', flat = True)
-
-                m_emails = EMail.objects.filter(
-                    registration__userid__in = admins
-                ).values_list('email', flat = True)
-
                 notifyProject(request = self.request, rcpt = list(m_emails),
                               action = SUBSCR_FORCED_NO_TYPE, context = noti_params,
                               dst_project_id = noti_params['project_id'])
