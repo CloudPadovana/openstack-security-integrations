@@ -428,40 +428,40 @@ def add_unit_combos(newprjform):
                 })
             )
 
-def check_VMs_and_Volumes(request, **kwargs):
-
-    try:        
-        kwargs['all_tenants'] = True
+def get_resources(request, **kwargs):
+    try:
         (servers, d1) = nova_api.server_list(request, kwargs, False)
-        if len(servers) > 0:
-            err_msg = _("Existing instances: ") + '\n'.join([x.name for x in servers])
-            LOG.error(err_msg, exc_info=True)
-            messages.error(request, err_msg)
-            return False
-
         volumes = cinder_api.volume_list(request, kwargs)
-        if len(volumes) > 0:
-            err_msg = _("Existing volumes: ") + '\n'.join([x.name for x in volumes])
-            LOG.error(err_msg, exc_info=True)
-            messages.error(request, err_msg)
-            return False
-
         snapshots = cinder_api.volume_snapshot_list(request, kwargs)
-        if len(snapshots) > 0:
-            err_msg = _("Existing snapshots: ") + '\n'.join([x.name for x in snapshots])
-            LOG.error(err_msg, exc_info=True)
-            messages.error(request, err_msg)
-            return False
+        return (servers, volumes, snapshots)
     except:
-        LOG.error(_("Failed checks for project removal"), exc_info=True)
-        messages.error(request, _("Failed checks for project removal"))
-        return False
-
-    return True
+        LOG.error("Cannot retrieve resources", exc_info = True)
+    return None    
 
 def dispose_project(request, project_id):
 
-    if not check_VMs_and_Volumes(request, project_id = project_id):
+    tmpt = get_resources(request, project_id = project_id, all_tenants = True)
+    if not tmpt:
+        messages.error(request, _("Failed checks for project removal"))
+        return False
+    servers, volumes, snapshots = tmpt
+
+    if len(servers) > 0:
+        err_msg = _("Existing instances: ") + '\n'.join([x.name for x in servers])
+        LOG.error(err_msg, exc_info = True)
+        messages.error(request, err_msg)
+        return False
+
+    if len(volumes) > 0:
+        err_msg = _("Existing volumes: ") + '\n'.join([x.name for x in volumes])
+        LOG.error(err_msg, exc_info=True)
+        messages.error(request, err_msg)
+        return False
+
+    if len(snapshots) > 0:
+        err_msg = _("Existing snapshots: ") + '\n'.join([x.name for x in snapshots])
+        LOG.error(err_msg, exc_info=True)
+        messages.error(request, err_msg)
         return False
 
     try:

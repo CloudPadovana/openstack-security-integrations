@@ -39,6 +39,7 @@ from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 from openstack_auth_shib.models import RSTATUS_DISABLING
 from openstack_auth_shib.models import RSTATUS_DISABLED
 from openstack_auth_shib.models import RSTATUS_REENABLING
+from openstack_auth_shib.utils import get_resources
 
 from openstack_dashboard import api
 
@@ -46,6 +47,7 @@ from .tables import UsersTable, OrphanTable
 from .forms import RenewExpForm
 from .forms import UpdateUserForm
 from .forms import ReactivateForm
+from .forms import CheckResourcesForm
 
 LOG = logging.getLogger(__name__)
 
@@ -242,4 +244,34 @@ class ReactivateView(forms.ModalFormView):
             'userid' : self.kwargs['user_id'],
             'expdate' : datetime.now(timezone.utc) + timedelta(365)
         }
+
+class CheckResourcesView(forms.ModalFormView):
+    form_class = CheckResourcesForm
+    template_name = 'idmanager/user_manager/chkresources.html'
+    success_url = reverse('horizon:idmanager:user_manager:index')
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            try:
+
+                self._object = Registration.objects.filter(userid=self.kwargs['user_id'])[0]
+
+            except Exception:
+                LOG.error("Reactivate error", exc_info=True)
+                exceptions.handle(self.request, _('Unable to reactivate user.'),
+                                  redirect=success_url)
+        return self._object
+
+    def get_context_data(self, **kwargs):
+        context = super(CheckResourcesView, self).get_context_data(**kwargs)
+        tmpt = get_resources(request, user_id = self.get_object().userid, all_tenants = True)
+        if not tmpt:
+            context['error'] = _('Cannot retrieve resources')
+        else:
+            context['servers'] = [ x.name for x in tmpt[0] ]
+            context['volumes'] = [ x.name for x in tmpt[1] ]
+            context['snapshots'] = [ x.name for x in tmpt[2] ]
+        return context
+
+
 

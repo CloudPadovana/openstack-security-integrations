@@ -386,3 +386,11 @@ class ReactivateForm(forms.SelfHandlingForm):
 
         return True
 
+class CheckResourcesForm(forms.SelfHandlingForm):
+
+    def __init__(self, request, *args, **kwargs):
+        super(CheckResourcesForm, self).__init__(request, *args, **kwargs)
+
+    def handle(self, request, data):
+        return True
+

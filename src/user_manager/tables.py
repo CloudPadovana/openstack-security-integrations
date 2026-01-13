@@ -136,6 +136,12 @@ class ReactivateLink(tables.LinkAction):
     def allowed(self, request, datum):
         return not datum.pending
 
+class CheckResourcesLink(tables.LinkAction):
+    name = "chkresources"
+    verbose_name = _("Check resources")
+    url = "horizon:idmanager:user_manager:chkresources"
+    classes = ("ajax-modal", "btn-edit")
+
 class OrphanTable(tables.DataTable):
     name = tables.Column('name', verbose_name=_('User name'))
     fullname = tables.Column('fullname', verbose_name=_('Full name'))
@@ -148,6 +154,7 @@ class OrphanTable(tables.DataTable):
         row_actions = (
             DeleteUsersAction,
             ReactivateLink,
+            CheckResourcesLink,
         )
         table_actions = (CloseOrphanLink,)
 
