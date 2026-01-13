@@ -264,14 +264,13 @@ class CheckResourcesView(forms.ModalFormView):
 
     def get_context_data(self, **kwargs):
         context = super(CheckResourcesView, self).get_context_data(**kwargs)
-        tmpt = get_resources(self.request, user_id = self.get_object().userid, all_tenants = True)
+        tmpt = get_resources(self.request, user_id = self.get_object().userid)
         context['userid'] = self.get_object().userid
         if not tmpt:
             context['error'] = _('Cannot retrieve resources')
         else:
             context['servers'] = [ x.name for x in tmpt[0] ]
             context['volumes'] = [ x.name for x in tmpt[1] ]
-            context['snapshots'] = [ x.name for x in tmpt[2] ]
         return context
 
 

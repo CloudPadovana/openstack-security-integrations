@@ -429,10 +429,14 @@ def add_unit_combos(newprjform):
             )
 
 def get_resources(request, **kwargs):
+    kwargs['all_tenants'] = True
     try:
         (servers, d1) = nova_api.server_list(request, kwargs, False)
         volumes = cinder_api.volume_list(request, kwargs)
-        snapshots = cinder_api.volume_snapshot_list(request, kwargs)
+        if 'project_id' in kwargs:
+            snapshots = cinder_api.volume_snapshot_list(request, kwargs)
+        else:
+            snapshots = []
         return (servers, volumes, snapshots)
     except:
         LOG.error("Cannot retrieve resources", exc_info = True)
@@ -440,7 +444,7 @@ def get_resources(request, **kwargs):
 
 def dispose_project(request, project_id):
 
-    tmpt = get_resources(request, project_id = project_id, all_tenants = True)
+    tmpt = get_resources(request, project_id = project_id)
     if not tmpt:
         messages.error(request, _("Failed checks for project removal"))
         return False
