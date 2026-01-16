@@ -68,7 +68,7 @@ body: The cloud admin has created the project {{ project }}
 LOG: User {{ username }} requests access to project {{ project }}
 subject: New request for membership
 body: The user {{ username }} requires to access the project {{ project }}
-  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html-desktop/#ManageProjectMembers
+  For further details refer to http://userguide.cloudveneto.it/en/latest/Registration.html#manage-project-membership-requests-only-for-project-managers
   
   Please, don't reply to this message
 
@@ -152,7 +152,7 @@ body: You have the following pending subscriptions for project {{ project }}:
   {% for req in pendingreqs %}
   * {{ req }}
   {% endfor %} 
-  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html-desktop/#ManageProjectMembers
+  For further details refer to http://userguide.cloudveneto.it/en/latest/Registration.html#manage-project-membership-requests-only-for-project-managers
   
   Please, don't reply to this message
 
@@ -161,7 +161,7 @@ LOG: User {{ username }} requests to join project {{ project }}
 subject: Subscription request waiting for approval
 body: User {{ username }} requires access to project {{ project }}
   Please, validate the subscription request
-  For further details refer to http://www.pd.infn.it/cloud/Users_Guide/html-desktop/#ManageProjectMembers
+  For further details refer to http://userguide.cloudveneto.it/en/latest/Registration.html#manage-project-membership-requests-only-for-project-managers
   
   Please, don't reply to this message
 
@@ -170,7 +170,7 @@ LOG: Sent account expiration notice to {{ username }}
 subject: Affiliation to {{ project }} is going to expire
 body: Your affiliation to the project {{ project }} will expire in {{ days }} days.
   If you wish to renew the affiliation please open the CloudVeneto dashboard in a browser and select the project: {{ project }}.
-
+  
   Please, don't reply to this message
 
 [user_need_renew]
@@ -178,6 +178,7 @@ LOG: User {{ username }} requires renewal
 subject: User {{ username }} requires renewal
 body: The affiliation of {{ username }} to {{ project }} is going to expire.
   Please, renew the affiliation or the user will be removed from the project
+  More information at: http://userguide.cloudveneto.it/en/latest/Registration.html#manage-account-renewals-only-for-project-managers
   
   Please, don't reply to this message
 
@@ -199,7 +200,7 @@ body: The affiliation for {{ username }} to {{ project }} is expired.
 [user_purged]
 LOG: User {{ username }} removed by {{ log.user_name }}
 subject: Account for user {{ username }} has been removed
-body: The account {{ username }} has been removed from Cloud Area Padovana.
+body: The account {{ username }} has been removed from  Cloud Veneto.
   
   Please, don't reply to this message
 
