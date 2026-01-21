@@ -113,8 +113,6 @@ class Registration(models.Model):
     givenname = models.CharField(max_length=OS_LNAME_LEN)
     sn = models.CharField(max_length=OS_LNAME_LEN)
     organization = models.CharField(max_length=OS_LNAME_LEN)
-    phone = models.CharField(max_length=OS_SNAME_LEN)
-    domain = models.CharField(max_length=OS_SNAME_LEN)
     #
     # deprecated
     # but it can be used as max expiration date
@@ -250,9 +248,8 @@ class PrjAttribute(models.Model):
 #Temporary data
 class RegRequest(models.Model):
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE)
-    password = models.CharField(max_length=PWD_LEN, null=True)
+    password = models.TextField(null=True)
     externalid = models.CharField(max_length=EXT_ACCT_LEN, null=True)
-    email = models.EmailField(max_length=EMAIL_LEN)
     flowstatus = models.IntegerField(default=RSTATUS_PENDING)
     contactper = models.CharField(max_length=OS_LNAME_LEN, null=True)
     notes = models.TextField()

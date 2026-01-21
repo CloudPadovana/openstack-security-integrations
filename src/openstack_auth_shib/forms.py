@@ -34,6 +34,7 @@ from .models import Project
 from .models import RegRequest
 from .models import PrjRequest
 from .models import PrjAttribute
+from .models import EMail
 from .models import Expiration
 from .models import PRJ_PRIVATE
 from .models import PRJ_PUBLIC
@@ -346,12 +347,14 @@ class RegistrForm(forms.SelfHandlingForm):
                             if PrjRequest.objects.filter(registration = registration).count() == 0:
                                 # Orphan user never activated, reset registration request
                                 rr_item.password = encode_password(data.get('pwd', None))
-                                rr_item.email = data['email']
                                 rr_item.contactper = data.get('contactper', '')
                                 rr_item.notes = data['notes']
                                 rr_item.flowstatus = RSTATUS_PENDING
                                 rr_item.save()
                                 first_req = True
+
+                                EMail.objects.filter(registration = registration).delete()
+                                EMail.objects.create(registration = registration, email = data['email'])
                             else:
                                 return self._build_safe_redirect(request, 'dup_login')
                         else:
@@ -363,16 +366,15 @@ class RegistrForm(forms.SelfHandlingForm):
                         username = data['username'],
                         givenname = data['givenname'],
                         sn = data['sn'],
-                        organization = data.get('organization', ''),
-                        phone = '0000',
-                        domain = 'Default'
+                        organization = data.get('organization', '')
                     )
                     registration.save()
+
+                    EMail.objects.create(registration = registration, email = data['email'])
 
                     regReq = RegRequest(
                         registration = registration,
                         password = encode_password(data.get('pwd', None)),
-                        email = data['email'],
                         contactper = data.get('contactper', ''),
                         notes = data['notes'],
                         externalid = data['username'] if is_fed_account else None
