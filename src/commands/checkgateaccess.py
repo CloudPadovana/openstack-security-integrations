@@ -51,13 +51,11 @@ class Command(CloudVenetoCommand):
 
                 new_orphans = Registration.objects.exclude(regid__in = pend_orphans | act_users | pend_prjusr)
                 for item in new_orphans:
-                    q_args = {
-                        'registration' : item,
-                        'email' : "-",
-                        'flowstatus' : RSTATUS_DISABLING,
-                        'notes' : "-"
-                    }
-                    RegRequest(**q_args).save()
+                    RegRequest.objects.create(
+                        registration = item,
+                        flowstatus = RSTATUS_DISABLING,
+                        notes = '-'
+                    )
                     LOG.info("Scheduled ban for %s" % item.username)
         except:
             LOG.error("Orphan schedule failed", exc_info=True)

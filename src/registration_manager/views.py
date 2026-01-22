@@ -137,23 +137,35 @@ class MainView(tables.DataTableView):
 
 class AbstractCheckView(forms.ModalFormView):
 
+    class ExtRegRequest:
+        def __init__(self, rreq, email):
+            self.registration = rreq.registration
+            self.password = rreq.password
+            self.externalid = rreq.externalid
+            self.flowstatus = rreq.flowstatus
+            self.contactper = rreq.contactper
+            self.notes = rreq.notes
+            self.email = email
+
     def get_object(self):
-        if not hasattr(self, "_object"):
-            try:
+        if hasattr(self, "_object"):
+            return self._object
+        try:
+            with transaction.atomic():
+
                 regid, prjname = parse_requestid(self.kwargs['requestid'])
                 
-                tmplist = RegRequest.objects.filter(registration__regid=regid, flowstatus=RSTATUS_PENDING)
-                if len(tmplist):
-                    self._object = tmplist[0]
-                else:
-                    raise Exception("Database error")
+                r_reqs = RegRequest.objects.filter(registration__regid = regid, flowstatus = RSTATUS_PENDING)
+                emails = EMail.objects.filter(registration__regid = regid)
+                self._object = ExtRegRequest(r_reqs[0], emails[0].email)
+                return self._object
                     
-            except Exception:
-                LOG.error("Registration error", exc_info=True)
-                redirect = reverse("horizon:idmanager:registration_manager:index")
-                exceptions.handle(self.request, _('Unable to pre-check request.'), redirect=redirect)
+        except Exception:
+            LOG.error("Registration error", exc_info=True)
+            redirect = reverse("horizon:idmanager:registration_manager:index")
+            exceptions.handle(self.request, _('Unable to pre-check request.'), redirect = redirect)
 
-        return self._object
+        return None
 
     def get_context_data(self, **kwargs):
         context = super(AbstractCheckView, self).get_context_data(**kwargs)

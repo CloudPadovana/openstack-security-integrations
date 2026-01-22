@@ -109,10 +109,9 @@ class PreCheckForm(forms.SelfHandlingForm):
         
         self.expiration = FROMNOW(365)
 
-    def post_reminder(self, registration, email):
+    def post_reminder(self, registration):
         regReq = RegRequest(
             registration = registration,
-            email = email,
             flowstatus = RSTATUS_REMINDER,
             notes = "-"
         )
@@ -151,7 +150,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                 if not password:
                     password = generate_pwd()
                 
-                user_email = EMail.objects.filter(registration = registration)[0]
+                user_email = EMail.objects.filter(registration = registration)[0].email
 
                 #
                 # User creation
@@ -220,7 +219,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                 newprj_reqs.delete()
                 reg_request.delete()
 
-                self.post_reminder(registration, user_email)
+                self.post_reminder(registration)
 
         except:
             LOG.error("Error pre-checking request", exc_info=True)
@@ -305,7 +304,7 @@ class GrantAllForm(PreCheckForm):
             keystone_api.add_tenant_user_role(request, newreq_prj.projectid,
                                     r_item.registration.userid, DEFAULT_ROLEID)
                 
-    def post_reminder(self, registration, email):
+    def post_reminder(self, registration):
         pass
 
     def clean(self):
