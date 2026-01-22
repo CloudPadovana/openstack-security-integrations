@@ -157,7 +157,7 @@ class AbstractCheckView(forms.ModalFormView):
                 
                 r_reqs = RegRequest.objects.filter(registration__regid = regid, flowstatus = RSTATUS_PENDING)
                 emails = EMail.objects.filter(registration__regid = regid)
-                self._object = ExtRegRequest(r_reqs[0], emails[0].email)
+                self._object = AbstractCheckView.ExtRegRequest(r_reqs[0], emails[0].email)
                 return self._object
                     
         except Exception:
