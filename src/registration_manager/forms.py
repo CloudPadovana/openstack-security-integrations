@@ -151,7 +151,7 @@ class PreCheckForm(forms.SelfHandlingForm):
                 if not password:
                     password = generate_pwd()
                 
-                user_email = reg_request.email
+                user_email = EMail.objects.filter(registration = registration)[0]
 
                 #
                 # User creation
@@ -172,10 +172,6 @@ class PreCheckForm(forms.SelfHandlingForm):
                     registration.save()
                     LOG.info("Created user %s" % registration.username)
 
-                    mail_obj = EMail()
-                    mail_obj.registration = registration
-                    mail_obj.email = user_email
-                    mail_obj.save()
 
                 prjReqList = PrjRequest.objects.filter(registration = registration)
                 self.process_tenants(request, prjReqList, data)
