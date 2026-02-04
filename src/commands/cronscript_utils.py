@@ -41,22 +41,54 @@ class CloudVenetoCommand(BaseCommand):
         if logconffile:
             logging.config.fileConfig(logconffile)
 
-        self.config = ConfigBin()
+        self.config = ConfigBin(options.get('conffile', None))
 
-        conffile = options.get('conffile', None)
+
+def get_prjman_roleid(keystone):
+    role_name = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
+    
+    for tmp_role in keystone.roles.list():
+        if tmp_role.name == role_name:
+            return tmp_role.id
+    raise CommandError("Cannot retrieve project manager role id")
+
+class ConfigBin:
+    def __init__(self, conffile = None):
+        self.script_params = getattr(settings, 'SCRIPT_PARAMETERS', {})
+
+        # TODO remove script-specific parameters
+        self.cron_user = self.script_params.get('CRON_USER', 'admin')
+        self.cron_pwd = self.script_params.get('CRON_PWD', '')
+        self.cron_prj = self.script_params.get('CRON_PROJECT', 'admin')
+        self.cron_domain = self.script_params.get('CRON_DOMAIN', 'Default')
+        self.cron_ca = self.script_params.get('OPENSTACK_SSL_CACERT', '')
+        self.cron_kurl = self.script_params.get('OPENSTACK_KEYSTONE_URL', '')
+        self.cron_renewd = self.script_params.get('CRON_RENEW_DAYS', 30)
+        self.cron_defer = self.script_params.get('CRON_DEFER_DAYS', 0)
+        self.cron_plan = self.script_params.get('NOTIFICATION_PLAN', None)
+        self.key_path = self.script_params.get('PRIVATE_KEY_PATH', None)
+        self.gate_user = self.script_params.get('GATE_USER', 'root')
+        self.gate_address = self.script_params.get('GATE_ADDRESS', None)
+        self.ban_script = self.script_params.get('GATE_BAN_SCRIPT', None)
+        self.allow_script = self.script_params.get('GATE_ALLOW_SCRIPT', None)
+        self.gate_dry_run = self.script_params.get('GATE_DRY_RUN', False)
+
         if conffile:
             params = self._readParameters(conffile)
 
             if len(params) > 0:
-                self.config.cron_user = params['USERNAME']
-                self.config.cron_pwd = params['PASSWD']
-                self.config.cron_prj = params['TENANTNAME']
-                self.config.cron_ca = params.get('CAFILE','')
-                self.config.cron_domain = params.get('DOMAIN', 'Default')
-                self.config.cron_kurl = params['AUTHURL']
-                self.config.cron_renewd = int(params.get('RENEW_DAYS', '30'))
-                self.config.cron_defer = int(params.get('DEFER_DAYS', '0'))
-                self.config.cron_plan = params.get('NOTIFICATION_PLAN', None)
+                self.cron_user = params['USERNAME']
+                self.cron_pwd = params['PASSWD']
+                self.cron_prj = params['TENANTNAME']
+                self.cron_ca = params.get('CAFILE','')
+                self.cron_domain = params.get('DOMAIN', 'Default')
+                self.cron_kurl = params['AUTHURL']
+                self.cron_renewd = int(params.get('RENEW_DAYS', '30'))
+                self.cron_defer = int(params.get('DEFER_DAYS', '0'))
+                self.cron_plan = params.get('NOTIFICATION_PLAN', None)
+
+                for name, value in params.items:
+                    self.script_params[name] = value
 
     def _readParameters(self, conffile):
         result = dict()
@@ -76,34 +108,8 @@ class CloudVenetoCommand(BaseCommand):
 
         return result
 
-
-def get_prjman_roleid(keystone):
-    role_name = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
-    
-    for tmp_role in keystone.roles.list():
-        if tmp_role.name == role_name:
-            return tmp_role.id
-    raise CommandError("Cannot retrieve project manager role id")
-
-class ConfigBin:
-    def __init__(self):
-        script_params = getattr(settings, 'SCRIPT_PARAMETERS', {})
-
-        self.cron_user = script_params.get('CRON_USER', 'admin')
-        self.cron_pwd = script_params.get('CRON_PWD', '')
-        self.cron_prj = script_params.get('CRON_PROJECT', 'admin')
-        self.cron_domain = script_params.get('CRON_DOMAIN', 'Default')
-        self.cron_ca = script_params.get('OPENSTACK_SSL_CACERT', '')
-        self.cron_kurl = script_params.get('OPENSTACK_KEYSTONE_URL', '')
-        self.cron_renewd = script_params.get('CRON_RENEW_DAYS', 30)
-        self.cron_defer = script_params.get('CRON_DEFER_DAYS', 0)
-        self.cron_plan = script_params.get('NOTIFICATION_PLAN', None)
-        self.key_path = script_params.get('PRIVATE_KEY_PATH', None)
-        self.gate_user = script_params.get('GATE_USER', 'root')
-        self.gate_address = script_params.get('GATE_ADDRESS', None)
-        self.ban_script = script_params.get('GATE_BAN_SCRIPT', None)
-        self.allow_script = script_params.get('GATE_ALLOW_SCRIPT', None)
-        self.gate_dry_run = script_params.get('GATE_DRY_RUN', False)
+    def get(self, name, default):
+        self.script_params.get(name, default)
 
 def build_contact_list():
     return getattr(settings, 'MANAGERS', None)
