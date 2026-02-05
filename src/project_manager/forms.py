@@ -241,6 +241,12 @@ class ProposedRenewForm(forms.SelfHandlingForm):
             initial = 'discard'
         )
 
+        self.fields['notes'] = forms.CharField(
+            label=_('Notes'),
+            required=False,
+            widget=forms.widgets.Textarea()
+        )
+
     def clean(self):
         data = super(ProposedRenewForm, self).clean()
         if not data['action'] in [ 'renew', 'discard' ]:
@@ -278,7 +284,8 @@ class ProposedRenewForm(forms.SelfHandlingForm):
         try:
             noti_params = {
                 'username' : request.user.username,
-                'project' : request.user.tenant_name
+                'project' : request.user.tenant_name,
+                'notes' : data['notes']
             }
             if prj_mails:
                 notifyProject(prj_mails, USER_NEED_RENEW,

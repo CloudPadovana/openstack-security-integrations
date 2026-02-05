@@ -179,6 +179,8 @@ subject: User {{ username }} requires renewal
 body: The affiliation of {{ username }} to {{ project }} is going to expire.
   Please, renew the affiliation or the user will be removed from the project
   More information at: http://userguide.cloudveneto.it/en/latest/Registration.html#manage-account-renewals-only-for-project-managers
+  {% if notes %}The user sent you this comment:
+  {{ notes }}{% endif %}
   
   Please, don't reply to this message
 
