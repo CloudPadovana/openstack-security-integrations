@@ -548,15 +548,16 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
             #
             # Expiration update
             #
-            if PrjAttribute.objects.filter(
-                project = self.this_project,
-                name = ATT_PRJ_EXP
-            ).update(value = data['expiration'].isoformat()) > 0:
+            tmpd = PrjAttribute.objects.filter(project = self.this_project, name = ATT_PRJ_EXP)
+            if len(tmpd):
+                old_pexp = datetime.fromisoformat(tmpd[0].value)
+                tmpd[0].value = data['expiration'].isoformat()
+                tmpd[0].save()
 
                 prj_members = [ x.registration for x in Expiration.objects.filter(project = self.this_project) ]
                 noti_list = EMail.objects.filter(registration__in = prj_members)
 
-                if data['expiration'] > self.initial['expiration']:
+                if data['expiration'] > old_pexp:
                     PrjRequest.objects.filter(
                         project = self.this_project,
                         flowstatus = PSTATUS_RENEW_ADMIN
