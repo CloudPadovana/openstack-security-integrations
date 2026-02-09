@@ -358,7 +358,7 @@ class RegistrForm(forms.SelfHandlingForm):
                             else:
                                 return self._build_safe_redirect(request, 'dup_login')
                         else:
-                            return self._build_safe_redirect(request, 'name_exists')
+                            break
 
                 else:
                     # Usual registration flow
@@ -386,7 +386,7 @@ class RegistrForm(forms.SelfHandlingForm):
 
                 # Membership handled only with first registration or courses
                 if not (first_req or 'selcourse' in data):
-                    return self._build_safe_redirect(request, 'reg_failure')
+                    return self._build_safe_redirect(request, 'name_exists')
 
                 for prjitem in prjlist:
             
