@@ -549,8 +549,9 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
             # Expiration update
             #
             tmpd = PrjAttribute.objects.filter(project = self.this_project, name = ATT_PRJ_EXP)
-            if len(tmpd):
-                old_pexp = datetime.fromisoformat(tmpd[0].value)
+            old_pexp = datetime.fromisoformat(tmpd[0].value) if len(tmpd) else None
+
+            if old_pexp and old_pexp != data['expiration']:
                 tmpd[0].value = data['expiration'].isoformat()
                 tmpd[0].save()
 
