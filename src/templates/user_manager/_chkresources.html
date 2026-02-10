@@ -33,14 +33,14 @@
         <h3>{% trans "Instances" %}</h3>
         <ul>
         {% for item in servers %}
-            <li>{{ item }}</li>
+            <li>{{ item.1 }} ({{ item.2 }})</li>
         {% endfor %}
         </ul>
 
         <h3>{% trans "Volumes" %}</h3>
         <ul>
         {% for item in volumes %}
-            <li>{{ item }}</li>
+            <li>{{ item.1 }} ({{ item.2 }})</li>
         {% endfor %}
         </ul>
     {% endif %}

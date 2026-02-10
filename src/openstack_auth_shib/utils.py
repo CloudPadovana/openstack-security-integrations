@@ -440,7 +440,36 @@ def get_resources(request, **kwargs):
         return (servers, volumes, snapshots)
     except:
         LOG.error("Cannot retrieve resources", exc_info = True)
-    return None    
+    return None
+
+def get_resource_details(request, **kwargs):
+    tmpt = get_resources(request, kwargs)
+    if not tmpt:
+        return None
+
+    try:
+        prj_table = dict()
+        for pitem in Project.objects.all():
+            prj_table[pitem.projectid] = pitem.projectname
+
+        srv_infos = list()
+        for item in tmpt[0]:
+            instance = nova_api.server_get(request, item.id)
+            tenant_name = prj_table.get(instance.tenant_id, None)
+            if tenant_name:
+                srv_infos.append((instance.id, instance.name, tenant_name))
+
+        vol_infos = list()
+        for item in tmpt[1]:
+            volume = cinder_api.volume_get(request, item.id)
+            tenant_name = prj_table.get(volume.tenant_id, None)
+            if tenant_name:
+                vol_infos.append((volume.id, volume.name, tenant_name))
+
+        return (srv_infos, vol_infos)
+    except:
+        LOG.error("Cannot retrieve resource details", exc_info = True)
+    return None
 
 def dispose_project(request, project_id):
 

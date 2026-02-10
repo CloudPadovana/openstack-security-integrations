@@ -39,7 +39,7 @@ from openstack_auth_shib.models import PSTATUS_RENEW_DISC
 from openstack_auth_shib.models import RSTATUS_DISABLING
 from openstack_auth_shib.models import RSTATUS_DISABLED
 from openstack_auth_shib.models import RSTATUS_REENABLING
-from openstack_auth_shib.utils import get_resources
+from openstack_auth_shib.utils import get_resource_details
 
 from openstack_dashboard import api
 
@@ -264,13 +264,13 @@ class CheckResourcesView(forms.ModalFormView):
 
     def get_context_data(self, **kwargs):
         context = super(CheckResourcesView, self).get_context_data(**kwargs)
-        tmpt = get_resources(self.request, user_id = self.get_object().userid)
+        tmpt = get_resource_details(self.request, user_id = self.get_object().userid)
         context['userid'] = self.get_object().userid
         if not tmpt:
             context['error'] = _('Cannot retrieve resources')
         else:
-            context['servers'] = [ x.name for x in tmpt[0] ]
-            context['volumes'] = [ x.name for x in tmpt[1] ]
+            context['servers'] = tmpt[0]
+            context['volumes'] = tmpt[1]
         return context
 
 
