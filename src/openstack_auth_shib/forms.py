@@ -263,9 +263,10 @@ class RegistrForm(forms.SelfHandlingForm):
         if data.get('aupok', 'reject') != 'accept':
             raise ValidationError(_('You must accept Cloud Padovana AUP.'))
             
-        if 'pwd' in data and data['pwd'] != data.get('repwd', None):
+        if 'pwd' in data: 
+            if data['pwd'] != data.get('repwd', None):
                 raise ValidationError(_('Passwords do not match.'))
-        validate_password(data['pwd'])
+            validate_password(data['pwd'])
 
         if '@' in data['username'] or ':' in data['username']:
             if data.get('federated', 'false') == 'false':
@@ -413,7 +414,7 @@ class RegistrForm(forms.SelfHandlingForm):
                     reqPrj = PrjRequest.objects.create(
                         registration = registration,
                         project = project,
-                        flowstatus = PSTATUS_REG,
+                        flowstatus = PSTATUS_REG if first_req else PSTATUS_PENDING,
                         notes = data['notes']
                     )
 

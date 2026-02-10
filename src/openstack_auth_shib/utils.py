@@ -667,6 +667,9 @@ class CloudVenetoPwdValidator:
 #
 from cryptography.fernet import Fernet
 import secrets
+import string
+
+from .models import PWD_LEN
 
 def encode_password(pwd):
     f_key = getattr(settings, "PASSWORD_FERNET_KEY", None)
