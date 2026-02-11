@@ -73,6 +73,10 @@ def login(request):
             tmpresp.set_cookie(AUTHZCOOKIE, auth_type)
             return tmpresp
 
+    default_admin_prjid = getattr(settings, "DEFAULT_ADMIN_PROJECTID", None)
+    if 'recent_project' not in request.COOKIES and default_admin_prjid:
+        request.COOKIES['recent_project'] = default_admin_prjid
+
     result = basic_login(request)
     if request.user.is_authenticated and request.user.is_superuser:
         checkFederationSetup(request)
