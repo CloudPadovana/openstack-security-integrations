@@ -649,12 +649,19 @@ def check_compliance(prj_list):
 class CloudVenetoPwdValidator:
     def __init__(self, min_length = 10):
         self.min_length = min_length
-        self.symbols = "[~!@#$%^&*()_+{}\":;'[]"
+        self.symbols = "+-*/%~!@#$^&_.,:;"
+        self.setsym = set()
+        for char in self.symbols:
+            self.setsym.add(char)
 
     def validate(self, password, user = None):
-        capitals = [ char for char in password if char.isupper() ]
-        digits = [ char for char in password if char.isdigit() ]
-        symbols = [ char for char in password if char in self.symbols ]
+        found_capital = False
+        found_digit = False
+        found_symbol = False
+        for char in password:
+            found_capital |= char.isupper()
+            found_digit |= char.isdigit()
+            found_symbol |= (char in self.setsym)
 
         if len(password) < self.min_length:
             raise ValidationError(
@@ -663,25 +670,25 @@ class CloudVenetoPwdValidator:
                 params = { "min_length" : self.min_length },
             )
 
-        if len(capitals) < 1:
+        if not found_capital:
             raise ValidationError(
-                _("This password must contain at least %(min_length)d capital letters."),
-                code = 'password_too_short',
-                params={'min_length': 1},
+                _("This password must contain at least 1 capital letter."),
+                code = 'missing_character',
+                params = {},
             )
 
-        if len(digits) < 1:
+        if not found_digit:
             raise ValidationError(
-                _("This password must contain at least %(min_length)d digits."),
-                code = 'password_too_short',
-                params={'min_length': 1},
+                _("This password must contain at least 1 digit."),
+                code = 'missing_character',
+                params = {},
             )
 
-        if len(symbols) < 1:
+        if not found_symbol:
             raise ValidationError(
-                _("This password must contain at least %(min_length)d symbols."),
-                code = 'password_too_short',
-                params = {'min_length': 1},
+                _("This password must contain at least 1 symbol: %(req_sym)s."),
+                code = 'missing_character',
+                params = { "req_sym" : self.symbols},
             )
 
 
