@@ -33,8 +33,6 @@ from openstack_auth_shib.notifications import DEL_USERS_SUMMARY
 from horizon.management.commands.cronscript_utils import CloudVenetoCommand
 from horizon.management.commands.cronscript_utils import get_prjman_roleid
 
-from keystoneclient.v3 import client
-
 LOG = logging.getLogger("checkexpiration")
 
 class Command(CloudVenetoCommand):
@@ -44,22 +42,10 @@ class Command(CloudVenetoCommand):
         super(Command, self).handle(options)
         
         LOG.info("Checking expired users")
-        try:
 
-            keystone_client = client.Client(username=self.config.cron_user,
-                                            password=self.config.cron_pwd,
-                                            project_name=self.config.cron_prj,
-                                            user_domain_name=self.config.cron_domain,
-                                            project_domain_name=self.config.cron_domain,
-                                            cacert=self.config.cron_ca,
-                                            auth_url=self.config.cron_kurl)
-
-            prjman_roleid = get_prjman_roleid(keystone_client)
-            cloud_adminid = keystone_client.auth_ref.user_id
-
-        except:
-            LOG.error("Check expiration failed", exc_info=True)
-            raise CommandError("Check expiration failed")
+        keystone_client = self.get_keystone_client()
+        prjman_roleid = get_prjman_roleid(keystone_client)
+        cloud_adminid = keystone_client.auth_ref.user_id
 
         exp_date = datetime.now(timezone.utc) - timedelta(self.config.cron_defer)
 

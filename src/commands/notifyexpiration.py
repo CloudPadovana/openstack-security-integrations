@@ -35,22 +35,6 @@ LOG = logging.getLogger("notifyexpiration")
 
 class Command(CloudVenetoCommand):
 
-    def _get_days_to_exp(self, n_plan):
-        result = list()
-        
-        if n_plan:
-            try:
-                for tok in n_plan.split(','):
-                    result.append(int(tok.strip()))
-            except:
-                LOG.error("Cannot parse notification plan, default used", exc_info=True)
-                
-        if len(result) == 0:
-            result.append(5)
-            result.append(10)
-            result.append(20)
-        return result
-    
     def handle(self, *args, **options):
 
         super(Command, self).handle(options)
@@ -68,7 +52,8 @@ class Command(CloudVenetoCommand):
                     x.registration for x in PrjRequest.objects.filter(flowstatus = PSTATUS_RENEW_ATTEMPT)
                 ]
 
-                for days_to_exp in self._get_days_to_exp(self.config.cron_plan):
+                counter = 0
+                for days_to_exp in self.config.cron_plan:
 
                     tframe = now + timedelta(days=days_to_exp)
                     noti_table[days_to_exp] = list()
@@ -86,22 +71,31 @@ class Command(CloudVenetoCommand):
                         prjname = exp_item.project.projectname
                         prjid = exp_item.project.projectid
 
-                        noti_table[days_to_exp].append((username, userid, prjname, prjid))
+                        noti_table[days_to_exp].append((username, userid, prjname, prjid, counter))
                         user_set.add(userid)
+                    counter += 1
 
                 for email_item in EMail.objects.filter(registration__userid__in=user_set):
                     mail_table[email_item.registration.userid] = email_item.email
 
             for days_to_exp, noti_list in noti_table.items():
-                for username, userid, prjname, prjid in noti_list:
+                for username, userid, prjname, prjid, noti_idx in noti_list:
                     try:
+
+                        servers, volumes = self.get_user_resources(userid, prjid)
                         noti_params = {
                             'username' : username,
                             'project' : prjname,
-                            'days' : days_to_exp
+                            'days' : days_to_exp,
+                            'instances' : [ x.id for x in servers ],
+                            'volumes' : [ x.id for x in voluems ]
                         }
                         notifyUser(mail_table[userid], USER_EXP_TYPE, noti_params,
                                    user_id=userid, project_id=prjid, dst_user_id=userid)
+
+                        if noti_idx == 0 and (len(servers) + len(volumes)) > 0:
+                            # TODO send notification to project admins
+                            pass
                     except:
                         LOG.error("Cannot notify %s" % username, exc_info=True)
                 

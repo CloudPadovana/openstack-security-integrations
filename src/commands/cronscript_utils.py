@@ -19,10 +19,20 @@ import logging.config
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from keystoneclient.v3.client import Client as KeystoneClient
+from novaclient.v2.client import Client as NovaClient
+from cinderclient.v3.client import Client as CinderClient
+
 LOG = logging.getLogger("cronscript_utils")
 
 class CloudVenetoCommand(BaseCommand):
 
+    def __init__(self):
+        super(CloudVenetoCommand, self).__init__()
+        self.keystone_client = None
+        self.nova_client = None
+        self.cinder_client = None
+        
     def add_arguments(self, parser):
         parser.add_argument('--config',
                             dest='conffile',
@@ -43,6 +53,60 @@ class CloudVenetoCommand(BaseCommand):
 
         self.config = ConfigBin(options.get('conffile', None))
 
+    def get_keystone_client(self):
+        if self.keystone_client:
+            return self.keystone_client
+        try:
+            self.keystone_client = KeystoneClient(username = self.config.cron_user,
+                                                  password = self.config.cron_pwd,
+                                                  project_name = self.config.cron_prj,
+                                                  user_domain_name = self.config.cron_domain,
+                                                  project_domain_name = self.config.cron_domain,
+                                                  cacert = self.config.cron_ca,
+                                                  auth_url = self.config.cron_kurl)
+            return self.keystone_client
+        except:
+            LOG.error("Keystone connection failed", exc_info=True)
+        raise CommandError("Keystone connection failed")
+
+    def get_nova_client(self):
+        if self.nova_client:
+            return self.nova_client
+        try:
+            self.nova_client = NovaClient(username = self.config.cron_user,
+                                          password = self.config.cron_pwd,
+                                          project_name = self.config.cron_prj,
+                                          user_domain_name = self.config.cron_domain,
+                                          project_domain_name = self.config.cron_domain,
+                                          cacert = self.config.cron_ca,
+                                          auth_url = self.config.cron_kurl)
+            return self.nova_client
+        except:
+            LOG.error("Nova connection failed", exc_info=True)
+        raise CommandError("Nova connection failed")
+
+    def get_cinder_client(self):
+        if self.cinder_client:
+            return self.cinder_client
+        try:
+            self.cinder_client = CinderClient(username = self.config.cron_user,
+                                              api_key = self.config.cron_pwd,
+                                              project_id = settings.DEFAULT_ADMIN_PROJECTID,
+                                              cacert = self.config.cron_ca,
+                                              auth_url = self.config.cron_kurl)
+            return self.cinder_client
+        except:
+            LOG.error("Cinder connection failed", exc_info=True)
+        raise CommandError("Cinder connection failed")
+
+    def get_user_resources(self, userid, prjid):
+        q_args = { 'user' : userid, 'project_id' : prjid, 'all_tenants' : True }
+        nova_client = self.get_nova_client()
+        (servers, d1) = nova_api.servers.list(True, q_args)
+        cinder_client = self.get_cinder_client()
+        volumes = cinder_client.volumes.list(search_opts = q_args)
+
+        return (servers, volumes)
 
 def get_prjman_roleid(keystone):
     role_name = getattr(settings, 'TENANTADMIN_ROLE', 'project_manager')
@@ -65,7 +129,7 @@ class ConfigBin:
         self.cron_kurl = self.script_params.get('OPENSTACK_KEYSTONE_URL', '')
         self.cron_renewd = self.script_params.get('CRON_RENEW_DAYS', 30)
         self.cron_defer = self.script_params.get('CRON_DEFER_DAYS', 0)
-        self.cron_plan = self.script_params.get('NOTIFICATION_PLAN', None)
+        self.cron_plan = self._parse_cron_plan(self.script_params.get('NOTIFICATION_PLAN', None))
         self.key_path = self.script_params.get('PRIVATE_KEY_PATH', None)
         self.gate_user = self.script_params.get('GATE_USER', 'root')
         self.gate_address = self.script_params.get('GATE_ADDRESS', None)
@@ -85,11 +149,23 @@ class ConfigBin:
                 self.cron_kurl = params['AUTHURL']
                 self.cron_renewd = int(params.get('RENEW_DAYS', '30'))
                 self.cron_defer = int(params.get('DEFER_DAYS', '0'))
-                self.cron_plan = params.get('NOTIFICATION_PLAN', None)
+                self.cron_plan = self._parse_cron_plan(params.get('NOTIFICATION_PLAN', None))
 
                 for name, value in params.items:
                     self.script_params[name] = value
 
+    def _parse_cron_plan(self, plan_str):
+        if plan_str:
+            try:
+                result = list()
+                for tok in plan_str.split(','):
+                    result.append(int(tok.strip()))
+                return sorted(result)
+            except:
+                LOG.error("Cannot parse notification plan, default used", exc_info=True)
+
+        return [ 5, 10, 20 ]
+        
     def _readParameters(self, conffile):
         result = dict()
 
@@ -113,4 +189,6 @@ class ConfigBin:
 
 def build_contact_list():
     return getattr(settings, 'MANAGERS', None)
+
+
 
