@@ -87,8 +87,9 @@ class Command(CloudVenetoCommand):
                             'username' : username,
                             'project' : prjname,
                             'days' : days_to_exp,
-                            'instances' : [ x.id for x in servers ],
-                            'volumes' : [ x.id for x in voluems ]
+                            'instances' : [ "%s (%s)" % (x.name, x.id) for x in servers ],
+                            'volumes' : [ "%s (%s)" % (x.name, x.id) for x in volumes ],
+                            'resources' : len(instances) > 0 or len(volumes) > 0
                         }
                         notifyUser(mail_table[userid], USER_EXP_TYPE, noti_params,
                                    user_id=userid, project_id=prjid, dst_user_id=userid)

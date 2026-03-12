@@ -20,8 +20,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from keystoneclient.v3.client import Client as KeystoneClient
-from novaclient.v2.client import Client as NovaClient
-from cinderclient.v3.client import Client as CinderClient
+from novaclient.client import Client as NovaClient
+from cinderclient.client import Client as CinderClient
 
 LOG = logging.getLogger("cronscript_utils")
 
@@ -73,7 +73,8 @@ class CloudVenetoCommand(BaseCommand):
         if self.nova_client:
             return self.nova_client
         try:
-            self.nova_client = NovaClient(username = self.config.cron_user,
+            self.nova_client = NovaClient('2',
+                                          username = self.config.cron_user,
                                           password = self.config.cron_pwd,
                                           project_name = self.config.cron_prj,
                                           user_domain_name = self.config.cron_domain,
@@ -89,22 +90,23 @@ class CloudVenetoCommand(BaseCommand):
         if self.cinder_client:
             return self.cinder_client
         try:
-            self.cinder_client = CinderClient(username = self.config.cron_user,
-                                              api_key = self.config.cron_pwd,
-                                              project_id = settings.DEFAULT_ADMIN_PROJECTID,
-                                              cacert = self.config.cron_ca,
-                                              auth_url = self.config.cron_kurl)
+            self.cinder_client = CinderClient('3', self.config.cron_user,
+                                              self.config.cron_pwd, self.config.cron_prj,
+                                              self.config.cron_kurl,
+                                              cacert = self.config.cron_ca)
             return self.cinder_client
         except:
             LOG.error("Cinder connection failed", exc_info=True)
         raise CommandError("Cinder connection failed")
 
     def get_user_resources(self, userid, prjid):
-        q_args = { 'user' : userid, 'project_id' : prjid, 'all_tenants' : True }
         nova_client = self.get_nova_client()
-        (servers, d1) = nova_api.servers.list(True, q_args)
+        q_args1 = { 'user' : userid, 'project_id' : prjid, 'all_tenants' : True }
+        servers = nova_client.servers.list(True, q_args1)
+
         cinder_client = self.get_cinder_client()
-        volumes = cinder_client.volumes.list(search_opts = q_args)
+        q_args2 = { 'user_id' : userid, 'project_id' : prjid, 'all_tenants' : True }
+        volumes = cinder_client.volumes.list(search_opts = q_args2)
 
         return (servers, volumes)
 
@@ -151,7 +153,7 @@ class ConfigBin:
                 self.cron_defer = int(params.get('DEFER_DAYS', '0'))
                 self.cron_plan = self._parse_cron_plan(params.get('NOTIFICATION_PLAN', None))
 
-                for name, value in params.items:
+                for name, value in params.items():
                     self.script_params[name] = value
 
     def _parse_cron_plan(self, plan_str):

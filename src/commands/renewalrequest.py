@@ -108,6 +108,11 @@ class Command(CloudVenetoCommand):
                                     project_id=req_pair[1].projectid,
                                     dst_project_id=req_pair[1].projectid)
                     else:
+                        servers, volumes = self.get_user_resources(userid, prjid)
+                        noti_params['instances'] = [ "%s (%s)" % (x.name, x.id) for x in servers ]
+                        noti_params['volumes'] = [ "%s (%s)" % (x.name, x.id) for x in volumes ]
+                        noti_params['resources'] = len(instances) > 0 or len(volumes) > 0
+
                         notifyUser(req_data[0], PROPOSED_RENEWAL, noti_params,
                                    project_id=req_pair[1].projectid,
                                    dst_user_id=req_pair[0].userid)

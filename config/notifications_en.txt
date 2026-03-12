@@ -170,6 +170,13 @@ LOG: Sent account expiration notice to {{ username }}
 subject: Affiliation to {{ project }} is going to expire
 body: Your affiliation to the project {{ project }} will expire in {{ days }} days.
   If you wish to renew the affiliation please open the CloudVeneto dashboard in a browser and select the project: {{ project }}.
+  {% if resources %}If you decide to give up you must delete the following resources:{% endif %}
+  {% for instance in instances %}
+    Instance {{ instance }}
+  {% endfor %}
+  {% for volume in volumes %}
+    Volume {{ volume }}
+  {% endfor %}
   
   Please, don't reply to this message
 
@@ -219,6 +226,13 @@ LOG: Proposed renewal to {{ username }} for project {{ project }}
 subject: Proposed renewal to {{ username }} for project {{ project }}
 body: Your affiliation to the project {{ project }} is going to expire
   If you wish to renew the affiliation please enter the the project work area in the dashboard.
+  {% if resources %}If you decide to give up you must delete the following resources:{% endif %}
+  {% for instance in instances %}
+    Instance {{ instance }}
+  {% endfor %}
+  {% for volume in volumes %}
+    Volume {{ volume }}
+  {% endfor %}
   
   Please, don't reply to this message
 
