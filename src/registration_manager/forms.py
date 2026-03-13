@@ -74,6 +74,7 @@ from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import PRJ_REGEX
 from openstack_auth_shib.utils import setup_new_project
 from openstack_auth_shib.utils import add_unit_combos
+from openstack_auth_shib.utils import get_prjadmin_emails
 from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import generate_pwd
 from openstack_auth_shib.utils import decode_password
@@ -180,20 +181,17 @@ class PreCheckForm(forms.SelfHandlingForm):
                 #
                 for p_item in prjReqList.filter(flowstatus=PSTATUS_PENDING):
                 
-                    m_userids = [
-                        x.registration.userid for x in PrjRole.objects.filter(
-                            registration__userid__isnull = False,
-                            project = p_item.project)
-                    ]
-                    tmpres = EMail.objects.filter(registration__userid__in=m_userids)
-                    m_emails = [ x.email for x in tmpres ]                    
+                    m_emails = get_prjadmin_emails(p_item.project.projectid)
 
                     noti_params = {
                         'username' : data['username'],
                         'project' : p_item.project.projectname
                     }
-                    notifyProject(request=self.request, rcpt=m_emails, action=SUBSCR_WAIT_TYPE, context=noti_params,
-                                  dst_project_id=p_item.project.projectid)
+                    notifyProject(request = self.request,
+                                  rcpt = m_emails,
+                                  action = SUBSCR_WAIT_TYPE,
+                                  context = noti_params,
+                                  dst_project_id = p_item.project.projectid)
                     
                     n2_params = {
                         'username' : p_item.registration.username,
@@ -440,31 +438,30 @@ class ForcedCheckForm(forms.SelfHandlingForm):
                 # clear request
                 #
                 prj_req.delete()
-
-            #
-            # send notification to project managers and users
-            #
-            tmpres = EMail.objects.filter(registration__userid=user_id)
-            user_email = tmpres[0].email if tmpres else None
-            
-            m_userids =  [
-                x.registration.userid for x in PrjRole.objects.filter(
-                    registration__userid__isnull = False,
-                    project__projectid = project_id)
-            ]
-            tmpres = EMail.objects.filter(registration__userid__in=m_userids)
-            m_emails = [ x.email for x in tmpres ]
-
-            noti_params = {
-                'username' : user_name,
-                'project' : project_name
-            }
-
-            notifyProject(request=self.request, rcpt=m_emails, action=SUBSCR_FORCED_OK_TYPE, context=noti_params,
-                          dst_project_id=project_id)
-            notifyUser(request=self.request, rcpt=user_email, action=SUBSCR_OK_TYPE, context=noti_params,
-                       dst_project_id=project_id, dst_user_id=user_id)
                 
+                #
+                # send notification to project managers and users
+                #
+                tmpres = EMail.objects.filter(registration__userid=user_id)
+                user_email = tmpres[0].email if tmpres else None
+                m_emails = get_prjadmin_emails(project_id)
+
+                noti_params = {
+                    'username' : user_name,
+                    'project' : project_name
+                }
+
+                notifyProject(request = self.request,
+                              rcpt = m_emails,
+                              action = SUBSCR_FORCED_OK_TYPE,
+                              context = noti_params,
+                              dst_project_id = project_id)
+                notifyUser(request = self.request,
+                           rcpt = user_email,
+                           action = SUBSCR_OK_TYPE,
+                           context = noti_params,
+                           dst_project_id = project_id,
+                           dst_user_id = user_id)
         except:
             LOG.error("Error forced-checking request", exc_info=True)
             messages.error(request, _("Cannot forced check request"))
@@ -493,6 +490,7 @@ class ForcedRejectForm(forms.SelfHandlingForm):
             regid, prjname = parse_requestid(data['requestid'])
 
             noti_params = { 'notes' : data['reason'] }
+            m_emails = None
 
             with transaction.atomic():
                 prj_req = PrjRequest.objects.filter(
@@ -522,14 +520,7 @@ class ForcedRejectForm(forms.SelfHandlingForm):
                 # prepare notification to project managers if necessary
                 #
                 if noti_params['flowstatus'] == PSTATUS_PENDING:
-                    admins = PrjRole.objects.filter(
-                        registration__userid__isnull = False,
-                        project__projectname = 'ARES'
-                    ).values_list('registration__userid', flat = True)
-
-                    m_emails = EMail.objects.filter(
-                        registration__userid__in = admins
-                    ).values_list('email', flat = True)
+                    m_emails = get_prjadmin_emails(noti_params['project_id'])
 
             #
             # send notification to users
@@ -541,7 +532,7 @@ class ForcedRejectForm(forms.SelfHandlingForm):
             #
             # prepare notification to project managers if necessary
             #
-            if noti_params['flowstatus'] == PSTATUS_PENDING:
+            if m_emails:
                 notifyProject(request = self.request, rcpt = list(m_emails),
                               action = SUBSCR_FORCED_NO_TYPE, context = noti_params,
                               dst_project_id = noti_params['project_id'])
@@ -859,8 +850,6 @@ class CompAckForm(forms.SelfHandlingForm):
     @sensitive_variables('data')
     def handle(self, request, data):
 
-        admin_emails = list()
-
         with transaction.atomic():
             regid, prjname = parse_requestid(data['requestid'])
 
@@ -872,15 +861,13 @@ class CompAckForm(forms.SelfHandlingForm):
                 flowstatus = PSTATUS_CHK_COMP
             ).update(flowstatus = PSTATUS_PENDING)
 
-            for prj_role in PrjRole.objects.filter(project = project):
-                for email_obj in EMail.objects.filter(registration = prj_role.registration):
-                    admin_emails.append(email_obj.email)
+            admin_emails = get_prjadmin_emails(project.projectid)
 
-        notifyProject(request = request,
-                      rcpt = admin_emails,
-                      action = MEMBER_REQUEST,
-                      context = {'username' : c_user.username,
-                                'project' : project.projectname})
+            notifyProject(request = request,
+                          rcpt = admin_emails,
+                          action = MEMBER_REQUEST,
+                          context = {'username' : c_user.username,
+                                    'project' : project.projectname})
         return True
 
 class PromoteAdminForm(forms.SelfHandlingForm):
@@ -954,7 +941,6 @@ class RejectPromotionForm(forms.SelfHandlingForm):
     def handle(self, request, data):
         regid, prjname = parse_requestid(data['requestid'])
 
-        admin_emails = None
         with transaction.atomic():
             prj_reqs = PrjRequest.objects.filter(
                 registration__regid = regid,
@@ -966,14 +952,10 @@ class RejectPromotionForm(forms.SelfHandlingForm):
 
             curr_usr = prj_reqs[0].registration
             curr_prj = prj_reqs[0].project
-            prj_admins = [ x.registration for x in 
-                            PrjRole.objects.filter(project = curr_prj) ]
-            admin_emails = [ x.email for x in
-                            EMail.objects.filter(registration__in = prj_admins) ]
             prj_reqs.delete()
 
             notifyProject(request = request,
-                          rcpt = admin_emails,
+                          rcpt = get_prjadmin_emails(curr_prj.projectid),
                           action = PROMO_REJECTED,
                           context = {'username' : curr_usr.username,
                                     'project' : curr_prj.projectname})

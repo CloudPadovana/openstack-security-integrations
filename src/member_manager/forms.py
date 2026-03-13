@@ -273,11 +273,11 @@ class SendMsgForm(forms.SelfHandlingForm):
                 noti_params = {
                     'username' : self.request.user.username,
                     'project' : self.request.user.tenant_name,
-                    'message' : data['message'],
-                    'use_bcc' : True
+                    'message' : data['message']
                 }
-                notifyUser(request=request, rcpt=e_addresses, action=GENERIC_MESSAGE,
-                           context=noti_params, dst_user_id=self.request.user.id)
+                notifyUser(request = request, rcpt = { 'bcc' : e_addresses },
+                           action = GENERIC_MESSAGE, context = noti_params, 
+                           dst_user_id = self.request.user.id)
         except:
             exceptions.handle(request)
             return False

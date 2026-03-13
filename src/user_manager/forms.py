@@ -54,6 +54,7 @@ from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import MEMBER_REQUEST
 
 from openstack_auth_shib.utils import check_compliance
+from openstack_auth_shib.utils import get_prjadmin_emails
 from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import DEFAULT_ROLEID
 
@@ -318,14 +319,7 @@ class ReactivateForm(forms.SelfHandlingForm):
                 #
                 tmpres = EMail.objects.filter(registration__userid=data['userid'])
                 user_email = tmpres[0].email if tmpres else None
-
-                m_userids = [
-                    x.userid for x in PrjRole.objects.filter(
-                        registration__userid__isnull = False,
-                        project__projectid = prj_item.projectid)
-                ]
-                tmpres = EMail.objects.filter(registration__userid__in = m_userids)
-                m_emails = [ x.email for x in tmpres ]
+                m_emails = get_prjadmin_emails(prj_item.projectid)
 
                 noti_params = {
                     'username' : reg_user.username,
@@ -366,17 +360,14 @@ class ReactivateForm(forms.SelfHandlingForm):
                         #
                         # send notification to project managers and users
                         #
-                        admin_emails = list()
-                        for prj_role in PrjRole.objects.filter(project=prj_item):
-                            for email_obj in EMail.objects.filter(registration=prj_role.registration):
-                                admin_emails.append(email_obj.email)
-
                         noti_params = {
                             'username' : reg_user.username,
                             'project' : prj_item.projectname
                         }
-                        notifyProject(request=request, rcpt=admin_emails, action=MEMBER_REQUEST, 
-                                      context=noti_params)
+                        notifyProject(request = request,
+                                      rcpt = get_prjadmin_emails(prj_item.projectid),
+                                      action = MEMBER_REQUEST, 
+                                      context = noti_params)
                     except:
                         LOG.error("Generic failure", exc_info=True)
 

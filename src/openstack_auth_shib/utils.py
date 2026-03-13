@@ -545,12 +545,28 @@ def dispose_project(request, project_id):
 
     return True
 
+###############################################################################
+# Project admin utils
+###############################################################################
+
 def unique_admin(username, prjname):
     tmpl = PrjRole.objects.filter(project__projectname = prjname)
     adm_list = tmpl.values_list('registration__username', flat = True).distinct()
     if len(adm_list) != 1:
         return False
     return username in adm_list
+
+def get_prjadmin_emails(prj_id):
+    # No transaction here
+    prj_roles = PrjRole.objects.filter(registration__userid__isnull = False,
+                                       project__projectid = prj_id)
+    tmpres = EMail.objects.filter(registration__in = prj_roles)
+    return [ x.email for x in tmpres ]
+
+
+###############################################################################
+# Multi-db support
+###############################################################################
 
 class AAIDBRouter:
 
@@ -578,6 +594,9 @@ class AAIDBRouter:
             return db == AAIDBRouter.AAIDB_NAME
         return None
 
+###############################################################################
+# Project compliance utils
+###############################################################################
 
 def getProjectInfo(request, project):
     result = {
@@ -643,9 +662,10 @@ def check_compliance(prj_list):
         result.append((prj, prj.projectname in c_projects))
     return result
 
-#
+###############################################################################
 # Custom Password Validator
-#
+###############################################################################
+
 class CloudVenetoPwdValidator:
     def __init__(self, min_length = 10):
         self.min_length = min_length
@@ -697,10 +717,10 @@ class CloudVenetoPwdValidator:
         msg += "One capital letter, one digit and one symbol (%(symb)s) are required."
         return _( msg % { "min_length": self.min_length , "symb" : self.symbols })
 
-#
+###############################################################################
 # Password codec
 # fernet key generated with Fernet.generate_key().decode()
-#
+###############################################################################
 from cryptography.fernet import Fernet
 import secrets
 import string

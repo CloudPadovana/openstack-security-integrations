@@ -91,7 +91,7 @@ class NotificationTemplate():
         return (self.subject.render(ctx), self.body.render(ctx), self.log_tpl.render(ctx))
 
 
-def _log_notify(rcpt, action, context, locale='en', request=None,
+def _log_notify(rcpt_obj, action, context, locale='en', request=None,
                 user_id=None, project_id=None,
                 user_name=None, project_name=None,
                 dst_user_id=None, dst_project_id=None):
@@ -117,6 +117,25 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
     if project_name is None:
         project_name = _try_get_from_request_user(request, 'project_name')
 
+    rcpt = None
+    rcptcc = None
+    rcptbcc = None
+    if isinstance(rcpt_obj, str):
+        if rcpt_obj == MANAGERS_RCPT:
+            rcpt = getattr(settings, 'MANAGERS', None)
+        else:
+            rcpt = [ rcpt_obj ]
+    elif isinstance(rcpt_obj, dict):
+        rcpt = rcpt_obj.get('to', [])
+        rcptcc = rcpt_obj.get('cc', [])
+        rcptbcc = rcpt_obj.get('bcc', [])
+    else:
+        rcpt = rcpt_obj
+
+    if not rcpt or not isinstance(rcpt, list):
+        LOG.error('Bad object for recipients')
+        return
+
     LOG.debug('notify user_id={user_id}, project_id={project_id}, '
               'user_name={user_name}, project_name={project_name}, '
               'dst_user_id={dst_user_id}, dst_project_id={dst_project_id}, '
@@ -124,7 +143,7 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
               .format(user_id=user_id, project_id=project_id,
                       user_name=user_name, project_name=project_name,
                       dst_user_id=dst_user_id, dst_project_id=dst_project_id,
-                      rcpt=rcpt, action=action, context=context))
+                      rcpt=repr(rcpt), action=action, context=context))
 
     context['log'] = {
         'user_id': user_id,
@@ -140,8 +159,6 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
     extra = {}
     if getattr(settings, 'LOG_MANAGER_KEEP_NOTIFICATIONS_EMAIL', False):
         to = rcpt
-        if not isinstance(to, list):
-            to = [to, ]
         to = ', '.join(map(str, to))
 
         extra['email'] = 'To: {to}\nSubject: {subject}\n\n{body}'.format(
@@ -163,14 +180,31 @@ def _log_notify(rcpt, action, context, locale='en', request=None,
         extra=extra,
     )
 
-    if rcpt == MANAGERS_RCPT:
-        notifyManagers(subject, body)
-    else:
-        notify(rcpt, subject, body, context.get('use_bcc', False))
+    try:
+        m_args = {
+            "subject" : subject,
+            "body" : body,
+            "from_email" : settings.SERVER_EMAIL,
+        }
+
+        if rcpt:
+            m_args['to'] = rcpt
+        if rcptcc:
+            m_args['cc'] = rcptcc
+        if rcptbcc:
+            m_args['bcc'] = rcptbcc
+
+        replyto = getattr(settings, 'REPLYTO', None)
+        if replyto:
+            m_args["reply_to"] = replyto if isinstance(replyto, list) else [ str(replyto) ]
+
+        EmailMessage(**m_args).send()
+        LOG.debug("Sending %s - %s - to %s" % (subject, body, str(rcpt)))
+    except:
+        LOG.error("Cannot send notification", exc_info=True)
 
     if request is not None:
         MESSAGES.info(request, "Notification sent.")
-
 
 def warn_if_missing(arg_name):
     def wrapper(func):
@@ -182,6 +216,9 @@ def warn_if_missing(arg_name):
         return wrapped
     return wrapper
 
+###############################################################################
+# Public methods
+###############################################################################
 
 @warn_if_missing('dst_user_id')
 def notifyUser(rcpt, action, context, locale='en', *args, **kwargs):
@@ -203,6 +240,9 @@ def notifyAdmin(action, context, locale='en', *args, **kwargs):
 
     _log_notify(MANAGERS_RCPT, action, context, locale, **kwargs)
 
+###############################################################################
+# Templates management
+###############################################################################
 
 def notification_render(msg_type, ctx_dict, locale='en'):
 
@@ -252,35 +292,4 @@ def load_templates():
 
     TEMPLATE_LOCK.release()
 
-def notify(recpt, subject, body, usebcc = False):
-    
-    if not recpt:
-        LOG.error('Missing recipients')
-        return
-    
-    try:
-        m_args = {
-            "subject" : subject,
-            "body" : body,
-            "from_email" : settings.SERVER_EMAIL,
-        }
-        if usebcc:
-            m_args['bcc'] = recpt if isinstance(recpt, list) else [ str(recpt) ]
-        else:
-            m_args['to'] = recpt if isinstance(recpt, list) else [ str(recpt) ]
-
-        replyto = getattr(settings, 'REPLYTO', None)
-        if replyto:
-            m_args["reply_to"] = replyto if isinstance(replyto, list) else [ str(replyto) ]
-
-        EmailMessage(**m_args).send()
-        LOG.debug("Sending %s - %s - to %s" % (subject, body, str(recpt)))
-    except:
-        LOG.error("Cannot send notification", exc_info=True)
-
-
-def notifyManagers(subject, body):
-
-    l_managers = getattr(settings, 'MANAGERS', None)
-    notify(l_managers, subject, body)
 

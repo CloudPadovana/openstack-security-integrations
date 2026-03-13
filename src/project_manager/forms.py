@@ -54,6 +54,7 @@ from openstack_auth_shib.utils import TAG_REGEX
 from openstack_auth_shib.utils import PRJ_REGEX
 from openstack_auth_shib.utils import check_compliance
 from openstack_auth_shib.utils import getProjectInfo
+from openstack_auth_shib.utils import get_prjadmin_emails
 from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import NOW
 from openstack_auth_shib.utils import FROMNOW
@@ -267,9 +268,7 @@ class ProposedRenewForm(forms.SelfHandlingForm):
                 if data['action'] == 'renew':
                     PrjRequest.objects.filter(**q_args).update(flowstatus = PSTATUS_RENEW_MEMB)
 
-                    tmp_ad = PrjRole.objects.filter(project__projectid = request.user.tenant_id)
-                    tmp_el = EMail.objects.filter(registration__in = [ x.registration for x in tmp_ad ])
-                    prj_mails = [ y.email for y in tmp_el ]
+                    prj_mails = get_prjadmin_emails(request.user.tenant_id)
                     messages.info(request, _("Renewal request sent to the project administrators"))
                 else:
                     PrjRequest.objects.filter(**q_args).update(flowstatus = PSTATUS_RENEW_DISC)
@@ -498,16 +497,10 @@ class SubscribeForm(forms.SelfHandlingForm):
                             }
                         })
                     else:
-
-                        admin_emails = list()
-                        for prj_role in PrjRole.objects.filter(project = project):
-                            for email_obj in EMail.objects.filter(registration = prj_role.registration):
-                                admin_emails.append(email_obj.email)
-
                         noti_buffer.append({
                             'cloud_level' : False,
                             'action' : MEMBER_REQUEST,
-                            'admin_emails' : admin_emails,
+                            'admin_emails' : get_prjadmin_emails(project.projectid),
                             'context' : {
                                 'username' : request.user.username,
                                 'project' : project.projectname
