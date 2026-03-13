@@ -87,7 +87,6 @@ class NotificationTemplate():
         ctx = DjangoContext(ctx_dict)
         return (self.subject.render(ctx), self.body.render(ctx), self.log_tpl.render(ctx))
 
-@check_and_set
 def _log_notify(rcpt_obj, action, context, locale='en', request=None,
                 user_id=None, project_id=None,
                 user_name=None, project_name=None,
@@ -225,11 +224,13 @@ def warn_if_missing(arg_name):
 ###############################################################################
 
 @warn_if_missing('dst_user_id')
+@check_and_set
 def notifyUser(rcpt, action, context, locale='en', *args, **kwargs):
     _log_notify(rcpt, action, context, locale, **kwargs)
 
 
 @warn_if_missing('dst_project_id')
+@check_and_set
 def notifyProject(rcpt, action, context, locale='en', *args, **kwargs):
     # ensure dst_user_id is not set
     kwargs.pop('dst_user_id', None)
@@ -237,6 +238,7 @@ def notifyProject(rcpt, action, context, locale='en', *args, **kwargs):
     _log_notify(rcpt, action, context, locale, **kwargs)
 
 
+@check_and_set
 def notifyAdmin(action, context, locale='en', *args, **kwargs):
     # ensure nor dst_user_id nor dst_project_id are set
     kwargs.pop('dst_project_id', None)
