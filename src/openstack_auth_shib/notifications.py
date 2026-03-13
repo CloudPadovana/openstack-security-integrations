@@ -76,9 +76,6 @@ PRJ_NEWEXP = 'project_newexpiration'
 LOG_TYPE_EMAIL = '__EMAIL__'
 
 
-MANAGERS_RCPT = '__MANAGERS__'
-
-
 class NotificationTemplate():
 
     def __init__(self, sbj, body, log_tpl):
@@ -90,41 +87,17 @@ class NotificationTemplate():
         ctx = DjangoContext(ctx_dict)
         return (self.subject.render(ctx), self.body.render(ctx), self.log_tpl.render(ctx))
 
-
+@check_and_set
 def _log_notify(rcpt_obj, action, context, locale='en', request=None,
                 user_id=None, project_id=None,
                 user_name=None, project_name=None,
                 dst_user_id=None, dst_project_id=None):
-    def _try_get_from_request_user(request, field):
-        value = None
-        try:
-            user = request.user
-            value = getattr(user, field)
-        except Exception as ex:
-            LOG.warning("Exception on accessing request.user.{field}: {ex}".
-                        format(field=field, ex=ex))
-        return value
-
-    if user_id is None:
-        user_id = _try_get_from_request_user(request, 'id')
-
-    if project_id is None:
-        project_id = _try_get_from_request_user(request, 'project_id')
-
-    if user_name is None:
-        user_name = _try_get_from_request_user(request, 'username')
-
-    if project_name is None:
-        project_name = _try_get_from_request_user(request, 'project_name')
 
     rcpt = None
     rcptcc = None
     rcptbcc = None
     if isinstance(rcpt_obj, str):
-        if rcpt_obj == MANAGERS_RCPT:
-            rcpt = getattr(settings, 'MANAGERS', None)
-        else:
-            rcpt = [ rcpt_obj ]
+        rcpt = [ rcpt_obj ]
     elif isinstance(rcpt_obj, dict):
         rcpt = rcpt_obj.get('to', [])
         rcptcc = rcpt_obj.get('cc', [])
@@ -206,6 +179,37 @@ def _log_notify(rcpt_obj, action, context, locale='en', request=None,
     if request is not None:
         MESSAGES.info(request, "Notification sent.")
 
+###############################################################################
+# Useful decorators
+###############################################################################
+
+def check_and_set(func):
+    def wrapper(*args, **kwargs):
+
+        def chk_field(field):
+            try:
+                return getattr(kwargs['request'].user, field)
+            except Exception as ex:
+                LOG.warning("Exception on accessing request.user.{field}: {ex}".
+                            format(field=field, ex=ex))
+            return None
+
+        if kwargs.get('user_id', None) is None:
+            kwargs['user_id'] = chk_field(id')
+
+        if kwargs.get('project_id', None) is None:
+            kwargs['project_id'] = chk_field('project_id')
+
+        if kwargs.get('user_name', None) is None:
+            kwargs['user_name'] = chk_field('username')
+
+        if kwargs.get('project_name', None) is None:
+            kwargs['project_name'] = chk_field('project_name')
+
+        func(*args, **kwargs)
+
+    return wrapper
+
 def warn_if_missing(arg_name):
     def wrapper(func):
         def wrapped(*args, **kwargs):
@@ -238,7 +242,7 @@ def notifyAdmin(action, context, locale='en', *args, **kwargs):
     kwargs.pop('dst_project_id', None)
     kwargs.pop('dst_user_id', None)
 
-    _log_notify(MANAGERS_RCPT, action, context, locale, **kwargs)
+    _log_notify(getattr(settings, 'MANAGERS', None), action, context, locale, **kwargs)
 
 ###############################################################################
 # Templates management
