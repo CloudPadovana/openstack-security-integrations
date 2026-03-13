@@ -195,7 +195,7 @@ def check_and_set(func):
             return None
 
         if kwargs.get('user_id', None) is None:
-            kwargs['user_id'] = chk_field(id')
+            kwargs['user_id'] = chk_field('id')
 
         if kwargs.get('project_id', None) is None:
             kwargs['project_id'] = chk_field('project_id')
