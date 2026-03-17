@@ -17,6 +17,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
+from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse_lazy as reverse
 
@@ -24,9 +25,8 @@ from horizon import tables
 from horizon import messages
 from horizon import forms
 
-from openstack_dashboard.api.keystone import keystoneclient as client_factory
 from openstack_auth_shib.models import Expiration
-from openstack_auth_shib.utils import TENANTADMIN_ROLEID
+from openstack_auth_shib.models import PrjRole
 
 from .tables import MemberTable
 from .forms import ModifyExpForm
@@ -38,15 +38,14 @@ LOG = logging.getLogger(__name__)
 
 class MemberItem():
 
-    def __init__(self, registration, role_params, exp_date):
+    def __init__(self, registration, exp_date, is_adm, n_adm):
         self.username = registration.username
         self.userid = registration.userid
         self.fullname = registration.givenname + " " + registration.sn
         self.organization = registration.organization
         self.expiration = exp_date
-        self.is_t_admin = role_params[0]
-        self.num_of_roles = role_params[1]
-        self.num_of_admins = role_params[2]
+        self.is_t_admin = is_adm
+        self.num_of_admins = n_adm
 
 class IndexView(tables.DataTableView):
     table_class = MemberTable
@@ -55,38 +54,27 @@ class IndexView(tables.DataTableView):
 
     def get_data(self):
     
+        result = list()
+
         try:
-            role_assign_obj = client_factory(self.request).role_assignments
-            member_id_dict = dict()
-            number_of_admins = 0
-            for r_item in role_assign_obj.list(project=self.request.user.tenant_id):
-                if not r_item.user['id'] in member_id_dict:
-                    member_id_dict[r_item.user['id']] = [False, 0, 0]
-                    
-                if r_item.role['id'] == TENANTADMIN_ROLEID:
-                    member_id_dict[r_item.user['id']][0] = True
-                    number_of_admins +=1
-                    
-                member_id_dict[r_item.user['id']][1] += 1
-            
-            for rp_item in member_id_dict.values():
-                rp_item[2] = number_of_admins
-        
-            result = list()
-            q_args = {
-                'registration__userid__in' : member_id_dict,
-                'project__projectid' : self.request.user.tenant_id
-            }
-            for expir in Expiration.objects.filter(**q_args):
-                reg = expir.registration
-                result.append(MemberItem(reg, member_id_dict[reg.userid], expir.expdate))
-            return result
-        
+            with transaction.atomic():
+
+                admin_set = set()
+                for item in PrjRole.objects.filter(project__projectid = self.request.user.tenant_id):
+                    admin_set.add(item.registration.userid)
+
+                for item in Expiration.objects.filter(project__projectid = self.request.user.tenant_id):
+                    m_item = MemberItem(item.registration,
+                                        item.expdate,
+                                        item.registration.userid in admin_set,
+                                        len(admin_set))
+                    result.append(m_item)
+
         except Exception:
             LOG.error("Member view error", exc_info=True)
             messages.error(self.request, _('Unable to retrieve member list.'))
 
-        return list()
+        return result
 
 class ModifyExpView(forms.ModalFormView):
     form_class = ModifyExpForm
