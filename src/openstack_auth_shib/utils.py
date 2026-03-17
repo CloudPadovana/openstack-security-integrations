@@ -39,6 +39,7 @@ from openstack_dashboard.api import nova as nova_api
 from openstack_dashboard.api import neutron as neutron_api
 
 from .models import Registration
+from .models import EMail
 from .models import Expiration
 from .models import Project
 from .models import PrjRequest
@@ -560,7 +561,7 @@ def get_prjadmin_emails(prj_id):
     # No transaction here
     prj_roles = PrjRole.objects.filter(registration__userid__isnull = False,
                                        project__projectid = prj_id)
-    tmpres = EMail.objects.filter(registration__in = prj_roles)
+    tmpres = EMail.objects.filter(registration__in = [ x.registration for x in prj_roles ])
     return [ x.email for x in tmpres ]
 
 
