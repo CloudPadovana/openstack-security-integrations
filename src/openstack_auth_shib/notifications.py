@@ -104,7 +104,7 @@ def _log_notify(rcpt_obj, action, context, locale='en', request=None,
     else:
         rcpt = rcpt_obj
 
-    if not rcpt or not isinstance(rcpt, list):
+    if rcpt and not isinstance(rcpt, list):
         LOG.error('Bad object for recipients')
         return
 
