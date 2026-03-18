@@ -240,6 +240,7 @@ class ReactivateForm(forms.SelfHandlingForm):
         if not self.request.user.is_superuser:
             raise ValidationError(_("Operation not authorized"))
 
+        data = super(ReactivateForm, self).clean()
         p_list = list()
         for item in data['projects']:
             if item.startswith(MARK_COMP_ON) or item.startswith(MARK_COMP_OFF):
@@ -248,7 +249,7 @@ class ReactivateForm(forms.SelfHandlingForm):
                 p_list.append(item)
         data['projects'] = p_list
 
-        return super(ReactivateForm, self).clean()
+        return data
 
     def handle(self, request, data):
 
