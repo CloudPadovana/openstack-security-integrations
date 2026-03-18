@@ -53,10 +53,6 @@
 {% endblock %}
 
 {% block modal-footer %}
-    <input type="button"
-           class="btn btn-primary pull-right"
-           onclick="location.href='{% url 'horizon:idmanager:user_manager:index' %}'"
-           value="{% trans 'Cancel' %}"/>  
     <input class="btn btn-primary pull-right" 
            type="submit" 
            value="{% trans 'Ok' %}" />
