@@ -444,7 +444,7 @@ def get_resources(request, **kwargs):
     return None
 
 def get_resource_details(request, **kwargs):
-    tmpt = get_resources(request, kwargs)
+    tmpt = get_resources(request, **kwargs)
     if not tmpt:
         return None
 
