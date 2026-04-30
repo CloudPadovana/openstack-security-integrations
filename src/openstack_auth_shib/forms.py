@@ -248,6 +248,8 @@ class RegistrForm(forms.SelfHandlingForm):
         if data['prjaction'] == 'newprj':
 
             data['newprj'] = check_projectname(data['newprj'], ValidationError)
+            if not 'contactper' in data or not data['contactper']:
+                raise ValidationError(_('Contact person is required.'))
 
         elif data['prjaction'] == 'selprj':
             if not 'selprj' in data:

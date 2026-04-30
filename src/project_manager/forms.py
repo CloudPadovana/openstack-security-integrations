@@ -51,8 +51,8 @@ from openstack_auth_shib.notifications import NEWPRJ_REQ_TYPE
 from openstack_auth_shib.notifications import MEMBER_REQUEST
 from openstack_auth_shib.notifications import COMP_CHECK_TYPE
 from openstack_auth_shib.utils import TAG_REGEX
-from openstack_auth_shib.utils import PRJ_REGEX
 from openstack_auth_shib.utils import check_compliance
+from openstack_auth_shib.utils import check_projectname
 from openstack_auth_shib.utils import getProjectInfo
 from openstack_auth_shib.utils import get_prjadmin_emails
 from openstack_auth_shib.utils import get_year_list
@@ -402,11 +402,9 @@ class SubscribeForm(forms.SelfHandlingForm):
         data = super(SubscribeForm, self).clean()
 
         if data['prjaction'] == 'newprj':
-            if not data['newprj']:
-                raise ValidationError(_('Project name is required.'))
-            tmpm = PRJ_REGEX.search(data['newprj'])
-            if tmpm:
-                raise ValidationError(_('Bad character "%s" for project name.') % tmpm.group(0))
+            data['newprj'] = check_projectname(data['newprj'], ValidationError)
+            if not 'contactper' in data or not data['contactper']:
+                raise ValidationError(_('Contact person is required.'))
         elif data['prjaction'] == 'selprj':
             if not data['selprj']:
                 raise ValidationError(_('Missing selected project.'))
@@ -415,9 +413,6 @@ class SubscribeForm(forms.SelfHandlingForm):
         if not 'expiration' in data or data['expiration'].date() < now.date() \
             or data['expiration'].year > now.year + YEARS_RANGE:
             raise ValidationError(_('Invalid expiration date.'))
-
-        if not 'contactper' in data:
-            data['contactper'] = ""
 
         p_list = list()
         for item in data['selprj']:
