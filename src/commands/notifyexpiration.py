@@ -31,6 +31,7 @@ from openstack_auth_shib.notifications import USER_EXP_TYPE
 from openstack_auth_shib.utils import get_prjadmin_emails
 
 from horizon.management.commands.cronscript_utils import CloudVenetoCommand
+from horizon.management.commands.cronscript_utils import build_contact_list
 
 LOG = logging.getLogger("notifyexpiration")
 
@@ -102,6 +103,8 @@ class Command(CloudVenetoCommand):
                         rcpt_table = { 'to' : mail_table[userid] }
                         if noti_idx == 0 and res_pending:
                             rcpt_table['cc'] = pmail_table[prjid]
+                            rcpt_table['bcc'] = build_contact_list()
+                            
 
                         notifyUser(rcpt_table, USER_EXP_TYPE, noti_params,
                                    user_id=userid, project_id=prjid, dst_user_id=userid)

@@ -16,6 +16,8 @@
 import logging
 import logging.config
 
+import re
+
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
@@ -189,8 +191,19 @@ class ConfigBin:
     def get(self, name, default):
         self.script_params.get(name, default)
 
-def build_contact_list():
-    return getattr(settings, 'MANAGERS', None)
+def build_contact_list(full_fmt = False):
+    if full_fmt:
+        return getattr(settings, 'MANAGERS', [])
+
+    alist = list()
+    regex = re.compile(r'([^<]+)<([^>]+)')
+    for item in getattr(settings, 'MANAGERS', []):
+        rres = regex.search(item)
+        if rres:
+            alist.append(rres[2])
+    return alist
+        
+    
 
 
 

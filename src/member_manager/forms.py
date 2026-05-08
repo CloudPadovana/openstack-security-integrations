@@ -19,7 +19,6 @@ from datetime import datetime
 from datetime import timezone
 
 from django.db import transaction
-from django.conf import settings
 from django.forms import ValidationError
 from django.forms.widgets import HiddenInput
 from django.forms.widgets import SelectDateWidget
@@ -52,16 +51,13 @@ from openstack_auth_shib.notifications import PROMO_AVAIL
 from openstack_auth_shib.utils import DEFAULT_ROLEID
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import TENANTADMIN_ROLEID
-from openstack_auth_shib.utils import ATT_PRJ_EXP
+
+from openstack_auth_shib.definitions import ATT_PRJ_EXP
+from openstack_auth_shib.definitions import MAX_RENEW
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
 LOG = logging.getLogger(__name__)
-
-try:
-    MAX_RENEW = int(getattr(settings, 'TENANT_MAX_RENEW', '4'))
-except:
-    MAX_RENEW = 4
 
 class ModifyExpForm(forms.SelfHandlingForm):
 
