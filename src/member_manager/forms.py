@@ -37,6 +37,7 @@ from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import EMail
 from openstack_auth_shib.models import PrjRequest
 from openstack_auth_shib.models import PrjRole
+from openstack_auth_shib.models import PrjAttribute
 from openstack_auth_shib.models import PSTATUS_ADM_ELECT
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
 from openstack_auth_shib.models import PSTATUS_RENEW_ATTEMPT
@@ -51,6 +52,7 @@ from openstack_auth_shib.notifications import PROMO_AVAIL
 from openstack_auth_shib.utils import DEFAULT_ROLEID
 from openstack_auth_shib.utils import TENANTADMIN_ROLE
 from openstack_auth_shib.utils import TENANTADMIN_ROLEID
+from openstack_auth_shib.utils import ATT_PRJ_EXP
 
 from openstack_dashboard.api.keystone import keystoneclient as client_factory
 
@@ -87,12 +89,21 @@ class ModifyExpForm(forms.SelfHandlingForm):
         if data['userid'] == self.request.user.id:
             raise ValidationError(_('Invalid operation.'))
 
-        q_args = {
-            'registration__userid' : data['userid'],
-            'project__projectid' : self.request.user.tenant_id
-        }
-        if PrjRole.objects.filter(**q_args).count() > 0:
-            raise ValidationError(_('Cannot change expiration for a project admin'))
+        with transaction.atomic():
+            q_args = {
+                'registration__userid' : data['userid'],
+                'project__projectid' : self.request.user.tenant_id
+            }
+            if PrjRole.objects.filter(**q_args).count() > 0:
+                raise ValidationError(_('Cannot change expiration for a project admin'))
+
+            tmpexp = PrjAttribute.objects.filter(project__projectid = self.request.user.tenant_id,
+                                                 name = ATT_PRJ_EXP)
+            if len(tmpexp) == 0:
+                raise ValidationError(_('Cannot retrieve project expiration.'))
+
+            if data['expiration'].date() > datetime.fromisoformat(tmpexp[0].value).date():
+                raise ValidationError(_('New expiration beyond project expiration.'))
 
         return data
 

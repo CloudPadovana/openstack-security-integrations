@@ -299,6 +299,7 @@ class ProjectExpChangeAction(workflows.Action):
     def clean(self):
         cleaned_data = super(ProjectExpChangeAction, self).clean()
         now = NOW()
+        # TODO reject if new_exp < old_exp
         if cleaned_data['expiration'].date() < now.date() \
             or cleaned_data['expiration'].year > now.year + MAX_RENEW:
             raise ValidationError(_('Invalid expiration date.'))
@@ -550,19 +551,31 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
             #
             tmpd = PrjAttribute.objects.filter(project = self.this_project, name = ATT_PRJ_EXP)
             old_pexp = datetime.fromisoformat(tmpd[0].value) if len(tmpd) else None
+            nexp_str = data['expiration'].isoformat()
 
             if old_pexp and old_pexp != data['expiration']:
-                tmpd[0].value = data['expiration'].isoformat()
-                tmpd[0].save()
+                tmpd.delete()
+                PrjAttribute.objects.create(project = self.this_project, name = ATT_PRJ_EXP, value = nexp_str)
 
-                prj_members = [ x.registration for x in Expiration.objects.filter(project = self.this_project) ]
+                mem_exps = Expiration.objects.filter(project = self.this_project)
+
+                prj_members = [ x.registration for x in mem_exps ]
                 noti_list = EMail.objects.filter(registration__in = prj_members)
 
                 if data['expiration'] > old_pexp:
-                    PrjRequest.objects.filter(
-                        project = self.this_project,
-                        flowstatus = PSTATUS_RENEW_ADMIN
-                    ).delete()
+                    # Reset all admin renewals still pending
+                    PrjRequest.objects.filter(project = self.this_project,
+                                              flowstatus = PSTATUS_RENEW_ADMIN).delete()
+                    # update users' expiration if equals to the old project one
+                    candidates = list()
+                    for e_item in mem_exps:
+                        if e_item.expdate.date() == data['expiration'].date():
+                            candidates.append(e_item.registration)
+                    if len(candidates) > 0:
+                        Expiration.objects.filter(registration__in = candidates,
+                            project = self.this_project).update(expdate = data['expiration'])
+                else:
+                    Expiration.objects.filter(project = self.this_project).update(expdate = data['expiration'])
 
             if not super(ExtUpdateProject, self).handle(request, data):
                 raise IntegrityError('Cannot complete update on Keystone')
@@ -570,7 +583,7 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
         if noti_list:
             noti_params = {
                 'project' : self.this_project.projectname,
-                'expiration' : data['expiration'].isoformat()
+                'expiration' : nexp_str
             }
             for e_item in noti_list:
                 notifyUser(
