@@ -29,7 +29,7 @@ from openstack_auth_shib.models import Expiration
 from openstack_auth_shib.models import PrjRole
 from openstack_auth_shib.models import PrjAttribute
 
-from openstack_auth_shib.utils import ATT_PRJ_EXP
+from openstack_auth_shib.utils import get_prj_expiration
 
 from .tables import MemberTable
 from .forms import ModifyExpForm
@@ -90,15 +90,9 @@ class ModifyExpView(forms.ModalFormView):
         return context
 
     def get_initial(self):
-        tmpexp = PrjAttribute.objects.filter(project__projectid = self.request.user.tenant_id,
-                                             name = ATT_PRJ_EXP)
-        if len(tmpexp) == 0:
-            def_exp = datetime.now(timezone.utc) + timedelta(365)
-        else:
-            def_exp = datetime.fromisoformat(tmpexp[0].value).date()
         return {
             'userid' : self.get_object(),
-            'expiration' : def_exp
+            'expiration' : get_prj_expiration(self.request)
         }
 
     def get_object(self):

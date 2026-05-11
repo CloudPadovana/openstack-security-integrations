@@ -54,6 +54,7 @@ from openstack_auth_shib.utils import TAG_REGEX
 from openstack_auth_shib.utils import check_compliance
 from openstack_auth_shib.utils import check_projectname
 from openstack_auth_shib.utils import getProjectInfo
+from openstack_auth_shib.utils import get_prj_expiration
 from openstack_auth_shib.utils import get_prjadmin_emails
 from openstack_auth_shib.utils import get_year_list
 from openstack_auth_shib.utils import NOW
@@ -341,7 +342,7 @@ class SubscribeForm(forms.SelfHandlingForm):
             label = _('Project expiration'),
             required = True,
             widget = SelectDateWidget(years = get_year_list()),
-            initial = FROMNOW(365)
+            initial = get_prj_expiration(self.request)
         )
 
         self.fields['contactper'] = forms.CharField(

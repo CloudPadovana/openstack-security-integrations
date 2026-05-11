@@ -98,15 +98,6 @@ def get_user_home(user):
 
     return get_default_dashboard().get_absolute_url()
 
-def check_projectname(prjname, error_class):
-    tmps = prjname.strip()
-    if not tmps:
-        raise error_class(_('Project name is required.'))
-    tmpm = PRJ_REGEX.search(tmps)
-    if tmpm:
-        raise error_class(_('Bad character "%s" for project name.') % tmpm.group(0))
-    return tmps
-
 #
 # Project post creation
 #
@@ -545,6 +536,28 @@ def dispose_project(request, project_id):
         return False
 
     return True
+
+###############################################################################
+# Project utils
+###############################################################################
+
+def check_projectname(prjname, error_class):
+    tmps = prjname.strip()
+    if not tmps:
+        raise error_class(_('Project name is required.'))
+    tmpm = PRJ_REGEX.search(tmps)
+    if tmpm:
+        raise error_class(_('Bad character "%s" for project name.') % tmpm.group(0))
+    return tmps
+
+def get_prj_expiration(request):
+    tmpexp = PrjAttribute.objects.filter(project__projectid = request.user.tenant_id,
+                                         name = ATT_PRJ_EXP)
+    if len(tmpexp) == 0:
+        return FROMNOW(365)
+
+    return datetime.fromisoformat(tmpexp[0].value).date()
+
 
 ###############################################################################
 # Project admin utils

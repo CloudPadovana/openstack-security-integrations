@@ -569,7 +569,7 @@ class ExtUpdateProject(baseWorkflows.UpdateProject):
                     # update users' expiration if equals to the old project one
                     candidates = list()
                     for e_item in mem_exps:
-                        if e_item.expdate.date() == data['expiration'].date():
+                        if e_item.expdate.date() == old_pexp.date():
                             candidates.append(e_item.registration)
                     if len(candidates) > 0:
                         Expiration.objects.filter(registration__in = candidates,

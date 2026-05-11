@@ -29,7 +29,7 @@ from openstack_auth_shib.models import PrjRequest
 
 from openstack_auth_shib.models import PSTATUS_PENDING
 from openstack_auth_shib.models import PSTATUS_RENEW_MEMB
-from openstack_auth_shib.utils import FROMNOW
+from openstack_auth_shib.utils import get_prj_expiration
 
 from .tables import SubscriptionTable
 from .forms import ApproveSubscrForm
@@ -129,7 +129,7 @@ class ApproveView(AbstractProcessView):
 
     def get_initial(self):
         inidata = super(ApproveView, self).get_initial()
-        inidata['expiration'] = FROMNOW(365)
+        inidata['expiration'] = get_prj_expiration(self.request)
         return inidata
 
 class RejectView(AbstractProcessView):
@@ -154,7 +154,7 @@ class RenewView(AbstractProcessView):
 
     def get_initial(self):
         inidata = super(RenewView, self).get_initial()
-        inidata['expiration'] = FROMNOW(365)
+        inidata['expiration'] = get_prj_expiration(self.request)
         return inidata
 
 class DiscardView(AbstractProcessView):
