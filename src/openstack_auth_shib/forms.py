@@ -47,9 +47,13 @@ from .models import PSTATUS_REG
 from .models import PSTATUS_PENDING
 from .models import RSTATUS_PENDING
 from .models import RSTATUS_REMINDER
-from .notifications import notifyAdmin, REGISTR_AVAIL_TYPE
+from .notifications import notifyAdmin
+from .notifications import notifyProject
+from .notifications import REGISTR_AVAIL_TYPE
+from .notifications import SUBSCR_WAIT_TYPE
 from .utils import check_compliance
 from .utils import check_projectname
+from .utils import get_prjadmin_emails
 from .utils import get_year_list
 from .utils import encode_password
 from .utils import MAX_RENEW
@@ -322,15 +326,12 @@ class RegistrForm(forms.SelfHandlingForm):
                     prjlist.append((project, "", PRJ_PUBLIC, False))
                 
             elif prj_action == 'newprj':
-                prjlist.append((
-                    data['newprj'],
-                    data['prjdescr'],
-                    PRJ_PUBLIC,
-                    True
-                ))
+                prjlist.append((data['newprj'], data['prjdescr'], PRJ_PUBLIC, True))
 
             LOG.debug("Saving %s" % data['username'])
-                    
+
+            pmail_table = list()
+
             with transaction.atomic():
 
                 is_fed_account = data.get('federated', 'false') == 'true'
@@ -391,14 +392,14 @@ class RegistrForm(forms.SelfHandlingForm):
                 if not (first_req or 'selcourse' in data):
                     return self._build_safe_redirect(request, 'name_exists')
 
-                for prjitem in prjlist:
+                for pname, pdescr, pflag, pnew in prjlist:
             
-                    if prjitem[3]:
+                    if pnew:
 
                         project = Project.objects.create(
-                            projectname = prjitem[0],
-                            description = prjitem[1],
-                            status = prjitem[2]
+                            projectname = pname,
+                            description = pdescr,
+                            status = pflag
                         )
 
                         PrjAttribute(project = project, name = ATT_PRJ_EXP,
@@ -411,23 +412,40 @@ class RegistrForm(forms.SelfHandlingForm):
                                      value = data['org_unit']).save()
 
                     else:
-                        project = Project.objects.get(projectname=prjitem[0])
+                        project = Project.objects.get(projectname = pname)
 
                     reqPrj = PrjRequest.objects.create(
                         registration = registration,
                         project = project,
-                        flowstatus = PSTATUS_REG if first_req else PSTATUS_PENDING,
+                        flowstatus = PSTATUS_REG if pnew else PSTATUS_PENDING,
                         notes = data['notes']
                     )
 
-            noti_params = {
-                'username': data['username'],
-                'projects': list(p[0] for p in prjlist),
-                'project_creation': (prj_action == 'newprj'),
-                'notes' : data['notes'],
-                'contactper' : data.get('contactper', '')
-            }
-            notifyAdmin(request=self.request, action=REGISTR_AVAIL_TYPE, context=noti_params)
+                    if not pnew:
+                        pmail_table.append((project.projectname, project.projectid,
+                                            get_prjadmin_emails(project.projectid)))
+
+
+            if first_req:
+                noti_params = {
+                    'username': data['username'],
+                    'projects': list(p[0] for p in prjlist),
+                    'project_creation': (prj_action == 'newprj'),
+                    'notes' : data['notes'],
+                    'contactper' : data.get('contactper', '')
+                }
+                notifyAdmin(request = self.request, action = REGISTR_AVAIL_TYPE, context = noti_params)
+            else:
+                for pname, pid, plist in pmail_table:
+                    noti_params = {
+                        'username' : data['username'],
+                        'project' : pname
+                    }
+                    notifyProject(request = self.request,
+                                  rcpt = plist,
+                                  action = SUBSCR_WAIT_TYPE,
+                                  context = noti_params,
+                                  dst_project_id = pid)
 
             return self._build_safe_redirect(request, 'reg_done')
         
