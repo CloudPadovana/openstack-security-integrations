@@ -15,6 +15,21 @@ WEBSSO_CHOICES = (("credentials", "Keystone Credentials"),)
 HORIZON_CONFIG['identity_providers'] = {}
 
 HORIZON_CONFIG['help_url'] = 'http://userguide.cloudveneto.it/'
+HORIZON_CONFIG['privacy_page'] = 'https://cloudveneto.it/privacy-statement/'
+
+USER_MENU_LINKS = [
+    {
+        'name': _('Privacy statement'),
+        'icon_classes': ['fa-question-circle', ],
+        'external' : True,
+        'url' : HORIZON_CONFIG['privacy_page']
+    },
+    {
+        'name': _('OpenStack RC File'),
+        'icon_classes': ['fa-download', ],
+        'url': 'horizon:project:api_access:openrc',
+    }
+]
 
 AVAILABLE_THEMES.append(( 'cap', pgettext_lazy("CloudVeneto theme", "CAP"), 'themes/cap' ))
 

@@ -204,10 +204,18 @@
   {% endif %}
 
   <div>
-    <a target="_new" href="{{ HORIZON_CONFIG.help_url }}">
-      <img class="btn" src="/dashboard/static/dashboard/img/help-transparent.png"/>
-      <label>{% trans "Read the User Guide" %}</label>
-    </a>
+    <table>
+        <tr><td>
+            <a target="_new" href="{{ HORIZON_CONFIG.help_url }}">
+              <label>{% trans "Read the User Guide" %}</label>
+            </a>
+        </td></tr>
+        <tr><td>
+            <a target="_new" href="{{ HORIZON_CONFIG.privacy_page }}">
+              <label>{% trans "Privacy statement" %}</label>
+            </a>
+        </td></tr>
+    </table>
   </div>
 {% endblock %}
 
