@@ -103,7 +103,7 @@ class CloudVenetoCommand(BaseCommand):
 
     def get_user_resources(self, userid, prjid):
         nova_client = self.get_nova_client()
-        q_args1 = { 'user' : userid, 'project_id' : prjid, 'all_tenants' : True }
+        q_args1 = { 'user_id' : userid, 'project_id' : prjid, 'all_tenants' : True }
         servers = nova_client.servers.list(True, q_args1)
 
         cinder_client = self.get_cinder_client()
