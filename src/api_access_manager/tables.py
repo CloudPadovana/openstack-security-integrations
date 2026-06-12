@@ -21,18 +21,11 @@ from openstack_dashboard.dashboards.project.api_access import tables as baseTabl
 
 from openstack_auth_shib.idpmanager import Federated_Account
 
-class DownloadEC2(baseTables.DownloadEC2):
-    url = "horizon:project:api_access_manager:ec2"
-
 class DownloadCloudsYaml(baseTables.DownloadCloudsYaml):
     url = "horizon:project:api_access_manager:clouds.yaml"
 
 class DownloadOpenRC(baseTables.DownloadOpenRC):
     url = "horizon:project:api_access_manager:openrc"
-
-    def allowed(self, request, datum=None):
-        #return settings.SHOW_OPENRC_FILE and not Federated_Account(request)
-        return settings.SHOW_OPENRC_FILE
 
 class DownloadOSToken(tables.LinkAction):
     name = "download_os_token"
@@ -41,11 +34,11 @@ class DownloadOSToken(tables.LinkAction):
     icon = "download"
     url = "horizon:project:api_access_manager:ostoken"
 
+    def allowed(self, request, datum=None):
+        return getattr(settings, 'SHOW_OSTOKEN_FILE', True)
+
 class ViewCredentials(baseTables.ViewCredentials):
     url = "horizon:project:api_access_manager:view_credentials"
-
-class RecreateCredentials(baseTables.RecreateCredentials):
-    url = "horizon:project:api_access_manager:recreate_credentials"
 
 class EndpointsTable(tables.DataTable):
     api_name = tables.Column('type',
@@ -58,11 +51,9 @@ class EndpointsTable(tables.DataTable):
         name = "endpoints"
         verbose_name = _("API Endpoints")
         multi_select = False
-        table_actions = (ViewCredentials,
-                         RecreateCredentials)
+        table_actions = (ViewCredentials,)
         table_actions_menu = (DownloadCloudsYaml,
                               DownloadOpenRC,
-                              DownloadOSToken,
-                              DownloadEC2)
+                              DownloadOSToken)
         table_actions_menu_label = _('Download OpenStack RC File')
 
