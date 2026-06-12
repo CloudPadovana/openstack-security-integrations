@@ -371,7 +371,6 @@ class DetailsView(forms.ModalFormView):
                 if len(tmpres):
                     reg_item = tmpres[0].registration
                     tmpdict['extaccount'] = tmpres[0].externalid
-                    tmpdict['email'] = tmpres[0].email
                     tmpdict['notes'] = tmpres[0].notes
 
                     if tmpres[0].flowstatus == RSTATUS_PENDING:
@@ -389,10 +388,10 @@ class DetailsView(forms.ModalFormView):
                     prj_req = PrjRequest.objects.filter(**q_args)[0]
                     reg_item = prj_req.registration
                     prj_list.append(prj_req.project)
-
-                    tmpem = EMail.objects.filter(registration__regid=regid)
-                    tmpdict['email'] = tmpem[0].email if len(tmpem) else "-"
                     tmpdict['notes'] = prj_req.notes
+
+                tmpem = EMail.objects.filter(registration__regid=regid)
+                tmpdict['email'] = tmpem[0].email if len(tmpem) else "-"
 
                 if reg_item:
                     tmpdict['username'] = reg_item.username
