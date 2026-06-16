@@ -30,6 +30,7 @@ from horizon.utils import validators
 from openstack_dashboard import api
 
 from openstack_auth_shib.models import PWD_LEN
+from openstack_auth_shib.views import logout
 
 class PasswordForm(forms.SelfHandlingForm):
     new_password = forms.RegexField(
@@ -65,7 +66,8 @@ class PasswordForm(forms.SelfHandlingForm):
             #api.keystone.user_update_own_password(request, None, data['new_password'])
             api.keystone.user_update_password(request, request.user.id, data['new_password'], False)
             
-            response = http.HttpResponseRedirect(reverse('logout'))
+            #response = http.HttpResponseRedirect(reverse('logout'))
+            response = logout(request)
             msg = _("Password changed. Please log in again to continue.")
             utils.add_logout_reason(request, response, msg)
             return response
