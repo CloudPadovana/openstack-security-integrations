@@ -363,7 +363,8 @@ class RejectForm(forms.SelfHandlingForm):
                 # First registration request, remove all (using cascaded foreign key)
                 #
             
-                user_email = regReqList[0].email
+                tmpres = EMail.objects.filter(registration = registration)
+                user_email = tmpres[0].email if tmpres else None
                 user_name = registration.username
                 
                 registration.delete()
