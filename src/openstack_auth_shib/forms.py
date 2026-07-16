@@ -413,6 +413,9 @@ class RegistrForm(forms.SelfHandlingForm):
 
                     else:
                         project = Project.objects.get(projectname = pname)
+                        if Expiration.objects.filter(registration = registration,
+                                                     project = project).count() > 0:
+                            return self._build_safe_redirect(request, 'already_subscribed')
 
                     reqPrj = PrjRequest.objects.create(
                         registration = registration,
