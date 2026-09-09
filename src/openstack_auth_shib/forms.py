@@ -426,7 +426,7 @@ class RegistrForm(forms.SelfHandlingForm):
                     reqPrj = PrjRequest.objects.create(
                         registration = registration,
                         project = project,
-                        flowstatus = PSTATUS_REG if pnew else PSTATUS_PENDING,
+                        flowstatus = PSTATUS_REG if first_req else PSTATUS_PENDING,
                         notes = data['notes']
                     )
 
