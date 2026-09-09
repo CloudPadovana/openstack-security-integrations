@@ -287,4 +287,11 @@ body: The expiration for project {{ project }} has been update.
   
   Please, don't reply to this message
 
+[unique_admin_renewal]
+LOG: Renewal of the unique administrator for {{ project }}
+subject: Renewal of the unique administrator for {{ project }}
+body: The membership of {{ username }} for {{ project }} will expire in {{ days }} days.
+  Please let us know if you want to renew the project expiration or not.
+  If a renewal is required, please, specify a new expiration date.
+
 

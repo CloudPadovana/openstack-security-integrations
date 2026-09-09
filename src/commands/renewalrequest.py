@@ -34,6 +34,7 @@ from openstack_auth_shib.notifications import notifyUser
 from openstack_auth_shib.notifications import notifyAdmin
 from openstack_auth_shib.notifications import PROPOSED_RENEWAL
 from openstack_auth_shib.notifications import USER_NEED_RENEW
+from openstack_auth_shib.notifications import CRITIC_RENEW
 
 from horizon.management.commands.cronscript_utils import CloudVenetoCommand
 
@@ -76,7 +77,7 @@ class Command(CloudVenetoCommand):
                             'registration' : e_item.registration,
                             'project' : e_item.project
                         }
-                        is_admin = (PrjRole.objects.filter(**q_args).count() > 0)
+                        num_admins = PrjRole.objects.filter(**q_args).count()
 
                         if not regid in mail_table:
                             tmpobj = EMail.objects.filter(registration=e_item.registration)
@@ -84,7 +85,7 @@ class Command(CloudVenetoCommand):
 
                         f_exp = e_item.expdate.date().isoformat()
 
-                        new_reqs[(e_item.registration, e_item.project)] = (mail_table[regid], f_exp, is_admin)
+                        new_reqs[(e_item.registration, e_item.project)] = (mail_table[regid], f_exp, num_admins)
 
                 for req_pair, req_data in new_reqs.items():
                     reqArgs = {
@@ -102,11 +103,16 @@ class Command(CloudVenetoCommand):
                     noti_params = {
                         'username' : req_pair[0].username,
                         'project' : req_pair[1].projectname
+                        'days' : self.config.cron_renewd
                     }
-                    if req_data[2]:
+                    if req_data[2] > 0:
                         notifyAdmin(USER_NEED_RENEW, noti_params, user_id=req_pair[0].userid,
                                     project_id=req_pair[1].projectid,
                                     dst_project_id=req_pair[1].projectid)
+                        if req_data[2] == 1:
+                            notifyUser(CRITIC_RENEW, noti_params, user_id=req_pair[0].userid,
+                                       project_id=req_pair[1].projectid,
+                                       dst_project_id=req_pair[1].projectid)
                     else:
                         servers, volumes = self.get_user_resources(req_pair[0].userid, req_pair[1].projectid)
                         noti_params['instances'] = [ "%s (%s)" % (x.name, x.id) for x in servers ]

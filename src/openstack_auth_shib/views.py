@@ -109,6 +109,7 @@ def websso(request):
         request.session.delete_test_cookie()
     sso_resp = django_http.HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
     sso_resp.delete_cookie(AUTHZCOOKIE)
+    # TODO log "Login successful for user ..."
     return sso_resp
 
 def logout(request):
