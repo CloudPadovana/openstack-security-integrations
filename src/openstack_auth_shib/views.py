@@ -261,7 +261,7 @@ def auth_error(request):
 
             idpdata = settings.HORIZON_CONFIG['identity_providers'][idp_tag]
             dest_url = idpdata['path'].replace('register', 'authzchk')
-            tmpresp = django_http.HttpResponseRedirect("%s?idp_tag=%s" % (dest_url, idp_tag))
+            tmpresp = django_http.HttpResponseRedirect(dest_url)
             tmpresp.delete_cookie(AUTHZCOOKIE)
 
             return tmpresp
@@ -341,14 +341,10 @@ def authzchk(request):
     attributes = Federated_Account(request)
 
     tmpresp = None
-    idp_tag = request.GET.get('idp_tag', None)
     try:
         if attributes:
             umap = Registration.objects.filter(username = attributes.username)
-            if idp_tag and len(umap) == 0:
-                idpdata = settings.HORIZON_CONFIG['identity_providers'][idp_tag]
-                tmpresp = django_http.HttpResponseRedirect(idpdata['path'])
-            elif len(umap) > 0:
+            if len(umap) > 0:
                 e_msg = None
                 q_args = { 'registration' : umap[0] }
                 pend_req = PrjRequest.objects.filter(**q_args)
